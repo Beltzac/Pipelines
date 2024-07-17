@@ -1,17 +1,22 @@
 ﻿using Common;
 using LiteDB;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq.Expressions;
+using LibGit2Sharp;
+using System.Diagnostics;
 
 namespace BuildInfoBlazorApp.Data
 {
     public class BuildInfoService
     {
+        private readonly string _azureDevOpsOrganizationUrl = "https://dev.azure.com/terminal-cp";
+        private readonly string _personalAccessToken = "2hthfevn4ba7ftrkkjpajj4h5rcej56oje6reabjnupqcwxfzhdq";
         private readonly string _databasePath = @"C:\Users\Beltzac\Documents\Builds.db";
         private readonly LiteDatabase _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
@@ -25,10 +30,9 @@ namespace BuildInfoBlazorApp.Data
             _liteDatabase = new LiteDatabase(_databasePath);
             _hubContext = hubContext;
 
-            string azureDevOpsOrganizationUrl = "https://dev.azure.com/terminal-cp";
-            string personalAccessToken = "2hthfevn4ba7ftrkkjpajj4h5rcej56oje6reabjnupqcwxfzhdq";
 
-            _connection = new VssConnection(new Uri(azureDevOpsOrganizationUrl), new VssBasicCredential(string.Empty, personalAccessToken));
+
+            _connection = new VssConnection(new Uri(_azureDevOpsOrganizationUrl), new VssBasicCredential(string.Empty, _personalAccessToken));
             _buildClient = _connection.GetClient<BuildHttpClient>();
             _projectClient = _connection.GetClient<ProjectHttpClient>();
             _gitClient = _connection.GetClient<GitHttpClient>();
@@ -74,43 +78,43 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task<BuildInfo> CreateBuildInfoAsync(string projectName, BuildDefinitionReference definition)
+        public async Task<BuildInfo> CreateBuildInfoAsync(TeamProjectReference project, BuildDefinitionReference buildDefinition)
         {
             var buildInfo = new BuildInfo
             {
-                Id = definition.Id,
-                Project = BsonMapper.Global.ToDocument(projectName),
-                Pipeline = BsonMapper.Global.ToDocument(definition),
+                Id = buildDefinition.Id,
+                Project = BsonMapper.Global.ToDocument(project),
+                Pipeline = BsonMapper.Global.ToDocument(buildDefinition),
             };
 
-            var latestBuild = definition.LatestBuild;
+            var latestBuild = buildDefinition.LatestBuild;
             if (latestBuild != null)
             {
-                var buildDetails = await _buildClient.GetBuildAsync(projectName, latestBuild.Id);
+                var buildDetails = await _buildClient.GetBuildAsync(project.Name, latestBuild.Id);
                 buildInfo.LatestBuildDetails = BsonMapper.Global.ToDocument(buildDetails);
 
-                await FetchCommitInfoAsync(projectName, buildDetails, buildInfo);
+                await FetchCommitInfoAsync(project.Name, buildDetails, buildInfo);
 
                 if (latestBuild.Result == BuildResult.Failed)
                 {
-                    buildInfo.ErrorLogs = await FetchBuildLogsAsync(projectName, latestBuild.Id);
+                    buildInfo.ErrorLogs = await FetchBuildLogsAsync(project.Name, latestBuild.Id);
                 }
 
-                Console.WriteLine($"\tPipeline: {definition.Name}, Latest Build: {latestBuild.FinishTime}, Status: {latestBuild.Status}, Result: {latestBuild.Result}, Commit: {buildDetails.SourceVersion}");
+                Console.WriteLine($"\tPipeline: {buildDefinition.Name}, Latest Build: {latestBuild.FinishTime}, Status: {latestBuild.Status}, Result: {latestBuild.Result}, Commit: {buildDetails.SourceVersion}");
             }
             else
             {
-                Console.WriteLine($"\tPipeline: {definition.Name} has no latest build.");
+                Console.WriteLine($"\tPipeline: {buildDefinition.Name} has no latest build.");
             }
 
-            var latestCompletedBuild = definition.LatestCompletedBuild;
+            var latestCompletedBuild = buildDefinition.LatestCompletedBuild;
             if (latestCompletedBuild != null)
             {
                 Console.WriteLine($"\tLatest Completed Build: {latestCompletedBuild.FinishTime}, Status: {latestCompletedBuild.Status}, Result: {latestCompletedBuild.Result}");
             }
             else
             {
-                Console.WriteLine($"\tPipeline: {definition.Name} has no latest completed build.");
+                Console.WriteLine($"\tPipeline: {buildDefinition.Name} has no latest completed build.");
             }
 
             return buildInfo;
@@ -138,7 +142,7 @@ namespace BuildInfoBlazorApp.Data
 
             foreach (var definition in buildDefinitions)
             {
-                var buildInfo = await CreateBuildInfoAsync(project.Name, definition);
+                var buildInfo = await CreateBuildInfoAsync(project, definition);
                 buildsCollection.Upsert(buildInfo);
                 await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
             }
@@ -163,6 +167,75 @@ namespace BuildInfoBlazorApp.Data
             return x => x.LatestBuildDetails == null || x.LatestBuildDetails["QueueTime"] == null || x.LatestBuildDetails["QueueTime"].IsNull
                         ? DateTime.MinValue
                         : x.LatestBuildDetails["QueueTime"].AsDateTime;
+        }
+
+        public async Task CloneRepositoryByBuildInfoIdAsync(int buildInfoId)
+        {
+            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
+            var buildInfo = buildsCollection.FindById(buildInfoId);
+
+            if (buildInfo != null)
+            {
+                var projectName = buildInfo.Project["Name"].AsString;
+                var repoId = buildInfo.LatestBuildDetails["Repository"]["_id"].AsString;
+
+                // Fetch repository details
+                var repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
+                if (repository != null)
+                {
+                    string cloneUrl = repository.RemoteUrl;
+                    string localPath = $@"C:\repos\{projectName}\{repository.Name}";
+
+                    // Ensure the directory exists
+                    if (!Directory.Exists(localPath))
+                    {
+                        Directory.CreateDirectory(localPath);
+                    }
+                    else
+                    {
+                        OpenFolder(localPath);
+                        return;
+                    }
+
+                    // Clone options with bypassing certificate check
+                    var cloneOptions = new CloneOptions
+                    {
+                        Checkout = true
+                    };
+
+                    cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
+                    cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) =>  new UsernamePasswordCredentials { Username = "Anything", Password = _personalAccessToken };
+
+                    // Clone the repository
+                    LibGit2Sharp.Repository.Clone(cloneUrl, localPath, cloneOptions);
+
+                    OpenFolder(localPath);
+
+                    Console.WriteLine($"Repository {repository.Name} cloned to {localPath}");
+                }
+                else
+                {
+                    Console.WriteLine($"Repository with ID {repoId} not found in project {projectName}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"BuildInfo with ID {buildInfoId} not found");
+            }
+        }
+
+        public void OpenFolder(string localPath)
+        {
+            if (Directory.Exists(localPath))
+            {
+                // Open the cloned folder in File Explorer
+                System.Diagnostics.Process.Start(new ProcessStartInfo
+                {
+                    FileName = localPath,
+                    UseShellExecute = true,
+                    Verb = "open"
+                });
+            }
         }
     }
 }

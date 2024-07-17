@@ -59,7 +59,7 @@ else
                     </td>
 
                     <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["RequestedFor"]?.AsDocument?["DisplayName"].AsString</td>
-                    <td>@((MarkupString)FormatCommit(buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString))</td>
+                    <td>@((MarkupString)buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString.ToHtml())</td>
                     <td><NavLink href="@buildInfo.LatestBuildCommit?.AsDocument["RemoteUrl"].AsString" target="_blank">Abrir commit</NavLink></td>
 
                     <td><NavLink href="@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Links"]?.AsDocument["Links"].AsDocument["web"]["Href"].AsString" target="_blank">Details</NavLink></td>
@@ -68,6 +68,10 @@ else
                         {
                             <NavLink href=@($"/logdetails/{buildInfo.Id}")>View Logs</NavLink>
                         }
+                    </td>
+
+                    <td>
+                        <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
                     </td>
 
                 </tr>
@@ -113,39 +117,8 @@ else
         buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
     }
 
-    private string FormatCommit(string commit)
+    private async ValueTask Clone(int buildId)
     {
-        if (string.IsNullOrEmpty(commit))
-        {
-            return null;
-        };
-
-        // Adjust Jira links
-        var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
-        commit = Regex.Replace(commit, pattern, match =>
-        {
-            return $"{match.Value.TrimEnd(':')} -";
-        });
-
-        var pipeline = new MarkdownPipelineBuilder()
-          //.UseAdvancedExtensions()
-          .UseAutoLinks()
-          .UseMediaLinks()
-          .UseFigures()
-          //.UsePipeTables()
-          //.UsePreciseSourceLocation()
-          //.UseAutoIdentifiers()
-          //.UseSmartyPants()
-          .UseBootstrap()
-          //.UseSoftlineBreakAsHardlineBreak()
-          .UseJiraLinks(new Markdig.Extensions.JiraLinks.JiraLinkOptions("https://terminalcp.atlassian.net/")
-              {
-                  OpenInNewWindow = true,
-              })
-          .Build();
-
-        return Markdown.ToHtml(commit, pipeline);
-
-        //return logs;
+        await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(buildId);
     }
 }

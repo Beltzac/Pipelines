@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components
 @using Microsoft.JSInterop
 @using System.Text.RegularExpressions
+@using Common
 @inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
@@ -26,7 +27,7 @@
 }
 else
 {
-    <pre>@((MarkupString)FormatLogs(errorLogs))</pre>
+    <pre>@((MarkupString)errorLogs.ToHtml())</pre>
 }
 
 @code {
@@ -52,66 +53,5 @@ else
 
         await JSRuntime.InvokeVoidAsync("scrollToLastError");
 
-    }
-
-    private string FormatLogs(string logs)
-    {
-        // Define the patterns and replacements for different log levels using capture groups
-        var replacements = new Dictionary<string, string>
-        {
-            { "(ERROR)", "<span class='log-error'>$1</span>" },
-            { "(exception)", "<span class='log-error'>$1</span>" },
-            { "(WARNING)", "<span class='log-warning'>$1</span>" },
-            { "(INFO)", "<span class='log-info'>$1</span>" }
-        };
-
-        // Apply replacements using Regex with IgnoreCase option and capture groups
-        foreach (var replacement in replacements)
-        {
-            logs = Regex.Replace(logs, replacement.Key, replacement.Value, RegexOptions.IgnoreCase);
-        }
-
-        // Highlight timestamps
-        var timestampPattern = @"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)";
-        logs = Regex.Replace(logs, timestampPattern, match =>
-        {
-            return $"<span class='log-timestamp'>{match.Value}</span>";
-        });
-
-        // Highlight docker commands
-        var dockerCommandPattern = @"(##\[\w+\]/usr/bin/docker [^\n]+)";
-        logs = Regex.Replace(logs, dockerCommandPattern, match =>
-        {
-            return $"<span class='log-docker-command'>{match.Value}</span>";
-        });
-
-
-        // Adjust Jira links
-        var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
-        logs = Regex.Replace(logs, pattern, match =>
-        {
-            return $"{match.Value.TrimEnd(':')} -";
-        });
-
-        var pipeline = new MarkdownPipelineBuilder()
-          //.UseAdvancedExtensions()
-          .UseAutoLinks()
-          .UseMediaLinks()
-          .UseFigures()
-          //.UsePipeTables()
-          //.UsePreciseSourceLocation()
-          //.UseAutoIdentifiers()
-          //.UseSmartyPants()
-          .UseBootstrap()
-          //.UseSoftlineBreakAsHardlineBreak()
-          .UseJiraLinks(new Markdig.Extensions.JiraLinks.JiraLinkOptions("https://terminalcp.atlassian.net/")
-          {
-                    OpenInNewWindow = true,           
-          })
-          .Build();
-
-        return Markdown.ToHtml(logs, pipeline);
-
-        //return logs;
     }
 }
