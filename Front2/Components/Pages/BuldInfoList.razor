@@ -85,7 +85,7 @@ else
         buildInfos = await BuildInfoService.GetBuildInfoAsync();
         await SignalRClientService.StartAsync(async id =>
         {
-            var newBuildInfo = await BuildInfoService.GetBuildInfoAsync(id);
+            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
 
             // Remove the existing build info with the specified id
             buildInfos.RemoveAll(b => b.Id == id);
