@@ -1,0 +1,151 @@
+﻿@page "/"
+@inject SignalRClientService SignalRClientService
+@using Common
+@using Markdig
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.RegularExpressions
+@inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
+@rendermode InteractiveServer
+
+<h3>Build Information</h3>
+
+<div class="mb-3">
+    <input type="text" id="filterInput" class="form-control" @bind="filter" @oninput="OnFilterChange" />
+</div>
+
+@if (buildInfos == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Pessoa</th>
+                <th>Commit</th>
+                <th>Link Commit</th>
+                <th>Link</th>
+                <th>Error Logs</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var buildInfo in buildInfos)
+            {
+                <tr>
+                    <td class="truncate">@(buildInfo.Project?["Name"].AsString + "/" + @buildInfo.Pipeline?["Name"].AsString)</td>
+@*                     <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString</td>
+                    <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString</td> *@
+
+                    <td>
+                        @if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "InProgress" || buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "InProgress")
+                        {
+                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Working" />
+                        }
+                        else if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "Succeeded")
+                        {
+                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Success" />
+                        }
+                        else if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "Failed")
+                        {
+                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Error" />
+                        }
+                        else
+                        {
+                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Unknown" />
+                        }
+                    </td>
+
+                    <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["RequestedFor"]?.AsDocument?["DisplayName"].AsString</td>
+                    <td>@((MarkupString)FormatCommit(buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString))</td>
+                    <td><NavLink href="@buildInfo.LatestBuildCommit?.AsDocument["RemoteUrl"].AsString" target="_blank">Abrir commit</NavLink></td>
+
+                    <td><NavLink href="@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Links"]?.AsDocument["Links"].AsDocument["web"]["Href"].AsString" target="_blank">Details</NavLink></td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(buildInfo.ErrorLogs))
+                        {
+                            <NavLink href=@($"/logdetails/{buildInfo.Id}")>View Logs</NavLink>
+                        }
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<BuildInfo> buildInfos;
+    private string filter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        buildInfos = await BuildInfoService.GetBuildInfoAsync();
+        await SignalRClientService.StartAsync(async id =>
+        {
+            var newBuildInfo = await BuildInfoService.GetBuildInfoAsync(id);
+
+            // Remove the existing build info with the specified id
+            buildInfos.RemoveAll(b => b.Id == id);
+
+            buildInfos.Add(newBuildInfo);
+
+            // Reorder the build infos
+            buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
+
+
+            // Invoke StateHasChanged on the UI thread
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    //Disconnect SignalR connection on component disposal
+    public async ValueTask DisposeAsync()
+    {
+        await SignalRClientService.Disconect();
+    }
+
+    private async Task OnFilterChange(ChangeEventArgs e)
+    {
+        filter = e.Value.ToString();
+        buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
+    }
+
+    private string FormatCommit(string commit)
+    {
+        if (string.IsNullOrEmpty(commit))
+        {
+            return null;
+        };
+
+        // Adjust Jira links
+        var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
+        commit = Regex.Replace(commit, pattern, match =>
+        {
+            return $"{match.Value.TrimEnd(':')} -";
+        });
+
+        var pipeline = new MarkdownPipelineBuilder()
+          //.UseAdvancedExtensions()
+          .UseAutoLinks()
+          .UseMediaLinks()
+          .UseFigures()
+          //.UsePipeTables()
+          //.UsePreciseSourceLocation()
+          //.UseAutoIdentifiers()
+          //.UseSmartyPants()
+          .UseBootstrap()
+          //.UseSoftlineBreakAsHardlineBreak()
+          .UseJiraLinks(new Markdig.Extensions.JiraLinks.JiraLinkOptions("https://terminalcp.atlassian.net/")
+              {
+                  OpenInNewWindow = true,
+              })
+          .Build();
+
+        return Markdown.ToHtml(commit, pipeline);
+
+        //return logs;
+    }
+}

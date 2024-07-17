@@ -1,0 +1,134 @@
+﻿@code {
+    [Parameter]
+    public Status CurrentStatus { get; set; }
+
+    public enum Status
+    {
+        Working,
+        Error,
+        Success,
+        Unknown
+    }
+}
+
+<div class="status-indicator @(CurrentStatus.ToString().ToLower())">
+    <div class="indicator-icon"></div>
+    <div class="indicator-text">@CurrentStatus.ToString()</div>
+</div>
+
+<style>
+    .status-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        position: relative;
+        font-family: 'Courier New', Courier, monospace;
+        text-transform: uppercase;
+        color: #fff;
+        font-size: 0.8rem;
+        text-align: center;
+        transition: background 0.5s, transform 0.5s;
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+    }
+
+    .indicator-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-bottom: 0.5rem;
+        animation: pulse 1s infinite;
+    }
+
+    .working .indicator-icon {
+        background: #ffff00;
+        animation: gradient-flow 3s infinite;
+    }
+
+    .error .indicator-icon {
+        background: linear-gradient(45deg, #ff0000, #cc0000);
+        animation: flash 0.5s infinite;
+    }
+
+    .success .indicator-icon {
+        background: linear-gradient(45deg, #00ff00, #009900);
+        animation: none;
+    }
+
+    .unknown .indicator-icon {
+        background: linear-gradient(45deg, #800080, #9932CC);
+        animation: spin 2s infinite linear;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes flash {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@keyframes gradient-flow {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .status-indicator:hover .indicator-text {
+        display: block;
+    }
+
+    .indicator-text {
+        display: none;
+        position: absolute;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.75);
+        padding: 5px 10px;
+        border-radius: 5px;
+        white-space: nowrap;
+    }
+</style>
