@@ -74,6 +74,10 @@ else
                         <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
                     </td>
 
+                    <td>
+                        <button class="btn btn-primary" @onclick="async () => await Open(buildInfo.Id)">Open</button>
+                    </td>
+
                 </tr>
             }
         </tbody>
@@ -120,5 +124,10 @@ else
     private async ValueTask Clone(int buildId)
     {
         await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(buildId);
+    }
+
+    private async ValueTask Open(int buildId)
+    {
+        await BuildInfoService.OpenProjectByBuildInfoIdAsync(buildId);
     }
 }

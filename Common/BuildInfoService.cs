@@ -237,5 +237,83 @@ namespace BuildInfoBlazorApp.Data
                 });
             }
         }
+
+        public async Task OpenProjectByBuildInfoIdAsync(int buildInfoId)
+        {
+            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
+            var buildInfo = buildsCollection.FindById(buildInfoId);
+
+            if (buildInfo != null)
+            {
+                var projectName = buildInfo.Project["Name"].AsString;
+                var repoName = buildInfo.LatestBuildDetails["Repository"]["Name"].AsString;
+               
+                string localPath = $@"C:\repos\{projectName}\{repoName}";
+                OpenProject(localPath);
+            }
+            else
+            {
+                Console.WriteLine($"BuildInfo with ID {buildInfoId} not found");
+            }
+        }
+
+        public void OpenProject(string folderPath)
+        {
+            if (Directory.Exists(folderPath))
+            {
+                var slnFile = Directory.GetFiles(folderPath, "*.sln", SearchOption.AllDirectories).FirstOrDefault();
+
+                if (slnFile != null)
+                {
+                    OpenWithVisualStudio(slnFile);
+                }
+                else
+                {
+                    OpenWithVSCode(folderPath);
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Directory {folderPath} does not exist.");
+            }
+        }
+
+        private void OpenWithVisualStudio(string slnFile)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new ProcessStartInfo
+                {
+                    FileName = "devenv.exe", // Path to Visual Studio executable
+                    Arguments = $"\"{slnFile}\"",
+                    UseShellExecute = true
+                });
+                Console.WriteLine($"Opening {slnFile} with Visual Studio.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening {slnFile} with Visual Studio: {ex.Message}");
+            }
+        }
+
+        private void OpenWithVSCode(string folderPath)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new ProcessStartInfo
+                {
+                    FileName = "code-insiders.cmd", // Path to VS Code executable
+                    Arguments = $"\"{folderPath}\"",
+                    UseShellExecute = true,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                });
+                Console.WriteLine($"Opening {folderPath} with VS Code.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening {folderPath} with VS Code: {ex.Message}");
+            }
+        }
     }
 }
