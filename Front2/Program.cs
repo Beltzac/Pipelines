@@ -62,7 +62,7 @@ app.MapHub<BuildInfoHub>("/buildInfoHub");
 
 
 
-using var icon = Front2.Resource.marshall_paw_patrol_canine_patrol_icon_263825;
+using var icon = Front2.Resource.halloween53_109170;
 using var trayIcon2 = new TrayIconWithContextMenu("H.NotifyIcon.Apps.Console.SecondTrayIcon")
 {
     Icon = icon.Handle,

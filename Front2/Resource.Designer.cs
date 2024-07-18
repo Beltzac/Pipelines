@@ -63,9 +63,29 @@ namespace Front2 {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
+        public static System.Drawing.Icon cube_rubik_icon_133139 {
+            get {
+                object obj = ResourceManager.GetObject("cube_rubik_icon_133139", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
         public static System.Drawing.Icon Dog {
             get {
                 object obj = ResourceManager.GetObject("Dog", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        public static System.Drawing.Icon halloween53_109170 {
+            get {
+                object obj = ResourceManager.GetObject("halloween53_109170", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }
