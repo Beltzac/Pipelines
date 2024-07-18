@@ -1,3 +1,4 @@
+using Blazored.Toast;
 using BuildInfoBlazorApp.Data;
 using Common;
 using Front2.Components;
@@ -15,6 +16,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddSingleton<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();
 
+builder.Services.AddBlazoredToast();
 
 builder.Services.AddSignalR();
 

@@ -5,9 +5,12 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
 @using System.Reactive.Subjects
-@using System.Reactive.Linq;
+@using System.Reactive.Linq
 @inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
+@inject IToastService toastService
 @rendermode InteractiveServer
+
+
 
 <h3>Build Information</h3>
 
@@ -143,6 +146,7 @@ else
     private async ValueTask Clone(int buildId)
     {
         await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(buildId);
+        this.toastService.ShowSuccess("CLONADO");
     }
 
     private async ValueTask Open(int buildId)

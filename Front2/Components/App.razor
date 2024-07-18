@@ -9,11 +9,12 @@
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="Front2.styles.css" />
     <link rel="icon" type="image/ico" href="favicon.ico" />
-    <HeadOutlet />
+    <link href="_content/Blazored.Toast/blazored-toast.css" rel="stylesheet" />
+    <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
 </body>
 
