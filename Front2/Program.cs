@@ -1,7 +1,10 @@
 using BuildInfoBlazorApp.Data;
 using Common;
 using Front2.Components;
+using H.NotifyIcon.Core;
+using Microsoft.VisualStudio.Services.Commerce;
 using Quartz;
+using System.Drawing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,4 +59,61 @@ app.MapRazorComponents<App>()
 //app.MapBlazorHub();
 app.MapHub<BuildInfoHub>("/buildInfoHub");
 
+
+
+
+using var icon = Front2.Resource.marshall_paw_patrol_canine_patrol_icon_263825;
+using var trayIcon2 = new TrayIconWithContextMenu("H.NotifyIcon.Apps.Console.SecondTrayIcon")
+{
+    Icon = icon.Handle,
+    ToolTip = "Second Tray Icon",
+    
+};
+
+trayIcon2.ContextMenu = new PopupMenu
+{
+    Items =
+    {
+        new PopupMenuItem("Create Second", (_, _) => OpenWeb()),
+        new PopupMenuSeparator(),
+        new PopupMenuItem("Show Info", (_, _) => ShowInfo(trayIcon2, "info")),
+    },
+};
+
+trayIcon2.Create();
+
+trayIcon2.MessageWindow.SubscribeToMouseEventReceived( (object sender, MessageWindow.MouseEventReceivedEventArgs args) =>
+
+{
+    if(args.MouseEvent == MouseEvent.IconLeftMouseUp)
+    {
+        Console.WriteLine("kjhds");
+        OpenWeb();
+    }
+
+}
+);
+
+
+
 app.Run();
+
+
+
+void OpenWeb()
+{
+    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "https://localhost:7143",
+        UseShellExecute = true
+    });
+}
+
+static void ShowInfo(TrayIcon trayIcon, string message)
+{
+    trayIcon.ShowNotification(
+        title: nameof(NotificationIcon.Info),
+        message: message,
+        icon: NotificationIcon.Info);
+    Console.WriteLine(nameof(trayIcon.ShowNotification));
+}
