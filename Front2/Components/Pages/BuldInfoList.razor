@@ -4,6 +4,8 @@
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
+@using System.Reactive.Subjects
+@using System.Reactive.Linq;
 @inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
 @rendermode InteractiveServer
 
@@ -22,23 +24,21 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>Project</th>
                 <th>Status</th>
+                <th>Project</th>
                 <th>Pessoa</th>
                 <th>Commit</th>
                 <th>Link Commit</th>
                 <th>Link</th>
                 <th>Error Logs</th>
+                <th>Clone</th>
+                <th>Open in IDE</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var buildInfo in buildInfos)
             {
                 <tr>
-                    <td class="truncate">@(buildInfo.Project?["Name"].AsString + "/" + @buildInfo.Pipeline?["Name"].AsString)</td>
-@*                     <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString</td>
-                    <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString</td> *@
-
                     <td>
                         @if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "InProgress" || buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "InProgress")
                         {
@@ -57,6 +57,9 @@ else
                             <StatusIndicator CurrentStatus="@StatusIndicator.Status.Unknown" />
                         }
                     </td>
+
+                    <td class="truncate">@(buildInfo.Project?["Name"].AsString + "/" + @buildInfo.Pipeline?["Name"].AsString)</td>
+
 
                     <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["RequestedFor"]?.AsDocument?["DisplayName"].AsString</td>
                     <td>@((MarkupString)buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString.ToHtml())</td>
@@ -87,9 +90,24 @@ else
 @code {
     private List<BuildInfo> buildInfos;
     private string filter;
+    private Subject<string> _searchEvents;
+    private IDisposable _subscription;
 
     protected override async Task OnInitializedAsync()
     {
+
+        _searchEvents = new Subject<string>();
+
+        _subscription = _searchEvents
+            .Throttle(TimeSpan.FromMilliseconds(500))
+            .Subscribe(async x =>
+            {
+                buildInfos = await BuildInfoService.GetBuildInfoAsync(x);
+                Console.WriteLine(x);
+                await InvokeAsync(StateHasChanged);
+            });
+
+
         buildInfos = await BuildInfoService.GetBuildInfoAsync();
         await SignalRClientService.StartAsync(async id =>
         {
@@ -113,12 +131,13 @@ else
     public async ValueTask DisposeAsync()
     {
         await SignalRClientService.Disconect();
+        _subscription.Dispose();
     }
 
     private async Task OnFilterChange(ChangeEventArgs e)
     {
         filter = e.Value.ToString();
-        buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
+        _searchEvents.OnNext(filter);
     }
 
     private async ValueTask Clone(int buildId)
