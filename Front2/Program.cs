@@ -38,7 +38,7 @@ builder.Services.AddQuartz(q =>
 });
 
 // Add Quartz hosted service
-//builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 var app = builder.Build();
 

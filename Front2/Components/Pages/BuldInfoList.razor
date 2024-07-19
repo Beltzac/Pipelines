@@ -9,13 +9,15 @@
 @inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
 @inject IToastService toastService
 @rendermode InteractiveServer
-
+@inject IJSRuntime JS
 
 
 <h3>Build Information</h3>
 
-<div class="mb-3">
-    <input type="text" id="filterInput" class="form-control" @bind="filter" @oninput="OnFilterChange" />
+<div class="mb-3 d-flex align-items-center">
+    <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
+    <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
+    <button class="btn btn-primary text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
 </div>
 
 @if (buildInfos == null)
@@ -96,6 +98,8 @@ else
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
 
+    private ElementReference filterInputElement;
+
     protected override async Task OnInitializedAsync()
     {
 
@@ -114,20 +118,32 @@ else
         buildInfos = await BuildInfoService.GetBuildInfoAsync();
         await SignalRClientService.StartAsync(async id =>
         {
-            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
+            if (buildInfos.Any(b => b.Id == id)){
+                // Remove the existing build info with the specified id
 
-            // Remove the existing build info with the specified id
-            buildInfos.RemoveAll(b => b.Id == id);
+                var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
+                buildInfos.RemoveAll(b => b.Id == id);
 
-            buildInfos.Add(newBuildInfo);
+                buildInfos.Add(newBuildInfo);
 
-            // Reorder the build infos
-            buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
+                // Reorder the build infos
+                buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
 
 
-            // Invoke StateHasChanged on the UI thread
-            await InvokeAsync(StateHasChanged);
+                // Invoke StateHasChanged on the UI thread
+                await InvokeAsync(StateHasChanged);
+
+                this.toastService.ShowSuccess($"Build {newBuildInfo.Project?["Name"].AsString + "/" + newBuildInfo.Pipeline?["Name"].AsString} Atualizada");
+            }
         });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await filterInputElement.FocusAsync();
+        }
     }
 
     //Disconnect SignalR connection on component disposal
@@ -149,8 +165,19 @@ else
         this.toastService.ShowSuccess("CLONADO");
     }
 
+    private async ValueTask CloneAll()
+    {
+        await BuildInfoService.CloneAllRepositoriesAsync();
+        this.toastService.ShowSuccess("TODOS OS REPOS FORAM CLONADOS");
+    }
+
     private async ValueTask Open(int buildId)
     {
         await BuildInfoService.OpenProjectByBuildInfoIdAsync(buildId);
+    }   
+
+    private async ValueTask OpenCloneInVSCode()
+    {
+        await BuildInfoService.OpenCloneFolderInVsCode();
     }
 }

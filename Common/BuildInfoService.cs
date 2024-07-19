@@ -1,15 +1,14 @@
 ﻿using Common;
+using LibGit2Sharp;
 using LiteDB;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
-using System.Linq.Expressions;
-using LibGit2Sharp;
 using System.Diagnostics;
+using System.Linq.Expressions;
 
 namespace BuildInfoBlazorApp.Data
 {
@@ -17,20 +16,20 @@ namespace BuildInfoBlazorApp.Data
     {
         private readonly string _azureDevOpsOrganizationUrl = "https://dev.azure.com/terminal-cp";
         private readonly string _personalAccessToken = "2hthfevn4ba7ftrkkjpajj4h5rcej56oje6reabjnupqcwxfzhdq";
-        private readonly string _databasePath = @"C:\Users\Beltzac\Documents\Builds.db";
+        private readonly string _databasePath = @"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared";
         private readonly LiteDatabase _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
         private readonly VssConnection _connection;
         private readonly BuildHttpClient _buildClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly GitHttpClient _gitClient;
+        private readonly ILiteCollection<BuildInfo> _buildsCollection;
 
         public BuildInfoService(IHubContext<BuildInfoHub> hubContext)
         {
             _liteDatabase = new LiteDatabase(_databasePath);
+            _buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
             _hubContext = hubContext;
-
-
 
             _connection = new VssConnection(new Uri(_azureDevOpsOrganizationUrl), new VssBasicCredential(string.Empty, _personalAccessToken));
             _buildClient = _connection.GetClient<BuildHttpClient>();
@@ -40,8 +39,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task<List<BuildInfo>> GetBuildInfoAsync(string filter = null)
         {
-            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
-            var query = buildsCollection.FindAll().AsQueryable();
+            var query = _buildsCollection.Query();
 
             if (!string.IsNullOrEmpty(filter))
             {
@@ -49,32 +47,32 @@ namespace BuildInfoBlazorApp.Data
                                           || x.Pipeline["Name"].AsString.ToUpper().Contains(filter.Trim().ToUpper()));
             }
 
-            var results = query.OrderByDescending(GetLatestBuildDetailsExpression()).ToList();
-            return await Task.FromResult(results);
+            var results = query.ToList();
+
+            var ordered = results.AsQueryable().OrderByDescending(GetLatestBuildDetailsExpression()).ToList();
+
+            return await Task.FromResult(ordered);
         }
 
         public async Task<BuildInfo> GetBuildInfoByIdAsync(int id)
         {
-            var collection = _liteDatabase.GetCollection<BuildInfo>("builds");
-            var query = collection.FindAll().AsQueryable();
-            return await Task.FromResult(query.FirstOrDefault(x => x.Id == id));
+            var query = _buildsCollection.Query();
+            return await Task.FromResult(query.Where(x => x.Id == id).FirstOrDefault());
         }
 
         public async Task<string> GetBuildErrorLogsAsync(int buildId)
         {
-            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
-            var query = buildsCollection.FindAll().AsQueryable();
-            return await Task.FromResult(query.FirstOrDefault(x => x.Id == buildId)?.ErrorLogs);
+            var query = _buildsCollection.Query();
+            return await Task.FromResult(query.Where(x => x.Id == buildId).FirstOrDefault()?.ErrorLogs);
         }
 
         public async Task FetchBuildInfoAsync()
         {
             var projects = await _projectClient.GetProjects();
-            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
 
             foreach (var project in projects)
             {
-                await FetchProjectBuildInfoAsync(buildsCollection, project);
+                await FetchProjectBuildInfoAsync(_buildsCollection, project);
             }
         }
 
@@ -135,15 +133,32 @@ namespace BuildInfoBlazorApp.Data
             return content;
         }
 
-        private async Task FetchProjectBuildInfoAsync(ILiteCollection<BuildInfo> buildsCollection, TeamProjectReference project)
+        private async Task FetchProjectBuildInfoAsync(ILiteCollection<BuildInfo> _buildsCollection, TeamProjectReference project)
         {
             Console.WriteLine($"Project: {project.Name}");
             var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, includeLatestBuilds: true);
 
             foreach (var definition in buildDefinitions)
             {
+                //Test if the build definition has changed
+
+                var actualBuild = _buildsCollection.Query().Where(x => x.Id == definition.Id).FirstOrDefault();
+
+                if (actualBuild != null)
+                {
+                    if (actualBuild.LatestBuildDetails?["LastChangedDate"]?.AsDateTime.ToUniversalTime() != definition.LatestBuild?.LastChangedDate.ToUniversalTime())
+                    {
+                        Console.WriteLine($"Pipeline {definition.Name} has changed. Updating build info.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Pipeline {definition.Name} has not changed. Skipping.");
+                        continue;
+                    }
+                }
+
                 var buildInfo = await CreateBuildInfoAsync(project, definition);
-                buildsCollection.Upsert(buildInfo);
+                _buildsCollection.Upsert(buildInfo);
                 await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
             }
         }
@@ -169,18 +184,42 @@ namespace BuildInfoBlazorApp.Data
                         : x.LatestBuildDetails["QueueTime"].AsDateTime;
         }
 
+        public async Task CloneAllRepositoriesAsync()
+        {
+            var buildInfos = _buildsCollection.FindAll();
+
+            foreach (var buildInfo in buildInfos)
+            {
+                await CloneRepositoryByBuildInfoIdAsync(buildInfo.Id);
+            }
+        }
+
         public async Task CloneRepositoryByBuildInfoIdAsync(int buildInfoId)
         {
-            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
-            var buildInfo = buildsCollection.FindById(buildInfoId);
+            var buildInfo = _buildsCollection.FindById(buildInfoId);
 
             if (buildInfo != null)
             {
                 var projectName = buildInfo.Project["Name"].AsString;
-                var repoId = buildInfo.LatestBuildDetails["Repository"]["_id"].AsString;
+                var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
+
+                if (repoId == null) {                    
+                    Console.WriteLine($"Repository ID not found in build info {buildInfoId}");
+                    return;
+                }
 
                 // Fetch repository details
-                var repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
+                GitRepository? repository;
+                try
+                {
+                    repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching repository {repoId}: {ex.Message}");
+                    return;
+                }
+                
                 if (repository != null)
                 {
                     string cloneUrl = repository.RemoteUrl;
@@ -193,7 +232,6 @@ namespace BuildInfoBlazorApp.Data
                     }
                     else
                     {
-                        OpenFolder(localPath);
                         return;
                     }
 
@@ -207,9 +245,16 @@ namespace BuildInfoBlazorApp.Data
                     cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) =>  new UsernamePasswordCredentials { Username = "Anything", Password = _personalAccessToken };
 
                     // Clone the repository
-                    LibGit2Sharp.Repository.Clone(cloneUrl, localPath, cloneOptions);
+                    try
+                    {
+                        LibGit2Sharp.Repository.Clone(cloneUrl, localPath, cloneOptions);
 
-                    OpenFolder(localPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error cloning repository {repository.Name}: {ex.Message}");
+                        return;
+                    }
 
                     Console.WriteLine($"Repository {repository.Name} cloned to {localPath}");
                 }
@@ -240,8 +285,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task OpenProjectByBuildInfoIdAsync(int buildInfoId)
         {
-            var buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
-            var buildInfo = buildsCollection.FindById(buildInfoId);
+            var buildInfo = _buildsCollection.FindById(buildInfoId);
 
             if (buildInfo != null)
             {
@@ -267,9 +311,14 @@ namespace BuildInfoBlazorApp.Data
                 {
                     OpenWithVisualStudio(slnFile);
                 }
-                else
+                // Check if the folder contains a src folder any level deep
+                else if (Directory.GetDirectories(folderPath, "src", SearchOption.AllDirectories).Any())
                 {
                     OpenWithVSCode(folderPath);
+                }
+                else 
+                {
+                    OpenFolder(folderPath);
                 }
             }
             else
@@ -314,6 +363,12 @@ namespace BuildInfoBlazorApp.Data
             {
                 Console.WriteLine($"Error opening {folderPath} with VS Code: {ex.Message}");
             }
+        }
+
+        public async Task OpenCloneFolderInVsCode()
+        {
+            string localPath = $@"C:\repos";
+            OpenWithVSCode(localPath);
         }
     }
 }
