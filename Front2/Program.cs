@@ -14,7 +14,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<OracleDiffService>();
-builder.Services.AddSingleton<BuildInfoService>();
+builder.Services.AddScoped<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();
 
 builder.Services.AddBlazoredToast();
