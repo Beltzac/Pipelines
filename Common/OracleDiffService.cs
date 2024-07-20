@@ -1,8 +1,10 @@
-﻿using DiffPlex;
+﻿using CSharpDiff.Patches;
+using CSharpDiff.Patches.Models;
+using DiffPlex;
 using DiffPlex.Chunkers;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
-using LibGit2Sharp;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,10 +53,19 @@ function helloFromDiff2Html() {
 helloFromDiff2Html();
 ";
 
-            var diffBuilder = new InlineDiffBuilder(new Differ());
-            var diff = diffBuilder.BuildDiffModel(oldText, newText);
+            //var diffBuilder = new InlineDiffBuilder(new Differ());
+            //var diff = diffBuilder.BuildDiffModel(oldText, newText);
 
-            return GenerateGitDiffString("sample.js", diff);
+            //return GenerateGitDiffString("sample.js", diff);
+
+ 
+
+
+
+            var ps = new Patch();
+            string patch = ps.create("filename1.cs", oldText, newText);
+
+            return patch;
         }
 
         static string GenerateGitDiffString(string fileName, DiffPaneModel diff)
