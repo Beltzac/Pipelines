@@ -1,0 +1,54 @@
+﻿@page "/oracle-diff"
+@inject SignalRClientService SignalRClientService
+@using Common
+@using Markdig
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Text.RegularExpressions
+@using System.Reactive.Subjects
+@using System.Reactive.Linq
+@inject OracleDiffService OracleDiffService
+@inject IToastService toastService
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<script>
+    window.initializeDiff2Html = function (diffString) {
+
+        var targetElement = document.getElementById('myDiffElement');
+        var configuration = {
+            drawFileList: true,
+            fileListToggle: false,
+            fileListStartVisible: false,
+            fileContentToggle: false,
+            matching: 'lines',
+            outputFormat: 'side-by-side',
+            synchronisedScroll: true,
+            highlight: true,
+            renderNothingWhenEmpty: false,
+        };
+        var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+        diff2htmlUi.draw();
+        diff2htmlUi.highlightCode();
+    };
+</script>
+
+
+
+<h3>Build Information</h3>
+
+<div id="myDiffElement"></div>
+
+
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            var diff = OracleDiffService.GetDiffString();
+            // Call JavaScript function to initialize diff2htmlUi after the page is rendered
+            await JS.InvokeVoidAsync("initializeDiff2Html", diff);
+        }
+    }
+}

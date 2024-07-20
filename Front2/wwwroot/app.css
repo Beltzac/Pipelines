@@ -135,3 +135,16 @@ h1:focus {
 .status:hover .status-text {
     display: inline;
 }
+
+/*diff*/
+span.inserted {
+    color: green;
+}
+
+span.deleted {
+    color: red;
+}
+
+span.unchanged {
+    color: black;
+}
