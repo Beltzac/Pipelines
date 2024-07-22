@@ -7,6 +7,7 @@
 @using System.Reactive.Subjects
 @using System.Reactive.Linq
 @inject OracleDiffService OracleDiffService
+@inject OracleSchemaService OracleSchemaService
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS
@@ -45,9 +46,13 @@
     {
         if (firstRender)
         {
+            var dict = OracleSchemaService.Compare();
 
-            var diff = OracleDiffService.GetDiffString();
+            //var diff = OracleDiffService.GetDiffString();
             // Call JavaScript function to initialize diff2htmlUi after the page is rendered
+
+            var diff = dict.Last().Value;
+
             await JS.InvokeVoidAsync("initializeDiff2Html", diff);
         }
     }
