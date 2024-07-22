@@ -22,15 +22,13 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 2px solid #fff;
-        border-radius: 50%;
         position: relative;
         font-family: 'Courier New', Courier, monospace;
         text-transform: uppercase;
         color: #fff;
         font-size: 0.8rem;
         text-align: center;
-        transition: background 0.5s, transform 0.5s;
+        transition: background 0.5s ease-in-out, transform 0.5s ease-in-out;
         width: 60px;
         height: 60px;
         cursor: pointer;
@@ -41,27 +39,36 @@
         height: 30px;
         border-radius: 50%;
         margin-bottom: 0.5rem;
-        animation: pulse 1s infinite;
     }
 
     .working .indicator-icon {
         background: #ffff00;
-        animation: gradient-flow 3s infinite;
+        animation: bounce 300ms alternate infinite cubic-bezier(.2, .65, .6, 1);
     }
 
     .error .indicator-icon {
-        background: linear-gradient(45deg, #ff0000, #cc0000);
-        animation: flash 0.5s infinite;
+        background: linear-gradient(45deg, #ff4d4d, #cc0000);
+        animation: flash 700ms infinite ease-in-out;
     }
 
     .success .indicator-icon {
-        background: linear-gradient(45deg, #00ff00, #009900);
+        background: linear-gradient(45deg, #00ff00, #006600);
         animation: none;
     }
 
     .unknown .indicator-icon {
         background: linear-gradient(45deg, #800080, #9932CC);
         animation: spin 2s infinite linear;
+    }
+
+    @@keyframes bounce {
+        from {
+            transform: translateY(0px);
+        }
+
+        to {
+            transform: translateY(-10px);
+        }
     }
 
     @@keyframes pulse {
@@ -84,7 +91,7 @@
         }
 
         50% {
-            opacity: 0;
+            opacity: 0.3;
         }
 
         100% {
@@ -102,20 +109,6 @@
         }
     }
 
-    @@keyframes gradient-flow {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
-    }
-
     .status-indicator:hover .indicator-text {
         display: block;
     }
@@ -130,5 +123,7 @@
         padding: 5px 10px;
         border-radius: 5px;
         white-space: nowrap;
+        color: #fff;
+        z-index: 1;
     }
 </style>

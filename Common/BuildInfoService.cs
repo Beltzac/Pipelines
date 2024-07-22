@@ -1,12 +1,15 @@
 ﻿using Common;
+using KellermanSoftware.CompareNetObjects;
 using LibGit2Sharp;
 using LiteDB;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Azure.Pipelines.WebApi;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.Linq.Expressions;
 
@@ -98,6 +101,9 @@ namespace BuildInfoBlazorApp.Data
                     buildInfo.ErrorLogs = await FetchBuildLogsAsync(project.Name, latestBuild.Id);
                 }
 
+                string localPath = $@"C:\repos\{project.Name}\{buildDefinition.Name}";
+                buildInfo.Clonned = Directory.Exists(localPath);
+
                 Console.WriteLine($"\tPipeline: {buildDefinition.Name}, Latest Build: {latestBuild.FinishTime}, Status: {latestBuild.Status}, Result: {latestBuild.Result}, Commit: {buildDetails.SourceVersion}");
             }
             else
@@ -158,8 +164,7 @@ namespace BuildInfoBlazorApp.Data
                 }
 
                 var buildInfo = await CreateBuildInfoAsync(project, definition);
-                _buildsCollection.Upsert(buildInfo);
-                await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+                await UpsertAndPublish(buildInfo);
             }
         }
 
@@ -186,86 +191,97 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task CloneAllRepositoriesAsync()
         {
-            var buildInfos = _buildsCollection.FindAll();
+            var buildInfos = _buildsCollection.FindAll().ToList();
 
             foreach (var buildInfo in buildInfos)
             {
-                await CloneRepositoryByBuildInfoIdAsync(buildInfo.Id);
+                await CloneRepositoryByBuildInfoAsync(buildInfo);
             }
         }
 
         public async Task CloneRepositoryByBuildInfoIdAsync(int buildInfoId)
         {
             var buildInfo = _buildsCollection.FindById(buildInfoId);
-
             if (buildInfo != null)
             {
-                var projectName = buildInfo.Project["Name"].AsString;
-                var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
-
-                if (repoId == null) {                    
-                    Console.WriteLine($"Repository ID not found in build info {buildInfoId}");
-                    return;
-                }
-
-                // Fetch repository details
-                GitRepository? repository;
-                try
-                {
-                    repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error fetching repository {repoId}: {ex.Message}");
-                    return;
-                }
-                
-                if (repository != null)
-                {
-                    string cloneUrl = repository.RemoteUrl;
-                    string localPath = $@"C:\repos\{projectName}\{repository.Name}";
-
-                    // Ensure the directory exists
-                    if (!Directory.Exists(localPath))
-                    {
-                        Directory.CreateDirectory(localPath);
-                    }
-                    else
-                    {
-                        return;
-                    }
-
-                    // Clone options with bypassing certificate check
-                    var cloneOptions = new CloneOptions
-                    {
-                        Checkout = true
-                    };
-
-                    cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
-                    cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) =>  new UsernamePasswordCredentials { Username = "Anything", Password = _personalAccessToken };
-
-                    // Clone the repository
-                    try
-                    {
-                        LibGit2Sharp.Repository.Clone(cloneUrl, localPath, cloneOptions);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error cloning repository {repository.Name}: {ex.Message}");
-                        return;
-                    }
-
-                    Console.WriteLine($"Repository {repository.Name} cloned to {localPath}");
-                }
-                else
-                {
-                    Console.WriteLine($"Repository with ID {repoId} not found in project {projectName}");
-                }
+                await CloneRepositoryByBuildInfoAsync(buildInfo);
             }
             else
             {
                 Console.WriteLine($"BuildInfo with ID {buildInfoId} not found");
+            }
+        }
+
+        public async Task CloneRepositoryByBuildInfoAsync(BuildInfo buildInfo)
+        {
+            var projectName = buildInfo.Project["Name"].AsString;
+            var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
+            var repoName = buildInfo.LatestBuildDetails?["Repository"]["Name"].AsString;
+
+            if (repoId == null) {                    
+                Console.WriteLine($"Repository ID not found in build info {buildInfo.Id}");
+                return;
+            }
+
+            string localPath = $@"C:\repos\{projectName}\{repoName}";
+
+            var exists = Directory.Exists(localPath);
+
+            if (exists)
+            {
+                Console.WriteLine($"Repository {repoName} already cloned to {localPath}");
+                buildInfo.Clonned = exists;
+                await UpsertAndPublish(buildInfo);
+                return;
+            }
+
+            // Fetch repository details
+            GitRepository? repository;
+            try
+            {
+                repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching repository {repoId}: {ex.Message}");
+                return;
+            }
+                
+            if (repository != null)
+            {
+                string cloneUrl = repository.RemoteUrl;
+                Directory.CreateDirectory(localPath);
+
+                // Clone options with bypassing certificate check
+                var cloneOptions = new CloneOptions
+                {
+                    Checkout = true
+                };
+
+                cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
+                cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) =>  new UsernamePasswordCredentials { Username = "Anything", Password = _personalAccessToken };
+
+                // Clone the repository
+                try
+                {
+                    LibGit2Sharp.Repository.Clone(cloneUrl, localPath, cloneOptions);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error cloning repository {repository.Name}: {ex.Message}");
+                    return;
+                }
+                    
+                buildInfo.Clonned = true;
+
+                await UpsertAndPublish(buildInfo);
+
+                Console.WriteLine($"Repository {repository.Name} cloned to {localPath}");
+            }
+            else
+            {
+                Console.WriteLine($"Repository with ID {repoId} not found in project {projectName}");
             }
         }
 
@@ -369,6 +385,98 @@ namespace BuildInfoBlazorApp.Data
         {
             string localPath = $@"C:\repos";
             OpenWithVSCode(localPath);
+        }
+
+        private async Task UpsertAndPublish(BuildInfo buildInfo)
+        {
+            // Only send updates if the build info has changed
+            var actualBuild = _buildsCollection.FindById(buildInfo.Id);
+
+            var compareLogic = new CompareLogic()
+            {
+                Config = new ComparisonConfig
+                {
+                    SkipInvalidIndexers = true
+                }
+            };
+
+            // Perform the comparison
+            ComparisonResult result = compareLogic.Compare(buildInfo, actualBuild);
+
+            // Output the comparison result
+            if (!result.AreEqual)
+            {
+                _buildsCollection.Upsert(buildInfo);
+                await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+            }
+        }
+
+        public async Task DownloadConsul()
+        {
+            string consulUrl = "https://consul-qa.tcp.com.br/v1/kv/?recurse";
+            string downloadFolder = "C:\\ConsulKV"; // Change this to your desired download folder
+
+            if (!Directory.Exists(downloadFolder))
+            {
+                Directory.CreateDirectory(downloadFolder);
+            }
+
+            try
+            {
+                var kvData = await FetchConsulKV(consulUrl);
+                await SaveKVToFiles(kvData, downloadFolder);
+                Console.WriteLine("Download completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        static async Task<JArray> FetchConsulKV(string url)
+        {
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JArray.Parse(responseBody);
+        }
+
+        static async Task SaveKVToFiles(JArray kvData, string folderPath)
+        {
+            foreach (var kv in kvData)
+            {
+                try
+                {
+                    string key = kv["Key"].ToString();
+                    string value = kv["Value"]?.ToString() ?? string.Empty;
+
+                    // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
+                    string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
+                    string directory = Path.GetDirectoryName(filePath);
+
+                    if (!Directory.Exists(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    // If the path ends with a slash, treat it as a directory
+                    if (kv["Value"] == null)
+                    {
+                        continue;
+                    }
+
+                    byte[] valueBytes = Convert.FromBase64String(value);
+                    await File.WriteAllBytesAsync(filePath, valueBytes);
+
+                    Console.WriteLine($"Saved: {filePath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+            }
         }
     }
 }

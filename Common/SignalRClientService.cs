@@ -20,13 +20,6 @@ namespace Common
                 return;
             }
 
-
-            _hubConnection.On<string>("ReceiveMessage", (message) =>
-            {
-                // Handle incoming messages here
-                Console.WriteLine($"Received message: {message}");
-            });           
-            
             _hubConnection.On<int>("Update", action);
 
             await _hubConnection.StartAsync();

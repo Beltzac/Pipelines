@@ -6,10 +6,13 @@
 @using System.Text.RegularExpressions
 @using System.Reactive.Subjects
 @using System.Reactive.Linq
+@using System.Linq.Expressions;
+@using Microsoft.AspNetCore.WebUtilities
 @inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 
 <h3>Build Information</h3>
@@ -36,8 +39,7 @@ else
                 <th>Link Commit</th>
                 <th>Link</th>
                 <th>Error Logs</th>
-                <th>Clone</th>
-                <th>Open in IDE</th>
+                <th>Clone / Open</th>
             </tr>
         </thead>
         <tbody>
@@ -79,13 +81,15 @@ else
                     </td>
 
                     <td>
-                        <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
+                        @if (!buildInfo.Clonned)
+                        {
+                            <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
+                        } 
+                        else
+                        {
+                            <button class="btn btn-primary" @onclick="async () => await Open(buildInfo.Id)">Open</button>
+                        }
                     </td>
-
-                    <td>
-                        <button class="btn btn-primary" @onclick="async () => await Open(buildInfo.Id)">Open</button>
-                    </td>
-
                 </tr>
             }
         </tbody>
@@ -102,7 +106,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-
         _searchEvents = new Subject<string>();
 
         _subscription = _searchEvents
@@ -115,27 +118,41 @@ else
             });
 
 
-        buildInfos = await BuildInfoService.GetBuildInfoAsync();
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("filter", out var filterFromQuery))
+        {
+            filter = filterFromQuery;
+        }
+
+
+        buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
+
+
         await SignalRClientService.StartAsync(async id =>
         {
-            if (buildInfos.Any(b => b.Id == id)){
-                // Remove the existing build info with the specified id
-
-                var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
-                buildInfos.RemoveAll(b => b.Id == id);
-
-                buildInfos.Add(newBuildInfo);
-
-                // Reorder the build infos
-                buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
-
-
-                // Invoke StateHasChanged on the UI thread
-                await InvokeAsync(StateHasChanged);
-
-                this.toastService.ShowSuccess($"Build {newBuildInfo.Project?["Name"].AsString + "/" + newBuildInfo.Pipeline?["Name"].AsString} Atualizada");
-            }
+            await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Project?["Name"].AsString + "/" + x.Pipeline?["Name"].AsString} Atualizada"); });
         });
+    }
+
+    private async Task ReloadById(int id, Action<BuildInfo> action)
+    {
+        if (buildInfos.Any(b => b.Id == id))
+        {
+            // Remove the existing build info with the specified id
+
+            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
+            buildInfos.RemoveAll(b => b.Id == id);
+
+            buildInfos.Add(newBuildInfo);
+
+            // Reorder the build infos
+            buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
+
+            action(newBuildInfo);
+
+            // Invoke StateHasChanged on the UI thread
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -156,6 +173,7 @@ else
     private async Task OnFilterChange(ChangeEventArgs e)
     {
         filter = e.Value.ToString();
+        Navigation.NavigateTo($"?filter={filter}");
         _searchEvents.OnNext(filter);
     }
 

@@ -9,4 +9,5 @@ public class BuildInfo
     public BsonDocument LatestBuildDetails { get; set; }
     public BsonDocument LatestBuildCommit { get; set; }
     public string ErrorLogs { get; set; }
+    public bool Clonned { get; set; }
 }
