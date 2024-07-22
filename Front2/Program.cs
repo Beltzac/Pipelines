@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddSingleton<OracleSchemaService>();
 builder.Services.AddSingleton<OracleDiffService>();
 builder.Services.AddScoped<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();

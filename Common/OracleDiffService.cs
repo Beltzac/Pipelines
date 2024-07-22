@@ -1,4 +1,6 @@
-﻿using CSharpDiff.Patches;
+﻿using CSharpDiff.Diffs;
+using CSharpDiff.Diffs.Models;
+using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using DiffPlex;
 using DiffPlex.Chunkers;
@@ -15,7 +17,7 @@ namespace Common
 {
     public class OracleDiffService
     {
-        public static string GetDiffString()
+        public static string GetDiffString(string view, string old, string newString)
         {
             //string oldText = "console.log(\"Hello World!\")";
             //string newText = "console.log(\"Hello from Diff2Html!\")";
@@ -35,23 +37,23 @@ namespace Common
             //+console.log(""Hello from Diff2Html!"")
             //";
 
-            string oldText = @"
-function helloWorld() {
-    console.log('Hello World!');
-    return 42;
-}
+//            string oldText = @"
+//function helloWorld() {
+//    console.log('Hello World!');
+//    return 42;
+//}
 
-helloWorld();
-";
+//helloWorld();
+//";
 
-            string newText = @"
-function helloFromDiff2Html() {
-    console.log('Hello from Diff2Html!');
-    return 42;
-}
+//            string newText = @"
+//function helloFromDiff2Html() {
+//    console.log('Hello from Diff2Html!');
+//    return 42;
+//}
 
-helloFromDiff2Html();
-";
+//helloFromDiff2Html();
+//";
 
             //var diffBuilder = new InlineDiffBuilder(new Differ());
             //var diff = diffBuilder.BuildDiffModel(oldText, newText);
@@ -62,11 +64,37 @@ helloFromDiff2Html();
 
 
 
-            var ps = new Patch();
-            string patch = ps.create("filename1.cs", oldText, newText);
+            var ps = new Patch(new PatchOptions(), new DiffOptions()
+            {
+              //  IgnoreWhiteSpace = true
+              //NewlineIsToken = true
+            });
+            string patch = ps.create(view, NormalizeLineBreaks(old), NormalizeLineBreaks(newString));
+
+
+            //var d = new Diff();
+
+            //var diff = d.diff(old, newString);
 
             return patch;
         }
+
+        public static string NormalizeLineBreaks(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            // Replace Windows line breaks (\r\n) with Unix line breaks (\n)
+            text = text.Replace("\r\n", "\n");
+
+            // Replace old Mac line breaks (\r) with Unix line breaks (\n)
+            text = text.Replace("\r", "\n");
+
+            return text;
+        }
+
 
         static string GenerateGitDiffString(string fileName, DiffPaneModel diff)
         {
@@ -146,15 +174,15 @@ helloFromDiff2Html();
             //}
         }
 
-        public static string CompareViewDefinitions3()
-        {
-            var oldText = "Could not reconnect to the server. Reload the page to restore functionality.";
-            var newText = "Could not reconnect to the server. Relaad the page to restore functionality.";
+        //public static string CompareViewDefinitions3(string old, string new)
+        //{
+        //    //var oldText = "Could not reconnect to the server. Reload the page to restore functionality.";
+        //    //var newText = "Could not reconnect to the server. Relaad the page to restore functionality.";
 
-            var diffBuilder = new SideBySideDiffBuilder(new Differ());
-            var diff = diffBuilder.BuildDiffModel(oldText, newText, false, false);
-            return PrintDiff(diff);
-        }
+        //    var diffBuilder = new SideBySideDiffBuilder(new Differ());
+        //    var diff = diffBuilder.BuildDiffModel(oldText, newText, false, false);
+        //    return PrintDiff(diff);
+        //}
 
         public static string PrintDiff(SideBySideDiffModel diff)
         {
