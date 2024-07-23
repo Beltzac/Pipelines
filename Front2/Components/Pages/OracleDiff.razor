@@ -12,7 +12,11 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 
+<AnchorNavigation></AnchorNavigation>
+
 <script>
+ 
+
     window.initializeDiff2Html = function (diffString) {
 
         var targetElement = document.getElementById('myDiffElement');
@@ -25,7 +29,19 @@
             outputFormat: 'side-by-side',
             synchronisedScroll: true,
             highlight: true,
-            renderNothingWhenEmpty: false,
+            renderNothingWhenEmpty: true,
+            rawTemplates: {
+                "file-summary-line": `<li class="d2h-file-list-line">
+        <span class="d2h-file-name-wrapper">
+          {{>fileIcon}}
+              <a href="oracle-diff#{{fileHtmlId}}" class="d2h-file-name">{{fileName}}</a>
+          <span class="d2h-file-stats">
+              <span class="d2h-lines-added">{{addedLines}}</span>
+              <span class="d2h-lines-deleted">{{deletedLines}}</span>
+          </span>
+        </span>
+    </li>`
+    }
         };
         var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
         diff2htmlUi.draw();
@@ -33,11 +49,11 @@
     };
 </script>
 
-
+@* target="_top" *@
 
 <h3>Build Information</h3>
 
-<div id="myDiffElement"></div>
+<div id="myDiffElement" style="max-width:80VW;"></div>
 
 
 
@@ -51,7 +67,7 @@
             //var diff = OracleDiffService.GetDiffString();
             // Call JavaScript function to initialize diff2htmlUi after the page is rendered
 
-            var diff = dict.Last().Value;
+            var diff = String.Join("\r\n", dict.Values);
 
             await JS.InvokeVoidAsync("initializeDiff2Html", diff);
         }
