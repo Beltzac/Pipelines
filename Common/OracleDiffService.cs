@@ -66,7 +66,7 @@ namespace Common
 
             var ps = new Patch(new PatchOptions(), new DiffOptions()
             {
-              //  IgnoreWhiteSpace = true
+                IgnoreWhiteSpace = true
               //NewlineIsToken = true
             });
             string patch = ps.create(view, NormalizeLineBreaks(old), NormalizeLineBreaks(newString));

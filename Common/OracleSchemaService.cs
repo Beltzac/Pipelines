@@ -78,7 +78,7 @@ namespace Common
                 }
                 else
                 {
-                    //difs.Add(viewName, OracleDiffService.GetDiffString(viewName, devViews[viewName], string.Empty));
+                    difs.Add(viewName, OracleDiffService.GetDiffString(viewName, devViews[viewName], string.Empty));
 
                     Console.WriteLine($"View {viewName} is present in DEV but not in QA");
                 }
@@ -88,7 +88,7 @@ namespace Common
             {
                 if (!devViews.ContainsKey(viewName))
                 {
-                    //difs.Add(viewName, OracleDiffService.GetDiffString(viewName, string.Empty, qaViews[viewName]));
+                    difs.Add(viewName, OracleDiffService.GetDiffString(viewName, string.Empty, qaViews[viewName]));
 
                     Console.WriteLine($"View {viewName} is present in QA but not in DEV");
                 }
