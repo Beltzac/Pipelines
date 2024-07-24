@@ -17,7 +17,7 @@ namespace Common
 {
     public class OracleDiffService
     {
-        public static string GetDiffString(string view, string old, string newString)
+        public static PatchResult GetDiff(string view, string old, string newString)
         {
             //string oldText = "console.log(\"Hello World!\")";
             //string newText = "console.log(\"Hello from Diff2Html!\")";
@@ -69,7 +69,7 @@ namespace Common
                 IgnoreWhiteSpace = true
               //NewlineIsToken = true
             });
-            string patch = ps.create(view, NormalizeLineBreaks(old), NormalizeLineBreaks(newString));
+            var patch = ps.createPatchResult(view, view, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
 
 
             //var d = new Diff();
@@ -77,6 +77,16 @@ namespace Common
             //var diff = d.diff(old, newString);
 
             return patch;
+        }
+
+        public static string Format(PatchResult patchResult)
+        {
+            var ps = new Patch(new PatchOptions(), new DiffOptions()
+            {
+                IgnoreWhiteSpace = true
+                //NewlineIsToken = true
+            });
+            return ps.formatPatch(patchResult);
         }
 
         public static string NormalizeLineBreaks(string text)

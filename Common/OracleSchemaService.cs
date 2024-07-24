@@ -1,12 +1,5 @@
-﻿using LiteDB;
+﻿using CSharpDiff.Patches.Models;
 using Oracle.ManagedDataAccess.Client;
-using Oracle.ManagedDataAccess.Types;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Common
 {
@@ -15,13 +8,6 @@ namespace Common
         string devConnectionString = "User Id=AHOY_ABELTZAC;Password=***REMOVED***;Data Source=***REMOVED***;";
         string qaConnectionString = "User Id=TCPAPI;Password=TCPAPI;Data Source=***REMOVED***;";
         string schema = "TCPAPI";
-
-        //private readonly OracleDiffService _oracleDiffService;
-
-        //public OracleSchemaService(OracleDiffService oracleDiffService)
-        //{
-        //    _oracleDiffService = oracleDiffService;
-        //}
 
         public Dictionary<string, string> Compare()
         {
@@ -59,26 +45,17 @@ namespace Common
 
         public Dictionary<string, string> CompareViewDefinitions(Dictionary<string, string> devViews, Dictionary<string, string> qaViews)
         {
-            Dictionary<string, string> difs = new Dictionary<string, string>();
+            Dictionary<string, PatchResult> difs = new Dictionary<string, PatchResult>();
 
             foreach (var viewName in devViews.Keys)
             {
                 if (qaViews.ContainsKey(viewName))
                 {
-                    if (devViews[viewName] != qaViews[viewName])
-                    {
-                        Console.WriteLine($"Difference in view: {viewName}");
-                        //Console.WriteLine($"DEV: {devViews[viewName]}");
-                        //Console.WriteLine($"QA: {qaViews[viewName]}");
-
-                        difs.Add(viewName, OracleDiffService.GetDiffString(viewName, devViews[viewName], qaViews[viewName]));
-
-                    }
-
+                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, devViews[viewName], qaViews[viewName]));
                 }
                 else
                 {
-                    difs.Add(viewName, OracleDiffService.GetDiffString(viewName, devViews[viewName], string.Empty));
+                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, devViews[viewName], string.Empty));
 
                     Console.WriteLine($"View {viewName} is present in DEV but not in QA");
                 }
@@ -88,13 +65,24 @@ namespace Common
             {
                 if (!devViews.ContainsKey(viewName))
                 {
-                    difs.Add(viewName, OracleDiffService.GetDiffString(viewName, string.Empty, qaViews[viewName]));
+                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, string.Empty, qaViews[viewName]));
 
                     Console.WriteLine($"View {viewName} is present in QA but not in DEV");
                 }
             }
 
-            return difs;
+            Dictionary<string, string> difsString = new Dictionary<string, string>();
+
+            foreach (var kv in difs)
+            {
+                if (kv.Value.Hunks.Any())
+                {
+                    Console.WriteLine($"Difference in view: {kv.Key}");
+                    difsString.Add(kv.Key, OracleDiffService.Format(kv.Value));
+                }
+            }
+
+            return difsString;
         }
     }
 }
