@@ -14,6 +14,13 @@ public class BuildInfoJob : IJob
     public async Task Execute(IJobExecutionContext context)
     {
         // Your existing code to fetch and process build information
-        await _buildInfoService.FetchBuildInfoAsync();
+        try
+        {
+            await _buildInfoService.FetchBuildInfoAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
     }
 }

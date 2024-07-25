@@ -17,10 +17,23 @@
 
 <h3>Build Information</h3>
 
+<script>
+    function downloadFile(fileName, base64Content) {
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = 'data:text/plain;base64,' + base64Content;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+</script>
+
 <div class="mb-3 d-flex align-items-center">
     <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
-    <button class="btn btn-primary text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
+    <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
+    <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
 </div>
 
 @if (buildInfos == null)
@@ -200,6 +213,21 @@ else
     {
         await BuildInfoService.OpenCloneFolderInVsCode();
     }
+
+    private async ValueTask CloneAllCmd()
+    {
+        var cloneCommands = await BuildInfoService.GenerateCloneCommands();
+        var fileName = "clone_all_tcp.cmd";
+        await DownloadFile(fileName, cloneCommands);
+    }
+
+    private async Task DownloadFile(string fileName, string fileContent)
+    {
+        var byteArray = System.Text.Encoding.UTF8.GetBytes(fileContent);
+        var base64Content = Convert.ToBase64String(byteArray);
+        await JS.InvokeVoidAsync("downloadFile", fileName, base64Content);
+    }
+    
 
     // async void LocationChanged(object sender, LocationChangedEventArgs e)
     // {

@@ -9,7 +9,7 @@ namespace Common
         public SignalRClientService()
         {
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl("https://localhost:7143/buildInfoHub")
+                .WithUrl("http://localhost:8001/buildInfoHub")
                 .Build();
         }
 

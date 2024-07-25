@@ -10,6 +10,7 @@
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
+    <PackageReference Include="ElectronNET.API" Version="23.6.2" />
     <PackageReference Include="H.NotifyIcon" Version="2.1.0" />
     <PackageReference Include="LibGit2Sharp" Version="0.30.0" />
     <PackageReference Include="LiteDB" Version="5.0.21" />

@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace BuildInfoBlazorApp.Data
 {
@@ -478,5 +479,59 @@ namespace BuildInfoBlazorApp.Data
                 }
             }
         }
+
+        public async Task<string> GenerateCloneCommands()
+        {
+            var buildInfos = _buildsCollection.FindAll().ToList();
+            var commands = new StringBuilder();
+
+            commands.AppendLine("@echo off");
+            commands.AppendLine("set REPO_ROOT=C:\\repos");
+
+            foreach (var buildInfo in buildInfos)
+            {
+                var projectName = buildInfo.Project["Name"].AsString;
+                var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
+                var repoName = buildInfo.LatestBuildDetails?["Repository"]["Name"].AsString;
+
+                if (repoId == null || repoName == null)
+                {
+                    Console.WriteLine($"Repository ID or Name not found in build info {buildInfo.Id}");
+                    continue;
+                }
+
+                string localPath = $"%REPO_ROOT%\\{projectName}\\{repoName}";
+
+                // Add check if the repository is already cloned for Windows Command Prompt
+                commands.AppendLine($"IF NOT EXIST \"{localPath}\" (");
+                commands.AppendLine($"  mkdir \"{localPath}\"");
+                try
+                {
+                    var repository = await _gitClient.GetRepositoryAsync(projectName, repoId);
+                    if (repository != null)
+                    {
+                        string cloneUrl = repository.RemoteUrl.Replace("%", "%%");
+
+                        commands.AppendLine($"  git clone \"{cloneUrl}\" \"{localPath}\"");
+                        Console.WriteLine($"Added clone command for repository {repoName}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Repository with ID {repoId} not found in project {projectName}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error fetching repository {repoId}: {ex.Message}");
+                }
+                commands.AppendLine(") ELSE (");
+                commands.AppendLine($"  echo \"Repository {repoName} already cloned at {localPath}\"");
+                commands.AppendLine(")");
+            }
+
+            return commands.ToString();
+        }
+
+
     }
 }
