@@ -130,6 +130,11 @@ namespace BuildInfoBlazorApp.Data
             var logs = await _buildClient.GetBuildLogsAsync(projectName, buildId);
             var content = string.Empty;
 
+            if(logs == null) 
+            {             
+                return content;
+            }
+
             foreach (var log in logs)
             {
                 var logLines = await _buildClient.GetBuildLogLinesAsync(projectName, buildId, log.Id);
