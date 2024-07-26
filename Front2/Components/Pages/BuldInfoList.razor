@@ -60,7 +60,7 @@ else
             {
                 <tr>
                     <td>
-                        @if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "InProgress" || buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "InProgress")
+                        @if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "NotStarted" || buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "InProgress")
                         {
                             <StatusIndicator CurrentStatus="@StatusIndicator.Status.Working" />
                         }
