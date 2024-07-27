@@ -20,13 +20,13 @@
 
 <div id="myDiffElement"></div>
 
-<button class="btn btn-primary text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
+<button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
 
 
 
 @code {
 
-    private async ValueTask OpenCloneInVSCode()
+    private async ValueTask DownloadConsul()
     {
         await BuildInfoService.DownloadConsul();
     }
