@@ -257,15 +257,18 @@ async Task OpenWeb()
     {
         // minimize if it is in focus
 
-        if (await window.IsVisibleAsync())
+        if (await window.IsMinimizedAsync() || !await window.IsVisibleAsync())
         {
-            window.Minimize();
-        }
-        else
-        {
+
             window.Maximize();
             window.Show();
             window.Focus();
+
+        }
+        else
+        {
+
+            window.Minimize();
         }
     }
     else
