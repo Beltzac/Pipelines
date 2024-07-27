@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject SignalRClientService SignalRClientService
 @using Common
+@using ElectronNET.API
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
@@ -12,7 +13,7 @@
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS
-@* @inject NavigationManager Navigation *@
+@inject NavigationManager NavigationManager
 
 
 <h3>Build Information</h3>
@@ -83,13 +84,16 @@ else
 
                     <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["RequestedFor"]?.AsDocument?["DisplayName"].AsString</td>
                     <td>@((MarkupString)buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString.ToHtml())</td>
-                    <td><NavLink href="@buildInfo.LatestBuildCommit?.AsDocument["RemoteUrl"].AsString" target="_blank">Abrir commit</NavLink></td>
 
-                    <td><NavLink href="@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Links"]?.AsDocument["Links"].AsDocument["web"]["Href"].AsString" target="_blank">Details</NavLink></td>
+
+                    <td><button class="btn btn-primary" @onclick="async () => await OpenExternalCommit(buildInfo)">Commit</button></td>
+                    <td><button class="btn btn-primary" @onclick="async () => await OpenExternalRun(buildInfo)">Details</button></td>
+
+
                     <td>
                         @if (!string.IsNullOrEmpty(buildInfo.ErrorLogs))
                         {
-                            <NavLink href=@($"/logdetails/{buildInfo.Id}")>View Logs</NavLink>
+                            <button class="btn btn-primary" @onclick="() => NavigateToLogDetails(buildInfo.Id)">View Logs</button>
                         }
                     </td>
 
@@ -227,7 +231,23 @@ else
         var base64Content = Convert.ToBase64String(byteArray);
         await JS.InvokeVoidAsync("downloadFile", fileName, base64Content);
     }
-    
+
+    private async Task OpenExternalCommit(BuildInfo x)
+    {
+        var url = x.LatestBuildCommit?.AsDocument["RemoteUrl"].AsString;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+
+    private async Task OpenExternalRun(BuildInfo x)
+    {
+        var url = x.Pipeline?["LatestBuild"]?.AsDocument?["Links"]?.AsDocument["Links"].AsDocument["web"]["Href"].AsString;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+
+    private void NavigateToLogDetails(int buildInfoId)
+    {
+        NavigationManager.NavigateTo($"/logdetails/{buildInfoId}");
+    }
 
     // async void LocationChanged(object sender, LocationChangedEventArgs e)
     // {

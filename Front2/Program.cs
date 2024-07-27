@@ -5,6 +5,7 @@ using ElectronNET.API;
 using ElectronNET.API.Entities;
 using Front2.Components;
 using H.NotifyIcon.Core;
+using Microsoft.AspNetCore.Hosting;
 using Quartz;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -120,11 +121,32 @@ var menus = new List<MenuItem>()
         Click = () => Electron.App.Quit()
     }
 };
-    
+
+// Define the event handler method
+void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
+{
+    OpenWeb();
+}
+
+// print current working directory
+Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
+
+//print all files and folders in the executable directory
+//foreach (var file in System.IO.Directory.GetFiles(System.IO.Directory.GetCurrentDirectory()))
+//    {
+//    Console.WriteLine(file);
+//}       
 
 
-await Electron.Tray.Show("/Assets/app.ico", menus.ToArray());
+await Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
 await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
+//await Electron.Tray.SetToolTip("teste");
+
+
+// Subscribe to the event
+
+Electron.Tray.OnClick += OnTrayClick;
+
 
 
 
@@ -149,16 +171,26 @@ async Task OpenWeb()
     {
         //Frame = false
         SkipTaskbar = true,
-        AutoHideMenuBar = true,
+        AutoHideMenuBar = true
     };
     //await Electron.WindowManager.CreateWindowAsync(options);
 
+    var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
 
-    var window = await Electron.WindowManager.CreateWindowAsync(options);
+    var window = existing ?? await Electron.WindowManager.CreateWindowAsync(options);
 
     window.SetTitle("¯\\_(ツ)_/¯");
 
-    window.OnReadyToShow += () => { window.Maximize(); window.Show(); };
+    if (existing != null)
+    {
+        window.Maximize();
+        window.Show();
+        window.Focus();
+    }
+    else
+    {
+        window.OnReadyToShow += () => { window.Maximize(); window.Show(); };
+    }
 
     //Open("https://localhost:7143");
 
