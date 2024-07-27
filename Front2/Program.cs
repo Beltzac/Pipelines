@@ -108,6 +108,9 @@ app.MapHub<BuildInfoHub>("/buildInfoHub");
 
 
 
+
+var startupEnabled = IsStartupEnabled();
+
 var menus = new List<MenuItem>()
 {
     new MenuItem
@@ -118,9 +121,75 @@ var menus = new List<MenuItem>()
     new MenuItem
     {
         Label = "Exit",
-        Click = () => Electron.App.Quit()
+        Click = () => Electron.App.Exit()
     }
+   
 };
+
+menus.Add(
+     new MenuItem
+     {
+         Label = "Enable Startup with Windows",
+         Click = () => SetStartup(true),
+         Visible = !startupEnabled
+     });
+
+menus.Add(
+    new MenuItem
+    {
+        Label = "Disable Startup with Windows",
+        Click = () => SetStartup(false),
+        Visible = startupEnabled
+    });
+
+bool IsStartupEnabled()
+{
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
+        if (key != null)
+        {
+            return key.GetValue("MyElectronApp") != null;
+        }
+    }
+    return false;
+}
+
+void SetStartup(bool enable)
+{
+    var startupPath = $"\"{System.Reflection.Assembly.GetExecutingAssembly().Location}\"";
+
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+        if (enable)
+        {
+            key.SetValue("MyElectronApp", startupPath);
+        }
+        else
+        {
+            key.DeleteValue("MyElectronApp", false);
+        }
+
+        // Update menu items' visibility
+
+        //var novos = Electron.Tray.MenuItems;
+
+        menus.First(m => m.Label == "Enable Startup with Windows").Visible = !enable;
+        menus.First(m => m.Label == "Disable Startup with Windows").Visible = enable;
+
+        Electron.Tray.OnClick -= OnTrayClick;
+        Electron.Tray.Destroy();
+        Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
+        Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
+        Electron.Tray.OnClick += OnTrayClick;
+
+    }
+    else
+    {
+        Electron.Dialog.ShowMessageBoxAsync(new MessageBoxOptions("Startup setting is only supported on Windows."));
+    }
+}
 
 // Define the event handler method
 void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
@@ -140,12 +209,13 @@ Console.WriteLine(System.IO.Directory.GetCurrentDirectory());
 
 await Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
 await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
+Electron.Tray.OnClick += OnTrayClick;
+
 //await Electron.Tray.SetToolTip("teste");
 
 
 // Subscribe to the event
 
-Electron.Tray.OnClick += OnTrayClick;
 
 
 
@@ -171,7 +241,9 @@ async Task OpenWeb()
     {
         //Frame = false
         SkipTaskbar = true,
-        AutoHideMenuBar = true
+        AutoHideMenuBar = true,
+        Closable = false,
+        
     };
     //await Electron.WindowManager.CreateWindowAsync(options);
 
@@ -183,9 +255,18 @@ async Task OpenWeb()
 
     if (existing != null)
     {
-        window.Maximize();
-        window.Show();
-        window.Focus();
+        // minimize if it is in focus
+
+        if (await window.IsVisibleAsync())
+        {
+            window.Minimize();
+        }
+        else
+        {
+            window.Maximize();
+            window.Show();
+            window.Focus();
+        }
     }
     else
     {
