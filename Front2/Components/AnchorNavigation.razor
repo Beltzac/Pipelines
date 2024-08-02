@@ -1,5 +1,6 @@
 ﻿@inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject ILogger<NavigationManager> _logger;
 @implements IDisposable
 
 <script>
@@ -40,7 +41,7 @@
     {
         var uri = new Uri(NavigationManager.Uri, UriKind.Absolute);
 
-        Console.WriteLine($"ScrollToFragment: {uri}");
+        _logger.LogInformation($"ScrollToFragment: {uri}");
 
         var fragment = uri.Fragment;
         if (fragment.StartsWith('#'))
@@ -59,7 +60,7 @@
                 await JSRuntime.InvokeVoidAsync("BlazorScrollToId", elementId);
             }
 
-            Console.WriteLine($"Scrolling to fragment: {elementId}");
+            _logger.LogInformation($"Scrolling to fragment: {elementId}");
         }
     }
 }

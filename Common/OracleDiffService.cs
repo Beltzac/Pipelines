@@ -164,14 +164,14 @@ namespace Common
             //    {
             //        if (devViews[viewName] != qaViews[viewName])
             //        {
-            //            Console.WriteLine($"Difference in view: {viewName}");
+            //            _logger.LogInformation($"Difference in view: {viewName}");
             //            var diff = diffBuilder.BuildDiffModel(devViews[viewName], qaViews[viewName]);
             //            PrintDiff(diff);
             //        }
             //    }
             //    else
             //    {
-            //        Console.WriteLine($"View {viewName} is present in DEV but not in QA");
+            //        _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
             //    }
             //}
 
@@ -179,7 +179,7 @@ namespace Common
             //{
             //    if (!devViews.ContainsKey(viewName))
             //    {
-            //        Console.WriteLine($"View {viewName} is present in QA but not in DEV");
+            //        _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
             //    }
             //}
         }
@@ -266,7 +266,7 @@ namespace Common
         //                break;
         //        }
 
-        //        Console.WriteLine(line.Text);
+        //        _logger.LogInformation(line.Text);
         //    }
         //    Console.ResetColor();
         //}

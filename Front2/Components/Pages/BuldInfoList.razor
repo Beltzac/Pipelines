@@ -14,7 +14,7 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
-
+@inject ILogger<NavigationManager> _logger;
 
 <h3>Build Information</h3>
 
@@ -27,7 +27,6 @@
     link.click();
     document.body.removeChild(link);
 }
-
 </script>
 
 <div class="mb-3 d-flex align-items-center">
@@ -132,7 +131,7 @@ else
             .Subscribe(async x =>
             {
                 buildInfos = await BuildInfoService.GetBuildInfoAsync(x);
-                Console.WriteLine(x);
+                _logger.LogInformation(x);
                 //Navigation.NavigateTo($"?filter={filter}");
                 await InvokeAsync(StateHasChanged);
             });
@@ -252,12 +251,12 @@ else
     // async void LocationChanged(object sender, LocationChangedEventArgs e)
     // {
     //     string navigationMethod = e.IsNavigationIntercepted ? "HTML" : "code";
-    //     Console.WriteLine($"Notified of navigation via {navigationMethod} to {e.Location}");
+    //     _logger.LogInformation($"Notified of navigation via {navigationMethod} to {e.Location}");
 
     //     var uri = Navigation.ToAbsoluteUri(e.Location);
     //     if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("filter", out var filterFromQuery))
     //     {
-    //         Console.WriteLine($"Filter from query: {filterFromQuery}");
+    //         _logger.LogInformation($"Filter from query: {filterFromQuery}");
     //         filter = filterFromQuery;
     //     }else{
     //         filter = string.Empty;

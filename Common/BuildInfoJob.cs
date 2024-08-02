@@ -1,4 +1,5 @@
 ﻿using BuildInfoBlazorApp.Data;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using System;
 using System.Threading.Tasks;
@@ -6,9 +7,12 @@ using System.Threading.Tasks;
 public class BuildInfoJob : IJob
 {
     private readonly BuildInfoService _buildInfoService;
-    public BuildInfoJob(BuildInfoService buildInfoService)
+    private readonly ILogger<BuildInfoJob> _logger;
+
+    public BuildInfoJob(BuildInfoService buildInfoService, ILogger<BuildInfoJob> logger)
     {
         _buildInfoService = buildInfoService;
+        _logger = logger;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -20,7 +24,7 @@ public class BuildInfoJob : IJob
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogInformation(ex.Message);
         }
     }
 }
