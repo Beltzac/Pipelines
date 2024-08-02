@@ -1,4 +1,6 @@
-﻿using CSharpDiff.Patches.Models;
+﻿using BuildInfoBlazorApp.Data;
+using CSharpDiff.Patches.Models;
+using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 
 namespace Common
@@ -8,6 +10,13 @@ namespace Common
         string devConnectionString = "User Id=AHOY_ABELTZAC;Password=***REMOVED***;Data Source=***REMOVED***;";
         string qaConnectionString = "User Id=TCPAPI;Password=TCPAPI;Data Source=***REMOVED***;";
         string schema = "TCPAPI";
+
+        private readonly ILogger<OracleSchemaService> _logger;
+
+        public OracleSchemaService(ILogger<OracleSchemaService> logger)
+        {
+            _logger = logger;
+        }
 
         public Dictionary<string, string> Compare()
         {
@@ -57,7 +66,7 @@ namespace Common
                 {
                     difs.Add(viewName, OracleDiffService.GetDiff(viewName, devViews[viewName], string.Empty));
 
-                    Console.WriteLine($"View {viewName} is present in DEV but not in QA");
+                    _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
                 }
             }
 
@@ -67,7 +76,7 @@ namespace Common
                 {
                     difs.Add(viewName, OracleDiffService.GetDiff(viewName, string.Empty, qaViews[viewName]));
 
-                    Console.WriteLine($"View {viewName} is present in QA but not in DEV");
+                    _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
                 }
             }
 
@@ -77,7 +86,7 @@ namespace Common
             {
                 if (kv.Value.Hunks.Any())
                 {
-                    Console.WriteLine($"Difference in view: {kv.Key}");
+                    _logger.LogInformation($"Difference in view: {kv.Key}");
                     difsString.Add(kv.Key, OracleDiffService.Format(kv.Value));
                 }
             }

@@ -3,13 +3,13 @@
   "splashscreen": {
     "imageFile": ""
   },
-  "name": "Front2",
+  "name": "TcpDash",
   "author": "",
   "singleInstance": false,
   "environment": "Production",
   "build": {
-    "appId": "com.Front2.app",
-    "productName": "Front2",
+    "appId": "com.TcpDash.app",
+    "productName": "TcpDash",
     "copyright": "Copyright © 2020",
     "buildVersion": "1.0.0",
     "compression": "maximum",
