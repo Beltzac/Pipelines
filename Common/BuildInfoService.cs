@@ -458,25 +458,25 @@ namespace BuildInfoBlazorApp.Data
         private async Task UpsertAndPublish(BuildInfo buildInfo)
         {
             // Only send updates if the build info has changed
-            var actualBuild = _buildsCollection.FindById(buildInfo.Id);
+            //var actualBuild = _buildsCollection.FindById(buildInfo.Id);
 
-            var compareLogic = new CompareLogic()
-            {
-                Config = new ComparisonConfig
-                {
-                    SkipInvalidIndexers = true
-                }
-            };
+            //var compareLogic = new CompareLogic()
+            //{
+            //    Config = new ComparisonConfig
+            //    {
+            //        SkipInvalidIndexers = true
+            //    }
+            //};
 
             // Perform the comparison
-            ComparisonResult result = compareLogic.Compare(buildInfo, actualBuild);
+          //  ComparisonResult result = compareLogic.Compare(buildInfo, actualBuild);
 
             // Output the comparison result
-            if (!result.AreEqual)
-            {
+           // if (!result.AreEqual)
+          //  {
                 _buildsCollection.Upsert(buildInfo);
                 await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
-            }
+            //}
         }
 
         public async Task DownloadConsul()

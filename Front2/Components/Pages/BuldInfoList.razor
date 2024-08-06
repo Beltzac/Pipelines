@@ -31,10 +31,12 @@
 
 <div class="mb-3 d-flex align-items-center">
     <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
+    <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
     <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
 </div>
+
 
 @if (buildInfos == null)
 {
@@ -122,8 +124,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        //Navigation.LocationChanged += LocationChanged;
-
         _searchEvents = new Subject<string>();
 
         _subscription = _searchEvents
@@ -135,13 +135,6 @@ else
                 //Navigation.NavigateTo($"?filter={filter}");
                 await InvokeAsync(StateHasChanged);
             });
-
-        // var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-        // if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("filter", out var filterFromQuery))
-        // {
-        //     filter = filterFromQuery;
-        // }
-
 
         buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
 
@@ -186,7 +179,6 @@ else
     {
         await SignalRClientService.Disconect();
         _subscription.Dispose();
-        //Navigation.LocationChanged -= LocationChanged;
     }
 
     private async Task OnFilterChange(ChangeEventArgs e)
@@ -248,22 +240,10 @@ else
         NavigationManager.NavigateTo($"/logdetails/{buildInfoId}");
     }
 
-    // async void LocationChanged(object sender, LocationChangedEventArgs e)
-    // {
-    //     string navigationMethod = e.IsNavigationIntercepted ? "HTML" : "code";
-    //     _logger.LogInformation($"Notified of navigation via {navigationMethod} to {e.Location}");
-
-    //     var uri = Navigation.ToAbsoluteUri(e.Location);
-    //     if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("filter", out var filterFromQuery))
-    //     {
-    //         _logger.LogInformation($"Filter from query: {filterFromQuery}");
-    //         filter = filterFromQuery;
-    //     }else{
-    //         filter = string.Empty;
-    //     }
-
-    //     _searchEvents.OnNext(filter);
-
-    //     //await InvokeAsync(StateHasChanged);
-    // }
+    private async Task ClearFilter()
+    {
+        filter = string.Empty;
+        await OnFilterChange(new ChangeEventArgs { Value = filter });
+        await filterInputElement.FocusAsync();
+    }
 }
