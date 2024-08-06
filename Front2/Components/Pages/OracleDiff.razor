@@ -19,6 +19,8 @@
 
     window.initializeDiff2Html = function (diffString) {
 
+        //var hljs = require('highlight.js');
+
         console.log(diffString);
         var targetElement = document.getElementById('myDiffElement');
         var configuration = {
@@ -29,7 +31,7 @@
             matching: 'lines',
             outputFormat: 'side-by-side',
             synchronisedScroll: true,
-            highlight: true,
+            
             renderNothingWhenEmpty: true,
             rawTemplates: {
                 "file-summary-line": `<li class="d2h-file-list-line">
@@ -44,9 +46,19 @@
     </li>`
     }
         };
-        var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+        console.log(hljs);
+        var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration, hljs);
         diff2htmlUi.draw();
-        diff2htmlUi.highlightCode();
+
+        hljs.configure({ ignoreUnescapedHTML: true })
+
+        document.querySelectorAll('.hljs').forEach((block) => {
+            block.classList.remove('plaintext'); // Remove the plaintext class
+            block.classList.add('sql'); // Add the SQL language class
+            hljs.highlightElement(block); // Highlight the block
+        });
+
+        //diff2htmlUi.highlightCode();
     };
 </script>
 

@@ -37,39 +37,39 @@ namespace Common
             //+console.log(""Hello from Diff2Html!"")
             //";
 
-//            string oldText = @"
-//function helloWorld() {
-//    console.log('Hello World!');
-//    return 42;
-//}
+            //            string oldText = @"
+            //function helloWorld() {
+            //    console.log('Hello World!');
+            //    return 42;
+            //}
 
-//helloWorld();
-//";
+            //helloWorld();
+            //";
 
-//            string newText = @"
-//function helloFromDiff2Html() {
-//    console.log('Hello from Diff2Html!');
-//    return 42;
-//}
+            //            string newText = @"
+            //function helloFromDiff2Html() {
+            //    console.log('Hello from Diff2Html!');
+            //    return 42;
+            //}
 
-//helloFromDiff2Html();
-//";
+            //helloFromDiff2Html();
+            //";
 
             //var diffBuilder = new InlineDiffBuilder(new Differ());
             //var diff = diffBuilder.BuildDiffModel(oldText, newText);
 
             //return GenerateGitDiffString("sample.js", diff);
 
- 
 
 
+            var viewNameFormated = $"{view}.SQL";
 
             var ps = new Patch(new PatchOptions(), new DiffOptions()
             {
                 IgnoreWhiteSpace = true
               //NewlineIsToken = true
             });
-            var patch = ps.createPatchResult(view, view, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
+            var patch = ps.createPatchResult(viewNameFormated, viewNameFormated, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
 
 
             //var d = new Diff();
