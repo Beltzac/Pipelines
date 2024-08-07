@@ -105,7 +105,8 @@ namespace BuildInfoBlazorApp.Data
                 Project = project.Name,
                 Name = repo.Name,
                 MasterClonned = false,
-                Url = repo.Url
+                Url = repo.WebUrl,
+                CloneUrl = repo.RemoteUrl
             };
 
             if(buildDefinition != null)
@@ -194,12 +195,19 @@ namespace BuildInfoBlazorApp.Data
                 {
                     _logger.LogInformation($"Repo: {repo.Name}");
 
+                    if (repo.IsDisabled ?? false)
+                    {
+                        await Delete(repo.Id);
+                        _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
+                        continue;
+                    }
+
                     var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
                     var buildDefinition = buildDefinitions.FirstOrDefault();
 
                     //Test if the build definition has changed
 
-                    if (buildDefinition != null)
+                    if (buildDefinition?.LatestBuild != null)
                     {
                         var actualBuild = _reposCollection.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefault();
 
@@ -223,7 +231,7 @@ namespace BuildInfoBlazorApp.Data
                         if (actualBuild != null)
                         {
                             // Só cadastramos, não tem pipeline
-                            _logger.LogInformation($"Repo {repo.Name} has no pipeline. Skipping.");
+                            _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
                             continue;
                         }
                     }
@@ -526,6 +534,12 @@ namespace BuildInfoBlazorApp.Data
         {
             _reposCollection.Upsert(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+        }
+
+        public async Task Delete(Guid id)
+        {
+            _reposCollection.Delete(id);
+            await _hubContext.Clients.All.SendAsync("Update", id);
         }
 
         public async Task DownloadConsul()

@@ -35,6 +35,7 @@ public class Repository
     public string Project { get; set; }
     public string Name { get; set; }
     public string Url { get; set; }
+    public string CloneUrl { get; set; }
     public bool MasterClonned { get; set; }
 
     public Pipeline Pipeline { get; set; }

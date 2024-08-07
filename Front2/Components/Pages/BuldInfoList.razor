@@ -55,6 +55,7 @@ else
                 <th>Link</th>
                 <th>Error Logs</th>
                 <th>Clone / Open</th>
+                <th>DEL</th>
             </tr>
         </thead>
         <tbody>
@@ -91,8 +92,23 @@ else
                     <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.Message.ToHtml())</td>
 
 
-                    <td><button class="btn btn-primary" @onclick="async () => await OpenExternalCommit(buildInfo)">Commit</button></td>
-                    <td><button class="btn btn-primary" @onclick="async () => await OpenExternalRun(buildInfo)">Details</button></td>
+                    <td>
+                        @if(buildInfo.Pipeline?.Last?.Commit != null)
+                        {
+                            <button class="btn btn-primary" @onclick="async () => await OpenExternalCommit(buildInfo)">Commit</button>
+                        }
+                        else 
+                        {
+                            <button class="btn btn-primary" @onclick="async () => await OpenRepository(buildInfo)">Repository</button>
+                        }
+                    </td>
+
+                    <td>
+                        @if(buildInfo.Pipeline?.Last != null)
+                        {
+                            <button class="btn btn-primary" @onclick="async () => await OpenExternalRun(buildInfo)">Details</button>
+                        }
+                    </td>
 
 
                     <td>
@@ -111,6 +127,12 @@ else
                         {
                             <button class="btn btn-primary" @onclick="async () => await Open(buildInfo.Id)">Open</button>
                         }
+                    </td>
+
+                    <td>
+
+                        <button class="btn btn-danger" @onclick="async () => await Delete(buildInfo)">DEL</button>
+                      
                     </td>
                 </tr>
             }
@@ -154,16 +176,17 @@ else
         if (buildInfos.Any(b => b.Id == id))
         {
             // Remove the existing build info with the specified id
-
-            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
             buildInfos.RemoveAll(b => b.Id == id);
 
-            buildInfos.Add(newBuildInfo);
+            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
+            if (newBuildInfo != null)
+            {
+                buildInfos.Add(newBuildInfo);
+                action(newBuildInfo);
+            }
 
             // Reorder the build infos
             buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
-
-            action(newBuildInfo);
 
             // Invoke StateHasChanged on the UI thread
             await InvokeAsync(StateHasChanged);
@@ -208,6 +231,11 @@ else
         await BuildInfoService.OpenProjectByBuildInfoIdAsync(buildId);
     }   
 
+    private async ValueTask Delete(Repository repo)
+    {
+        await BuildInfoService.Delete(repo.Id);
+    }
+
     private async ValueTask OpenCloneInVSCode()
     {
         await BuildInfoService.OpenCloneFolderInVsCode();
@@ -230,6 +258,12 @@ else
     private async Task OpenExternalCommit(Repository x)
     {
         var url = x.Pipeline.Last.Commit.Url;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+     
+    private async Task OpenRepository(Repository x)
+    {
+        var url = x.Url;
         await Electron.Shell.OpenExternalAsync(url);
     }
 

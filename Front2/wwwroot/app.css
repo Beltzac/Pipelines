@@ -76,7 +76,7 @@ h1:focus {
 }
 
 .truncate {
-    max-width: 400px; /* Adjust the width as needed */
+    max-width: 300px; /* Adjust the width as needed */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
