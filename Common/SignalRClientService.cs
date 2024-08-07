@@ -13,14 +13,14 @@ namespace Common
                 .Build();
         }
 
-        public async Task StartAsync(Action<int> action)
+        public async Task StartAsync(Action<Guid> action)
         {
 
             if (_hubConnection.State != HubConnectionState.Disconnected) {
                 return;
             }
 
-            _hubConnection.On<int>("Update", action);
+            _hubConnection.On<Guid>("Update", action);
 
             await _hubConnection.StartAsync();
         }

@@ -58,19 +58,23 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var buildInfo in buildInfos)
+            @foreach (var buildInfo in buildInfos.ToList())
             {
                 <tr>
                     <td>
-                        @if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "NotStarted" || buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Status"].AsString == "InProgress")
+                        @if(buildInfo.Pipeline?.Last == null)
+                        {
+                            
+                        }
+                        else if (buildInfo.Pipeline.Last.Status == "NotStarted" || buildInfo.Pipeline.Last.Status == "InProgress")
                         {
                             <StatusIndicator CurrentStatus="@StatusIndicator.Status.Working" />
                         }
-                        else if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "Succeeded")
+                        else if (buildInfo.Pipeline.Last.Result == "Succeeded")
                         {
                             <StatusIndicator CurrentStatus="@StatusIndicator.Status.Success" />
                         }
-                        else if (buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["Result"].AsString == "Failed")
+                        else if (buildInfo.Pipeline.Last.Result == "Failed")
                         {
                             <StatusIndicator CurrentStatus="@StatusIndicator.Status.Error" />
                         }
@@ -80,11 +84,11 @@ else
                         }
                     </td>
 
-                    <td class="truncate">@(buildInfo.Project?["Name"].AsString + "/" + @buildInfo.Pipeline?["Name"].AsString)</td>
+                    <td class="truncate">@(buildInfo.Path)</td>
 
 
-                    <td>@buildInfo.Pipeline?["LatestBuild"]?.AsDocument?["RequestedFor"]?.AsDocument?["DisplayName"].AsString</td>
-                    <td>@((MarkupString)buildInfo.LatestBuildCommit?.AsDocument["Comment"].AsString.ToHtml())</td>
+                    <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
+                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.Message.ToHtml())</td>
 
 
                     <td><button class="btn btn-primary" @onclick="async () => await OpenExternalCommit(buildInfo)">Commit</button></td>
@@ -92,14 +96,14 @@ else
 
 
                     <td>
-                        @if (!string.IsNullOrEmpty(buildInfo.ErrorLogs))
+                        @if (!string.IsNullOrEmpty(buildInfo.Pipeline?.Last?.ErrorLogs))
                         {
                             <button class="btn btn-primary" @onclick="() => NavigateToLogDetails(buildInfo.Id)">Logs</button>
                         }
                     </td>
 
                     <td>
-                        @if (!buildInfo.Clonned)
+                        @if (!buildInfo.MasterClonned)
                         {
                             <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
                         } 
@@ -115,7 +119,7 @@ else
 }
 
 @code {
-    private List<BuildInfo> buildInfos;
+    private List<Repository> buildInfos;
     private string filter;
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
@@ -141,11 +145,11 @@ else
 
         await SignalRClientService.StartAsync(async id =>
         {
-            await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Project?["Name"].AsString + "/" + x.Pipeline?["Name"].AsString} Atualizada"); });
+            await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Path} Atualizada"); });
         });
     }
 
-    private async Task ReloadById(int id, Action<BuildInfo> action)
+    private async Task ReloadById(Guid id, Action<Repository> action)
     {
         if (buildInfos.Any(b => b.Id == id))
         {
@@ -187,7 +191,7 @@ else
         _searchEvents.OnNext(filter);
     }
 
-    private async ValueTask Clone(int buildId)
+    private async ValueTask Clone(Guid buildId)
     {
         await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(buildId);
         this.toastService.ShowSuccess("CLONADO");
@@ -199,7 +203,7 @@ else
         this.toastService.ShowSuccess("TODOS OS REPOS FORAM CLONADOS");
     }
 
-    private async ValueTask Open(int buildId)
+    private async ValueTask Open(Guid buildId)
     {
         await BuildInfoService.OpenProjectByBuildInfoIdAsync(buildId);
     }   
@@ -223,19 +227,19 @@ else
         await JS.InvokeVoidAsync("downloadFile", fileName, base64Content);
     }
 
-    private async Task OpenExternalCommit(BuildInfo x)
+    private async Task OpenExternalCommit(Repository x)
     {
-        var url = x.LatestBuildCommit?.AsDocument["RemoteUrl"].AsString;
+        var url = x.Pipeline.Last.Commit.Url;
         await Electron.Shell.OpenExternalAsync(url);
     }
 
-    private async Task OpenExternalRun(BuildInfo x)
+    private async Task OpenExternalRun(Repository x)
     {
-        var url = x.Pipeline?["LatestBuild"]?.AsDocument?["Links"]?.AsDocument["Links"].AsDocument["web"]["Href"].AsString;
+        var url = x.Pipeline.Last.Url;
         await Electron.Shell.OpenExternalAsync(url);
     }
 
-    private void NavigateToLogDetails(int buildInfoId)
+    private void NavigateToLogDetails(Guid buildInfoId)
     {
         NavigationManager.NavigateTo($"/logdetails/{buildInfoId}");
     }

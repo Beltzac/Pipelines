@@ -1,5 +1,4 @@
 ﻿using Common;
-using KellermanSoftware.CompareNetObjects;
 using LibGit2Sharp;
 using LiteDB;
 using Microsoft.AspNetCore.SignalR;
@@ -28,13 +27,13 @@ namespace BuildInfoBlazorApp.Data
         private readonly BuildHttpClient _buildClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly GitHttpClient _gitClient;
-        private readonly ILiteCollection<BuildInfo> _buildsCollection;
+        private readonly ILiteCollection<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
 
         public BuildInfoService(IHubContext<BuildInfoHub> hubContext, ILogger<BuildInfoService> logger)
         {
             _liteDatabase = new LiteDatabase(_databasePath);
-            _buildsCollection = _liteDatabase.GetCollection<BuildInfo>("builds");
+            _reposCollection = _liteDatabase.GetCollection<Repository>("repos");
             _hubContext = hubContext;
 
             _connection = new VssConnection(new Uri(_azureDevOpsOrganizationUrl), new VssBasicCredential(string.Empty, _personalAccessToken));
@@ -44,14 +43,14 @@ namespace BuildInfoBlazorApp.Data
             _logger = logger;
         }
 
-        public async Task<List<BuildInfo>> GetBuildInfoAsync(string filter = null)
+        public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
-            var query = _buildsCollection.Query();
+            var query = _reposCollection.Query();
 
             if (!string.IsNullOrEmpty(filter))
             {
-                query = query.Where(x => x.Project["Name"].AsString.ToUpper().Contains(filter.Trim().ToUpper())
-                                          || x.Pipeline["Name"].AsString.ToUpper().Contains(filter.Trim().ToUpper()));
+                query = query.Where(x => x.Project.ToUpper().Contains(filter.Trim().ToUpper())
+                                          || x.Name.ToUpper().Contains(filter.Trim().ToUpper()));
             }
 
             var results = query.ToList();
@@ -61,16 +60,31 @@ namespace BuildInfoBlazorApp.Data
             return await Task.FromResult(ordered);
         }
 
-        public async Task<BuildInfo> GetBuildInfoByIdAsync(int id)
+        public async Task<Repository> GetBuildInfoByIdAsync(Guid id)
         {
-            var query = _buildsCollection.Query();
+            var query = _reposCollection.Query();
             return await Task.FromResult(query.Where(x => x.Id == id).FirstOrDefault());
         }
 
         public async Task<string> GetBuildErrorLogsAsync(int buildId)
         {
-            var query = _buildsCollection.Query();
-            return await Task.FromResult(query.Where(x => x.Id == buildId).FirstOrDefault()?.ErrorLogs);
+            var query = _reposCollection.Query();
+
+            var lastBuildsSuccessful = query
+                .Select(x => x.Pipeline.LastSuccessful)
+                .ToList();
+
+            var lastBuilds = query
+                .Select(x => x.Pipeline.Last)
+                .ToList();
+
+            var allBuilds = lastBuildsSuccessful.Union(lastBuilds).ToList();
+
+            var build = allBuilds
+                .Where(x => x.Id == buildId)
+                .FirstOrDefault();
+
+            return await Task.FromResult(build?.ErrorLogs);
         }
 
         public async Task FetchBuildInfoAsync()
@@ -79,50 +93,70 @@ namespace BuildInfoBlazorApp.Data
 
             foreach (var project in projects)
             {
-                await FetchProjectBuildInfoAsync(_buildsCollection, project);
+                await FetchProjectBuildInfoAsync(project);
             }
         }
 
-        public async Task<BuildInfo> CreateBuildInfoAsync(TeamProjectReference project, BuildDefinitionReference buildDefinition)
+        public async Task<Repository> CreateBuildInfoAsync(TeamProjectReference project, GitRepository repo, BuildDefinitionReference buildDefinition)
         {
-            var buildInfo = new BuildInfo
+            var buildInfo = new Repository
             {
-                Id = buildDefinition.Id,
-                Project = BsonMapper.Global.ToDocument(project),
-                Pipeline = BsonMapper.Global.ToDocument(buildDefinition),
+                Id = repo.Id,
+                Project = project.Name,
+                Name = repo.Name,
+                MasterClonned = false,
+                Url = repo.Url
             };
 
-            var latestBuild = buildDefinition.LatestBuild;
-            if (latestBuild != null)
+            if(buildDefinition != null)
             {
-                var buildDetails = await _buildClient.GetBuildAsync(project.Name, latestBuild.Id);
-                buildInfo.LatestBuildDetails = BsonMapper.Global.ToDocument(buildDetails);
 
-                await FetchCommitInfoAsync(project.Name, buildDetails, buildInfo);
-
-                if (latestBuild.Result == BuildResult.Failed)
+                buildInfo.Pipeline = new Pipeline()
                 {
-                    buildInfo.ErrorLogs = await FetchBuildLogsAsync(project.Name, latestBuild.Id);
+                    Id = buildDefinition.Id,
+                };
+
+
+                var latestBuild = buildDefinition.LatestBuild;
+                if (latestBuild != null)
+                {
+                    var buildDetails = await _buildClient.GetBuildAsync(project.Name, latestBuild.Id);
+                    buildInfo.Pipeline.Last = new Build
+                    {
+                        Id= buildDetails.Id,
+                        Changed = buildDetails.LastChangedDate,
+                        Queued = buildDetails.QueueTime,
+                        Result = buildDetails.Result?.ToString(),
+                        Status = buildDetails.Status?.ToString(),
+                        Url = (buildDetails.Links.Links["web"] as ReferenceLink).Href
+                    };
+
+                    await FetchCommitInfoAsync(buildInfo, project.Name, buildInfo.Id, buildDetails.SourceVersion);
+
+                    if (latestBuild.Result == BuildResult.Failed)
+                    {
+                        buildInfo.Pipeline.Last.ErrorLogs = await FetchBuildLogsAsync(project.Name, latestBuild.Id);
+                    }
+
+                    string localPath = $@"C:\repos\{project.Name}\{buildDefinition.Name}";
+                    buildInfo.MasterClonned = Directory.Exists(localPath);
+
+                    _logger.LogInformation($"\tPipeline: {buildDefinition.Name}, Latest Build: {latestBuild.FinishTime}, Status: {latestBuild.Status}, Result: {latestBuild.Result}, Commit: {buildDetails.SourceVersion}");
+                }
+                else
+                {
+                    _logger.LogInformation($"\tPipeline: {buildDefinition.Name} has no latest build.");
                 }
 
-                string localPath = $@"C:\repos\{project.Name}\{buildDefinition.Name}";
-                buildInfo.Clonned = Directory.Exists(localPath);
-
-                _logger.LogInformation($"\tPipeline: {buildDefinition.Name}, Latest Build: {latestBuild.FinishTime}, Status: {latestBuild.Status}, Result: {latestBuild.Result}, Commit: {buildDetails.SourceVersion}");
-            }
-            else
-            {
-                _logger.LogInformation($"\tPipeline: {buildDefinition.Name} has no latest build.");
-            }
-
-            var latestCompletedBuild = buildDefinition.LatestCompletedBuild;
-            if (latestCompletedBuild != null)
-            {
-                _logger.LogInformation($"\tLatest Completed Build: {latestCompletedBuild.FinishTime}, Status: {latestCompletedBuild.Status}, Result: {latestCompletedBuild.Result}");
-            }
-            else
-            {
-                _logger.LogInformation($"\tPipeline: {buildDefinition.Name} has no latest completed build.");
+                var latestCompletedBuild = buildDefinition.LatestCompletedBuild;
+                if (latestCompletedBuild != null)
+                {
+                    _logger.LogInformation($"\tLatest Completed Build: {latestCompletedBuild.FinishTime}, Status: {latestCompletedBuild.Status}, Result: {latestCompletedBuild.Result}");
+                }
+                else
+                {
+                    _logger.LogInformation($"\tPipeline: {buildDefinition.Name} has no latest completed build.");
+                }
             }
 
             return buildInfo;
@@ -148,59 +182,92 @@ namespace BuildInfoBlazorApp.Data
             return content;
         }
 
-        private async Task FetchProjectBuildInfoAsync(ILiteCollection<BuildInfo> _buildsCollection, TeamProjectReference project)
+        private async Task FetchProjectBuildInfoAsync(TeamProjectReference project)
         {
             _logger.LogInformation($"Project: {project.Name}");
-            var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, includeLatestBuilds: true);
 
-            foreach (var definition in buildDefinitions)
+            var repos = await _gitClient.GetRepositoriesAsync(project.Id);
+
+            foreach (var repo in repos)
             {
-                //Test if the build definition has changed
-
-                var actualBuild = _buildsCollection.Query().Where(x => x.Id == definition.Id).FirstOrDefault();
-
-                if (actualBuild != null)
+                try
                 {
-                    if (actualBuild.LatestBuildDetails?["LastChangedDate"]?.AsDateTime.ToUniversalTime() != definition.LatestBuild?.LastChangedDate.ToUniversalTime())
+                    _logger.LogInformation($"Repo: {repo.Name}");
+
+                    var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
+                    var buildDefinition = buildDefinitions.FirstOrDefault();
+
+                    //Test if the build definition has changed
+
+                    if (buildDefinition != null)
                     {
-                        _logger.LogInformation($"Pipeline {definition.Name} has changed. Updating build info.");
+                        var actualBuild = _reposCollection.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefault();
+
+                        if (actualBuild?.Pipeline.Last != null)
+                        {
+                            if (actualBuild.Pipeline.Last.Changed.ToUniversalTime() != buildDefinition.LatestBuild?.LastChangedDate.ToUniversalTime())
+                            {
+                                _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
+                            }
+                            else
+                            {
+                                _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
+                                continue;
+                            }
+                        }
                     }
                     else
                     {
-                        _logger.LogInformation($"Pipeline {definition.Name} has not changed. Skipping.");
-                        continue;
+                        // Check if the repo exists in the database
+                        var actualBuild = _reposCollection.Query().Where(x => x.Id == repo.Id).FirstOrDefault();
+                        if (actualBuild != null)
+                        {
+                            // Só cadastramos, não tem pipeline
+                            _logger.LogInformation($"Repo {repo.Name} has no pipeline. Skipping.");
+                            continue;
+                        }
                     }
-                }
 
-                var buildInfo = await CreateBuildInfoAsync(project, definition);
-                await UpsertAndPublish(buildInfo);
+                    var buildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
+                    await UpsertAndPublish(buildInfo);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Erro ao processar repo {Repo}", repo.Name);
+                }
             }
         }
 
-        private async Task FetchCommitInfoAsync(string projectName, Build buildDetails, BuildInfo buildInfo)
+        private async Task FetchCommitInfoAsync(Repository buildInfo, string projectName, Guid repoId, string commitId)
         {
-            var commitId = buildDetails.SourceVersion;
             try
             {
-                var commit = await _gitClient.GetCommitAsync(projectName, commitId, buildDetails.Repository.Id);
-                buildInfo.LatestBuildCommit = BsonMapper.Global.ToDocument(commit);
+                var commit = await _gitClient.GetCommitAsync(projectName, commitId, repoId);
+                buildInfo.Pipeline.Last.Commit = new Commit
+                {
+                    Id = commit.CommitId,
+                    Message = commit.Comment,
+                    Url = commit.RemoteUrl,
+                    AuthorName = commit.Author.Name,
+                    AuthorEmail = commit.Author.Email
+                };
             }
-            catch
+            catch(Exception ex)
             {
-                // Handle commit fetch exception
+                _logger.LogError(ex, "Erro ao obter commit {Id}", commitId);
             }
         }
 
-        public Expression<Func<BuildInfo, DateTime>> GetLatestBuildDetailsExpression()
+        public Expression<Func<Repository, DateTime>> GetLatestBuildDetailsExpression()
         {
-            return x => x.LatestBuildDetails == null || x.LatestBuildDetails["QueueTime"] == null || x.LatestBuildDetails["QueueTime"].IsNull
+            return x => x.Pipeline == null || x.Pipeline.Last == null 
                         ? DateTime.MinValue
-                        : x.LatestBuildDetails["QueueTime"].AsDateTime;
+                        : x.Pipeline.Last.Changed;
         }
 
         public async Task CloneAllRepositoriesAsync()
         {
-            var buildInfos = _buildsCollection.FindAll().ToList();
+            var buildInfos = _reposCollection.FindAll().ToList();
 
             foreach (var buildInfo in buildInfos)
             {
@@ -208,9 +275,9 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task CloneRepositoryByBuildInfoIdAsync(int buildInfoId)
+        public async Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId)
         {
-            var buildInfo = _buildsCollection.FindById(buildInfoId);
+            var buildInfo = _reposCollection.FindById(buildInfoId);
             if (buildInfo != null)
             {
                 await CloneRepositoryByBuildInfoAsync(buildInfo);
@@ -221,11 +288,11 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task CloneRepositoryByBuildInfoAsync(BuildInfo buildInfo)
+        public async Task CloneRepositoryByBuildInfoAsync(Repository buildInfo)
         {
-            var projectName = buildInfo.Project["Name"].AsString;
-            var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
-            var repoName = buildInfo.LatestBuildDetails?["Repository"]["Name"].AsString;
+            var projectName = buildInfo.Project;
+            var repoId = buildInfo.Id;
+            var repoName = buildInfo.Name;
 
             if (repoId == null) {                    
                 _logger.LogInformation($"Repository ID not found in build info {buildInfo.Id}");
@@ -239,7 +306,7 @@ namespace BuildInfoBlazorApp.Data
             if (exists)
             {
                 _logger.LogInformation($"Repository {repoName} already cloned to {localPath}");
-                buildInfo.Clonned = exists;
+                buildInfo.MasterClonned = exists;
                 await UpsertAndPublish(buildInfo);
                 return;
             }
@@ -282,7 +349,7 @@ namespace BuildInfoBlazorApp.Data
                     return;
                 }
                     
-                buildInfo.Clonned = true;
+                buildInfo.MasterClonned = true;
 
                 await UpsertAndPublish(buildInfo);
 
@@ -308,14 +375,14 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task OpenProjectByBuildInfoIdAsync(int buildInfoId)
+        public async Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId)
         {
-            var buildInfo = _buildsCollection.FindById(buildInfoId);
+            var buildInfo = _reposCollection.FindById(buildInfoId);
 
             if (buildInfo != null)
             {
-                var projectName = buildInfo.Project["Name"].AsString;
-                var repoName = buildInfo.LatestBuildDetails["Repository"]["Name"].AsString;
+                var projectName = buildInfo.Project;
+                var repoName = buildInfo.Name;
                
                 string localPath = $@"C:\repos\{projectName}\{repoName}";
                 OpenProject(localPath);
@@ -455,28 +522,10 @@ namespace BuildInfoBlazorApp.Data
             OpenWithVSCode(localPath);
         }
 
-        private async Task UpsertAndPublish(BuildInfo buildInfo)
+        private async Task UpsertAndPublish(Repository buildInfo)
         {
-            // Only send updates if the build info has changed
-            //var actualBuild = _buildsCollection.FindById(buildInfo.Id);
-
-            //var compareLogic = new CompareLogic()
-            //{
-            //    Config = new ComparisonConfig
-            //    {
-            //        SkipInvalidIndexers = true
-            //    }
-            //};
-
-            // Perform the comparison
-          //  ComparisonResult result = compareLogic.Compare(buildInfo, actualBuild);
-
-            // Output the comparison result
-           // if (!result.AreEqual)
-          //  {
-                _buildsCollection.Upsert(buildInfo);
-                await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
-            //}
+            _reposCollection.Upsert(buildInfo);
+            await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
         }
 
         public async Task DownloadConsul()
@@ -549,7 +598,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task<string> GenerateCloneCommands()
         {
-            var buildInfos = _buildsCollection.FindAll().ToList();
+            var buildInfos = _reposCollection.FindAll().ToList();
             var commands = new StringBuilder();
 
             commands.AppendLine("@echo off");
@@ -557,9 +606,9 @@ namespace BuildInfoBlazorApp.Data
 
             foreach (var buildInfo in buildInfos)
             {
-                var projectName = buildInfo.Project["Name"].AsString;
-                var repoId = buildInfo.LatestBuildDetails?["Repository"]["_id"].AsString;
-                var repoName = buildInfo.LatestBuildDetails?["Repository"]["Name"].AsString;
+                var projectName = buildInfo.Project;
+                var repoId = buildInfo.Id;
+                var repoName = buildInfo.Name;
 
                 if (repoId == null || repoName == null)
                 {
@@ -598,7 +647,5 @@ namespace BuildInfoBlazorApp.Data
 
             return commands.ToString();
         }
-
-
     }
 }
