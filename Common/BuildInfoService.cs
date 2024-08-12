@@ -246,6 +246,51 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
+
+        public async Task FetchBuildInfoByIdAsync(Guid repoId)
+        {
+            var repoAtual = _reposCollection.FindById(repoId);
+            if (repoAtual == null)
+            {
+                _logger.LogInformation($"Repository with ID {repoId} not found.");
+                return;
+            }
+
+            var repo = await _gitClient.GetRepositoryAsync(repoId);
+
+            try
+            {
+                _logger.LogInformation($"Fetching info for repository: {repoAtual.Name}");
+
+                var project = await _projectClient.GetProject(repoAtual.Project);
+
+                if (project == null)
+                {
+                    _logger.LogInformation($"Project {repoAtual.Project} not found in Azure DevOps.");
+                    return;
+                }
+
+                var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repoAtual.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
+                var buildDefinition = buildDefinitions.FirstOrDefault();
+
+                if (buildDefinition?.LatestBuild != null)
+                {
+                    _logger.LogInformation($"Updating build info for repository: {repoAtual.Name}");
+                    var updatedBuildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
+                    await UpsertAndPublish(updatedBuildInfo);
+                }
+                else
+                {
+                    _logger.LogInformation($"No latest build found for repository: {repoAtual.Name}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching build info for repository {repoAtual.Name}");
+            }
+        }
+
+
         private async Task FetchCommitInfoAsync(Repository buildInfo, string projectName, Guid repoId, string commitId)
         {
             try
@@ -540,74 +585,6 @@ namespace BuildInfoBlazorApp.Data
         {
             _reposCollection.Delete(id);
             await _hubContext.Clients.All.SendAsync("Update", id);
-        }
-
-        public async Task DownloadConsul()
-        {
-            string consulUrl = "https://consul-qa.tcp.com.br/v1/kv/?recurse";
-            string downloadFolder = "C:\\ConsulKV"; // Change this to your desired download folder
-
-            if (!Directory.Exists(downloadFolder))
-            {
-                Directory.CreateDirectory(downloadFolder);
-            }
-
-            try
-            {
-                var kvData = await FetchConsulKV(consulUrl);
-                await SaveKVToFiles(kvData, downloadFolder);
-                _logger.LogInformation("Download completed successfully.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogInformation($"Error: {ex.Message}");
-            }
-        }
-
-        async Task<JArray> FetchConsulKV(string url)
-        {
-            HttpClient client = new HttpClient();
-            HttpResponseMessage response = await client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
-            return JArray.Parse(responseBody);
-        }
-
-        async Task SaveKVToFiles(JArray kvData, string folderPath)
-        {
-            foreach (var kv in kvData)
-            {
-                try
-                {
-                    string key = kv["Key"].ToString();
-                    string value = kv["Value"]?.ToString() ?? string.Empty;
-
-                    // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
-                    string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
-                    string directory = Path.GetDirectoryName(filePath);
-
-                    if (!Directory.Exists(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
-
-                    // If the path ends with a slash, treat it as a directory
-                    if (kv["Value"] == null)
-                    {
-                        continue;
-                    }
-
-                    byte[] valueBytes = Convert.FromBase64String(value);
-                    await File.WriteAllBytesAsync(filePath, valueBytes);
-
-                    _logger.LogInformation($"Saved: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogInformation($"Error: {ex.Message}");
-                }
-            }
         }
 
         public async Task<string> GenerateCloneCommands()

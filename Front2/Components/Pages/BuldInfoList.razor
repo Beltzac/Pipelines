@@ -130,9 +130,11 @@ else
                     </td>
 
                     <td>
-
                         <button class="btn btn-danger" @onclick="async () => await Delete(buildInfo)">DEL</button>
-                      
+                    </td>
+
+                    <td>
+                        <button class="btn btn-danger" @onclick="async () => await Refetch(buildInfo)">Refetch</button>
                     </td>
                 </tr>
             }
@@ -175,21 +177,34 @@ else
     {
         if (buildInfos.Any(b => b.Id == id))
         {
+            var update = false;
+
             // Remove the existing build info with the specified id
-            buildInfos.RemoveAll(b => b.Id == id);
+            var count = buildInfos.RemoveAll(b => b.Id == id);
+            if (count > 0)
+            {
+                update = true;
+            };
 
             var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
             if (newBuildInfo != null)
             {
                 buildInfos.Add(newBuildInfo);
                 action(newBuildInfo);
+
+                // Compile the expression into a Func
+                var keySelector = BuildInfoService.GetLatestBuildDetailsExpression().Compile();
+
+                // Sort the list in place
+                buildInfos.Sort((x, y) => keySelector(y).CompareTo(keySelector(x)));
+
+                update = true;
             }
 
-            // Reorder the build infos
-            buildInfos = buildInfos.AsQueryable().OrderByDescending(BuildInfoService.GetLatestBuildDetailsExpression()).ToList();
-
-            // Invoke StateHasChanged on the UI thread
-            await InvokeAsync(StateHasChanged);
+            if (update)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
         }
     }
 
@@ -234,6 +249,11 @@ else
     private async ValueTask Delete(Repository repo)
     {
         await BuildInfoService.Delete(repo.Id);
+    }
+
+    private async ValueTask Refetch(Repository repo)
+    {
+        await BuildInfoService.FetchBuildInfoByIdAsync(repo.Id);
     }
 
     private async ValueTask OpenCloneInVSCode()
