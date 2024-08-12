@@ -8,12 +8,17 @@ using H.NotifyIcon.Core;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.Pipelines.WebApi;
 using Quartz;
+using Quartz.Impl.LiteDB;
 using Serilog;
 using Serilog.Sinks.LiteDB;
+using ShellLink.Structures;
+using ShellLink;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
+//electronize build /target win
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +43,7 @@ builder.Services.AddScoped<OracleSchemaService>();
 builder.Services.AddScoped<OracleDiffService>();
 builder.Services.AddScoped<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();
+builder.Services.AddScoped<ConsulService>();
 
 builder.Services.AddBlazoredToast();
 
@@ -46,22 +52,32 @@ builder.Services.AddSignalR();
 // Add Quartz services
 builder.Services.AddQuartz(q =>
 {
-    q.UseMicrosoftDependencyInjectionJobFactory();
+    q.UsePersistentStore(s =>
+    {
+        s.UseLiteDb(options =>
+        {
+            options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
+        });
+        s.UseNewtonsoftJsonSerializer();
+    });
 
-    // Configure the job and trigger
-    q.AddJob<BuildInfoJob>(opts => opts.WithIdentity("buildInfoJob", "group1"));
-
-    q.AddTrigger(opts => opts
-        .ForJob("buildInfoJob", "group1")
-        .WithIdentity("trigger1", "group1")
+    q.ScheduleJob<BuildInfoJob>(trigger => trigger
+        .WithIdentity("BuildInfoJob-trigger")
         .StartNow()
         .WithSimpleSchedule(x => x
             .WithIntervalInMinutes(3)
-            .RepeatForever()));
+            .RepeatForever()),
+        job => job.WithIdentity("BuildInfoJob")
+    );
 });
 
 // Add Quartz hosted service
-builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+builder.Services.AddQuartzHostedService(q =>
+{
+    q.WaitForJobsToComplete = true;
+    q.AwaitApplicationStarted = true;
+    //q.StartDelay = TimeSpan.FromSeconds(10);
+});
 
 var app = builder.Build();
 
@@ -125,29 +141,35 @@ bool IsStartupEnabled()
 {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
-        if (key != null)
-        {
-            return key.GetValue("MyElectronApp") != null;
-        }
+        string appName = "MyBlazorApp"; // Define your application name
+
+        string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
+        return File.Exists(shortcutPath);
     }
     return false;
 }
 
 void SetStartup(bool enable)
 {
-    var startupPath = $"\"{System.Reflection.Assembly.GetExecutingAssembly().Location}\"";
+
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
-        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
+        string appName = "MyBlazorApp"; // Define your application name
+        string executablePath = Environment.ProcessPath;
+        string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
         if (enable)
         {
-            key.SetValue("MyElectronApp", startupPath);
+            CreateStartupShortcut(shortcutPath, executablePath);
         }
         else
         {
-            key.DeleteValue("MyElectronApp", false);
+            if (File.Exists(shortcutPath))
+            {
+                File.Delete(shortcutPath);
+            }
         }
 
         menus.First(m => m.Label == "Enable Startup with Windows").Visible = !enable;
@@ -163,6 +185,21 @@ void SetStartup(bool enable)
     {
         Electron.Dialog.ShowMessageBoxAsync(new MessageBoxOptions("Startup setting is only supported on Windows."));
     }
+}
+
+void CreateStartupShortcut(string shortcutPath, string executablePath)
+{
+    string workingDirectory = Path.GetDirectoryName(executablePath);
+
+    // Create the ShellLink object and set its properties
+    var shortcut = Shortcut.CreateShortcut(executablePath);
+    //shortcut.StringData.WorkingDir = workingDirectory;
+
+    // Optional: Set icon location
+    //shortcut.StringData.IconLocation = Path.Combine(workingDirectory, "wwwroot", "favicon.ico");
+
+    // Save the shortcut to the specified path
+    shortcut.WriteToFile(shortcutPath);
 }
 
 // Define the event handler method

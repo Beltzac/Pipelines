@@ -10,7 +10,7 @@
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS
-@inject BuildInfoBlazorApp.Data.BuildInfoService BuildInfoService
+@inject ConsulService ConsulService
 
 
 
@@ -28,6 +28,6 @@
 
     private async ValueTask DownloadConsul()
     {
-        await BuildInfoService.DownloadConsul();
+        await ConsulService.DownloadConsul();
     }
 }
