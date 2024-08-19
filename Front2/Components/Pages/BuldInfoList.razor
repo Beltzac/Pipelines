@@ -29,7 +29,17 @@
 }
 </script>
 
-<div class="mb-3 d-flex align-items-center">
+<style>
+    .sticky-filter {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: white; /* To avoid overlap with the table content */
+        padding: 10px 0;
+    }
+</style>
+
+<div class="mb-3 d-flex align-items-center sticky-filter">
     <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
     <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
