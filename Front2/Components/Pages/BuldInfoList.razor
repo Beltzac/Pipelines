@@ -39,6 +39,43 @@
     }
 </style>
 
+<ContextMenu Id="tableContextMenu">
+
+    @{
+        var repo = context.Data as Repository;
+        if (!repo.MasterClonned)
+        {
+            <Item OnClick="@CloneClickAsync">Clone</Item>
+        }
+        else
+        {
+            <Item OnClick="@OpenClickAsync">Open</Item>
+        }
+
+        if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
+        {
+            <Item OnClick="@OpenLogDetailsClickAsync">Error Logs</Item>
+        }
+
+        if (repo.Pipeline?.Last != null)
+        {
+            <Item OnClick="@OpenExternalRunClickAsync">Open Build</Item>
+        }
+
+        if (repo.Pipeline?.Last?.Commit != null)
+        {
+            <Item OnClick="@OpenExternalCommitClickAsync">Open Commit</Item>
+        }
+        else
+        {
+            <Item OnClick="@OpenRepositoryClickAsync">Open Repository</Item>
+        }
+    }
+
+    <Item OnClick="@DeleteClickAsync">Delete</Item>
+    <Item OnClick="@RefetchClickAsync">Refetch</Item>
+</ContextMenu>
+
 <div class="mb-3 d-flex align-items-center sticky-filter">
     <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
     <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
@@ -61,17 +98,12 @@ else
                 <th>Project</th>
                 <th>Pessoa</th>
                 <th>Commit</th>
-                <th>Link Commit</th>
-                <th>Link</th>
-                <th>Error Logs</th>
-                <th>Clone / Open</th>
-                <th>DEL</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var buildInfo in buildInfos.ToList())
             {
-                <tr>
+                <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo">
                     <td>
                         @if(buildInfo.Pipeline?.Last == null)
                         {
@@ -101,52 +133,7 @@ else
                     <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
                     <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.Message.ToHtml())</td>
 
-
-                    <td>
-                        @if(buildInfo.Pipeline?.Last?.Commit != null)
-                        {
-                            <button class="btn btn-primary" @onclick="async () => await OpenExternalCommit(buildInfo)">Commit</button>
-                        }
-                        else 
-                        {
-                            <button class="btn btn-primary" @onclick="async () => await OpenRepository(buildInfo)">Repository</button>
-                        }
-                    </td>
-
-                    <td>
-                        @if(buildInfo.Pipeline?.Last != null)
-                        {
-                            <button class="btn btn-primary" @onclick="async () => await OpenExternalRun(buildInfo)">Details</button>
-                        }
-                    </td>
-
-
-                    <td>
-                        @if (!string.IsNullOrEmpty(buildInfo.Pipeline?.Last?.ErrorLogs))
-                        {
-                            <button class="btn btn-primary" @onclick="() => NavigateToLogDetails(buildInfo.Id)">Logs</button>
-                        }
-                    </td>
-
-                    <td>
-                        @if (!buildInfo.MasterClonned)
-                        {
-                            <button class="btn btn-primary" @onclick="async () => await Clone(buildInfo.Id)">Clone</button>
-                        } 
-                        else
-                        {
-                            <button class="btn btn-primary" @onclick="async () => await Open(buildInfo.Id)">Open</button>
-                        }
-                    </td>
-
-                    <td>
-                        <button class="btn btn-danger" @onclick="async () => await Delete(buildInfo)">DEL</button>
-                    </td>
-
-                    <td>
-                        <button class="btn btn-danger" @onclick="async () => await Refetch(buildInfo)">Refetch</button>
-                    </td>
-                </tr>
+                </ContextMenuTrigger>
             }
         </tbody>
     </table>
@@ -239,31 +226,11 @@ else
         _searchEvents.OnNext(filter);
     }
 
-    private async ValueTask Clone(Guid buildId)
-    {
-        await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(buildId);
-        this.toastService.ShowSuccess("CLONADO");
-    }
-
+    //Global
     private async ValueTask CloneAll()
     {
         await BuildInfoService.CloneAllRepositoriesAsync();
         this.toastService.ShowSuccess("TODOS OS REPOS FORAM CLONADOS");
-    }
-
-    private async ValueTask Open(Guid buildId)
-    {
-        await BuildInfoService.OpenProjectByBuildInfoIdAsync(buildId);
-    }   
-
-    private async ValueTask Delete(Repository repo)
-    {
-        await BuildInfoService.Delete(repo.Id);
-    }
-
-    private async ValueTask Refetch(Repository repo)
-    {
-        await BuildInfoService.FetchBuildInfoByIdAsync(repo.Id);
     }
 
     private async ValueTask OpenCloneInVSCode()
@@ -285,33 +252,63 @@ else
         await JS.InvokeVoidAsync("downloadFile", fileName, base64Content);
     }
 
-    private async Task OpenExternalCommit(Repository x)
-    {
-        var url = x.Pipeline.Last.Commit.Url;
-        await Electron.Shell.OpenExternalAsync(url);
-    }
-     
-    private async Task OpenRepository(Repository x)
-    {
-        var url = x.Url;
-        await Electron.Shell.OpenExternalAsync(url);
-    }
-
-    private async Task OpenExternalRun(Repository x)
-    {
-        var url = x.Pipeline.Last.Url;
-        await Electron.Shell.OpenExternalAsync(url);
-    }
-
-    private void NavigateToLogDetails(Guid buildInfoId)
-    {
-        NavigationManager.NavigateTo($"/logdetails/{buildInfoId}");
-    }
-
     private async Task ClearFilter()
     {
         filter = string.Empty;
         await OnFilterChange(new ChangeEventArgs { Value = filter });
         await filterInputElement.FocusAsync();
+    }
+
+    //Itens
+    async Task DeleteClickAsync (ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        await BuildInfoService.Delete(repo.Id);
+    }
+
+    async Task CloneClickAsync (ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(repo.Id);
+        this.toastService.ShowSuccess("CLONADO");
+    }
+
+    async Task OpenClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        await BuildInfoService.OpenProjectByBuildInfoIdAsync(repo.Id);
+    }
+
+    async Task RefetchClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        await BuildInfoService.FetchBuildInfoByIdAsync(repo.Id);
+    }
+
+    async Task OpenExternalCommitClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        var url = repo.Pipeline.Last.Commit.Url;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+
+    async Task OpenRepositoryClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        var url = repo.Url;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+
+    async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        var url = repo.Pipeline.Last.Url;
+        await Electron.Shell.OpenExternalAsync(url);
+    }
+
+    async Task OpenLogDetailsClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        NavigationManager.NavigateTo($"/logdetails/{repo.Id}");
     }
 }

@@ -34,7 +34,11 @@ builder.Host.UseSerilog(logger);
 // Add services to the container.
 builder.Services
     .AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddCircuitOptions(o =>
+        {
+            o.DetailedErrors = true;
+        });
 
 builder.WebHost.UseElectron(args);
 builder.Services.AddElectron();
@@ -46,6 +50,7 @@ builder.Services.AddScoped<SignalRClientService>();
 builder.Services.AddScoped<ConsulService>();
 
 builder.Services.AddBlazoredToast();
+builder.Services.AddBlazorContextMenu();
 
 builder.Services.AddSignalR();
 
@@ -222,13 +227,16 @@ app.Run();
 
 async Task OpenWeb()
 {
+    WebPreferences wp = new WebPreferences();
+    wp.NodeIntegration = false;
+
     var options = new BrowserWindowOptions
     {
         //Frame = false
         SkipTaskbar = true,
         AutoHideMenuBar = true,
         Closable = false,
-        
+        WebPreferences = wp,
     };
 
     var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
