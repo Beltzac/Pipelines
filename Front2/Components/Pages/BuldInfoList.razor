@@ -55,6 +55,7 @@
         if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
         {
             <Item OnClick="@OpenLogDetailsClickAsync">Error Logs</Item>
+            <Item OnClick="@OpenSonarClickAsync">Sonar</Item>
         }
 
         if (repo.Pipeline?.Last != null)
@@ -303,6 +304,13 @@ else
     {
         var repo = e.Data as Repository;
         var url = repo.Pipeline.Last.Url;
+        await Electron.Shell.OpenExternalAsync(url);
+    }   
+    
+    async Task OpenSonarClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        var url = $"https://sonarcloud.io/project/branches_list?id={repo.Project}-{repo.Name}";
         await Electron.Shell.OpenExternalAsync(url);
     }
 
