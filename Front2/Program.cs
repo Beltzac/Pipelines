@@ -84,6 +84,8 @@ builder.Services.AddQuartzHostedService(q =>
     //q.StartDelay = TimeSpan.FromSeconds(10);
 });
 
+builder.Services.AddScoped<ConfigurationService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -260,8 +262,8 @@ async Task OpenWeb()
     else
     {
         window.OnReadyToShow += () => {
-            window.Maximize(); 
-            window.Focus(); 
+            window.Maximize();
+            window.Focus();
         };
     }
 }

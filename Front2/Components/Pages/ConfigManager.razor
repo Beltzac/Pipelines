@@ -1,0 +1,45 @@
+@page "/config-manager"
+@inject ConfigurationService ConfigService
+@inject IToastService ToastService
+
+<h3>Configuration Manager</h3>
+
+<EditForm Model="@config" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="pat">Personal Access Token (PAT)</label>
+        <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
+        <ValidationMessage For="@(() => config.PAT)" />
+    </div>
+
+    <div class="form-group">
+        <label for="orgUrl">Organization URL</label>
+        <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control" />
+        <ValidationMessage For="@(() => config.OrganizationUrl)" />
+    </div>
+
+    <div class="form-group">
+        <label for="cloneFolder">Local Clone Folder</label>
+        <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control" />
+        <ValidationMessage For="@(() => config.LocalCloneFolder)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</EditForm>
+
+@code {
+    private ConfigModel config = new ConfigModel();
+
+    protected override void OnInitialized()
+    {
+        config = ConfigService.GetConfig();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await ConfigService.SaveConfigAsync(config);
+        ToastService.ShowSuccess("Configuration saved successfully!");
+    }
+}

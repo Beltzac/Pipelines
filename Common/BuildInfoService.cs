@@ -15,14 +15,16 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Xml;
+using Microsoft.Extensions.Options;
 
 namespace BuildInfoBlazorApp.Data
 {
     public class BuildInfoService
     {
-        private readonly string _azureDevOpsOrganizationUrl = "https://dev.azure.com/terminal-cp";
-        private readonly string _personalAccessToken = "2hthfevn4ba7ftrkkjpajj4h5rcej56oje6reabjnupqcwxfzhdq";
-        private readonly string _databasePath = @"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared";
+        private readonly string _azureDevOpsOrganizationUrl;
+        private readonly string _personalAccessToken;
+        private readonly string _databasePath;
+        private readonly string _localCloneFolder;
         private readonly LiteDatabaseAsync _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
         private readonly VssConnection _connection;
@@ -31,9 +33,21 @@ namespace BuildInfoBlazorApp.Data
         private readonly GitHttpClient _gitClient;
         private readonly ILiteCollectionAsync<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
+        private readonly ConfigurationService _configService;
 
-        public BuildInfoService(IHubContext<BuildInfoHub> hubContext, ILogger<BuildInfoService> logger)
+        public BuildInfoService(
+            IHubContext<BuildInfoHub> hubContext,
+            ILogger<BuildInfoService> logger,
+            ConfigurationService configService)
         {
+            _configService = configService;
+            var config = _configService.GetConfig();
+
+            _azureDevOpsOrganizationUrl = config.OrganizationUrl;
+            _personalAccessToken = config.PAT;
+            _localCloneFolder = config.LocalCloneFolder;
+            _databasePath = $@"Filename={Path.Combine(_localCloneFolder, "Builds.db")};Connection=shared";
+
             _liteDatabase = new LiteDatabaseAsync(_databasePath);
             _reposCollection = _liteDatabase.GetCollection<Repository>("repos");
             _hubContext = hubContext;
@@ -186,7 +200,7 @@ namespace BuildInfoBlazorApp.Data
                 Id = repo.Id,
                 Project = project.Name,
                 Name = repo.Name,
-                MasterClonned = Directory.Exists($@"C:\repos\{project.Name}\{repo.Name}"),
+                MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, project.Name, repo.Name)),
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
                 Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null
@@ -289,9 +303,9 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        private async Task CloneRepositoryByBuildInfoAsync(Repository buildInfo)
+        public async Task CloneRepositoryByBuildInfoAsync(Repository buildInfo)
         {
-            var localPath = $@"C:\repos\{buildInfo.Project}\{buildInfo.Name}";
+            var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
 
             if (Directory.Exists(localPath))
             {
@@ -348,7 +362,7 @@ namespace BuildInfoBlazorApp.Data
 
             if (buildInfo != null)
             {
-                var localPath = $@"C:\repos\{buildInfo.Project}\{buildInfo.Name}";
+                var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
                 OpenProject(localPath);
             }
             else
@@ -466,7 +480,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task OpenCloneFolderInVsCode()
         {
-            OpenWithVSCode(@"C:\repos");
+            OpenWithVSCode(_localCloneFolder);
         }
 
         private async Task UpsertAndPublish(Repository buildInfo)
@@ -487,11 +501,11 @@ namespace BuildInfoBlazorApp.Data
             var commands = new StringBuilder();
 
             commands.AppendLine("@echo off");
-            commands.AppendLine("set REPO_ROOT=C:\\repos");
+            commands.AppendLine($"set REPO_ROOT={_localCloneFolder}");
 
             foreach (var buildInfo in buildInfos)
             {
-                var localPath = $"%REPO_ROOT%\\{buildInfo.Project}\\{buildInfo.Name}";
+                var localPath = Path.Combine("%REPO_ROOT%", buildInfo.Project, buildInfo.Name);
 
                 commands.AppendLine($"IF NOT EXIST \"{localPath}\" (");
                 commands.AppendLine($"  mkdir \"{localPath}\"");
