@@ -18,7 +18,7 @@
     <PackageReference Include="LiteDB.Async" Version="0.1.5" />
     <PackageReference Include="LiteDB.Queryable" Version="1.0.4" />
     <PackageReference Include="Markdig" Version="0.37.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.1.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.225.1" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
