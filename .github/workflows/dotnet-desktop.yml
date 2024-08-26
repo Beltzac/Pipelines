@@ -27,6 +27,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Front2
 
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+
     - name: Build with Electronize
       run: |
         cd Front2
