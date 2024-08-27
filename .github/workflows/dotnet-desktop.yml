@@ -23,7 +23,25 @@ jobs:
         key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/global.json') }}
         restore-keys: |
           nuget-${{ runner.os }}-
+          
+    - name: Cache NPM/Yarn cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: npm-cache-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          npm-cache-${{ runner.os }}-
 
+    - name: Cache Node.js modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          node_modules
+          ~/.npm
+        key: node-modules-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}
+        restore-keys: |
+          node-modules-${{ runner.os }}-
+      
     - name: Cache .NET tools
       uses: actions/cache@v3
       with:
