@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Xunit;
 
-namespace BuildInfoBlazorApp.Tests
+namespace Common.Tests
 {
     public class ConfigurationServiceTests : IDisposable
     {
