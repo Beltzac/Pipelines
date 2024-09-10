@@ -2,7 +2,7 @@ using BuildInfoBlazorApp.Data;
 using LiteDB.Async;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Common;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Common.Tests
     {
         private readonly Mock<IHubContext<BuildInfoHub>> _hubContextMock;
         private readonly Mock<ILogger<BuildInfoService>> _loggerMock;
-        private readonly Mock<ConfigurationService> _configServiceMock;
+        private readonly Mock<IConfigurationService> _configServiceMock;
         private readonly Mock<ILiteDatabaseAsync> _liteDatabaseMock;
         private readonly Mock<IBuildHttpClient> _buildClientMock;
         private readonly Mock<IProjectHttpClient> _projectClientMock;
@@ -26,11 +26,18 @@ namespace Common.Tests
         {
             _hubContextMock = new Mock<IHubContext<BuildInfoHub>>();
             _loggerMock = new Mock<ILogger<BuildInfoService>>();
-            _configServiceMock = new Mock<ConfigurationService>();
+            _configServiceMock = new Mock<IConfigurationService>();
             _liteDatabaseMock = new Mock<ILiteDatabaseAsync>();
             _buildClientMock = new Mock<IBuildHttpClient>();
             _projectClientMock = new Mock<IProjectHttpClient>();
             _gitClientMock = new Mock<IGitHttpClient>();
+
+            var configModel = new ConfigModel
+            {
+                LocalCloneFolder = "some/path",
+                PAT = "someToken"
+            };
+            _configServiceMock.Setup(cs => cs.GetConfig()).Returns(configModel);
 
             _buildInfoService = new BuildInfoService(
                 _hubContextMock.Object,
