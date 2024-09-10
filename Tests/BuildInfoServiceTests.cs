@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace BuildInfoBlazorApp.Tests
+namespace Common.Tests
 {
     public class BuildInfoServiceTests
     {
