@@ -1,4 +1,5 @@
 using BuildInfoBlazorApp.Data;
+using LiteDB.Async;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -17,7 +18,7 @@ namespace Common.Tests
         private readonly Mock<IHubContext<BuildInfoHub>> _hubContextMock;
         private readonly Mock<ILogger<BuildInfoService>> _loggerMock;
         private readonly Mock<ConfigurationService> _configServiceMock;
-        private readonly Mock<LiteDatabaseAsync> _liteDatabaseMock;
+        private readonly Mock<ILiteDatabaseAsync> _liteDatabaseMock;
         private readonly Mock<BuildHttpClient> _buildClientMock;
         private readonly Mock<ProjectHttpClient> _projectClientMock;
         private readonly Mock<GitHttpClient> _gitClientMock;
@@ -28,7 +29,7 @@ namespace Common.Tests
             _hubContextMock = new Mock<IHubContext<BuildInfoHub>>();
             _loggerMock = new Mock<ILogger<BuildInfoService>>();
             _configServiceMock = new Mock<ConfigurationService>();
-            _liteDatabaseMock = new Mock<LiteDatabaseAsync>();
+            _liteDatabaseMock = new Mock<ILiteDatabaseAsync>();
             _buildClientMock = new Mock<BuildHttpClient>();
             _projectClientMock = new Mock<ProjectHttpClient>();
             _gitClientMock = new Mock<GitHttpClient>();
