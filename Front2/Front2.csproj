@@ -19,7 +19,7 @@
     <PackageReference Include="Quartz" Version="3.13.0" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.13.0" />
-    <PackageReference Include="Quartz.Serialization.Json" Version="3.12.0" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.13.0" />
     <PackageReference Include="Quartznet-LiteDB" Version="1.0.7" />
     <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
