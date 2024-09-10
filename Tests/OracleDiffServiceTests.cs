@@ -14,7 +14,12 @@ namespace Common.Tests
             var result = OracleDiffService.GetDiff(view, old, newString);
 
             Assert.NotNull(result);
-            // Add more assertions based on the expected structure of the result
+            Assert.NotEmpty(result.Diffs);
+            Assert.All(result.Diffs, diff => 
+            {
+                Assert.NotNull(diff.OldValue);
+                Assert.NotNull(diff.NewValue);
+            });
         }
     }
 }

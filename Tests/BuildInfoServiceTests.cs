@@ -19,7 +19,13 @@ namespace BuildInfoBlazorApp.Tests
             var result = await _buildInfoService.FetchBuildInfoAsync();
 
             Assert.NotNull(result);
-            // Add more assertions based on the expected structure of the result
+            Assert.NotEmpty(result.Builds);
+            Assert.All(result.Builds, build => 
+            {
+                Assert.NotNull(build.Id);
+                Assert.NotNull(build.Status);
+                Assert.NotNull(build.Result);
+            });
         }
     }
 }

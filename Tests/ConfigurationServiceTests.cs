@@ -18,7 +18,8 @@ namespace BuildInfoBlazorApp.Tests
 
             // Create a test-specific ConfigurationService
             _configService = new ConfigurationService(_testConfigPath);
-        }
+            Assert.NotNull(loadedConfig);
+            Assert.IsType<ConfigModel>(loadedConfig);
 
         [Fact]
         public void GetConfig_ReturnsDefaultValues_WhenConfigFileDoesNotExist()
@@ -28,6 +29,8 @@ namespace BuildInfoBlazorApp.Tests
             Assert.Equal("https://dev.azure.com/terminal-cp", config.OrganizationUrl);
             Assert.Equal(@"C:\repos", config.LocalCloneFolder);
             Assert.Empty(config.PAT);
+            Assert.NotNull(config);
+            Assert.IsType<ConfigModel>(config);
         }
 
         [Fact]
