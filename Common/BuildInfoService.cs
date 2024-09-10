@@ -21,21 +21,22 @@ namespace BuildInfoBlazorApp.Data
 {
     public class BuildInfoService
     {
-        private readonly LiteDatabaseAsync _liteDatabase;
+        private readonly ILiteDatabaseAsync _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
         private readonly BuildHttpClient _buildClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly GitHttpClient _gitClient;
         private readonly ILiteCollectionAsync<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
-        private readonly ConfigurationService _configService;
+        private readonly IConfigurationService _configService;
         private readonly string _localCloneFolder;
+        private readonly string _privateToken;
 
         public BuildInfoService(
             IHubContext<BuildInfoHub> hubContext,
             ILogger<BuildInfoService> logger,
-            ConfigurationService configService,
-            LiteDatabaseAsync liteDatabase,
+            IConfigurationService configService,
+            ILiteDatabaseAsync liteDatabase,
             BuildHttpClient buildClient,
             ProjectHttpClient projectClient,
             GitHttpClient gitClient)
@@ -51,6 +52,7 @@ namespace BuildInfoBlazorApp.Data
             _projectClient = projectClient;
             _gitClient = gitClient;
             _logger = logger;
+            _privateToken = config.PAT;
         }
 
         private async Task FetchRepoBuildInfoAsync(TeamProjectReference project, GitRepository repo)
@@ -318,7 +320,7 @@ namespace BuildInfoBlazorApp.Data
                     };
 
                     cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
-                    cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _personalAccessToken };
+                    cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken };
 
                     LibGit2Sharp.Repository.Clone(repo.RemoteUrl, localPath, cloneOptions);
 
