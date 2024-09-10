@@ -45,6 +45,9 @@ builder.Services.AddElectron();
 
 builder.Services.AddScoped<OracleSchemaService>();
 builder.Services.AddScoped<OracleDiffService>();
+builder.Services.AddScoped<IBuildHttpClient, BuildHttpClientFacade>();
+builder.Services.AddScoped<IProjectHttpClient, ProjectHttpClientFacade>();
+builder.Services.AddScoped<IGitHttpClient, GitHttpClientFacade>();
 builder.Services.AddScoped<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();
 builder.Services.AddScoped<ConsulService>();
