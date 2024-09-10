@@ -21,7 +21,7 @@ namespace Common.Tests
 
             await _signalRClientService.StartAsync(action);
 
-            Assert.True(actionExecuted);
+            Assert.True(actionExecuted, "The action was not executed as expected.");
         }
     }
 }
