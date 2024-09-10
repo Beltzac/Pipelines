@@ -60,7 +60,7 @@ namespace Common.Tests
             };
 
             var reposCollectionMock = new Mock<ILiteCollectionAsync<Repository>>();
-            reposCollectionMock.Setup(c => c.FindAllAsync()).ReturnsAsync(expectedRepositories);
+            reposCollectionMock.Setup(c => c.AsQueryable()).Returns(expectedRepositories.AsQueryable());
             _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
 
             // Act
