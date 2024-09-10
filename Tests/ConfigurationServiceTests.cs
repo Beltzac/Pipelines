@@ -18,8 +18,7 @@ namespace Common.Tests
 
             // Create a test-specific ConfigurationService
             _configService = new ConfigurationService(_testConfigPath);
-            Assert.NotNull(loadedConfig);
-            Assert.IsType<ConfigModel>(loadedConfig);
+        }
 
         [Fact]
         public void GetConfig_ReturnsDefaultValues_WhenConfigFileDoesNotExist()
