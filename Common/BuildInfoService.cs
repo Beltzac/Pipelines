@@ -21,42 +21,81 @@ namespace BuildInfoBlazorApp.Data
 {
     public class BuildInfoService
     {
-        private readonly string _azureDevOpsOrganizationUrl;
-        private readonly string _personalAccessToken;
-        private readonly string _databasePath;
-        private readonly string _localCloneFolder;
         private readonly LiteDatabaseAsync _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
-        private readonly VssConnection _connection;
         private readonly BuildHttpClient _buildClient;
         private readonly ProjectHttpClient _projectClient;
         private readonly GitHttpClient _gitClient;
         private readonly ILiteCollectionAsync<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
         private readonly ConfigurationService _configService;
+        private readonly string _localCloneFolder;
 
         public BuildInfoService(
             IHubContext<BuildInfoHub> hubContext,
             ILogger<BuildInfoService> logger,
-            ConfigurationService configService)
+            ConfigurationService configService,
+            LiteDatabaseAsync liteDatabase,
+            BuildHttpClient buildClient,
+            ProjectHttpClient projectClient,
+            GitHttpClient gitClient)
         {
             _configService = configService;
             var config = _configService.GetConfig();
 
-            _azureDevOpsOrganizationUrl = config.OrganizationUrl;
-            _personalAccessToken = config.PAT;
             _localCloneFolder = config.LocalCloneFolder;
-            _databasePath = $@"Filename={Path.Combine(_localCloneFolder, "Builds.db")};Connection=shared";
-
-            _liteDatabase = new LiteDatabaseAsync(_databasePath);
+            _liteDatabase = liteDatabase;
             _reposCollection = _liteDatabase.GetCollection<Repository>("repos");
             _hubContext = hubContext;
-
-            _connection = new VssConnection(new Uri(_azureDevOpsOrganizationUrl), new VssBasicCredential(string.Empty, _personalAccessToken));
-            _buildClient = _connection.GetClient<BuildHttpClient>();
-            _projectClient = _connection.GetClient<ProjectHttpClient>();
-            _gitClient = _connection.GetClient<GitHttpClient>();
+            _buildClient = buildClient;
+            _projectClient = projectClient;
+            _gitClient = gitClient;
             _logger = logger;
+        }
+
+        private async Task FetchRepoBuildInfoAsync(TeamProjectReference project, GitRepository repo)
+        {
+            try
+            {
+                if (repo.IsDisabled ?? false)
+                {
+                    await Delete(repo.Id);
+                    _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
+                    return;
+                }
+
+                var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
+                var buildDefinition = buildDefinitions.FirstOrDefault();
+
+                if (buildDefinition?.LatestBuild != null)
+                {
+                    var existingRepo = await _reposCollection.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
+
+                    if (existingRepo?.Pipeline.Last.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
+                    {
+                        _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
+                        return;
+                    }
+
+                    _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
+                }
+                else
+                {
+                    var actualBuild = await _reposCollection.AsQueryable().Where(x => x.Id == repo.Id).FirstOrDefaultAsync();
+                    if (actualBuild != null)
+                    {
+                        _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
+                        return;
+                    }
+                }
+
+                var buildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
+                await UpsertAndPublish(buildInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error processing repo {repo.Name}");
+            }
         }
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
@@ -90,64 +129,16 @@ namespace BuildInfoBlazorApp.Data
         public async Task FetchBuildInfoAsync()
         {
             var projects = await _projectClient.GetProjects();
-
-            foreach (var project in projects)
-            {
-                await FetchProjectBuildInfoAsync(project);
-            }
+            var fetchTasks = projects.Select(FetchProjectBuildInfoAsync);
+            await Task.WhenAll(fetchTasks);
         }
 
         private async Task FetchProjectBuildInfoAsync(TeamProjectReference project)
         {
             _logger.LogInformation($"Fetching builds for project: {project.Name}");
             var repos = await _gitClient.GetRepositoriesAsync(project.Id);
-
-            foreach (var repo in repos)
-            {
-                try
-                {
-                    if (repo.IsDisabled ?? false)
-                    {
-                        await Delete(repo.Id);
-                        _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
-                        continue;
-                    }
-
-                    var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
-                    var buildDefinition = buildDefinitions.FirstOrDefault();
-
-                    if (buildDefinition?.LatestBuild != null)
-                    {
-                        var existingRepo = await _reposCollection.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
-
-                        if (existingRepo?.Pipeline.Last.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
-                        {
-                            _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
-                            continue;
-                        }
-
-                        _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
-                    }
-                    else
-                    {
-                        // Check if the repo exists in the database
-                        var actualBuild = await _reposCollection.AsQueryable().Where(x => x.Id == repo.Id).FirstOrDefaultAsync();
-                        if (actualBuild != null)
-                        {
-                            // Só cadastramos, não tem pipeline
-                            _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
-                            continue;
-                        }
-                    }
-
-                    var buildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
-                    await UpsertAndPublish(buildInfo);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error processing repo {repo.Name}");
-                }
-            }
+            var fetchTasks = repos.Select(repo => FetchRepoBuildInfoAsync(project, repo));
+            await Task.WhenAll(fetchTasks);
         }
 
         public async Task FetchBuildInfoByIdAsync(Guid repoId)
