@@ -23,9 +23,9 @@ namespace BuildInfoBlazorApp.Data
     {
         private readonly ILiteDatabaseAsync _liteDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
-        private readonly BuildHttpClient _buildClient;
-        private readonly ProjectHttpClient _projectClient;
-        private readonly GitHttpClient _gitClient;
+        private readonly IBuildHttpClient _buildClient;
+        private readonly IProjectHttpClient _projectClient;
+        private readonly IGitHttpClient _gitClient;
         private readonly ILiteCollectionAsync<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
         private readonly IConfigurationService _configService;
@@ -37,9 +37,9 @@ namespace BuildInfoBlazorApp.Data
             ILogger<BuildInfoService> logger,
             IConfigurationService configService,
             ILiteDatabaseAsync liteDatabase,
-            BuildHttpClient buildClient,
-            ProjectHttpClient projectClient,
-            GitHttpClient gitClient)
+            IBuildHttpClient buildClient,
+            IProjectHttpClient projectClient,
+            IGitHttpClient gitClient)
         {
             _configService = configService;
             var config = _configService.GetConfig();
