@@ -55,37 +55,21 @@ namespace Common.Tests
         public async Task GetBuildInfoAsync_ShouldReturnOrderedRepositories_WhenFilterIsApplied()
         {
             // Arrange
-            var expectedRepositories = new List<Repository>
+            var repos = new List<Repository>
             {
                 new Repository { Id = Guid.NewGuid(), Name = "Repo1", Project = "Project1", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author1" } } } },
                 new Repository { Id = Guid.NewGuid(), Name = "Repo2", Project = "Project2", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author2" } } } }
             };
 
-            var liteQueryableMock = new Mock<ILiteQueryableAsync<Repository>>();
-
-
-            // Mock Where to filter repositories using BsonExpression (simulating LiteDB behavior)
-            liteQueryableMock.Setup(q => q.Where(It.IsAny<BsonExpression>()))
-                .Returns(liteQueryableMock.Object);
-
-            // Mock ToListAsync to return the expected repositories ordered by the commit author name
-            liteQueryableMock.Setup(q => q.ToListAsync())
-                .ReturnsAsync(expectedRepositories.OrderByDescending(r => r.Pipeline.Last.Commit.AuthorName).ToList());
-
             // Mock the database to return the mocked collection
-            _repositoryDatabaseMock.Setup(db => db.Query()).Returns(liteQueryableMock.Object);
+            _repositoryDatabaseMock.Setup(db => db.Query()).Returns(repos.AsQueryable());
 
             // Act
             var result = await _buildInfoService.GetBuildInfoAsync("Author1");
 
             // Assert
-            Assert.Equal(expectedRepositories.Count, result.Count);
+            Assert.Equal(1, result.Count);
             Assert.Equal("Repo1", result.First().Name); // Check ordering, Repo1 should come first as per filter and sorting
         }
-
-
-
-
-        // Additional tests...
     }
 }

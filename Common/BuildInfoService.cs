@@ -107,7 +107,7 @@ namespace BuildInfoBlazorApp.Data
             {
                 query = query.Where(x => x.Project.ToUpper().Contains(filter.Trim().ToUpper())
                                           || x.Name.ToUpper().Contains(filter.Trim().ToUpper())
-                                          || x.Pipeline.Last.Commit.AuthorName.Contains(filter.Trim().ToUpper()));
+                                          || x.Pipeline.Last.Commit.AuthorName.ToUpper().Contains(filter.Trim().ToUpper()));
             }
 
             var results = await query.ToListAsync();

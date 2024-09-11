@@ -1,4 +1,5 @@
 using LiteDB.Async;
+using LiteDB.Queryable;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -37,9 +38,9 @@ namespace Common
             return _reposCollection.DeleteAsync(id);
         }
 
-        public ILiteQueryableAsync<Repository> Query()
+        public IQueryable<Repository> Query()
         {
-            return _reposCollection.Query();
+            return _reposCollection.AsQueryable();
         }
     }
 }

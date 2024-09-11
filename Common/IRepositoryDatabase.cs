@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using LiteDB.Async;
 
 namespace Common
 {
@@ -10,6 +11,6 @@ namespace Common
         Task<List<Repository>> FindAllAsync();
         Task UpsertAsync(Repository repository);
         Task DeleteAsync(Guid id);
-        ILiteQueryableAsync<Repository> Query();
+        IQueryable<Repository> Query();
     }
 }
