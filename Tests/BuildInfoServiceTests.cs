@@ -18,7 +18,7 @@ namespace Common.Tests
         private readonly Mock<IHubContext<BuildInfoHub>> _hubContextMock;
         private readonly Mock<ILogger<BuildInfoService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
-        private readonly Mock<ILiteDatabaseAsync> _liteDatabaseMock;
+        private readonly Mock<IRepositoryDatabase> _repositoryDatabaseMock;
         private readonly Mock<IBuildHttpClient> _buildClientMock;
         private readonly Mock<IProjectHttpClient> _projectClientMock;
         private readonly Mock<IGitHttpClient> _gitClientMock;
@@ -29,7 +29,7 @@ namespace Common.Tests
             _hubContextMock = new Mock<IHubContext<BuildInfoHub>>();
             _loggerMock = new Mock<ILogger<BuildInfoService>>();
             _configServiceMock = new Mock<IConfigurationService>();
-            _liteDatabaseMock = new Mock<ILiteDatabaseAsync>();
+            _repositoryDatabaseMock = new Mock<IRepositoryDatabase>();
             _buildClientMock = new Mock<IBuildHttpClient>();
             _projectClientMock = new Mock<IProjectHttpClient>();
             _gitClientMock = new Mock<IGitHttpClient>();
@@ -45,7 +45,7 @@ namespace Common.Tests
                 _hubContextMock.Object,
                 _loggerMock.Object,
                 _configServiceMock.Object,
-                _liteDatabaseMock.Object,
+                _repositoryDatabaseMock.Object,
                 _buildClientMock.Object,
                 _projectClientMock.Object,
                 _gitClientMock.Object);
@@ -77,7 +77,7 @@ namespace Common.Tests
                 .ReturnsAsync(expectedRepositories.OrderByDescending(r => r.Pipeline.Last.Commit.AuthorName).ToList());
 
             // Mock the database to return the mocked collection
-            _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
+            _repositoryDatabaseMock.Setup(db => db.Query()).Returns(liteQueryableMock.Object);
 
             // Act
             var result = await _buildInfoService.GetBuildInfoAsync("Author1");
