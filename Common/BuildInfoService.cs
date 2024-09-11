@@ -111,7 +111,7 @@ namespace BuildInfoBlazorApp.Data
             }
 
             var results = await query.ToListAsync();
-            var ordered = await results.AsQueryable().OrderByDescending(GetLatestBuildDetailsExpression()).ToListAsync();
+            var ordered = results.AsQueryable().OrderByDescending(GetLatestBuildDetailsExpression()).ToList();
 
             return ordered;
         }
