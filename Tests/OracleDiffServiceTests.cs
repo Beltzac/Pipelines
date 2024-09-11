@@ -14,11 +14,11 @@ namespace Common.Tests
             var result = OracleDiffService.GetDiff(view, old, newString);
 
             Assert.NotNull(result);
-            Assert.NotEmpty(result.Diffs);
-            Assert.All(result.Diffs, diff => 
+            Assert.NotEmpty(result.Hunks);
+            Assert.All(result.Hunks, diff => 
             {
-                Assert.NotNull(diff.OldValue);
-                Assert.NotNull(diff.NewValue);
+                Assert.NotEmpty(diff.lines);
+                Assert.NotEmpty(diff.lines);
             });
         }
     }

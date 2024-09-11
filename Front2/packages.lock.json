@@ -135,12 +135,12 @@
       },
       "Quartz.Serialization.Json": {
         "type": "Direct",
-        "requested": "[3.12.0, )",
-        "resolved": "3.12.0",
-        "contentHash": "Qx73zlm4IiX0owlVuB7B9LLCw7hP2+sg5TPMAoun2wAOPkmohEYqTU3J6Z3kHRzEOb6tMkxgNYj6OHm3UCikkQ==",
+        "requested": "[3.13.0, )",
+        "resolved": "3.13.0",
+        "contentHash": "Nm8klDppHsttLLfbchWOAOb2bB5mgwbuALpNY+a8Yd+C4kx6RiTvmwbM2l/8qifMOcJxyFvfWTWyoB69ubwTWw==",
         "dependencies": {
           "Newtonsoft.Json": "13.0.1",
-          "Quartz": "3.12.0"
+          "Quartz": "3.13.0"
         }
       },
       "Quartznet-LiteDB": {

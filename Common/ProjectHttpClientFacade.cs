@@ -1,4 +1,5 @@
 using Microsoft.TeamFoundation.Core.WebApi;
+using Microsoft.VisualStudio.Services.WebApi;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,12 +14,12 @@ namespace Common
             _projectHttpClient = projectHttpClient;
         }
 
-        public Task<List<TeamProjectReference>> GetProjects()
+        public Task<IPagedList<TeamProjectReference>> GetProjects()
         {
             return _projectHttpClient.GetProjects();
         }
 
-        public Task<TeamProjectReference> GetProject(string projectName)
+        public Task<TeamProject> GetProject(string projectName)
         {
             return _projectHttpClient.GetProject(projectName);
         }
