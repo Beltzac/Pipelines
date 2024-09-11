@@ -15,6 +15,7 @@ namespace Common
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
             services.AddSingleton<SignalRClientService>();
+            services.AddLogging();
             services.AddSingleton<OracleSchemaService>();
             services.AddSingleton<OracleDiffService>();
             services.AddSingleton<BuildInfoService>();
