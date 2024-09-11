@@ -51,6 +51,7 @@ builder.Services.AddScoped<IGitHttpClient, GitHttpClientFacade>();
 builder.Services.AddScoped<BuildInfoService>();
 builder.Services.AddScoped<SignalRClientService>();
 builder.Services.AddScoped<ConsulService>();
+builder.Services.AddScoped<IRepositoryDatabase, LiteDbRepositoryDatabase>();
 
 builder.Services.AddBlazoredToast();
 builder.Services.AddBlazorContextMenu();
