@@ -61,8 +61,9 @@ namespace Common.Tests
             };
 
             var reposCollectionMock = new Mock<ILiteCollectionAsync<Repository>>();
-            reposCollectionMock.Setup(c => c.AsQueryable<Repository>()).Returns(expectedRepositories.AsQueryable());
+            reposCollectionMock.Setup(c => c.Query()).Returns(new LiteQueryableAsync<Repository>(expectedRepositories.AsQueryable()));
             _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
+            reposCollectionMock.Setup(c => c.FindAllAsync()).ReturnsAsync(expectedRepositories);
 
             // Act
             var result = await _buildInfoService.GetBuildInfoAsync();
