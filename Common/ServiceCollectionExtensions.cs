@@ -8,6 +8,8 @@ namespace Common
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
+            services.AddSingleton<ILiteDatabaseAsync, LiteDatabaseAsync>(provider => 
+                new LiteDatabaseAsync("Filename=MyData.db;Connection=shared"));
             services.AddSingleton<IRepositoryDatabase, LiteDbRepositoryDatabase>();
             services.AddSingleton<IBuildHttpClient, BuildHttpClientFacade>();
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
