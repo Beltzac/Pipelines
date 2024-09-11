@@ -21,9 +21,10 @@ namespace Common
             return _reposCollection.FindByIdAsync(id);
         }
 
-        public Task<List<Repository>> FindAllAsync()
+        public async Task<List<Repository>> FindAllAsync()
         {
-            return _reposCollection.FindAllAsync();
+            var result = await _reposCollection.FindAllAsync();
+            return result.ToList();
         }
 
         public Task UpsertAsync(Repository repository)
