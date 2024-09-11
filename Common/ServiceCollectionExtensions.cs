@@ -11,6 +11,7 @@ namespace Common
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddSingleton<ILiteDatabaseAsync, LiteDatabaseAsync>(provider => new LiteDatabaseAsync("Filename=C:\\repos\\Builds.db;Connection=shared"));
             services.AddSingleton<IRepositoryDatabase, LiteDbRepositoryDatabase>();
+            services.AddSingleton<Microsoft.TeamFoundation.Build.WebApi.BuildHttpClient>();
             services.AddSingleton<IBuildHttpClient, BuildHttpClientFacade>();
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
