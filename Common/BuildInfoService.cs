@@ -21,7 +21,7 @@ namespace BuildInfoBlazorApp.Data
 {
     public class BuildInfoService
     {
-        private readonly ILiteDatabaseAsync _liteDatabase;
+        private readonly IRepositoryDatabase _repositoryDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;
         private readonly IBuildHttpClient _buildClient;
         private readonly IProjectHttpClient _projectClient;
@@ -36,7 +36,7 @@ namespace BuildInfoBlazorApp.Data
             IHubContext<BuildInfoHub> hubContext,
             ILogger<BuildInfoService> logger,
             IConfigurationService configService,
-            ILiteDatabaseAsync liteDatabase,
+            IRepositoryDatabase repositoryDatabase,
             IBuildHttpClient buildClient,
             IProjectHttpClient projectClient,
             IGitHttpClient gitClient)
@@ -45,8 +45,7 @@ namespace BuildInfoBlazorApp.Data
             var config = _configService.GetConfig();
 
             _localCloneFolder = config.LocalCloneFolder;
-            _liteDatabase = liteDatabase;
-            _reposCollection = _liteDatabase.GetCollection<Repository>("repos");
+            _repositoryDatabase = repositoryDatabase;
             _hubContext = hubContext;
             _buildClient = buildClient;
             _projectClient = projectClient;
@@ -71,7 +70,7 @@ namespace BuildInfoBlazorApp.Data
 
                 if (buildDefinition?.LatestBuild != null)
                 {
-                    var existingRepo = await _reposCollection.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
+                    var existingRepo = await _repositoryDatabase.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
 
                     if (existingRepo?.Pipeline.Last.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
                     {
@@ -83,7 +82,7 @@ namespace BuildInfoBlazorApp.Data
                 }
                 else
                 {
-                    var actualBuild = await _reposCollection.AsQueryable().Where(x => x.Id == repo.Id).FirstOrDefaultAsync();
+                    var actualBuild = await _repositoryDatabase.Query().Where(x => x.Id == repo.Id).FirstOrDefaultAsync();
                     if (actualBuild != null)
                     {
                         _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
@@ -102,7 +101,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
-            var query = _reposCollection.AsQueryable();
+            var query = _repositoryDatabase.Query();
 
             if (!string.IsNullOrEmpty(filter))
             {
@@ -119,12 +118,12 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task<Repository> GetBuildInfoByIdAsync(Guid id)
         {
-            return await _reposCollection.AsQueryable().Where(x => x.Id == id).FirstOrDefaultAsync();
+            return await _repositoryDatabase.Query().Where(x => x.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<string> GetBuildErrorLogsAsync(int buildId)
         {
-            var build = await _reposCollection.AsQueryable().Where(x => x.Pipeline.Last.Id == buildId).Select(x => x.Pipeline.Last).FirstOrDefaultAsync();
+            var build = await _repositoryDatabase.Query().Where(x => x.Pipeline.Last.Id == buildId).Select(x => x.Pipeline.Last).FirstOrDefaultAsync();
             return await Task.FromResult(build?.ErrorLogs);
         }
 
@@ -145,7 +144,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task FetchBuildInfoByIdAsync(Guid repoId)
         {
-            var repoAtual = await _reposCollection.FindByIdAsync(repoId);
+            var repoAtual = await _repositoryDatabase.FindByIdAsync(repoId);
             if (repoAtual == null)
             {
                 _logger.LogInformation($"Repository with ID {repoId} not found.");
@@ -275,7 +274,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task CloneAllRepositoriesAsync()
         {
-            var buildInfos = (await _reposCollection.FindAllAsync()).ToList();
+            var buildInfos = (await _repositoryDatabase.FindAllAsync()).ToList();
 
             foreach (var buildInfo in buildInfos)
             {
@@ -285,7 +284,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId)
         {
-            var buildInfo = await _reposCollection.FindByIdAsync(buildInfoId);
+            var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
             if (buildInfo != null)
             {
                 await CloneRepositoryByBuildInfoAsync(buildInfo);
@@ -351,7 +350,7 @@ namespace BuildInfoBlazorApp.Data
 
         public async Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId)
         {
-            var buildInfo = await _reposCollection.FindByIdAsync(buildInfoId);
+            var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
 
             if (buildInfo != null)
             {
@@ -478,19 +477,19 @@ namespace BuildInfoBlazorApp.Data
 
         private async Task UpsertAndPublish(Repository buildInfo)
         {
-            _reposCollection.UpsertAsync(buildInfo);
+            await _repositoryDatabase.UpsertAsync(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
         }
 
         public async Task Delete(Guid id)
         {
-            await _reposCollection.DeleteAsync(id);
+            await _repositoryDatabase.DeleteAsync(id);
             await _hubContext.Clients.All.SendAsync("Update", id);
         }
 
         public async Task<string> GenerateCloneCommands()
         {
-            var buildInfos = (await _reposCollection.FindAllAsync()).ToList();
+            var buildInfos = (await _repositoryDatabase.FindAllAsync()).ToList();
             var commands = new StringBuilder();
 
             commands.AppendLine("@echo off");
