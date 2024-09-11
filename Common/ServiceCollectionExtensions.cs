@@ -1,3 +1,4 @@
+using BuildInfoBlazorApp.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Common
