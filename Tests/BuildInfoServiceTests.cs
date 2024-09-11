@@ -61,12 +61,8 @@ namespace Common.Tests
                 new Repository { Id = Guid.NewGuid(), Name = "Repo2", Project = "Project2", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author2" } } } }
             };
 
-            // Mock the ILiteCollectionAsync<Repository>
-            var reposCollectionMock = new Mock<ILiteCollectionAsync<Repository>>();
             var liteQueryableMock = new Mock<ILiteQueryableAsync<Repository>>();
 
-            // Setup AsQueryable to return a mocked ILiteQueryableAsync
-            reposCollectionMock.Setup(c => c.Query()).Returns(liteQueryableMock.Object);
 
             // Mock Where to filter repositories using BsonExpression (simulating LiteDB behavior)
             liteQueryableMock.Setup(q => q.Where(It.IsAny<BsonExpression>()))
