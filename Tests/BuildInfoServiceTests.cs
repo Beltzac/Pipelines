@@ -50,7 +50,7 @@ namespace Common.Tests
                 _gitClientMock.Object);
         }
 
-        [Fact]
+       [Fact]
         public async Task GetBuildInfoAsync_ShouldReturnRepositories()
         {
             // Arrange
@@ -61,10 +61,12 @@ namespace Common.Tests
             };
 
             var reposCollectionMock = new Mock<ILiteCollectionAsync<Repository>>();
-            var liteDatabaseAsyncMock = new Mock<LiteDatabaseAsync>();
-            reposCollectionMock.Setup(c => c.Query()).Returns(new LiteQueryableAsync<Repository>(expectedRepositories.AsQueryable(), liteDatabaseAsyncMock.Object));
+            var liteQueryableMock = new Mock<ILiteQueryableAsync<Repository>>();
+
+            liteQueryableMock.Setup(q => q.ToListAsync()).ReturnsAsync(expectedRepositories);
+            reposCollectionMock.Setup(c => c.Query()).Returns(liteQueryableMock.Object);
+
             _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
-            reposCollectionMock.Setup(c => c.FindAllAsync()).ReturnsAsync(expectedRepositories);
 
             // Act
             var result = await _buildInfoService.GetBuildInfoAsync();
@@ -72,6 +74,7 @@ namespace Common.Tests
             // Assert
             Assert.Equal(expectedRepositories.Count, result.Count);
         }
+
 
         // Additional tests...
     }
