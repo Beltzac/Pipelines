@@ -64,7 +64,7 @@ namespace Common.Tests
             var liteQueryableMock = new Mock<ILiteQueryableAsync<Repository>>();
 
             liteQueryableMock.Setup(q => q.ToListAsync()).ReturnsAsync(expectedRepositories);
-            reposCollectionMock.Setup(c => c.Query()).Returns(liteQueryableMock.Object);
+            reposCollectionMock.Setup(c => c.Query()).Returns(new LiteQueryableAsync<Repository>(expectedRepositories.AsQueryable(), _liteDatabaseMock.Object));
 
             _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
 
