@@ -20,81 +20,18 @@ using static System.Net.Mime.MediaTypeNames;
 
 //electronize build /target win
 
-public static class Program
-{
-    public static void ConfigureServices(IServiceCollection services)
-    {
-        // Configure Serilog
-        var logger = new LoggerConfiguration()
-            .WriteTo.LiteDB(@"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared", logCollectionName: "logEvents", RollingPeriod.Monthly)
-            .WriteTo.BrowserConsole()
-            .WriteTo.Console()
-            .CreateLogger();
+var builder = WebApplication.CreateBuilder();
 
-        var builder = WebApplication.CreateBuilder();
+// Configure Serilog
+var logger = new LoggerConfiguration()
+    .WriteTo.LiteDB(@"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared", logCollectionName: "logEvents", RollingPeriod.Monthly)
+    .WriteTo.BrowserConsole()
+    .WriteTo.Console()
+    .CreateLogger();
 
-        builder.Host.UseSerilog(logger);
+builder.Host.UseSerilog(logger);
 
-        // Add services to the container.
-        services
-            .AddRazorComponents()
-            .AddInteractiveServerComponents()
-            .AddCircuitOptions(o =>
-            {
-                o.DetailedErrors = true;
-            });
-
-        builder.WebHost.UseElectron();
-        services.AddElectron();
-
-        services.AddScoped<OracleSchemaService>();
-        services.AddScoped<OracleDiffService>();
-        services.AddScoped<IBuildHttpClient, BuildHttpClientFacade>();
-        services.AddScoped<IProjectHttpClient, ProjectHttpClientFacade>();
-        services.AddScoped<IGitHttpClient, GitHttpClientFacade>();
-        services.AddScoped<BuildInfoService>();
-        services.AddScoped<SignalRClientService>();
-        services.AddScoped<ConsulService>();
-        services.AddScoped<IRepositoryDatabase, LiteDbRepositoryDatabase>();
-
-        services.AddBlazoredToast();
-        services.AddBlazorContextMenu();
-
-        services.AddSignalR();
-
-        // Add Quartz services
-        services.AddQuartz(q =>
-        {
-            q.UsePersistentStore(s =>
-            {
-                s.UseLiteDb(options =>
-                {
-                    options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
-                });
-                s.UseNewtonsoftJsonSerializer();
-            });
-
-            q.ScheduleJob<BuildInfoJob>(trigger => trigger
-                .WithIdentity("BuildInfoJob-trigger")
-                .StartNow()
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(3)
-                    .RepeatForever()),
-                job => job.WithIdentity("BuildInfoJob")
-            );
-        });
-
-        // Add Quartz hosted service
-        services.AddQuartzHostedService(q =>
-        {
-            q.WaitForJobsToComplete = true;
-            q.AwaitApplicationStarted = true;
-            //q.StartDelay = TimeSpan.FromSeconds(10);
-        });
-
-        services.AddScoped<ConfigurationService>();
-    }
-}
+Program.ConfigureServices(builder.Services);
 
 var app = builder.Build();
 
