@@ -100,7 +100,8 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
+        public async Task<List<Repository>>
+        GetBuildInfoAsync(string filter = null)
         {
             var query = _reposCollection.AsQueryable();
 
