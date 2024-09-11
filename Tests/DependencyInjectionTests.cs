@@ -17,6 +17,9 @@ namespace Common.Tests
             serviceCollection.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
             serviceCollection.AddSingleton<SignalRClientService>();
 
+            serviceCollection.AddSingleton<ILiteDatabaseAsync, LiteDatabaseAsync>(provider => 
+                new LiteDatabaseAsync("Filename=MyData.db;Connection=shared"));
+
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // Act & Assert
