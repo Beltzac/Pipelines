@@ -27,8 +27,6 @@ namespace BuildInfoBlazorApp.Data
         private readonly IProjectHttpClient _projectClient;
         private readonly IGitHttpClient _gitClient;
         private readonly ILiteCollectionAsync<Repository> _reposCollection;
-        private readonly IFileSystem _fileSystem;
-        private readonly IRepositoryCloner _repositoryCloner;
         private readonly ILogger<BuildInfoService> _logger;
         private readonly IConfigurationService _configService;
         private readonly string _localCloneFolder;
@@ -41,9 +39,7 @@ namespace BuildInfoBlazorApp.Data
             ILiteDatabaseAsync liteDatabase,
             IBuildHttpClient buildClient,
             IProjectHttpClient projectClient,
-            IGitHttpClient gitClient,
-            IFileSystem fileSystem,
-            IRepositoryCloner repositoryCloner)
+            IGitHttpClient gitClient)
         {
             _configService = configService;
             var config = _configService.GetConfig();
@@ -57,8 +53,6 @@ namespace BuildInfoBlazorApp.Data
             _gitClient = gitClient;
             _logger = logger;
             _privateToken = config.PAT;
-            _fileSystem = fileSystem;
-            _repositoryCloner = repositoryCloner;
         }
 
         private async Task FetchRepoBuildInfoAsync(TeamProjectReference project, GitRepository repo)
@@ -106,8 +100,7 @@ namespace BuildInfoBlazorApp.Data
             }
         }
 
-        public async Task<List<Repository>>
-        GetBuildInfoAsync(string filter = null)
+        public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
             var query = _reposCollection.AsQueryable();
 
@@ -307,7 +300,7 @@ namespace BuildInfoBlazorApp.Data
         {
             var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
 
-            if (_fileSystem.DirectoryExists(localPath))
+            if (Directory.Exists(localPath))
             {
                 _logger.LogInformation($"Repository {buildInfo.Name} already cloned to {localPath}");
                 buildInfo.MasterClonned = true;
@@ -320,7 +313,7 @@ namespace BuildInfoBlazorApp.Data
                 var repo = await _gitClient.GetRepositoryAsync(buildInfo.Project, buildInfo.Id);
                 if (repo != null)
                 {
-                    _fileSystem.CreateDirectory(localPath);
+                    Directory.CreateDirectory(localPath);
                     var cloneOptions = new CloneOptions
                     {
                         Checkout = true
@@ -329,7 +322,7 @@ namespace BuildInfoBlazorApp.Data
                     cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
                     cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken };
 
-                    _repositoryCloner.Clone(repo.RemoteUrl, localPath, cloneOptions);
+                    LibGit2Sharp.Repository.Clone(repo.RemoteUrl, localPath, cloneOptions);
 
                     buildInfo.MasterClonned = true;
                     await UpsertAndPublish(buildInfo);
@@ -345,7 +338,7 @@ namespace BuildInfoBlazorApp.Data
 
         public void OpenFolder(string localPath)
         {
-            if (_fileSystem.DirectoryExists(localPath))
+            if (Directory.Exists(localPath))
             {
                 System.Diagnostics.Process.Start(new ProcessStartInfo
                 {
@@ -374,15 +367,15 @@ namespace BuildInfoBlazorApp.Data
         public string FindSolutionFile(string folderPath)
         {
             // Search in the top directory
-            string slnFile = _fileSystem.GetFiles(folderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
+            string slnFile = Directory.GetFiles(folderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
 
             if (slnFile == null)
             {
                 // Search in the src folder if the solution file wasn't found in the top directory
                 string srcFolderPath = Path.Combine(folderPath, "src");
-                if (_fileSystem.DirectoryExists(srcFolderPath))
+                if (Directory.Exists(srcFolderPath))
                 {
-                    slnFile = _fileSystem.GetFiles(srcFolderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                    slnFile = Directory.GetFiles(srcFolderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
                 }
             }
 
