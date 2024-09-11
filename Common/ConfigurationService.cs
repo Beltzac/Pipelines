@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-public class ConfigurationService
+public class ConfigurationService : IConfigurationService
 {
     private readonly string _configPath;
     private ConfigModel _config;

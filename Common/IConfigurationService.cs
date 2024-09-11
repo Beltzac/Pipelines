@@ -1,0 +1,6 @@
+﻿
+public interface IConfigurationService
+{
+    ConfigModel GetConfig();
+    Task SaveConfigAsync(ConfigModel config);
+}

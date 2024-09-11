@@ -15,10 +15,10 @@ namespace Common
 
         public Task<List<BuildDefinitionReference>> GetDefinitionsAsync(string project, string repositoryId, string repositoryType, bool includeLatestBuilds)
         {
-            return _buildHttpClient.GetDefinitionsAsync(project, repositoryId, repositoryType, includeLatestBuilds);
+            return _buildHttpClient.GetDefinitionsAsync(project, repositoryId: repositoryId, repositoryType: repositoryType, includeLatestBuilds: includeLatestBuilds);
         }
 
-        public Task<Build> GetBuildAsync(string project, int buildId)
+        public Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetBuildAsync(string project, int buildId)
         {
             return _buildHttpClient.GetBuildAsync(project, buildId);
         }
