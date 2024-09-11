@@ -1,4 +1,5 @@
 using BuildInfoBlazorApp.Data;
+using LiteDB;
 using LiteDB.Async;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -50,30 +51,43 @@ namespace Common.Tests
                 _gitClientMock.Object);
         }
 
-       [Fact]
-        public async Task GetBuildInfoAsync_ShouldReturnRepositories()
+        [Fact]
+        public async Task GetBuildInfoAsync_ShouldReturnOrderedRepositories_WhenFilterIsApplied()
         {
             // Arrange
             var expectedRepositories = new List<Repository>
             {
-                new Repository { Id = Guid.NewGuid(), Name = "Repo1" },
-                new Repository { Id = Guid.NewGuid(), Name = "Repo2" }
+                new Repository { Id = Guid.NewGuid(), Name = "Repo1", Project = "Project1", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author1" } } } },
+                new Repository { Id = Guid.NewGuid(), Name = "Repo2", Project = "Project2", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author2" } } } }
             };
 
+            // Mock the ILiteCollectionAsync<Repository>
             var reposCollectionMock = new Mock<ILiteCollectionAsync<Repository>>();
             var liteQueryableMock = new Mock<ILiteQueryableAsync<Repository>>();
 
-            liteQueryableMock.Setup(q => q.ToListAsync()).ReturnsAsync(expectedRepositories);
-            reposCollectionMock.Setup(c => c.Query()).Returns(new Mock<ILiteQueryableAsync<Repository>>().Object);
+            // Setup AsQueryable to return a mocked ILiteQueryableAsync
+            reposCollectionMock.Setup(c => c.Query()).Returns(liteQueryableMock.Object);
 
+            // Mock Where to filter repositories using BsonExpression (simulating LiteDB behavior)
+            liteQueryableMock.Setup(q => q.Where(It.IsAny<BsonExpression>()))
+                .Returns(liteQueryableMock.Object);
+
+            // Mock ToListAsync to return the expected repositories ordered by the commit author name
+            liteQueryableMock.Setup(q => q.ToListAsync())
+                .ReturnsAsync(expectedRepositories.OrderByDescending(r => r.Pipeline.Last.Commit.AuthorName).ToList());
+
+            // Mock the database to return the mocked collection
             _liteDatabaseMock.Setup(db => db.GetCollection<Repository>("repos")).Returns(reposCollectionMock.Object);
 
             // Act
-            var result = await _buildInfoService.GetBuildInfoAsync();
+            var result = await _buildInfoService.GetBuildInfoAsync("Author1");
 
             // Assert
             Assert.Equal(expectedRepositories.Count, result.Count);
+            Assert.Equal("Repo1", result.First().Name); // Check ordering, Repo1 should come first as per filter and sorting
         }
+
+
 
 
         // Additional tests...
