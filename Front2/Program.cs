@@ -157,9 +157,9 @@ void CreateStartupShortcut(string shortcutPath, string executablePath)
 }
 
 // Define the event handler method
-void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
+async void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
 {
-    OpenWeb();
+    await OpenWeb();
 }
 
 // Check if is running the http launch profile
