@@ -10,7 +10,7 @@ namespace Common.Tests
         {
             // Arrange
             var serviceCollection = new ServiceCollection();
-            Program.ConfigureServices(serviceCollection);
+            serviceCollection.AddCustomServices();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 

@@ -31,7 +31,7 @@ var logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog(logger);
 
-Program.ConfigureServices(builder.Services);
+builder.Services.AddCustomServices();
 
 var app = builder.Build();
 
