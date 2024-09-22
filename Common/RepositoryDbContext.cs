@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common
@@ -25,5 +26,35 @@ namespace Common
                 optionsBuilder.UseSqlite(connectionString);
             }
         }
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Repository>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Project)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Url)
+                .IsRequired();
+
+            entity.Property(e => e.CloneUrl)
+                .IsRequired();
+
+            entity.Property(e => e.MasterClonned)
+                .IsRequired();
+
+            entity.Ignore(e => e.Path); // Path is a computed property, not stored in the database
+
+            // Configure relationships if any
+            // For example, if Repository has a one-to-many relationship with another entity, configure it here
+        });
     }
 }
