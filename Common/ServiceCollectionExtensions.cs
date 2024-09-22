@@ -1,6 +1,6 @@
 using Blazored.Toast;
 using BuildInfoBlazorApp.Data;
-using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -15,14 +15,16 @@ namespace Common
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
-            services.AddSingleton<IRepositoryDatabase, SqliteRepositoryDatabase>(provider =>
+            services.AddDbContext<RepositoryDbContext>(options =>
             {
-                var configService = provider.GetRequiredService<IConfigurationService>();
+                var configService = services.BuildServiceProvider().GetRequiredService<IConfigurationService>();
                 var config = configService.GetConfig();
                 var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
                 var connectionString = $"Data Source={databasePath}";
-                return new SqliteRepositoryDatabase(connectionString);
+                options.UseSqlite(connectionString);
             });
+
+            services.AddScoped<IRepositoryDatabase, SqliteRepositoryDatabase>();
 
             // Register VssConnection as a singleton
             services.AddSingleton(provider =>

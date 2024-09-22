@@ -1,5 +1,4 @@
-using Microsoft.Data.Sqlite;
-using System.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,90 +7,50 @@ namespace Common
 {
     public class SqliteRepositoryDatabase : IRepositoryDatabase
     {
-        private readonly string _connectionString;
+        private readonly RepositoryDbContext _context;
 
-        public SqliteRepositoryDatabase(string connectionString)
+        public SqliteRepositoryDatabase(RepositoryDbContext context)
         {
-            _connectionString = connectionString;
+            _context = context;
         }
 
         public async Task<Repository> FindByIdAsync(Guid id)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM repos WHERE Id = $id";
-            command.Parameters.AddWithValue("$id", id);
-
-            using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return new Repository
-                {
-                    Id = reader.GetGuid(0),
-                    // Map other fields
-                };
-            }
-
-            return null;
+            return await _context.Repositories.FindAsync(id);
         }
 
         public async Task<List<Repository>> FindAllAsync()
         {
-            var repositories = new List<Repository>();
-
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "SELECT * FROM repos";
-
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                repositories.Add(new Repository
-                {
-                    Id = reader.GetGuid(0),
-                    // Map other fields
-                });
-            }
-
-            return repositories;
+            return await _context.Repositories.ToListAsync();
         }
 
         public async Task UpsertAsync(Repository repository)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO repos (Id, /* other fields */) 
-                VALUES ($id, /* other values */)
-                ON CONFLICT(Id) DO UPDATE SET /* field updates */;
-            ";
-            command.Parameters.AddWithValue("$id", repository.Id);
-            // Add other parameters
-
-            await command.ExecuteNonQueryAsync();
+            var existing = await _context.Repositories.FindAsync(repository.Id);
+            if (existing == null)
+            {
+                _context.Repositories.Add(repository);
+            }
+            else
+            {
+                _context.Entry(existing).CurrentValues.SetValues(repository);
+            }
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            using var connection = new SqliteConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM repos WHERE Id = $id";
-            command.Parameters.AddWithValue("$id", id);
-
-            await command.ExecuteNonQueryAsync();
+            var repository = await _context.Repositories.FindAsync(id);
+            if (repository != null)
+            {
+                _context.Repositories.Remove(repository);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public IQueryable<Repository> Query()
         {
-            throw new NotImplementedException("Query method is not implemented for SQLite.");
+            return _context.Repositories.AsQueryable();
         }
     }
 }
