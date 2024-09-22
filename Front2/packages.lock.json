@@ -1804,6 +1804,8 @@
       "common": {
         "type": "Project",
         "dependencies": {
+          "Blazor.ContextMenu": "[2.1.0, )",
+          "Blazored.Toast": "[4.2.1, )",
           "CSharpDiff": "[0.0.7, )",
           "CompareNETObjects": "[4.83.0, )",
           "DiffPlex": "[1.7.2, )",
