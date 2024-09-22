@@ -102,7 +102,6 @@ namespace BuildInfoBlazorApp.Data
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
             var query = _repositoryDatabase.Query();
-
             if (!string.IsNullOrEmpty(filter))
             {
                 query = query.Where(x => x.Project.ToUpper().Contains(filter.Trim().ToUpper())

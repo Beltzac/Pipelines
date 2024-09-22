@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using static System.Net.Mime.MediaTypeNames;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 //electronize build /target win
 
@@ -31,7 +32,50 @@ var logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog(logger);
 
+
+builder.Services.AddSignalR();
+builder.Services.AddAntiforgery();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddCircuitOptions(o =>
+    {
+        o.DetailedErrors = true;
+    });
+
+builder.WebHost.UseElectron(args);
+builder.Services.AddElectron();
+
 builder.Services.AddCustomServices();
+
+// Add Quartz services
+builder.Services.AddQuartz(q =>
+{
+    q.UsePersistentStore(s =>
+    {
+        s.UseLiteDb(options =>
+        {
+            options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
+        });
+        s.UseNewtonsoftJsonSerializer();
+    });
+
+    q.ScheduleJob<BuildInfoJob>(trigger => trigger
+        .WithIdentity("BuildInfoJob-trigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x
+            .WithIntervalInMinutes(3)
+            .RepeatForever()),
+        job => job.WithIdentity("BuildInfoJob")
+    );
+});
+
+// Add Quartz hosted service
+builder.Services.AddQuartzHostedService(q =>
+{
+    q.WaitForJobsToComplete = true;
+    q.AwaitApplicationStarted = true;
+    //q.StartDelay = TimeSpan.FromSeconds(10);
+});
 
 var app = builder.Build();
 
