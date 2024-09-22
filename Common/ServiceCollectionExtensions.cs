@@ -1,6 +1,6 @@
 using Blazored.Toast;
 using BuildInfoBlazorApp.Data;
-using LiteDB.Async;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -15,14 +15,14 @@ namespace Common
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
-            services.AddSingleton<ILiteDatabaseAsync, LiteDatabaseAsync>(provider =>
+            services.AddSingleton<IRepositoryDatabase, SqliteRepositoryDatabase>(provider =>
             {
                 var configService = provider.GetRequiredService<IConfigurationService>();
                 var config = configService.GetConfig();
-                var databasePath = $@"Filename={Path.Combine(config.LocalCloneFolder, "Builds.db")};Connection=shared";
-                return new LiteDatabaseAsync(databasePath);
+                var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
+                var connectionString = $"Data Source={databasePath}";
+                return new SqliteRepositoryDatabase(connectionString);
             });
-            services.AddSingleton<IRepositoryDatabase, LiteDbRepositoryDatabase>();
 
             // Register VssConnection as a singleton
             services.AddSingleton(provider =>
