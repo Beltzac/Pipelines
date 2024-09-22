@@ -9,6 +9,21 @@ namespace Common
         {
         }
 
+        public RepositoryDbContext()
+        {
+        }
+
         public DbSet<Repository> Repositories { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                // Configure the database provider and connection string
+                var databasePath = @"C:\repos\Builds.db";
+                var connectionString = $"Data Source={databasePath}";
+                optionsBuilder.UseSqlite(connectionString);
+            }
+        }
     }
 }

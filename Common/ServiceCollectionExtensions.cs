@@ -63,13 +63,12 @@ namespace Common
             services.AddSingleton<IBuildHttpClient, BuildHttpClientFacade>();
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
-            services.AddSingleton<SignalRClientService>();
+            services.AddScoped<SignalRClientService>();
             services.AddLogging();
-            services.AddSingleton<OracleSchemaService>();
-            services.AddSingleton<OracleDiffService>();
-            services.AddSingleton<BuildInfoService>();
-            services.AddSingleton<ConsulService>();
-            services.AddSingleton<BuildInfoBlazorApp.Data.BuildInfoService>();
+            services.AddScoped<OracleSchemaService>();
+            services.AddScoped<OracleDiffService>();
+            services.AddScoped<BuildInfoService>();
+            services.AddScoped<ConsulService>();
             services.AddBlazoredToast();
             services.AddBlazorContextMenu();
 
