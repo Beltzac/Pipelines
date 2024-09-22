@@ -15,6 +15,7 @@ namespace Common
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
+            services.AddEntityFrameworkSqlite();
             services.AddDbContext<RepositoryDbContext>(options =>
             {
                 var configService = services.BuildServiceProvider().GetRequiredService<IConfigurationService>();
