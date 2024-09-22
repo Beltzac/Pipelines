@@ -1,46 +1,97 @@
-using LiteDB.Async;
-using LiteDB.Queryable;
+using Microsoft.Data.Sqlite;
+using System.Data;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Common
 {
-    public class LiteDbRepositoryDatabase : IRepositoryDatabase
+    public class SqliteRepositoryDatabase : IRepositoryDatabase
     {
-        private readonly ILiteDatabaseAsync _liteDatabase;
-        private readonly ILiteCollectionAsync<Repository> _reposCollection;
+        private readonly string _connectionString;
 
-        public LiteDbRepositoryDatabase(ILiteDatabaseAsync liteDatabase)
+        public SqliteRepositoryDatabase(string connectionString)
         {
-            _liteDatabase = liteDatabase;
-            _reposCollection = _liteDatabase.GetCollection<Repository>("repos");
+            _connectionString = connectionString;
         }
 
-        public Task<Repository> FindByIdAsync(Guid id)
+        public async Task<Repository> FindByIdAsync(Guid id)
         {
-            return _reposCollection.FindByIdAsync(id);
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM repos WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", id);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new Repository
+                {
+                    Id = reader.GetGuid(0),
+                    // Map other fields
+                };
+            }
+
+            return null;
         }
 
         public async Task<List<Repository>> FindAllAsync()
         {
-            var result = await _reposCollection.FindAllAsync();
-            return result.ToList();
+            var repositories = new List<Repository>();
+
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT * FROM repos";
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                repositories.Add(new Repository
+                {
+                    Id = reader.GetGuid(0),
+                    // Map other fields
+                });
+            }
+
+            return repositories;
         }
 
-        public Task UpsertAsync(Repository repository)
+        public async Task UpsertAsync(Repository repository)
         {
-            return _reposCollection.UpsertAsync(repository);
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO repos (Id, /* other fields */) 
+                VALUES ($id, /* other values */)
+                ON CONFLICT(Id) DO UPDATE SET /* field updates */;
+            ";
+            command.Parameters.AddWithValue("$id", repository.Id);
+            // Add other parameters
+
+            await command.ExecuteNonQueryAsync();
         }
 
-        public Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id)
         {
-            return _reposCollection.DeleteAsync(id);
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM repos WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", id);
+
+            await command.ExecuteNonQueryAsync();
         }
 
         public IQueryable<Repository> Query()
         {
-            return _reposCollection.AsQueryable();
+            throw new NotImplementedException("Query method is not implemented for SQLite.");
         }
     }
 }
