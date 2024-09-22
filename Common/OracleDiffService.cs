@@ -1,17 +1,10 @@
-﻿using CSharpDiff.Diffs;
-using CSharpDiff.Diffs.Models;
+﻿using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using DiffPlex;
-using DiffPlex.Chunkers;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Common
 {

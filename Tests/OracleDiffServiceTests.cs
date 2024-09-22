@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Common.Tests
 {
     public class OracleDiffServiceTests

@@ -1,21 +1,16 @@
 ﻿using Common;
 using LibGit2Sharp;
-using LiteDB;
-using LiteDB.Async;
-using LiteDB.Queryable;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Diagnostics;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Xml;
-using Microsoft.Extensions.Options;
 
 namespace BuildInfoBlazorApp.Data
 {
@@ -26,9 +21,7 @@ namespace BuildInfoBlazorApp.Data
         private readonly IBuildHttpClient _buildClient;
         private readonly IProjectHttpClient _projectClient;
         private readonly IGitHttpClient _gitClient;
-        private readonly ILiteCollectionAsync<Repository> _reposCollection;
         private readonly ILogger<BuildInfoService> _logger;
-        private readonly IConfigurationService _configService;
         private readonly string _localCloneFolder;
         private readonly string _privateToken;
 
@@ -41,8 +34,7 @@ namespace BuildInfoBlazorApp.Data
             IProjectHttpClient projectClient,
             IGitHttpClient gitClient)
         {
-            _configService = configService;
-            var config = _configService.GetConfig();
+            var config = configService.GetConfig();
 
             _localCloneFolder = config.LocalCloneFolder;
             _repositoryDatabase = repositoryDatabase;

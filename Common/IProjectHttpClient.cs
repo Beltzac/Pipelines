@@ -1,7 +1,5 @@
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Common
 {

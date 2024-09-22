@@ -1,6 +1,5 @@
 using BuildInfoBlazorApp.Data;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Common.Tests
 {

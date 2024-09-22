@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace Common
 {
     public interface IFileSystem

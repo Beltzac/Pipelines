@@ -1,8 +1,6 @@
 ﻿using BuildInfoBlazorApp.Data;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using System;
-using System.Threading.Tasks;
 
 public class BuildInfoJob : IJob
 {

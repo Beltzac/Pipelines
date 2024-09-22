@@ -1,23 +1,12 @@
-﻿using Blazored.Toast;
-using BuildInfoBlazorApp.Data;
-using Common;
+﻿using Common;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
-using Front2.Components;
-using H.NotifyIcon.Core;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Azure.Pipelines.WebApi;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Quartz;
-using Quartz.Impl.LiteDB;
 using Serilog;
-using Serilog.Sinks.LiteDB;
-using ShellLink.Structures;
 using ShellLink;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
-using static System.Net.Mime.MediaTypeNames;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 //electronize build /target win
 
@@ -25,8 +14,8 @@ var builder = WebApplication.CreateBuilder();
 
 // Configure Serilog
 var logger = new LoggerConfiguration()
-    .WriteTo.LiteDB(@"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared", logCollectionName: "logEvents", RollingPeriod.Monthly)
-    .WriteTo.BrowserConsole()
+    //.WriteTo.LiteDB(@"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared", logCollectionName: "logEvents", RollingPeriod.Monthly)
+    //.WriteTo.BrowserConsole()
     .WriteTo.Console()
     .CreateLogger();
 
@@ -50,14 +39,14 @@ builder.Services.AddCustomServices();
 // Add Quartz services
 builder.Services.AddQuartz(q =>
 {
-    q.UsePersistentStore(s =>
-    {
-        s.UseLiteDb(options =>
-        {
-            options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
-        });
-        s.UseNewtonsoftJsonSerializer();
-    });
+    //q.UsePersistentStore(s =>
+    //{
+    //    s.UseLiteDb(options =>
+    //    {
+    //        options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
+    //    });
+    //    s.UseNewtonsoftJsonSerializer();
+    //});
 
     q.ScheduleJob<BuildInfoJob>(trigger => trigger
         .WithIdentity("BuildInfoJob-trigger")
@@ -213,6 +202,24 @@ if (!app.Environment.IsDevelopment())
     await Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
     await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
     Electron.Tray.OnClick += OnTrayClick;
+}
+
+
+// Apply migrations at startup
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<RepositoryDbContext>();
+        context.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        // Log the error
+        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+        throw;
+    }
 }
 
 
