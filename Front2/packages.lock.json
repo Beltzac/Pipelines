@@ -1418,6 +1418,14 @@
           "System.Runtime.Extensions": "4.3.0"
         }
       },
+      "System.Linq.Async": {
+        "type": "Transitive",
+        "resolved": "6.0.1",
+        "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
+        }
+      },
       "System.Linq.Expressions": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -2039,7 +2047,8 @@
           "Microsoft.VisualStudio.Services.Client": "[19.225.1, )",
           "Oracle.ManagedDataAccess.Core": "[23.5.1, )",
           "Quartz": "[3.13.0, )",
-          "Quartz.AspNetCore": "[3.13.0, )"
+          "Quartz.AspNetCore": "[3.13.0, )",
+          "System.Linq.Async": "[6.0.1, )"
         }
       }
     }

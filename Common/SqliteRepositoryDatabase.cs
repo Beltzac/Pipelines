@@ -4,50 +4,55 @@ namespace Common
 {
     public class SqliteRepositoryDatabase : IRepositoryDatabase
     {
-        private readonly RepositoryDbContext _context;
+        private readonly IDbContextFactory<RepositoryDbContext> _contextFactory;
 
-        public SqliteRepositoryDatabase(RepositoryDbContext context)
+        public SqliteRepositoryDatabase(IDbContextFactory<RepositoryDbContext> contextFactory)
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         public async Task<Repository> FindByIdAsync(Guid id)
         {
-            return await _context.Repositories.FindAsync(id);
+            await using var context = _contextFactory.CreateDbContext();
+            return await context.Repositories.FindAsync(id);
         }
 
         public async Task<List<Repository>> FindAllAsync()
         {
-            return await _context.Repositories.ToListAsync();
+            await using var context = _contextFactory.CreateDbContext();
+            return await context.Repositories.ToListAsync();
         }
 
         public async Task UpsertAsync(Repository repository)
         {
-            var existing = await _context.Repositories.FindAsync(repository.Id);
+            await using var context = _contextFactory.CreateDbContext();
+            var existing = await context.Repositories.FindAsync(repository.Id);
             if (existing == null)
             {
-                _context.Repositories.Add(repository);
+                context.Repositories.Add(repository);
             }
             else
             {
-                _context.Entry(existing).CurrentValues.SetValues(repository);
+                context.Entry(existing).CurrentValues.SetValues(repository);
             }
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
-            var repository = await _context.Repositories.FindAsync(id);
+            await using var context = _contextFactory.CreateDbContext();
+            var repository = await context.Repositories.FindAsync(id);
             if (repository != null)
             {
-                _context.Repositories.Remove(repository);
-                await _context.SaveChangesAsync();
+                context.Repositories.Remove(repository);
+                await context.SaveChangesAsync();
             }
         }
 
         public IQueryable<Repository> Query()
         {
-            return _context.Repositories.AsQueryable();
+            var context = _contextFactory.CreateDbContext();
+            return context.Repositories.AsQueryable();
         }
     }
 }

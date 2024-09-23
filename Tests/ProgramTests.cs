@@ -24,7 +24,7 @@ namespace Common.Tests
             Assert.NotNull(serviceProvider.GetService<SignalRClientService>());
             Assert.NotNull(serviceProvider.GetService<ConsulService>());
             Assert.NotNull(serviceProvider.GetService<IRepositoryDatabase>());
-            Assert.NotNull(serviceProvider.GetService<ConfigurationService>());
+            Assert.NotNull(serviceProvider.GetService<IConfigurationService>());
         }
     }
 }
