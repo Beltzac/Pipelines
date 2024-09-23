@@ -1,5 +1,6 @@
 using Blazored.Toast;
 using BuildInfoBlazorApp.Data;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -14,9 +15,10 @@ namespace Common
     {
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
+            services.AddSignalR();
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddEntityFrameworkSqlite();
-            services.AddDbContext<RepositoryDbContext>(options =>
+            services.AddDbContextFactory<RepositoryDbContext>(options =>
             {
                 var configService = services.BuildServiceProvider().GetRequiredService<IConfigurationService>();
                 var config = configService.GetConfig();

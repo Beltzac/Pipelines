@@ -2,6 +2,7 @@ using BuildInfoBlazorApp.Data;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.EntityFrameworkCore;
 
 namespace Common.Tests
 {
@@ -53,7 +54,7 @@ namespace Common.Tests
                 new Repository { Id = Guid.NewGuid(), Name = "Repo2", Project = "Project2", Pipeline = new Pipeline { Last = new Build { Commit = new Commit { AuthorName = "Author2" } } } }
             };
 
-            // Mock the database to return the mocked collection
+            // Mock the database to return the mocked collection with support for async operations
             _repositoryDatabaseMock.Setup(db => db.Query()).Returns(repos.AsQueryable());
 
             // Act

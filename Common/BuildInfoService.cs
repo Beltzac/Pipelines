@@ -101,7 +101,7 @@ namespace BuildInfoBlazorApp.Data
                                           || x.Pipeline.Last.Commit.AuthorName.ToUpper().Contains(filter.Trim().ToUpper()));
             }
 
-            var results = await query.ToListAsync();
+            var results = query.ToList();
             var ordered = results.AsQueryable().OrderByDescending(GetLatestBuildDetailsExpression()).ToList();
 
             return ordered;

@@ -22,7 +22,7 @@ var logger = new LoggerConfiguration()
 builder.Host.UseSerilog(logger);
 
 
-builder.Services.AddSignalR();
+
 builder.Services.AddAntiforgery();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
