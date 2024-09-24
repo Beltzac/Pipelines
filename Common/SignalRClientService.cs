@@ -2,7 +2,7 @@
 
 namespace Common
 {
-    public class SignalRClientService
+    public class SignalRClientService : ISignalRClientService
     {
         private readonly HubConnection _hubConnection;
 
@@ -16,7 +16,8 @@ namespace Common
         public async Task StartAsync(Action<Guid> action)
         {
 
-            if (_hubConnection.State != HubConnectionState.Disconnected) {
+            if (_hubConnection.State != HubConnectionState.Disconnected)
+            {
                 return;
             }
 
@@ -27,7 +28,7 @@ namespace Common
 
         public async Task Disconect()
         {
-               await _hubConnection.StopAsync();
+            await _hubConnection.StopAsync();
         }
 
         public async Task SendMessageAsync(string message)

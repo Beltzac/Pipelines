@@ -9,7 +9,7 @@ namespace Common.Tests
             string old = "old";
             string newString = "new";
 
-            var result = OracleDiffService.GetDiff(view, old, newString);
+            var result = OracleDiffUtils.GetDiff(view, old, newString);
 
             Assert.NotNull(result);
             Assert.NotEmpty(result.Hunks);

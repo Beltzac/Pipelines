@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Common
 {
-    public class OracleDiffService
+    public static class OracleDiffUtils
     {
         public static PatchResult GetDiff(string view, string old, string newString)
         {
