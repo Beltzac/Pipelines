@@ -8,10 +8,9 @@ on:
     branches:
       - master
   release:
-    branches:
-      - master
+    types: [created]
   workflow_dispatch:
-      
+    
 jobs:
   build:
     runs-on: windows-latest
@@ -56,21 +55,37 @@ jobs:
         cache: true
         cache-dependency-path: '**/packages.lock.json'
 
+    - name: Generate Release Notes
+      id: generate_release_notes
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { generateNotes } = require('@actions/github-script');
+          const { data: release } = await github.rest.repos.getReleaseByTag({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            tag: context.ref.replace('refs/tags/', ''),
+          });
+
+          const releaseNotes = release.body || "No release notes provided.";
+          core.setOutput('release_notes', releaseNotes);
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-        generate_release_notes: true
-        token: ${{ secrets.GITHUB_TOKEN }}
+        body: ${{ steps.generate_release_notes.outputs.release_notes }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: Front2/bin/Desktop/*.exe
-        asset_name: electron-build-exe-${{ github.ref }}.exe
+        asset_name: electron-build-exe-${{ github.ref_name }}.exe
         asset_content_type: application/octet-stream
