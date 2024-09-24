@@ -14,7 +14,7 @@ using System.Xml;
 
 namespace BuildInfoBlazorApp.Data
 {
-    public class BuildInfoService
+    public class BuildInfoService : IBuildInfoService
     {
         private readonly IRepositoryDatabase _repositoryDatabase;
         private readonly IHubContext<BuildInfoHub> _hubContext;

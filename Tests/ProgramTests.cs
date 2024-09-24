@@ -15,14 +15,13 @@ namespace Common.Tests
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // Act & Assert
-            Assert.NotNull(serviceProvider.GetService<OracleSchemaService>());
-            Assert.NotNull(serviceProvider.GetService<OracleDiffService>());
+            Assert.NotNull(serviceProvider.GetService<IOracleSchemaService>());
             Assert.NotNull(serviceProvider.GetService<IBuildHttpClient>());
             Assert.NotNull(serviceProvider.GetService<IProjectHttpClient>());
             Assert.NotNull(serviceProvider.GetService<IGitHttpClient>());
-            Assert.NotNull(serviceProvider.GetService<BuildInfoService>());
-            Assert.NotNull(serviceProvider.GetService<SignalRClientService>());
-            Assert.NotNull(serviceProvider.GetService<ConsulService>());
+            Assert.NotNull(serviceProvider.GetService<IBuildInfoService>());
+            Assert.NotNull(serviceProvider.GetService<ISignalRClientService>());
+            Assert.NotNull(serviceProvider.GetService<IConsulService>());
             Assert.NotNull(serviceProvider.GetService<IRepositoryDatabase>());
             Assert.NotNull(serviceProvider.GetService<IConfigurationService>());
         }

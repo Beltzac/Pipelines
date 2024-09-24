@@ -4,7 +4,7 @@ using Oracle.ManagedDataAccess.Client;
 
 namespace Common
 {
-    public class OracleSchemaService
+    public class OracleSchemaService : IOracleSchemaService
     {
         string devConnectionString = "User Id=AHOY_ABELTZAC;Password=***REMOVED***;Data Source=***REMOVED***;";
         string qaConnectionString = "User Id=TCPAPI;Password=TCPAPI;Data Source=***REMOVED***;";
@@ -59,11 +59,11 @@ namespace Common
             {
                 if (qaViews.ContainsKey(viewName))
                 {
-                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, devViews[viewName], qaViews[viewName]));
+                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, devViews[viewName], qaViews[viewName]));
                 }
                 else
                 {
-                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, devViews[viewName], string.Empty));
+                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, devViews[viewName], string.Empty));
 
                     _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
                 }
@@ -73,7 +73,7 @@ namespace Common
             {
                 if (!devViews.ContainsKey(viewName))
                 {
-                    difs.Add(viewName, OracleDiffService.GetDiff(viewName, string.Empty, qaViews[viewName]));
+                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, string.Empty, qaViews[viewName]));
 
                     _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
                 }
@@ -86,7 +86,7 @@ namespace Common
                 if (kv.Value.Hunks.Any())
                 {
                     _logger.LogInformation($"Difference in view: {kv.Key}");
-                    difsString.Add(kv.Key, OracleDiffService.Format(kv.Value));
+                    difsString.Add(kv.Key, OracleDiffUtils.Format(kv.Value));
                 }
             }
 

@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Common
 {
-    public class ConsulService
+    public class ConsulService : IConsulService
     {
         private readonly ILogger<ConsulService> _logger;
 
@@ -30,7 +30,7 @@ namespace Common
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"Error: {ex.Message}");
+                _logger.LogInformation(ex, "Error: {Message}", ex.Message);
             }
         }
 
@@ -71,11 +71,11 @@ namespace Common
                     byte[] valueBytes = Convert.FromBase64String(value);
                     await File.WriteAllBytesAsync(filePath, valueBytes);
 
-                    _logger.LogInformation($"Saved: {filePath}");
+                    _logger.LogInformation("Saved: {FilePath}", filePath);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogInformation($"Error: {ex.Message}");
+                    _logger.LogInformation(ex, "Error: {Message}", ex.Message);
                 }
             }
         }

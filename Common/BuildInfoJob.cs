@@ -4,10 +4,10 @@ using Quartz;
 
 public class BuildInfoJob : IJob
 {
-    private readonly BuildInfoService _buildInfoService;
+    private readonly IBuildInfoService _buildInfoService;
     private readonly ILogger<BuildInfoJob> _logger;
 
-    public BuildInfoJob(BuildInfoService buildInfoService, ILogger<BuildInfoJob> logger)
+    public BuildInfoJob(IBuildInfoService buildInfoService, ILogger<BuildInfoJob> logger)
     {
         _buildInfoService = buildInfoService;
         _logger = logger;
