@@ -1,5 +1,6 @@
 using Blazored.Toast;
 using BuildInfoBlazorApp.Data;
+using BuildInfoBlazorApp.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +67,7 @@ namespace Common
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
 
+            services.AddScoped<ICommitDataExportService, CommitDataExportService>();
             services.AddScoped<ISignalRClientService, SignalRClientService>();
             services.AddLogging();
             services.AddScoped<IOracleSchemaService, OracleSchemaService>();
