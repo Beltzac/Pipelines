@@ -30,7 +30,7 @@ namespace Common
             services.AddScoped<IRepositoryDatabase, SqliteRepositoryDatabase>();
 
             // Register VssConnection as a singleton
-            services.AddSingleton(provider =>
+            services.AddSingleton<IVssConnection>(provider =>
             {
                 var configService = provider.GetRequiredService<IConfigurationService>();
                 var config = configService.GetConfig();
@@ -44,27 +44,28 @@ namespace Common
             // Register BuildHttpClient
             services.AddSingleton(provider =>
             {
-                var connection = provider.GetRequiredService<VssConnection>();
+                var connection = provider.GetRequiredService<IVssConnection>();
                 return connection.GetClient<BuildHttpClient>();
             });
 
             // Register GitHttpClient
             services.AddSingleton(provider =>
             {
-                var connection = provider.GetRequiredService<VssConnection>();
+                var connection = provider.GetRequiredService<IVssConnection>();
                 return connection.GetClient<GitHttpClient>();
             });
 
             // Register ProjectHttpClient
             services.AddSingleton(provider =>
             {
-                var connection = provider.GetRequiredService<VssConnection>();
+                var connection = provider.GetRequiredService<IVssConnection>();
                 return connection.GetClient<ProjectHttpClient>();
             });
 
             services.AddSingleton<IBuildHttpClient, BuildHttpClientFacade>();
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
+
             services.AddScoped<ISignalRClientService, SignalRClientService>();
             services.AddLogging();
             services.AddScoped<IOracleSchemaService, OracleSchemaService>();
