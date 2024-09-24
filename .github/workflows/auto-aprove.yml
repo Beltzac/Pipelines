@@ -1,6 +1,8 @@
 name: Auto approve
 
-on: pull_request_target
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   auto-approve:
@@ -10,3 +12,5 @@ jobs:
     if: github.actor == 'dependabot[bot]'
     steps:
       - uses: hmarr/auto-approve-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
