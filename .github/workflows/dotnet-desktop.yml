@@ -72,13 +72,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.x'
-        cache: true
-        cache-dependency-path: '**/packages.lock.json'
-
     - name: Generate Release Notes
       id: generate_release_notes
       uses: actions/github-script@v6
@@ -91,16 +84,13 @@ jobs:
           });
           core.setOutput('release_notes', releaseNotes.body);
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
+    - name: Create a Release
+      uses: elgohr/Github-Release-Action@v5
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-        body: ${{ steps.generate_release_notes.outputs.release_notes }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+        title: Release ${{ github.ref }}
+        tag: ${{ github.ref }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
