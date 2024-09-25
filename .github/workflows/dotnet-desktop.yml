@@ -100,6 +100,7 @@ jobs:
         draft: false
         prerelease: false
         body: ${{ steps.generate_release_notes.outputs.release_notes }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
