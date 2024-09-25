@@ -10,7 +10,7 @@ on:
   release:
     types: [created]
   workflow_dispatch:
-    
+
 jobs:
   build:
     runs-on: windows-latest
@@ -18,6 +18,27 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Cache npm dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.npm
+          Front2/node_modules
+        key: ${{ runner.os }}-npm-${{ hashFiles('Front2/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+
+    - name: Cache Electron caches
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.electron
+          ~/.cache/electron
+          ~/.cache/electron-builder
+        key: ${{ runner.os }}-electron-${{ hashFiles('Front2/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-electron-
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v4
@@ -36,6 +57,8 @@ jobs:
       run: dotnet test --verbosity normal
 
     - name: Build with Electronize
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd Front2
         electronize build /target win
@@ -60,15 +83,13 @@ jobs:
       uses: actions/github-script@v6
       with:
         script: |
-          const { generateNotes } = require('@actions/github-script');
-          const { data: release } = await github.rest.repos.getReleaseByTag({
+          const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            tag: context.ref.replace('refs/tags/', ''),
+            tag_name: context.ref.replace('refs/tags/', ''),
           });
-
-          const releaseNotes = release.body || "No release notes provided.";
-          core.setOutput('release_notes', releaseNotes);
+    
+          core.setOutput('release_notes', releaseNotes.body);
 
     - name: Create Release
       id: create_release
