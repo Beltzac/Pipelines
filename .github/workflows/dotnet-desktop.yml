@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - master
+    tags:
+      - '*'  # Trigger on all tag pushes
   pull_request:
     branches:
       - master
-  release:
-    types: [created]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -86,14 +89,11 @@ jobs:
             repo: context.repo.repo,
             tag_name: context.ref.replace('refs/tags/', ''),
           });
-    
           core.setOutput('release_notes', releaseNotes.body);
 
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
