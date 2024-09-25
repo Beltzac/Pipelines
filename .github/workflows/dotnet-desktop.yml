@@ -57,8 +57,6 @@ jobs:
       run: dotnet test --verbosity normal
 
     - name: Build with Electronize
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         cd Front2
         electronize build /target win
