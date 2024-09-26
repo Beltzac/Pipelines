@@ -1,4 +1,5 @@
-﻿using Common;
+﻿using Common.ExternalApis;
+using Common.Repositories;
 using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Xml;
 
-namespace BuildInfoBlazorApp.Data
+namespace Common.Services
 {
     public class BuildInfoService : IBuildInfoService
     {

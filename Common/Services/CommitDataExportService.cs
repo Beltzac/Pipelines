@@ -1,17 +1,11 @@
-﻿using BuildInfoBlazorApp.Data;
-using BuildInfoBlazorApp.Models;
-using Common;
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
+using Common.ExternalApis;
+using Common.Models;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace BuildInfoBlazorApp.Services
+namespace Common.Services
 {
     public class CommitDataExportService : ICommitDataExportService
     {

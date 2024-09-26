@@ -1,8 +1,9 @@
-﻿using Common;
+﻿using Common.Repositories;
+using Common.Services;
+using Common.Utils;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using Quartz;
 using Serilog;
 using ShellLink;

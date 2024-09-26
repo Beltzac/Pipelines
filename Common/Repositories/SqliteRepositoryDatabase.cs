@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Common
+namespace Common.Repositories
 {
     public class SqliteRepositoryDatabase : IRepositoryDatabase
     {

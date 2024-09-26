@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace Common
+namespace Common.Services
 {
     public class BuildInfoHub : Hub
     {

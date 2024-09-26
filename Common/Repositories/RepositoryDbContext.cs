@@ -1,9 +1,7 @@
-using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Common
+namespace Common.Repositories
 {
     //dotnet ef migrations add MapearCampos --project Common
     public class RepositoryDbContext : DbContext
@@ -97,7 +95,7 @@ namespace Common
                    .IsRequired(false) // Se não tem pipeline cadastrada não tem status
                    .HasMaxLength(50);
 
-            builder.Property(b => b.Result) 
+            builder.Property(b => b.Result)
                    .IsRequired(false) // Se não tem pipeline cadastrada não tem result
                    .HasMaxLength(50);
 

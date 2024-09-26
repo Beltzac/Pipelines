@@ -1,4 +1,4 @@
-﻿using BuildInfoBlazorApp.Data;
+﻿using Common.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
 

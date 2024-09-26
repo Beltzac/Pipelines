@@ -1,4 +1,6 @@
-namespace Common.Tests
+using Common.Utils;
+
+namespace Tests
 {
     public class OracleDiffServiceTests
     {
@@ -13,7 +15,7 @@ namespace Common.Tests
 
             Assert.NotNull(result);
             Assert.NotEmpty(result.Hunks);
-            Assert.All(result.Hunks, diff => 
+            Assert.All(result.Hunks, diff =>
             {
                 Assert.NotEmpty(diff.lines);
                 Assert.NotEmpty(diff.lines);

@@ -1,10 +1,11 @@
-using BuildInfoBlazorApp.Data;
+using Common.ExternalApis;
+using Common.Repositories;
+using Common.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq.EntityFrameworkCore;
 
-namespace Common.Tests
+namespace Tests
 {
     public class BuildInfoServiceTests
     {

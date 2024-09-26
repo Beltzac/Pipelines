@@ -1,6 +1,6 @@
 using LibGit2Sharp;
 
-namespace Common
+namespace Common.Services
 {
     public interface IRepositoryCloner
     {

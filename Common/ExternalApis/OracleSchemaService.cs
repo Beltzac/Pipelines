@@ -1,8 +1,9 @@
-﻿using CSharpDiff.Patches.Models;
+﻿using Common.Utils;
+using CSharpDiff.Patches.Models;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 
-namespace Common
+namespace Common.ExternalApis
 {
     public class OracleSchemaService : IOracleSchemaService
     {
