@@ -1,18 +1,17 @@
-using BuildInfoBlazorApp.Data;
+using Common.ExternalApis;
+using Common.Repositories;
+using Common.Services;
+using Common.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.TeamFoundation.Build.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
-using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
 
-namespace Common.Tests
+namespace Tests
 {
     public class ProgramTests
     {
 
-      //  [Fact]
+        //  [Fact]
         public void Services_AreRegisteredCorrectly()
         {
             // Arrange

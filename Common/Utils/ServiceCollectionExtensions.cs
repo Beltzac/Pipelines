@@ -1,7 +1,7 @@
 using Blazored.Toast;
-using BuildInfoBlazorApp.Data;
-using BuildInfoBlazorApp.Services;
-using Microsoft.AspNetCore.SignalR;
+using Common.ExternalApis;
+using Common.Repositories;
+using Common.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -10,7 +10,7 @@ using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace Common
+namespace Common.Utils
 {
     public static class ServiceCollectionExtensions
     {

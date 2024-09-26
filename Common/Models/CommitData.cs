@@ -1,4 +1,4 @@
-﻿namespace BuildInfoBlazorApp.Models
+﻿namespace Common.Models
 {
     public class CommitData
     {

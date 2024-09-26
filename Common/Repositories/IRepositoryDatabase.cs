@@ -1,4 +1,4 @@
-namespace Common
+namespace Common.Repositories
 {
     public interface IRepositoryDatabase
     {

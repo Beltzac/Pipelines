@@ -1,6 +1,6 @@
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
-namespace Common
+namespace Common.ExternalApis
 {
     public interface IGitHttpClient
     {

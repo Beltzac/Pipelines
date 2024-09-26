@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 
-namespace Common
+namespace Common.Services
 {
     public class SignalRClientService : ISignalRClientService
     {
@@ -21,7 +21,7 @@ namespace Common
                 return;
             }
 
-            _hubConnection.On<Guid>("Update", action);
+            _hubConnection.On("Update", action);
 
             await _hubConnection.StartAsync();
         }

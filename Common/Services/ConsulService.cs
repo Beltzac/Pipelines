@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-namespace Common
+namespace Common.Services
 {
     public class ConsulService : IConsulService
     {

@@ -1,7 +1,7 @@
 ﻿using Markdig;
 using System.Text.RegularExpressions;
 
-namespace Common
+namespace Common.Utils
 {
     public static class StringExtensions
     {

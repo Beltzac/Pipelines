@@ -6,7 +6,7 @@ using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
 using System.Text;
 
-namespace Common
+namespace Common.Utils
 {
     public static class OracleDiffUtils
     {
@@ -60,7 +60,7 @@ namespace Common
             var ps = new Patch(new PatchOptions(), new DiffOptions()
             {
                 IgnoreWhiteSpace = true
-              //NewlineIsToken = true
+                //NewlineIsToken = true
             });
             var patch = ps.createPatchResult(viewNameFormated, viewNameFormated, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
 

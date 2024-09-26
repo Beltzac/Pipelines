@@ -1,7 +1,7 @@
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 
-namespace Common
+namespace Common.ExternalApis
 {
     public interface IProjectHttpClient
     {

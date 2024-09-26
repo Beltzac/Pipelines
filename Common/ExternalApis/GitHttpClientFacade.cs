@@ -1,11 +1,7 @@
 // Common/GitHttpClientFacade.cs
 using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.VisualStudio.Services.WebApi;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace Common
+namespace Common.ExternalApis
 {
     public class GitHttpClientFacade : IGitHttpClient
     {

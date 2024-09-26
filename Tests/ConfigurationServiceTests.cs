@@ -1,4 +1,4 @@
-namespace Common.Tests
+namespace Tests
 {
     public class ConfigurationServiceTests : IDisposable
     {

@@ -1,6 +1,7 @@
 ﻿@page "/"
 @inject ISignalRClientService SignalRClientService
 @using Common
+@using Common.Services
 @using ElectronNET.API
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
@@ -9,7 +10,8 @@
 @using System.Reactive.Linq
 @using System.Linq.Expressions;
 @using Microsoft.AspNetCore.WebUtilities
-@inject BuildInfoBlazorApp.Data.IBuildInfoService BuildInfoService
+@using Common.Utils
+@inject IBuildInfoService BuildInfoService
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS

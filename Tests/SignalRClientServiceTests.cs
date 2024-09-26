@@ -1,4 +1,6 @@
-namespace Common.Tests
+using Common.Services;
+
+namespace Tests
 {
     public class SignalRClientServiceTests
     {

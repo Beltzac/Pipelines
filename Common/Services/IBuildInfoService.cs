@@ -3,7 +3,7 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using System.Linq.Expressions;
 
-namespace BuildInfoBlazorApp.Data
+namespace Common.Services
 {
     public interface IBuildInfoService
     {

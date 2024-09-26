@@ -1,5 +1,4 @@
-﻿
-namespace BuildInfoBlazorApp.Services
+﻿namespace Common.Services
 {
     public interface ICommitDataExportService
     {
