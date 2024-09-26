@@ -89,13 +89,8 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        title: Release ${{ github.ref }}
-        tag: ${{ github.ref }}
-
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: Front2/bin/Desktop/*.exe
-        asset_name: electron-build-exe-${{ github.ref_name }}.exe
-        asset_content_type: application/octet-stream
+        tag: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: ${{ steps.generate_release_notes.outputs.release_notes }}
+        files: Front2/bin/Desktop/*.exe
+        prerelease: false
