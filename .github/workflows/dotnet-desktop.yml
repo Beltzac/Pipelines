@@ -19,78 +19,68 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Cache npm dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.npm
-          Front2/node_modules
-        key: ${{ runner.os }}-npm-${{ hashFiles('Front2/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-npm-
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            $HOME/AppData/Roaming/npm-cache
+            $HOME/AppData/Local/electron
+            $HOME/AppData/Local/electron/Cache
+            $HOME/AppData/Local/electron-builder/Cache
+            Front2/node_modules
+          key: ${{ runner.os }}-cache-${{ hashFiles('Front2/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cache-
 
-    - name: Cache Electron caches
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.electron
-          ~/.cache/electron
-          ~/.cache/electron-builder
-        key: ${{ runner.os }}-electron-${{ hashFiles('Front2/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-electron-
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'  # Adjust the version according to your project requirements
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.x'  # Adjust the version according to your project requirements
-        cache: true
-        cache-dependency-path: '**/packages.lock.json'
+      - name: Install ElectronNET.CLI
+        run: dotnet tool install ElectronNET.CLI --global
 
-    - name: Install ElectronNET.CLI
-      run: dotnet tool install ElectronNET.CLI --global
+      - name: Restore dependencies
+        run: dotnet restore Front2
 
-    - name: Restore dependencies
-      run: dotnet restore Front2
+      - name: Test
+        run: dotnet test --verbosity minimal
 
-    - name: Test
-      run: dotnet test --verbosity normal
-
-    - name: Build with Electronize
-      run: |
-        cd Front2
-        electronize build /target win
+      - name: Build with Electronize
+        run: |
+          cd Front2
+          electronize build /target win
 
   release:
     runs-on: windows-latest
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    
+      - name: Generate Release Notes
+        id: generate_release_notes
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref.replace('refs/tags/', ''),
+            });
+            core.setOutput('release_notes', releaseNotes.body);
 
-    - name: Generate Release Notes
-      id: generate_release_notes
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            tag_name: context.ref.replace('refs/tags/', ''),
-          });
-          core.setOutput('release_notes', releaseNotes.body);
-
-    - name: Create a Release
-      uses: elgohr/Github-Release-Action@v5
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag: ${{ github.ref_name }}
-        name: Release ${{ github.ref_name }}
-        body: ${{ steps.generate_release_notes.outputs.release_notes }}
-        files: Front2/bin/Desktop/*.exe
-        prerelease: false
+      - name: Create or Update a Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.generate_release_notes.outputs.release_notes }}
+          artifacts: Front2/bin/Desktop/*.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          prerelease: false
