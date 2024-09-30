@@ -2,6 +2,15 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
+      "AutoMapper": {
+        "type": "Direct",
+        "requested": "[13.0.1, )",
+        "resolved": "13.0.1",
+        "contentHash": "/Fx1SbJ16qS7dU4i604Sle+U9VLX+WSNVJggk6MupKVkYvvBm4XqYaeFuf67diHefHKHs50uQIS2YEDFhPCakQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Options": "6.0.0"
+        }
+      },
       "Blazor.ContextMenu": {
         "type": "Direct",
         "requested": "[2.1.0, )",
@@ -70,6 +79,15 @@
           "SocketIOClient": "3.0.8",
           "SocketIOClient.Newtonsoft.Json": "3.0.7",
           "System.Drawing.Common": "7.0.0"
+        }
+      },
+      "FlexLabs.EntityFrameworkCore.Upsert": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "Z7KFJhVEuhLQMK763gXTaqfYFd3MknU0Du9IngXEtFXaEP4rKMxRlaWYntv58z3DEj1/UqBjLxojKMrUEDwNcw==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "8.0.0"
         }
       },
       "FuzzyString": {
@@ -237,6 +255,16 @@
         "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
+        }
+      },
+      "Z.EntityFramework.Extensions.EFCore": {
+        "type": "Direct",
+        "requested": "[8.103.4, )",
+        "resolved": "8.103.4",
+        "contentHash": "jy9pPEH0oRg02ywliwt2XHCaq6kRTrNvwxPjf/6kO9W80/Cph4l2uhGzaO/hhDle6CuUCd+Nnj1pNXETGMZOSQ==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "[8.0.0, 9.0.0)",
+          "System.Configuration.ConfigurationManager": "8.0.0"
         }
       },
       "DocumentFormat.OpenXml": {

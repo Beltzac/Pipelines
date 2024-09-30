@@ -65,7 +65,7 @@ namespace Common.Services
                 {
                     var existingRepo = await _repositoryDatabase.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
 
-                    if (existingRepo?.Pipeline.Last.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
+                    if (existingRepo?.Pipeline?.Last?.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
                     {
                         _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
                         return;
