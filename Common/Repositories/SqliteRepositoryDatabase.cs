@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Repositories
@@ -26,17 +27,35 @@ namespace Common.Repositories
         public async Task UpsertAsync(Repository repository)
         {
             await using var context = _contextFactory.CreateDbContext();
-            var existing = await context.Repositories.FindAsync(repository.Id);
-            if (existing == null)
-            {
-                context.Repositories.Add(repository);
-            }
-            else
-            {
-                context.Entry(existing).CurrentValues.SetValues(repository);
-            }
-            await context.SaveChangesAsync();
+            await context.SingleMergeAsync(repository, options => { options.IncludeGraph = true; });
+            context.SaveChanges();
         }
+
+        private void UpdateEntityState(RepositoryDbContext context, object entity)
+        {
+            if (entity == null) return;
+
+            context.Entry(entity).State = EntityState.Modified;
+
+            foreach (var navigationEntry in context.Entry(entity).Navigations)
+            {
+                var value = navigationEntry.CurrentValue;
+
+                if (value is IEnumerable<object> collection)
+                {
+                    foreach (var item in collection)
+                    {
+                        UpdateEntityState(context, item);
+                    }
+                }
+                else
+                {
+                    UpdateEntityState(context, value);
+                }
+            }
+        }
+
+
 
         public async Task DeleteAsync(Guid id)
         {

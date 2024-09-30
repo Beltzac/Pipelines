@@ -76,6 +76,8 @@ namespace Common.Utils
             services.AddBlazoredToast();
             services.AddBlazorContextMenu();
 
+            services.AddAutoMapper(typeof(RepositoryDbContext));
+
             return services;
         }
     }

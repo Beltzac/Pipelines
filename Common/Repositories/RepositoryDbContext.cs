@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Common.Repositories
 {
@@ -61,6 +62,9 @@ namespace Common.Repositories
 
             builder.HasKey(c => c.Id);
 
+            builder.Property(r => r.Id)
+                .ValueGeneratedNever();
+
             builder.Property(c => c.Id)
                    .IsRequired()
                    .HasMaxLength(50);
@@ -90,6 +94,9 @@ namespace Common.Repositories
             builder.ToTable("Builds");
 
             builder.HasKey(b => b.Id);
+
+            builder.Property(r => r.Id)
+                .ValueGeneratedNever();
 
             builder.Property(b => b.Status)
                    .IsRequired(false) // Se não tem pipeline cadastrada não tem status
@@ -129,17 +136,20 @@ namespace Common.Repositories
 
             builder.HasKey(p => p.Id);
 
+            builder.Property(r => r.Id)
+                .ValueGeneratedNever();
+
             builder.HasOne(p => p.Last)
                    .WithMany()
                    .HasForeignKey("LastBuildId")
                    .IsRequired(false)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(p => p.LastSuccessful)
                    .WithMany()
                    .HasForeignKey("LastSuccessfulBuildId")
                    .IsRequired(false)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 
@@ -150,6 +160,9 @@ namespace Common.Repositories
             builder.ToTable("Repositories");
 
             builder.HasKey(r => r.Id);
+
+            builder.Property(r => r.Id)
+                .ValueGeneratedNever();
 
             builder.Property(r => r.Project)
                    .IsRequired()
@@ -162,6 +175,9 @@ namespace Common.Repositories
             builder.Property(r => r.Url)
                    .IsRequired()
                    .HasMaxLength(500);
+
+            builder.HasIndex(r => r.Url)
+                   .IsUnique();
 
             builder.Property(r => r.CloneUrl)
                    .HasMaxLength(500);
