@@ -65,7 +65,15 @@ namespace Common.Services
                 {
                     var existingRepo = await _repositoryDatabase.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
 
-                    if (existingRepo?.Pipeline?.Last?.Changed.ToUniversalTime() == buildDefinition.LatestBuild.LastChangedDate.ToUniversalTime())
+                    var existingDate = existingRepo?.Pipeline?.Last?.Changed;
+                    var latestDate = buildDefinition.LatestBuild.LastChangedDate;
+
+                    // Check if the difference is within a reasonable tolerance (e.g., 1 second)
+                    bool areDatesEqual = existingDate.HasValue &&
+                                         Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
+
+
+                    if (areDatesEqual)
                     {
                         _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
                         return;
@@ -97,13 +105,18 @@ namespace Common.Services
             var query = _repositoryDatabase.Query();
             if (!string.IsNullOrEmpty(filter))
             {
-                query = query.Where(x => x.Project.ToUpper().Contains(filter.Trim().ToUpper())
-                                          || x.Name.ToUpper().Contains(filter.Trim().ToUpper())
-                                          || x.Pipeline.Last.Commit.AuthorName.ToUpper().Contains(filter.Trim().ToUpper()));
+                var trimmedFilter = filter.Trim();
+
+                query = query.Where(x =>
+                    EF.Functions.Like(x.Project, $"%{trimmedFilter}%") ||
+                    EF.Functions.Like(x.Name, $"%{trimmedFilter}%") ||
+                    EF.Functions.Like(x.Pipeline.Last.Commit.AuthorName, $"%{trimmedFilter}%"));
             }
 
             var results = query.ToList();
-            var ordered = results.AsQueryable().OrderByDescending(GetLatestBuildDetailsExpression()).ToList();
+            var ordered = results.AsQueryable()
+                                 .OrderByDescending(GetLatestBuildDetailsExpression())
+                                 .ToList();
 
             return ordered;
         }

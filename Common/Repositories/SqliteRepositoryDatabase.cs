@@ -33,7 +33,6 @@ namespace Common.Repositories
                 options.InsertKeepIdentity = true;
                 options.MergeKeepIdentity = true;
             });
-            //context.SaveChanges();
         }
 
         public async Task DeleteAsync(Guid id)
