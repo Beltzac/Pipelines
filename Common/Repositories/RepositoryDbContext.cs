@@ -57,6 +57,11 @@ namespace Common.Repositories
                 }
             }
         }
+
+        protected override void ConfigureConventions(ModelConfigurationBuilder mcb)
+        {
+            mcb.Properties<string>().UseCollation("NOCASE");
+        }
     }
 
     public class CommitConfiguration : IEntityTypeConfiguration<Commit>
@@ -126,6 +131,8 @@ namespace Common.Repositories
 
             builder.Property(b => b.Changed)
                    .IsRequired();
+
+            builder.HasIndex(b => b.Changed);
 
             builder.HasOne(b => b.Commit)
                    .WithMany()
