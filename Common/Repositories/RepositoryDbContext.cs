@@ -25,10 +25,15 @@ namespace Common.Repositories
         {
             if (!optionsBuilder.IsConfigured)
             {
-                // Configure the database provider and connection string
+                // Define the path to your SQLite database
                 var databasePath = @"C:\repos\Builds.db";
-                var connectionString = $"Data Source={databasePath}";
-                optionsBuilder.UseSqlite(connectionString);
+
+                // Construct the connection string with WAL enabled
+                var connectionString = $"Data Source={databasePath};Journal Mode=WAL";
+
+                // Configure the DbContext to use SQLite with the specified connection string
+                optionsBuilder.UseSqlite(connectionString)
+                    .EnableSensitiveDataLogging();
             }
         }
 
@@ -80,6 +85,8 @@ namespace Common.Repositories
             builder.Property(c => c.AuthorName)
                    .IsRequired()
                    .HasMaxLength(100);
+
+            builder.HasIndex(c => c.AuthorName);
 
             builder.Property(c => c.AuthorEmail)
                    .IsRequired()
@@ -168,9 +175,13 @@ namespace Common.Repositories
                    .IsRequired()
                    .HasMaxLength(100);
 
+            builder.HasIndex(r => r.Project);
+
             builder.Property(r => r.Name)
                    .IsRequired()
                    .HasMaxLength(100);
+
+            builder.HasIndex(r => r.Name);
 
             builder.Property(r => r.Url)
                    .IsRequired()
@@ -188,8 +199,8 @@ namespace Common.Repositories
             builder.Ignore(r => r.Path);
 
             builder.HasOne(r => r.Pipeline)
-                   .WithOne()
-                   .HasForeignKey<Pipeline>("RepositoryId")
+                   .WithMany()
+                   .HasForeignKey("PipelineId")
                    .IsRequired(false)
                    .OnDelete(DeleteBehavior.Cascade);
         }
