@@ -47,57 +47,57 @@ namespace Common.Services
             _privateToken = config.PAT;
         }
 
-        private async Task FetchRepoBuildInfoAsync(TeamProjectReference project, GitRepository repo)
+        public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
         {
-            try
+            var repo = await _gitClient.GetRepositoryAsync(repoId);
+            return await FetchRepoBuildInfoAsync(repo);
+        }
+
+        public async Task<Repository> FetchRepoBuildInfoAsync(GitRepository repo)
+        {
+            if (repo.IsDisabled ?? false)
             {
-                if (repo.IsDisabled ?? false)
-                {
-                    await Delete(repo.Id);
-                    _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
-                    return;
-                }
-
-                var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
-                var buildDefinition = buildDefinitions.FirstOrDefault();
-
-                if (buildDefinition?.LatestBuild != null)
-                {
-                    var existingRepo = await _repositoryDatabase.Query().Where(x => x.Pipeline.Id == buildDefinition.Id).FirstOrDefaultAsync();
-
-                    var existingDate = existingRepo?.Pipeline?.Last?.Changed;
-                    var latestDate = buildDefinition.LatestBuild.LastChangedDate;
-
-                    // Check if the difference is within a reasonable tolerance (e.g., 1 second)
-                    bool areDatesEqual = existingDate.HasValue &&
-                                         Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
-
-
-                    if (areDatesEqual)
-                    {
-                        _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
-                        return;
-                    }
-
-                    _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
-                }
-                else
-                {
-                    var actualBuild = await _repositoryDatabase.Query().Where(x => x.Id == repo.Id).FirstOrDefaultAsync();
-                    if (actualBuild != null)
-                    {
-                        _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
-                        return;
-                    }
-                }
-
-                var buildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
-                await UpsertAndPublish(buildInfo);
+                await Delete(repo.Id);
+                _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
+                return null;
             }
-            catch (Exception ex)
+
+            var buildDefinitions = await _buildClient.GetDefinitionsAsync(repo.ProjectReference.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
+            var buildDefinition = buildDefinitions.FirstOrDefault();
+            var existingRepo = await _repositoryDatabase.FindByIdAsync(repo.Id);
+
+            if (buildDefinition?.LatestBuild != null)
             {
-                _logger.LogError(ex, $"Error processing repo {repo.Name}");
+                var existingDate = existingRepo?.Pipeline?.Last?.Changed;
+                var latestDate = buildDefinition.LatestBuild.LastChangedDate;
+
+                // Check if the difference is within a reasonable tolerance (e.g., 1 second)
+                bool areDatesEqual = existingDate.HasValue &&
+                                        Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
+
+
+                if (areDatesEqual)
+                {
+                    _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
+                    return existingRepo;
+                }
+
+                _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
             }
+            else
+            {
+                if (existingRepo != null)
+                {
+                    _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
+                    return existingRepo;
+                }
+
+                _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Creating build info.");
+            }
+
+            var buildInfo = await CreateBuildInfoAsync(repo, buildDefinition);
+            await UpsertAndPublish(buildInfo);
+            return buildInfo;
         }
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
@@ -143,61 +143,34 @@ namespace Common.Services
         {
             _logger.LogInformation($"Fetching builds for project: {project.Name}");
             var repos = await _gitClient.GetRepositoriesAsync(project.Id);
-            var fetchTasks = repos.Select(repo => FetchRepoBuildInfoAsync(project, repo));
+            var fetchTasks = repos.Select(repo => FetchRepoBuildInfoAsync(repo));
             await Task.WhenAll(fetchTasks);
         }
 
-        public async Task FetchBuildInfoByIdAsync(Guid repoId)
+        public async Task<List<Guid>> FetchReposGuids()
         {
-            var repoAtual = await _repositoryDatabase.FindByIdAsync(repoId);
-            if (repoAtual == null)
+            var projects = await _projectClient.GetProjects();
+            var repos = new List<GitRepository>();
+
+            foreach (var project in projects)
             {
-                _logger.LogInformation($"Repository with ID {repoId} not found.");
-                return;
+                var projectRepos = await _gitClient.GetRepositoriesAsync(project.Id);
+                repos.AddRange(projectRepos);
             }
 
-            var repo = await _gitClient.GetRepositoryAsync(repoId);
-
-            try
-            {
-                _logger.LogInformation($"Fetching info for repository: {repoAtual.Name}");
-
-                var project = await _projectClient.GetProject(repoAtual.Project);
-
-                if (project == null)
-                {
-                    _logger.LogInformation($"Project {repoAtual.Project} not found in Azure DevOps.");
-                    return;
-                }
-
-                var buildDefinitions = await _buildClient.GetDefinitionsAsync(project.Name, repositoryId: repoAtual.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
-                var buildDefinition = buildDefinitions.FirstOrDefault();
-
-                if (buildDefinition?.LatestBuild != null)
-                {
-                    _logger.LogInformation($"Updating build info for repository: {repoAtual.Name}");
-                    var updatedBuildInfo = await CreateBuildInfoAsync(project, repo, buildDefinition);
-                    await UpsertAndPublish(updatedBuildInfo);
-                }
-                else
-                {
-                    _logger.LogInformation($"No latest build found for repository: {repoAtual.Name}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error fetching build info for repository {repoAtual.Name}");
-            }
+            return repos.Select(repo => repo.Id).ToList();
         }
 
-        public async Task<Repository> CreateBuildInfoAsync(TeamProjectReference project, GitRepository repo, BuildDefinitionReference buildDefinition)
+        public async Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition)
         {
+            var projectName = repo.ProjectReference.Name;
+
             var buildInfo = new Repository
             {
                 Id = repo.Id,
-                Project = project.Name,
+                Project = projectName,
                 Name = repo.Name,
-                MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, project.Name, repo.Name)),
+                MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, projectName, repo.Name)),
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
                 Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null
@@ -205,7 +178,7 @@ namespace Common.Services
 
             if (buildDefinition?.LatestBuild != null)
             {
-                var buildDetails = await _buildClient.GetBuildAsync(project.Name, buildDefinition.LatestBuild.Id);
+                var buildDetails = await _buildClient.GetBuildAsync(projectName, buildDefinition.LatestBuild.Id);
                 buildInfo.Pipeline.Last = new Build
                 {
                     Id = buildDetails.Id,
@@ -216,11 +189,11 @@ namespace Common.Services
                     Url = (buildDetails.Links.Links["web"] as ReferenceLink).Href
                 };
 
-                await FetchCommitInfoAsync(buildInfo, project.Name, buildInfo.Id, buildDetails.SourceVersion);
+                await FetchCommitInfoAsync(buildInfo, projectName, buildInfo.Id, buildDetails.SourceVersion);
 
                 if (buildDetails.Result == BuildResult.Failed)
                 {
-                    buildInfo.Pipeline.Last.ErrorLogs = await FetchBuildLogsAsync(project.Name, buildDetails.Id);
+                    buildInfo.Pipeline.Last.ErrorLogs = await FetchBuildLogsAsync(projectName, buildDetails.Id);
                 }
 
                 _logger.LogInformation($"Pipeline: {buildDefinition.Name}, Latest Build: {buildDetails.FinishTime}, Status: {buildDetails.Status}, Result: {buildDetails.Result}, Commit: {buildDetails.SourceVersion}");

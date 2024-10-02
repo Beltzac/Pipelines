@@ -286,7 +286,7 @@ else
     async Task RefetchClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        await BuildInfoService.FetchBuildInfoByIdAsync(repo.Id);
+        await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
     }
 
     async Task OpenExternalCommitClickAsync(ItemClickEventArgs e)
