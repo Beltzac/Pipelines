@@ -15,14 +15,24 @@ public class BuildInfoJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        // Your existing code to fetch and process build information
-        try
+        var guids = await _buildInfoService.FetchReposGuids();
+
+        // For each repository, schedule a job to update the repository with a random start time
+        foreach (var guid in guids)
         {
-            await _buildInfoService.FetchBuildInfoAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogInformation(ex.Message);
+            var job = JobBuilder.Create<RepositoryUpdateJob>()
+                .WithIdentity($"RepositoryUpdateJob-{guid}")
+                .UsingJobData("RepositoryId", guid)
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity($"RepositoryUpdateTrigger-{guid}")
+                .StartAt(DateTime.UtcNow.AddSeconds(new Random().Next(60)))
+                .Build();
+
+            await context.Scheduler.ScheduleJob(job, trigger);
+
+            _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {guid}");
         }
     }
 }

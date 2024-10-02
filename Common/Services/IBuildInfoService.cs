@@ -10,10 +10,11 @@ namespace Common.Services
         Task CloneAllRepositoriesAsync();
         Task CloneRepositoryByBuildInfoAsync(Repository buildInfo);
         Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId);
-        Task<Repository> CreateBuildInfoAsync(TeamProjectReference project, GitRepository repo, BuildDefinitionReference buildDefinition);
+        Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition);
         Task Delete(Guid id);
-        Task FetchBuildInfoAsync();
-        Task FetchBuildInfoByIdAsync(Guid repoId);
+        Task<Repository> FetchRepoBuildInfoAsync(Guid repoId);
+        Task<Repository> FetchRepoBuildInfoAsync(GitRepository repo);
+        Task<List<Guid>> FetchReposGuids();
         string FindSolutionFile(string folderPath);
         Task<string> GenerateCloneCommands();
         Task<string> GetBuildErrorLogsAsync(int buildId);
