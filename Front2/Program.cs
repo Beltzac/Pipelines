@@ -247,6 +247,11 @@ async Task OpenWeb(bool warmUp = false)
 
     window.SetTitle("¯\\_(ツ)_/¯");
 
+    if (warmUp)
+    {
+        return;
+    }
+
     if (existing != null)
     {
         if (await window.IsMinimizedAsync() || !await window.IsVisibleAsync())
