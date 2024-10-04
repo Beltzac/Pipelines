@@ -1,3 +1,5 @@
+using FluentAssertions;
+
 namespace Tests
 {
     public class ConfigurationServiceTests : IDisposable
@@ -16,19 +18,19 @@ namespace Tests
             _configService = new ConfigurationService(_testConfigPath);
         }
 
-        [Fact]
+        [Test]
         public void GetConfig_ReturnsDefaultValues_WhenConfigFileDoesNotExist()
         {
             var config = _configService.GetConfig();
 
-            Assert.Equal("https://dev.azure.com/terminal-cp", config.OrganizationUrl);
-            Assert.Equal(@"C:\repos", config.LocalCloneFolder);
-            Assert.Empty(config.PAT);
-            Assert.NotNull(config);
-            Assert.IsType<ConfigModel>(config);
+            config.OrganizationUrl.Should().Be("https://dev.azure.com/terminal-cp");
+            config.LocalCloneFolder.Should().Be(@"C:\repos");
+            config.PAT.Should().BeEmpty();
+            config.Should().NotBeNull();
+            config.Should().BeOfType<ConfigModel>();
         }
 
-        [Fact]
+        [Test]
         public async Task SaveConfigAsync_SavesConfigCorrectly()
         {
             var testConfig = new ConfigModel
@@ -41,9 +43,9 @@ namespace Tests
             await _configService.SaveConfigAsync(testConfig);
 
             var loadedConfig = _configService.GetConfig();
-            Assert.Equal(testConfig.PAT, loadedConfig.PAT);
-            Assert.Equal(testConfig.OrganizationUrl, loadedConfig.OrganizationUrl);
-            Assert.Equal(testConfig.LocalCloneFolder, loadedConfig.LocalCloneFolder);
+            loadedConfig.PAT.Should().Be(testConfig.PAT);
+            loadedConfig.OrganizationUrl.Should().Be(testConfig.OrganizationUrl);
+            loadedConfig.LocalCloneFolder.Should().Be(testConfig.LocalCloneFolder);
         }
 
         public void Dispose()

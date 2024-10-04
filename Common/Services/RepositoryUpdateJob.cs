@@ -18,28 +18,28 @@ namespace Common.Services
         {
             var repositoryId = context.MergedJobDataMap.GetGuid("RepositoryId");
 
-            _logger.LogInformation($"Updating repository {repositoryId}");
 
-            DateTime? lastUpdated = null;
+            var nextRun = 0;
+            Repository? repo = null;
 
             try
             {
-                var repo = await _buildInfoService.FetchRepoBuildInfoAsync(repositoryId);
-                lastUpdated = repo.Pipeline?.Last?.Changed;
+                repo = await _buildInfoService.FetchRepoBuildInfoAsync(repositoryId);
+
+                if (repo == null)
+                {
+                    _logger.LogWarning($"Repository {repositoryId} not found");
+                    return;
+                }
+
+                nextRun = repo.SecondsToNextUpdate();
+
+                _logger.LogInformation($"Updating repository {repo.Name}");
             }
             catch (Exception ex)
             {
-                lastUpdated = null;
                 _logger.LogError(ex, $"Error updating repository {repositoryId}");
             }
-
-            // Requeue the job, more time if the repository was not updated recently
-            // Less if it is more active
-            // With a minimum of 60 seconds
-            // With a maximum of 3600 seconds
-            // And a random offset to stagger the jobs
-
-            var nextRun = Math.Max(60, Math.Min(3600, (int)(DateTime.UtcNow - (lastUpdated ?? DateTime.MinValue)).TotalSeconds)) + new Random().Next(60);
 
             context.JobDetail.JobDataMap["RepositoryId"] = repositoryId;
 
@@ -50,7 +50,7 @@ namespace Common.Services
 
             await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
 
-            _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repositoryId} in {nextRun} seconds");
+            _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo.Name} in {nextRun} seconds");
         }
     }
 }

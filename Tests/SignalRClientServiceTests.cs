@@ -11,7 +11,7 @@ namespace Tests
             _signalRClientService = new SignalRClientService();
         }
 
-        //[Fact]
+        //[Test]
         //public async Task StartAsync_ExecutesAction()
         //{
         //    bool actionExecuted = false;

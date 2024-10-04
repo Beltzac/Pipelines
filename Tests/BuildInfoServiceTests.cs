@@ -1,6 +1,7 @@
 using Common.ExternalApis;
 using Common.Repositories;
 using Common.Services;
+using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -45,7 +46,9 @@ namespace Tests
                 _gitClientMock.Object);
         }
 
-        [Fact]
+        // ...
+
+        [Test]
         public async Task GetBuildInfoAsync_ShouldReturnOrderedRepositories_WhenFilterIsApplied()
         {
             // Arrange
@@ -62,8 +65,8 @@ namespace Tests
             var result = await _buildInfoService.GetBuildInfoAsync("Author1");
 
             // Assert
-            Assert.Equal(1, result.Count);
-            Assert.Equal("Repo1", result.First().Name); // Check ordering, Repo1 should come first as per filter and sorting
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Repo1"); // Check ordering, Repo1 should come first as per filter and sorting
         }
     }
 }

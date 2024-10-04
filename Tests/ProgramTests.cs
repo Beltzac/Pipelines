@@ -2,6 +2,7 @@ using Common.ExternalApis;
 using Common.Repositories;
 using Common.Services;
 using Common.Utils;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
@@ -10,8 +11,7 @@ namespace Tests
 {
     public class ProgramTests
     {
-
-        //  [Fact]
+        //  [Test]
         public void Services_AreRegisteredCorrectly()
         {
             // Arrange
@@ -49,15 +49,15 @@ namespace Tests
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
             // Act & Assert
-            Assert.NotNull(serviceProvider.GetService<IOracleSchemaService>());
-            Assert.NotNull(serviceProvider.GetService<IBuildHttpClient>());
-            Assert.NotNull(serviceProvider.GetService<IProjectHttpClient>());
-            Assert.NotNull(serviceProvider.GetService<IGitHttpClient>());
-            Assert.NotNull(serviceProvider.GetService<IBuildInfoService>());
-            Assert.NotNull(serviceProvider.GetService<ISignalRClientService>());
-            Assert.NotNull(serviceProvider.GetService<IConsulService>());
-            Assert.NotNull(serviceProvider.GetService<IRepositoryDatabase>());
-            Assert.NotNull(serviceProvider.GetService<IConfigurationService>());
+            serviceProvider.GetService<IOracleSchemaService>().Should().NotBeNull();
+            serviceProvider.GetService<IBuildHttpClient>().Should().NotBeNull();
+            serviceProvider.GetService<IProjectHttpClient>().Should().NotBeNull();
+            serviceProvider.GetService<IGitHttpClient>().Should().NotBeNull();
+            serviceProvider.GetService<IBuildInfoService>().Should().NotBeNull();
+            serviceProvider.GetService<ISignalRClientService>().Should().NotBeNull();
+            serviceProvider.GetService<IConsulService>().Should().NotBeNull();
+            serviceProvider.GetService<IRepositoryDatabase>().Should().NotBeNull();
+            serviceProvider.GetService<IConfigurationService>().Should().NotBeNull();
         }
     }
 }
