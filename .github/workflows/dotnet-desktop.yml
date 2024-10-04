@@ -27,16 +27,22 @@ jobs:
         shell: powershell
         run: |
           if ($env:GITHUB_REF -like 'refs/tags/*') {
-              # Extract the tag name by removing 'refs/tags/' prefix
-              $VERSION = $env:GITHUB_REF.Substring(10)
+            # Extract the tag name by removing 'refs/tags/' prefix
+            $VERSION = $env:GITHUB_REF.Substring(10)
           } else {
-              # Use the short commit SHA (first 7 characters)
-              $VERSION = $env:GITHUB_SHA.Substring(0,7)
+            # Get the latest tag
+            $latestTag = (git describe --tags --abbrev=0).Trim()
+            # Remove any leading 'v' from the tag
+            $baseVersion = $latestTag.TrimStart('v')
+            # Use the short commit SHA (first 7 characters)
+            $commitId = $env:GITHUB_SHA.Substring(0,7)
+            # Construct a pre-release version
+            $VERSION = "$baseVersion-beta.$commitId"
           }
-          
+      
           # Set environment variable
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
-          
+      
           # Set output variable
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$VERSION"
 
@@ -45,13 +51,15 @@ jobs:
         run: |
           $jsonPath = 'Front2/electron.manifest.json'
           $json = Get-Content $jsonPath | ConvertFrom-Json
-          $json.build.buildVersion = $env:VERSION
-          $json | ConvertTo-Json -Depth 100 | Out-File $jsonPath -Encoding utf8
-          
+          $json.build.buildVersion = "$env:VERSION"
+          $json | ConvertTo-Json -Depth 100 | Set-Content -Path $jsonPath -Encoding utf8
+
+          # Commit the changes
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add $jsonPath
-          git commit -m "Update buildVersion to $env:VERSION"
+          git commit -m "Update buildVersion to $env:VERSION [skip ci]"
+          git push
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
