@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
+          tags: true   
+          persist-credentials: true
 
       - name: Set VERSION variable
         id: set_version
@@ -30,21 +34,34 @@ jobs:
             # Extract the tag name by removing 'refs/tags/' prefix
             $VERSION = $env:GITHUB_REF.Substring(10)
           } else {
-            # Get the latest tag
-            $latestTag = (git describe --tags --abbrev=0).Trim()
-            # Remove any leading 'v' from the tag
-            $baseVersion = $latestTag.TrimStart('v')
+            try {
+              # Get the latest tag
+              $latestTag = git describe --tags --abbrev=0
+              if (-not $latestTag) {
+                throw "No tags found."
+              }
+              $latestTag = $latestTag.Trim()
+              # Remove any leading 'v' from the tag
+              $baseVersion = $latestTag.TrimStart('v')
+            } catch {
+              # No tags found, use a default base version
+              $baseVersion = "0.1.0"
+            }
             # Use the short commit SHA (first 7 characters)
             $commitId = $env:GITHUB_SHA.Substring(0,7)
             # Construct a pre-release version
             $VERSION = "$baseVersion-beta.$commitId"
           }
-      
+
+          # Output the computed version for debugging
+          Write-Host "Computed VERSION: $VERSION"
+
           # Set environment variable
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
-      
+
           # Set output variable
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$VERSION"
+
 
       - name: Update Version in electron.manifest.json
         shell: powershell
