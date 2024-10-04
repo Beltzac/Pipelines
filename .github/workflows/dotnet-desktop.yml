@@ -22,6 +22,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set VERSION variable
+        id: set_version
+        shell: powershell
+        run: |
+          if ($env:GITHUB_REF.StartsWith('refs/tags/')) {
+            $VERSION = $env:GITHUB_REF -replace 'refs/tags/', ''
+          } else {
+            $VERSION = $env:GITHUB_RUN_NUMBER
+          }
+          echo "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "version=$VERSION" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Update Version in electron.manifest.json
+        uses: maxgfr/github-change-json@main
+        with:
+          path: 'Front2/electron.manifest.json'
+          key: 'build.buildVersion'
+          value: '${{ steps.set_version.outputs.version }}'
+          commit: true
+
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -37,22 +57,6 @@ jobs:
 
       - name: Test
         run: dotnet test --verbosity minimal
-
-      - name: Set VERSION variable (for tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      - name: Set VERSION variable (for non-tag)
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        run: echo "VERSION=${{ github.run_number }}" >> $GITHUB_ENV
-
-      - name: Update Version in electron.manifest.json
-        uses: maxgfr/github-change-json@main
-        with:
-          path: 'Front2/electron.manifest.json'
-          key: 'build.buildVersion'
-          value: '${{ env.VERSION }}'
-          commit: true
 
       - name: Build with Electronize
         run: |
