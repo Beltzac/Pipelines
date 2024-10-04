@@ -26,21 +26,32 @@ jobs:
         id: set_version
         shell: powershell
         run: |
-          if ($env:GITHUB_REF.StartsWith('refs/tags/')) {
-            $VERSION = $env:GITHUB_REF -replace 'refs/tags/', ''
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+              # Extract the tag name by removing 'refs/tags/' prefix
+              $VERSION = $env:GITHUB_REF.Substring(10)
           } else {
-            $VERSION = $env:GITHUB_RUN_NUMBER
+              # Use the short commit SHA (first 7 characters)
+              $VERSION = $env:GITHUB_SHA.Substring(0,7)
           }
-          echo "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "version=$VERSION" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          
+          # Set environment variable
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
+          
+          # Set output variable
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$VERSION"
 
       - name: Update Version in electron.manifest.json
-        uses: maxgfr/github-change-json@main
-        with:
-          path: 'Front2/electron.manifest.json'
-          key: 'build.buildVersion'
-          value: '${{ steps.set_version.outputs.version }}'
-          commit: true
+        shell: powershell
+        run: |
+          $jsonPath = 'Front2/electron.manifest.json'
+          $json = Get-Content $jsonPath | ConvertFrom-Json
+          $json.build.buildVersion = $env:VERSION
+          $json | ConvertTo-Json -Depth 100 | Out-File $jsonPath -Encoding utf8
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add $jsonPath
+          git commit -m "Update buildVersion to $env:VERSION"
 
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4

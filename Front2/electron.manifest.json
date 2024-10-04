@@ -10,7 +10,6 @@
   "build": {
     "appId": "com.TcpDash.app",
     "productName": "TcpDash",
-    "copyright": "Copyright © 2020",
     "buildVersion": "1.0.0",
     "compression": "maximum",
     "directories": {
