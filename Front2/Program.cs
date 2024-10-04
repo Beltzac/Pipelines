@@ -93,7 +93,7 @@ var menus = new List<MenuItem>()
     new MenuItem
     {
         Label = "Open",
-        Click = () => OpenWeb()
+        Click = async () => await OpenWeb()
     },
     new MenuItem
     {
@@ -110,7 +110,7 @@ menus.Add(
      new MenuItem
      {
          Label = "Enable Startup with Windows",
-         Click = () => SetStartup(true),
+         Click = () => SetStartupAsync(true),
          Visible = !startupEnabled
      });
 
@@ -118,7 +118,7 @@ menus.Add(
     new MenuItem
     {
         Label = "Disable Startup with Windows",
-        Click = () => SetStartup(false),
+        Click = () => SetStartupAsync(false),
         Visible = startupEnabled
     });
 
@@ -135,14 +135,14 @@ bool IsStartupEnabled()
     return false;
 }
 
-void SetStartup(bool enable)
+async Task SetStartupAsync(bool enable)
 {
 
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
         string appName = "MyBlazorApp"; // Define your application name
-        string executablePath = Environment.ProcessPath;
+        string executablePath = await Electron.App.GetAppPathAsync();
         string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
         string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
         if (enable)
@@ -174,10 +174,16 @@ void SetStartup(bool enable)
 
 void CreateStartupShortcut(string shortcutPath, string executablePath)
 {
-    string workingDirectory = Path.GetDirectoryName(executablePath);
+    //string workingDirectory = Path.GetDirectoryName(executablePath);
+
+    // get the upper folder
+
+    var upperFolder = Path.GetDirectoryName(Path.GetDirectoryName(executablePath));
+
+    var exePath = Path.Combine(upperFolder, "TcpDash.exe");
 
     // Create the ShellLink object and set its properties
-    var shortcut = Shortcut.CreateShortcut(executablePath);
+    var shortcut = Shortcut.CreateShortcut(exePath);
     //shortcut.StringData.WorkingDir = workingDirectory;
 
     // Optional: Set icon location
@@ -225,6 +231,12 @@ Electron.App.Ready += async () =>
     await OpenWeb(true);
 };
 
+Electron.App.WillQuit += async (args) =>
+{
+    args.PreventDefault();
+    await OpenWeb(true);
+};
+
 app.Run();
 
 async Task OpenWeb(bool warmUp = false)
@@ -234,11 +246,10 @@ async Task OpenWeb(bool warmUp = false)
 
     var options = new BrowserWindowOptions
     {
-        //Frame = false
         SkipTaskbar = true,
         AutoHideMenuBar = true,
-        Closable = false,
         WebPreferences = wp,
+        Show = false
     };
 
     var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
@@ -252,23 +263,13 @@ async Task OpenWeb(bool warmUp = false)
         return;
     }
 
-    if (existing != null)
+    if (await window.IsMinimizedAsync())
     {
-        if (await window.IsMinimizedAsync() || !await window.IsVisibleAsync())
-        {
-            window.Maximize();
-            window.Focus();
-        }
-        else
-        {
-            window.Minimize();
-        }
+        window.Maximize();
+        window.Focus();
     }
     else
     {
-        window.OnReadyToShow += () => {
-            window.Maximize();
-            window.Focus();
-        };
+        window.Minimize();
     }
 }
