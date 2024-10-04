@@ -123,10 +123,10 @@ namespace Common.Services
             return await _repositoryDatabase.Query().Where(x => x.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task<string> GetBuildErrorLogsAsync(int buildId)
+        public async Task<string> GetBuildErrorLogsAsync(Guid id)
         {
-            var build = await _repositoryDatabase.Query().Where(x => x.Pipeline.Last.Id == buildId).Select(x => x.Pipeline.Last).FirstOrDefaultAsync();
-            return await Task.FromResult(build?.ErrorLogs);
+            var repo = await _repositoryDatabase.FindByIdAsync(id);
+            return await Task.FromResult(repo?.Pipeline?.Last?.ErrorLogs);
         }
 
         public async Task FetchBuildInfoAsync()

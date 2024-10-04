@@ -4,8 +4,8 @@
     "imageFile": ""
   },
   "name": "TcpDash",
-  "author": "",
-  "singleInstance": false,
+  "author": "Alexandre Beltzac",
+  "singleInstance": true,
   "environment": "Production",
   "build": {
     "appId": "com.TcpDash.app",

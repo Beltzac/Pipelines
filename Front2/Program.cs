@@ -9,20 +9,16 @@ using Serilog;
 using ShellLink;
 using System.Runtime.InteropServices;
 
-//electronize build /target win
+// electronize start
+// electronize build /target win
 
 var builder = WebApplication.CreateBuilder();
 
-// Configure Serilog
 var logger = new LoggerConfiguration()
-    //.WriteTo.LiteDB(@"Filename=C:\Users\Beltzac\Documents\Builds.db;Connection=shared", logCollectionName: "logEvents", RollingPeriod.Monthly)
-    //.WriteTo.BrowserConsole()
     .WriteTo.Console()
     .CreateLogger();
 
 builder.Host.UseSerilog(logger);
-
-
 
 builder.Services.AddAntiforgery();
 builder.Services.AddRazorComponents()
@@ -37,18 +33,8 @@ builder.Services.AddElectron();
 
 builder.Services.AddCustomServices();
 
-// Add Quartz services
 builder.Services.AddQuartz(q =>
 {
-    //q.UsePersistentStore(s =>
-    //{
-    //    s.UseLiteDb(options =>
-    //    {
-    //        options.ConnectionString = @"Filename=C:\Users\Beltzac\Documents\QuartzWorker.db;Connection=shared";
-    //    });
-    //    s.UseNewtonsoftJsonSerializer();
-    //});
-
     q.ScheduleJob<BuildInfoJob>(trigger => trigger
         .WithIdentity("BuildInfoJob-trigger")
         .StartNow(),
@@ -56,25 +42,19 @@ builder.Services.AddQuartz(q =>
     );
 });
 
-// Add Quartz hosted service
 builder.Services.AddQuartzHostedService(q =>
 {
     q.WaitForJobsToComplete = true;
     q.AwaitApplicationStarted = true;
-    //q.StartDelay = TimeSpan.FromSeconds(10);
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
-//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
@@ -82,9 +62,7 @@ app.UseAntiforgery();
 app.MapRazorComponents<Front2.Components.App>()
     .AddInteractiveServerRenderMode();
 
-//app.MapBlazorHub();
 app.MapHub<BuildInfoHub>("/buildInfoHub");
-
 
 var startupEnabled = IsStartupEnabled();
 
@@ -132,19 +110,19 @@ bool IsStartupEnabled()
         string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
         return File.Exists(shortcutPath);
     }
+
     return false;
 }
 
 async Task SetStartupAsync(bool enable)
 {
-
-
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     {
         string appName = "MyBlazorApp"; // Define your application name
         string executablePath = await Electron.App.GetAppPathAsync();
         string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
         string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
+
         if (enable)
         {
             CreateStartupShortcut(shortcutPath, executablePath);
@@ -162,7 +140,7 @@ async Task SetStartupAsync(bool enable)
 
         Electron.Tray.OnClick -= OnTrayClick;
         Electron.Tray.Destroy();
-        Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
+        Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
         Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
         Electron.Tray.OnClick += OnTrayClick;
     }
@@ -174,40 +152,25 @@ async Task SetStartupAsync(bool enable)
 
 void CreateStartupShortcut(string shortcutPath, string executablePath)
 {
-    //string workingDirectory = Path.GetDirectoryName(executablePath);
-
-    // get the upper folder
-
     var upperFolder = Path.GetDirectoryName(Path.GetDirectoryName(executablePath));
-
     var exePath = Path.Combine(upperFolder, "TcpDash.exe");
 
-    // Create the ShellLink object and set its properties
     var shortcut = Shortcut.CreateShortcut(exePath);
-    //shortcut.StringData.WorkingDir = workingDirectory;
 
-    // Optional: Set icon location
-    //shortcut.StringData.IconLocation = Path.Combine(workingDirectory, "wwwroot", "favicon.ico");
-
-    // Save the shortcut to the specified path
     shortcut.WriteToFile(shortcutPath);
 }
 
-// Define the event handler method
 async void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
 {
     await OpenWeb();
 }
 
-// Check if is running the http launch profile
-
-if (!app.Environment.IsDevelopment())
+if (HybridSupport.IsElectronActive)
 {
-    await Electron.Tray.Show(System.IO.Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
+    await Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
     await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
     Electron.Tray.OnClick += OnTrayClick;
 }
-
 
 // Apply migrations at startup
 using (var scope = app.Services.CreateScope())
@@ -226,16 +189,19 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-Electron.App.Ready += async () =>
+if (HybridSupport.IsElectronActive)
 {
-    await OpenWeb(true);
-};
+    Electron.App.Ready += async () =>
+    {
+        await OpenWeb(true);
+    };
 
-Electron.App.WillQuit += async (args) =>
-{
-    args.PreventDefault();
-    await OpenWeb(true);
-};
+    Electron.App.WillQuit += async (args) =>
+    {
+        args.PreventDefault();
+        await OpenWeb(true);
+    };
+}
 
 app.Run();
 

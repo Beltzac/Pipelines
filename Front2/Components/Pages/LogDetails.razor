@@ -40,9 +40,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        if (int.TryParse(BuildId, out int buildIdint))
+        if (Guid.TryParse(BuildId, out Guid guid))
         {
-            errorLogs = await BuildInfoService.GetBuildErrorLogsAsync(buildIdint);
+            errorLogs = await BuildInfoService.GetBuildErrorLogsAsync(guid);
         }
         else
         {

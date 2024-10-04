@@ -38,11 +38,27 @@ jobs:
       - name: Test
         run: dotnet test --verbosity minimal
 
+      - name: Set VERSION variable (for tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Set VERSION variable (for non-tag)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: echo "VERSION=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Update Version in electron.manifest.json
+        uses: maxgfr/github-change-json@main
+        with:
+          path: 'Front2/electron.manifest.json'
+          key: 'build.buildVersion'
+          value: '${{ env.VERSION }}'
+          commit: true
+
       - name: Build with Electronize
         run: |
           cd Front2
           electronize build /target win
-    
+
       - name: Generate Release Notes
         id: generate_release_notes
         uses: actions/github-script@v6
