@@ -51,6 +51,18 @@
     [JSInvokable]
     public static async Task OpenExternal(string url)
     {
-        await ElectronNET.API.Electron.Shell.OpenExternalAsync(url);
+        // Get the environment name from the environment variable
+        string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+
+        // Check if the environment is not Development
+        if (!string.Equals(environment, "Development", StringComparison.OrdinalIgnoreCase))
+        {
+            await ElectronNET.API.Electron.Shell.OpenExternalAsync(url);
+        }
+        else
+        {
+            url = url.Replace("&", "^&");
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
     }
 }
