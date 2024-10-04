@@ -49,22 +49,10 @@ namespace Common.Services
 
         public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
         {
-            var repo = await _gitClient.GetRepositoryAsync(repoId);
-            return await FetchRepoBuildInfoAsync(repo);
-        }
+            var existingRepo = await _repositoryDatabase.FindByIdAsync(repoId);
 
-        public async Task<Repository> FetchRepoBuildInfoAsync(GitRepository repo)
-        {
-            if (repo.IsDisabled ?? false)
-            {
-                await Delete(repo.Id);
-                _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
-                return null;
-            }
-
-            var buildDefinitions = await _buildClient.GetDefinitionsAsync(repo.ProjectReference.Name, repositoryId: repo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
+            var buildDefinitions = await _buildClient.GetDefinitionsAsync(existingRepo.Project, repositoryId: existingRepo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
             var buildDefinition = buildDefinitions.FirstOrDefault();
-            var existingRepo = await _repositoryDatabase.FindByIdAsync(repo.Id);
 
             if (buildDefinition?.LatestBuild != null)
             {
@@ -88,11 +76,20 @@ namespace Common.Services
             {
                 if (existingRepo != null)
                 {
-                    _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Skipping.");
+                    _logger.LogInformation($"Repo {existingRepo.Name} has no pipeline/build. Skipping.");
                     return existingRepo;
                 }
 
-                _logger.LogInformation($"Repo {repo.Name} has no pipeline/build. Creating build info.");
+                _logger.LogInformation($"Repo {existingRepo.Name} has no pipeline/build. Creating build info.");
+            }
+
+            var repo = await _gitClient.GetRepositoryAsync(repoId);
+
+            if (repo.IsDisabled ?? false)
+            {
+                await Delete(repo.Id);
+                _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
+                return null;
             }
 
             var buildInfo = await CreateBuildInfoAsync(repo, buildDefinition);
@@ -143,7 +140,7 @@ namespace Common.Services
         {
             _logger.LogInformation($"Fetching builds for project: {project.Name}");
             var repos = await _gitClient.GetRepositoriesAsync(project.Id);
-            var fetchTasks = repos.Select(repo => FetchRepoBuildInfoAsync(repo));
+            var fetchTasks = repos.Select(repo => FetchRepoBuildInfoAsync(repo.Id));
             await Task.WhenAll(fetchTasks);
         }
 

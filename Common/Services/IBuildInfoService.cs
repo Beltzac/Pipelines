@@ -13,7 +13,6 @@ namespace Common.Services
         Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition);
         Task Delete(Guid id);
         Task<Repository> FetchRepoBuildInfoAsync(Guid repoId);
-        Task<Repository> FetchRepoBuildInfoAsync(GitRepository repo);
         Task<List<Guid>> FetchReposGuids();
         string FindSolutionFile(string folderPath);
         Task<string> GenerateCloneCommands();

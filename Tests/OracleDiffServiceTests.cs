@@ -1,10 +1,12 @@
 using Common.Utils;
+using FluentAssertions;
+using Microsoft.VisualStudio.Services.Common;
 
 namespace Tests
 {
     public class OracleDiffServiceTests
     {
-        [Fact]
+        [Test]
         public void GetDiff_ReturnsExpectedPatchResult()
         {
             string view = "view";
@@ -13,12 +15,12 @@ namespace Tests
 
             var result = OracleDiffUtils.GetDiff(view, old, newString);
 
-            Assert.NotNull(result);
-            Assert.NotEmpty(result.Hunks);
-            Assert.All(result.Hunks, diff =>
+            result.Should().NotBeNull();
+            result.Hunks.Should().NotBeEmpty();
+            result.Hunks.ForEach(diff =>
             {
-                Assert.NotEmpty(diff.lines);
-                Assert.NotEmpty(diff.lines);
+                diff.lines.Should().NotBeEmpty();
+                diff.lines.Should().NotBeEmpty();
             });
         }
     }
