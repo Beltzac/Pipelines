@@ -16,7 +16,7 @@ namespace Common.Services
         Task<List<Guid>> FetchReposGuids();
         string FindSolutionFile(string folderPath);
         Task<string> GenerateCloneCommands();
-        Task<string> GetBuildErrorLogsAsync(int buildId);
+        Task<string> GetBuildErrorLogsAsync(Guid id);
         Task<List<Repository>> GetBuildInfoAsync(string filter = null);
         Task<Repository> GetBuildInfoByIdAsync(Guid id);
         Expression<Func<Repository, DateTime>> GetLatestBuildDetailsExpression();

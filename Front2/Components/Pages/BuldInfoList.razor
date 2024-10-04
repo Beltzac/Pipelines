@@ -161,7 +161,6 @@ else
             {
                 buildInfos = await BuildInfoService.GetBuildInfoAsync(x);
                 _logger.LogInformation(x);
-                //Navigation.NavigateTo($"?filter={filter}");
                 await InvokeAsync(StateHasChanged);
             });
 
