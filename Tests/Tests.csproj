@@ -19,7 +19,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Moq.EntityFrameworkCore" Version="8.0.1.2" />
-    <PackageReference Include="TUnit" Version="0.1.897" />
+    <PackageReference Include="TUnit" Version="0.1.916" />
   </ItemGroup>
 
   <ItemGroup>
