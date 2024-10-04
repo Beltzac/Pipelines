@@ -11,7 +11,7 @@
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
     <PackageReference Include="Blazored.Toast" Version="4.2.1" />
-    <PackageReference Include="ClosedXML" Version="0.102.3" />
+    <PackageReference Include="ClosedXML" Version="0.104.1" />
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
@@ -32,7 +32,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.225.1" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.225.1" />
-    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.5.1" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.6.0" />
     <PackageReference Include="Quartz" Version="3.13.0" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
