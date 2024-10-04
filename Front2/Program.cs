@@ -220,10 +220,14 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+Electron.App.Ready += async () =>
+{
+    await OpenWeb(true);
+};
 
 app.Run();
 
-async Task OpenWeb()
+async Task OpenWeb(bool warmUp = false)
 {
     WebPreferences wp = new WebPreferences();
     wp.NodeIntegration = false;
