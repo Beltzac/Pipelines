@@ -1,28 +1,28 @@
-{
-    "executable":  "Front2",
-    "splashscreen":  {
-                         "imageFile":  ""
-                     },
-    "name":  "TcpDash",
-    "author":  "Alexandre Beltzac",
-    "singleInstance":  true,
-    "environment":  "Production",
-    "build":  {
-                  "appId":  "com.TcpDash.app",
-                  "productName":  "TcpDash",
-                  "buildVersion":  "0.0.12-beta.62a6919",
-                  "compression":  "maximum",
-                  "directories":  {
-                                      "output":  "../../../bin/Desktop"
-                                  },
-                  "extraResources":  [
-                                         {
-                                             "from":  "./bin",
-                                             "to":  "bin",
-                                             "filter":  [
-                                                            "**/*"
-                                                        ]
-                                         }
-                                     ]
-              }
+﻿{
+  "executable": "Front2",
+  "splashscreen": {
+    "imageFile": ""
+  },
+  "name": "TcpDash",
+  "author": "Alexandre Beltzac",
+  "singleInstance": true,
+  "environment": "Production",
+  "build": {
+    "appId": "com.TcpDash.app",
+    "productName": "TcpDash",
+    "buildVersion": "0.0.12-beta.bff5feb",
+    "compression": "maximum",
+    "directories": {
+      "output": "../../../bin/Desktop"
+    },
+    "extraResources": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  }
 }
