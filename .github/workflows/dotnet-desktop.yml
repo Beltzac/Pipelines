@@ -71,9 +71,9 @@ jobs:
           Import-Module -Name Newtonsoft.Json
           $jsonPath = 'Front2/electron.manifest.json'
           $jsonContent = Get-Content $jsonPath -Raw
-          $json = $jsonContent | ConvertFrom-JsonNewtonsoft -Depth 100
+          $json = $jsonContent | ConvertFrom-JsonNewtonsoft
           $json.build.buildVersion = "$env:VERSION"
-          $formattedJson = $json | ConvertTo-JsonNewtonsoft -Depth 100 -Indentation 2
+          $formattedJson = $json | ConvertTo-JsonNewtonsoft
           $formattedJson | Set-Content -Path $jsonPath -Encoding utf8
 
           # Commit the changes
