@@ -67,10 +67,14 @@ jobs:
         shell: powershell
         run: |
           # Update the buildVersion in electron.manifest.json
+          Install-Module -Name Newtonsoft.Json -Force -Scope CurrentUser
+          Import-Module -Name Newtonsoft.Json
           $jsonPath = 'Front2/electron.manifest.json'
-          $json = Get-Content $jsonPath | ConvertFrom-Json
+          $jsonContent = Get-Content $jsonPath -Raw
+          $json = $jsonContent | ConvertFrom-JsonNewtonsoft -Depth 100
           $json.build.buildVersion = "$env:VERSION"
-          $json | ConvertTo-Json -Depth 100 -Indent 2 | Set-Content -Path $jsonPath -Encoding utf8
+          $formattedJson = $json | ConvertTo-JsonNewtonsoft -Depth 100 -Indentation 2
+          $formattedJson | Set-Content -Path $jsonPath -Encoding utf8
 
           # Commit the changes
           git config user.name "github-actions[bot]"
