@@ -191,15 +191,9 @@ using (var scope = app.Services.CreateScope())
 
 if (HybridSupport.IsElectronActive)
 {
-    Electron.App.Ready += async () =>
-    {
-        await OpenWeb(true);
-    };
-
     Electron.App.WillQuit += async (args) =>
     {
         args.PreventDefault();
-        await OpenWeb(true);
     };
 }
 
@@ -229,7 +223,7 @@ async Task OpenWeb(bool warmUp = false)
         return;
     }
 
-    if (await window.IsMinimizedAsync())
+    if (await window.IsMinimizedAsync() || !await window.IsVisibleAsync())
     {
         window.Maximize();
         window.Focus();

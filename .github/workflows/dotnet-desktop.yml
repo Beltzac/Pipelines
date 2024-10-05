@@ -86,6 +86,7 @@ jobs:
           cache-dependency-path: '**/packages.lock.json'
 
       - name: Install ElectronNET.CLI
+        if: startsWith(github.ref, 'refs/tags/')
         run: dotnet tool install ElectronNET.CLI --global
 
       - name: Restore dependencies
@@ -95,6 +96,7 @@ jobs:
         run: dotnet test --verbosity minimal
 
       - name: Build with Electronize
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd Front2
           electronize build /target win

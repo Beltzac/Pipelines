@@ -23,17 +23,6 @@
           "**/*"
         ]
       }
-    ],
-    "files": [
-      {
-        "from": "./ElectronHostHook/node_modules",
-        "to": "ElectronHostHook/node_modules",
-        "filter": [
-          "**/*"
-        ]
-      },
-      "**/*"
     ]
-  },
-  "build.buildVersion": "93"
+  }
 }
