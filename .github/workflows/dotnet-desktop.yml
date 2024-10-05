@@ -66,10 +66,11 @@ jobs:
       - name: Update Version in electron.manifest.json
         shell: powershell
         run: |
+          # Update the buildVersion in electron.manifest.json
           $jsonPath = 'Front2/electron.manifest.json'
           $json = Get-Content $jsonPath | ConvertFrom-Json
           $json.build.buildVersion = "$env:VERSION"
-          $json | ConvertTo-Json -Depth 100 | Set-Content -Path $jsonPath -Encoding utf8
+          $json | ConvertTo-Json -Depth 100 -Indent 2 | Set-Content -Path $jsonPath -Encoding utf8
 
           # Commit the changes
           git config user.name "github-actions[bot]"
