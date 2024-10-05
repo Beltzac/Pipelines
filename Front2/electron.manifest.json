@@ -10,7 +10,7 @@
   "build": {
     "appId": "com.TcpDash.app",
     "productName": "TcpDash",
-    "buildVersion": "0.0.12-beta.bff5feb",
+    "buildVersion": "0.0.12-beta.1c6cf28",
     "compression": "maximum",
     "directories": {
       "output": "../../../bin/Desktop"
