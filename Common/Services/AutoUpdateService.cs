@@ -121,8 +121,6 @@ namespace Common.Services
                             }
                         }
 
-                        // Save to file
-                        System.IO.File.WriteAllBytes(installerFileName, installerData);
 
                         Console.WriteLine("Installer downloaded to " + installerFileName);
 
