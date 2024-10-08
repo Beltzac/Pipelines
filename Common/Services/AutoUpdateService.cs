@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -10,22 +11,18 @@ namespace Common.Services
 {
     public class AutoUpdateService : IAutoUpdateService
     {
-        private readonly IHubContext<BuildInfoHub> _hubContext;
-        private readonly IConfigurationService _configService;
-
         private readonly string _repositoryOwner;
         private readonly string _repositoryName;
         private readonly string _userAgent;
+        private readonly string _accessToken;
 
-        public AutoUpdateService(IHubContext<BuildInfoHub> hubContext, IConfigurationService configService)
+        public AutoUpdateService(IConfigurationService configService)
         {
-            _hubContext = hubContext;
-            _configService = configService;
-
             var config = configService.GetConfig();
             _repositoryOwner = config.RepositoryOwner;
             _repositoryName = config.RepositoryName;
             _userAgent = config.UserAgent;
+            _accessToken = config.AccessToken; // Added this line
         }
 
         /// <summary>
@@ -34,7 +31,17 @@ namespace Common.Services
         public async Task<Release> CheckForUpdatesAsync()
         {
             // Get current version
-            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            // check if it is dev or release
+
+
+            Version currentVersion = Version.Parse("0.0.0");            
+            bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+            if (!isDevelopment)
+            {
+                currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+            }
+                
             Console.WriteLine("Current version: " + currentVersion);
 
             // GitHub API URL for the latest release
@@ -44,6 +51,9 @@ namespace Common.Services
             {
                 // GitHub API requires a User-Agent header
                 client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
+
+                // Add the Authorization header with the access token
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
 
                 try
                 {
@@ -64,8 +74,6 @@ namespace Common.Services
                     if (latestVersion > currentVersion)
                     {
                         Console.WriteLine("An update is available.");
-                        //await DownloadAndInstallAsync(latestRelease);
-                        await _hubContext.Clients.All.SendAsync("Msg", latestVersion);
                         return latestRelease;
                     }
                     else
@@ -79,6 +87,8 @@ namespace Common.Services
                     Console.WriteLine("Error checking for updates: " + ex.Message);
                 }
             }
+
+            return null;
         }
 
         /// <summary>
@@ -91,15 +101,25 @@ namespace Common.Services
             {
                 client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
 
+                // Add the Authorization header with the access token
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
+
+                // Add the Accept header to get the binary content
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+
                 // Find the installer asset
                 foreach (Asset asset in latestRelease.assets)
                 {
                     if (asset.name.EndsWith(".exe"))
                     {
-                        string installerUrl = asset.browser_download_url;
+                        string installerUrl = asset.url; // Use asset.url
                         string installerFileName = asset.name;
 
-                        Console.WriteLine("Downloading installer...");
+                        // Get the temp folder path
+                        string tempFolder = Path.GetTempPath();
+                        string installerFilePath = Path.Combine(tempFolder, installerFileName);
+
+                        Console.WriteLine("Downloading installer to temp folder...");
 
                         // Download the installer
                         using (var response = await client.GetAsync(installerUrl, HttpCompletionOption.ResponseHeadersRead))
@@ -109,7 +129,7 @@ namespace Common.Services
                             var downloadedBytes = 0;
 
                             using (var contentStream = await response.Content.ReadAsStreamAsync())
-                            using (var fileStream = new System.IO.FileStream(installerFileName, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None, 8192, true))
+                            using (var fileStream = new FileStream(installerFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, false))
                             {
                                 var buffer = new byte[8192];
                                 int bytesRead;
@@ -123,11 +143,10 @@ namespace Common.Services
                             }
                         }
 
-
-                        Console.WriteLine("Installer downloaded to " + installerFileName);
+                        Console.WriteLine("Installer downloaded to " + installerFilePath);
 
                         // Start the installer process
-                        System.Diagnostics.Process.Start(installerFileName);
+                        System.Diagnostics.Process.Start(installerFilePath);
 
                         // Optionally, exit the application
                         Environment.Exit(0);
@@ -181,7 +200,7 @@ namespace Common.Services
         public class Asset
         {
             public string name { get; set; }
-            public string browser_download_url { get; set; }
+            public string url { get; set; }
         }
     }
 }

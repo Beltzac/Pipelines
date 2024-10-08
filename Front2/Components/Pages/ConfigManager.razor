@@ -26,6 +26,14 @@
         <ValidationMessage For="@(() => config.LocalCloneFolder)" />
     </div>
 
+    <!--config for github token-->
+
+    <div class="form-group">
+        <label for="githubToken">Github Token</label>
+        <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control" />
+        <ValidationMessage For="@(() => config.AccessToken)" />
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
 </EditForm>
 

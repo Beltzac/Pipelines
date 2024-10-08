@@ -1,67 +1,53 @@
 @using Common.Services
+@using static Common.Services.AutoUpdateService
 @inject IAutoUpdateService AutoUpdateService
 
-<h3>Auto Update Status</h3>
-
-<style>
-    .auto-update-status {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: #333;
-        background-color: #f8f9fa;
-        padding: 8px;
-        border-radius: 4px;
-        text-align: center;
-        margin-bottom: 8px;
-    }
-
-    .update-button {
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    .update-button:hover {
-        background-color: #0056b3;
-    }
-
-    .progress-text {
-        font-size: 0.85rem;
-        margin-top: 4px;
-    }
-</style>
-
-<div class="auto-update-status">
-    <p>Status: @statusMessage</p>
-    @if (updateAvailable)
-    {
-        <button class="update-button" @onclick="DownloadUpdateAsync">Download Update</button>
-        <p class="progress-text">Download Progress: @downloadProgress%</p>
-    }
-</div>
+@if (updateAvailable)
+{
+    <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
+        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> Update Available
+        @if (downloadProgress > 0)
+        {
+            <small> @downloadProgress%</small>
+        }
+    </a>
+}
+else
+{
+    <a class="nav-link disabled" href="#">
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> Up to Date
+    </a>
+}
 
 @code {
     private bool updateAvailable = false;
-    private string statusMessage = "Checking for updates...";
     private int downloadProgress = 0;
+    private Release latestRelease;
 
     protected override async Task OnInitializedAsync()
     {
-        var latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
+        await CheckForUpdatesAsync();
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
         updateAvailable = latestRelease != null;
-        statusMessage = updateAvailable ? "Update available!" : "You are up to date.";
     }
 
     private async Task DownloadUpdateAsync()
     {
-        downloadProgress = 0;
-        var latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
-        if (latestRelease != null)
+        try
         {
-            await AutoUpdateService.DownloadAndInstallAsync(latestRelease, UpdateProgress);
+            downloadProgress = 0;
+            if (latestRelease != null)
+            {
+                await AutoUpdateService.DownloadAndInstallAsync(latestRelease, UpdateProgress);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during update: {ex.Message}");
         }
     }
 

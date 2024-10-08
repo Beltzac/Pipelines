@@ -67,6 +67,8 @@ namespace Common.Utils
             services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
             services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
 
+            services.AddScoped<IAutoUpdateService, AutoUpdateService>();
+
             services.AddScoped<ICommitDataExportService, CommitDataExportService>();
             services.AddScoped<ISignalRClientService, SignalRClientService>();
             services.AddLogging();
