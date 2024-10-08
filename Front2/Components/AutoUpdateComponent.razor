@@ -20,14 +20,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        updateAvailable = await AutoUpdateService.CheckForUpdatesAsync();
+        var latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
+        updateAvailable = latestRelease != null;
         statusMessage = updateAvailable ? "Update available!" : "You are up to date.";
     }
 
     private async Task DownloadUpdateAsync()
     {
         downloadProgress = 0;
-        await AutoUpdateService.DownloadAndInstallAsync(UpdateProgress);
+        var latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
+        if (latestRelease != null)
+        {
+            await AutoUpdateService.DownloadAndInstallAsync(latestRelease, UpdateProgress);
+        }
     }
 
     private void UpdateProgress(int progress)
