@@ -69,4 +69,8 @@ public class ConfigModel
     public string PAT { get; set; }
     public string OrganizationUrl { get; set; }
     public string LocalCloneFolder { get; set; }
+    public string RepositoryOwner { get; set; } = "beltzac";
+    public string RepositoryName { get; set; } = "pipelines";
+    public string UserAgent { get; set; } = "TcpDash";
+    public string AccessToken { get; set; }
 }
