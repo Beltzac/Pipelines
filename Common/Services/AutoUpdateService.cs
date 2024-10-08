@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Common.Services
 {
@@ -171,13 +172,13 @@ namespace Common.Services
         }
 
         // Classes to deserialize JSON response
-        private class Release
+        public class Release
         {
             public string tag_name { get; set; }
             public List<Asset> assets { get; set; }
         }
 
-        private class Asset
+        public class Asset
         {
             public string name { get; set; }
             public string browser_download_url { get; set; }
