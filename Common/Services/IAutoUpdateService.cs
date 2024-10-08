@@ -1,4 +1,6 @@
-﻿namespace Common.Services
+﻿using static Common.Services.AutoUpdateService;
+
+namespace Common.Services
 {
     public interface IAutoUpdateService
     {
