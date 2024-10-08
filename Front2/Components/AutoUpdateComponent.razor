@@ -1,0 +1,37 @@
+@page "/autoupdate"
+@inject Common.Services.AutoUpdateService AutoUpdateService
+
+<h3>Auto Update Status</h3>
+
+<div>
+    <p>Status: @statusMessage</p>
+    @if (updateAvailable)
+    {
+        <button @onclick="DownloadUpdateAsync">Download Update</button>
+        <p>Download Progress: @downloadProgress%</p>
+    }
+</div>
+
+@code {
+    private bool updateAvailable = false;
+    private string statusMessage = "Checking for updates...";
+    private int downloadProgress = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        updateAvailable = await AutoUpdateService.CheckForUpdatesAsync();
+        statusMessage = updateAvailable ? "Update available!" : "You are up to date.";
+    }
+
+    private async Task DownloadUpdateAsync()
+    {
+        downloadProgress = 0;
+        await AutoUpdateService.DownloadAndInstallAsync(UpdateProgress);
+    }
+
+    private void UpdateProgress(int progress)
+    {
+        downloadProgress = progress;
+        InvokeAsync(StateHasChanged);
+    }
+}

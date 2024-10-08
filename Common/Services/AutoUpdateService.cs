@@ -82,7 +82,7 @@ namespace Common.Services
         /// Downloads the installer and runs it.
         /// </summary>
         /// <param name="latestRelease">The latest release information from GitHub.</param>
-        public async Task DownloadAndInstallAsync(Release latestRelease)
+        public async Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -99,7 +99,26 @@ namespace Common.Services
                         Console.WriteLine("Downloading installer...");
 
                         // Download the installer
-                        byte[] installerData = await client.GetByteArrayAsync(installerUrl);
+                        using (var response = await client.GetAsync(installerUrl, HttpCompletionOption.ResponseHeadersRead))
+                        {
+                            response.EnsureSuccessStatusCode();
+                            var totalBytes = response.Content.Headers.ContentLength ?? 1;
+                            var downloadedBytes = 0;
+
+                            using (var contentStream = await response.Content.ReadAsStreamAsync())
+                            using (var fileStream = new System.IO.FileStream(installerFileName, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None, 8192, true))
+                            {
+                                var buffer = new byte[8192];
+                                int bytesRead;
+                                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                                {
+                                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+                                    downloadedBytes += bytesRead;
+                                    int progress = (int)((double)downloadedBytes / totalBytes * 100);
+                                    progressCallback(progress);
+                                }
+                            }
+                        }
 
                         // Save to file
                         System.IO.File.WriteAllBytes(installerFileName, installerData);
