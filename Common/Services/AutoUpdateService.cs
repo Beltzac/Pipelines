@@ -31,7 +31,7 @@ namespace Common.Services
         /// <summary>
         /// Checks for updates and performs the update if available.
         /// </summary>
-        public async Task CheckForUpdatesAsync()
+        public async Task<Release> CheckForUpdatesAsync()
         {
             // Get current version
             Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -66,6 +66,12 @@ namespace Common.Services
                         Console.WriteLine("An update is available.");
                         //await DownloadAndInstallAsync(latestRelease);
                         await _hubContext.Clients.All.SendAsync("Msg", latestVersion);
+                        return latestRelease;
+                    }
+                    else
+                    {
+                        Console.WriteLine("You are using the latest version.");
+                        return null;
                     }
                     else
                     {
