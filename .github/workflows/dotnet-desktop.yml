@@ -62,27 +62,6 @@ jobs:
           # Set output variable
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$VERSION"
 
-
-      - name: Update Version in electron.manifest.json
-        shell: powershell
-        run: |
-          # Update the buildVersion in electron.manifest.json
-          Install-Module -Name Newtonsoft.Json -Force -Scope CurrentUser
-          Import-Module -Name Newtonsoft.Json
-          $jsonPath = 'Front2/electron.manifest.json'
-          $jsonContent = Get-Content $jsonPath -Raw
-          $json = $jsonContent | ConvertFrom-JsonNewtonsoft
-          $json.build.buildVersion = "$env:VERSION"
-          $formattedJson = $json | ConvertTo-JsonNewtonsoft
-          $formattedJson | Set-Content -Path $jsonPath -Encoding utf8
-
-          # Commit the changes
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add $jsonPath
-          git commit -m "Update buildVersion to $env:VERSION [skip ci]"
-          git push
-
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -104,7 +83,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd Front2
-          electronize build /target win
+          electronize build /target win /Version $env:VERSION
 
       - name: Generate Release Notes
         id: generate_release_notes
