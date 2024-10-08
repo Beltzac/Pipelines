@@ -73,10 +73,6 @@ namespace Common.Services
                         Console.WriteLine("You are using the latest version.");
                         return null;
                     }
-                    else
-                    {
-                        Console.WriteLine("You are using the latest version.");
-                    }
                 }
                 catch (Exception ex)
                 {
