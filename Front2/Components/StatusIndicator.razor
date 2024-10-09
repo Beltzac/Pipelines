@@ -7,7 +7,8 @@
         Working,
         Error,
         Success,
-        Unknown
+        Unknown,
+        None
     }
 }
 
@@ -61,11 +62,16 @@
         animation: spin 2s infinite linear;
     }
 
+    /* Implementing the 'None' status */
+    .none .indicator-icon {
+        background: #cccccc; /* Gray color to indicate 'None' */
+        animation: none;
+    }
+
     @@keyframes bounce {
         from {
             transform: translateY(0px);
         }
-
         to {
             transform: translateY(-10px);
         }
@@ -75,11 +81,9 @@
         0% {
             transform: scale(1);
         }
-
         50% {
             transform: scale(1.2);
         }
-
         100% {
             transform: scale(1);
         }
@@ -89,11 +93,9 @@
         0% {
             opacity: 1;
         }
-
         50% {
             opacity: 0.3;
         }
-
         100% {
             opacity: 1;
         }
@@ -103,7 +105,6 @@
         0% {
             transform: rotate(0deg);
         }
-
         100% {
             transform: rotate(360deg);
         }

@@ -22,13 +22,13 @@
 
 <script>
     function downloadFile(fileName, base64Content) {
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = 'data:text/plain;base64,' + base64Content;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = 'data:text/plain;base64,' + base64Content;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 
 <style>
@@ -107,28 +107,9 @@ else
         <tbody>
             @foreach (var buildInfo in buildInfos.ToList())
             {
-                <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo">
+                <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                     <td>
-                        @if(buildInfo.Pipeline?.Last == null)
-                        {
-                            
-                        }
-                        else if (buildInfo.Pipeline.Last.Status == "NotStarted" || buildInfo.Pipeline.Last.Status == "InProgress")
-                        {
-                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Working" />
-                        }
-                        else if (buildInfo.Pipeline.Last.Result == "Succeeded")
-                        {
-                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Success" />
-                        }
-                        else if (buildInfo.Pipeline.Last.Result == "Failed")
-                        {
-                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Error" />
-                        }
-                        else
-                        {
-                            <StatusIndicator CurrentStatus="@StatusIndicator.Status.Unknown" />
-                        }
+                        <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
                     </td>
 
                     <td class="truncate">@(buildInfo.Path)</td>
@@ -282,6 +263,18 @@ else
         await BuildInfoService.OpenProjectByBuildInfoIdAsync(repo.Id);
     }
 
+    async Task OpenClickAsync(Repository e)
+    {
+        if(!e.MasterClonned)
+        {
+            this.toastService.ShowSuccess("Clonando Repo");
+            await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(e.Id);
+            this.toastService.ShowSuccess("Clonado");
+        }
+
+        await BuildInfoService.OpenProjectByBuildInfoIdAsync(e.Id);
+    }
+
     async Task RefetchClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
@@ -320,5 +313,19 @@ else
     {
         var repo = e.Data as Repository;
         NavigationManager.NavigateTo($"/logdetails/{repo.Id}");
+    }
+
+    private StatusIndicator.Status GetStatusIndicator(Repository repo)
+    {
+        if (repo.Pipeline?.Last == null)
+            return StatusIndicator.Status.None;
+
+        return repo.Pipeline.Last.Status switch
+        {
+            "NotStarted" or "InProgress" => StatusIndicator.Status.Working,
+            _ when repo.Pipeline.Last.Result == "Succeeded" => StatusIndicator.Status.Success,
+            _ when repo.Pipeline.Last.Result == "Failed" => StatusIndicator.Status.Error,
+            _ => StatusIndicator.Status.Unknown,
+        };
     }
 }
