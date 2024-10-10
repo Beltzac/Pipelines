@@ -186,7 +186,7 @@ namespace Common.Services
                     Url = (buildDetails.Links.Links["web"] as ReferenceLink).Href
                 };
 
-                await FetchCommitInfoAsync(buildInfo, projectName, buildInfo.Id, buildDetails.SourceVersion);
+                await FetchCommitInfoAsync(buildInfo, projectName, buildDetails.SourceBranch, buildInfo.Id, buildDetails.SourceVersion);
 
                 if (buildDetails.Result == BuildResult.Failed)
                 {
@@ -215,23 +215,23 @@ namespace Common.Services
             return content.ToString();
         }
 
-        private async Task FetchCommitInfoAsync(Repository buildInfo, string projectName, Guid repoId, string commitId)
+        private async Task FetchCommitInfoAsync(Repository buildInfo, string projectName, string branch, Guid repoId, string commitId)
         {
             try
             {
                 var commit = await _gitClient.GetCommitAsync(projectName, commitId, repoId);
-                buildInfo.Pipeline.Last.Commit = new Commit
+                buildInfo.Pipeline.Last.Commit = new Common.Models.Commit
                 {
                     Id = commit.CommitId,
-                    Message = commit.Comment,
+                    CommitMessage = commit.Comment,
                     Url = commit.RemoteUrl,
                     AuthorName = commit.Author.Name,
                     AuthorEmail = commit.Author.Email,
                     ProjectName = buildInfo.Project,
                     RepoName = buildInfo.Name,
-                    BranchName = GetBranchName(commit.Branch),
+                    BranchName = CommitDataExportService.GetBranchName(branch),
                     CommitDate = commit.Author.Date.ToUniversalTime(),
-                    JiraCardID = ExtractJiraCardID(commit.Comment)
+                    JiraCardID = CommitDataExportService.ExtractJiraCardID(commit.Comment)
                 };
             }
             catch (Exception ex)

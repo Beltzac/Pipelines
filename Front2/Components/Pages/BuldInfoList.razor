@@ -116,7 +116,7 @@ else
 
 
                     <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
-                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.Message.ToHtml())</td>
+                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.CommitMessage.ToHtml())</td>
 
                 </ContextMenuTrigger>
             }
