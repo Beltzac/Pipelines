@@ -79,8 +79,8 @@ namespace Common.Services
 
                                     _logger.LogInformation($"Processing branch: {branchName} in repository: {repoName}");
 
-                                    // 4. List commits by the user 'Beltzac' in the last 30 days
-                                    var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, "Beltzac", DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+                                    // 4. List commits by the user from the configuration in the last 30 days
+                                    var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, _configService.GetConfig().Username, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
                                     foreach (var commit in commits)
                                     {
