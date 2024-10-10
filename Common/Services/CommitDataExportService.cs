@@ -2,6 +2,7 @@
 using Common.ExternalApis;
 using Common.Models;
 using Common.Repositories;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -33,8 +34,6 @@ namespace Common.Services
 
         public async Task FetchCommitDataAsync()
         {
-            var commitDataList = new List<Commit>();
-
             try
             {
                 // 1. List all projects
@@ -78,8 +77,6 @@ namespace Common.Services
                             {
                                 try
                                 {
-
-
                                     string branchName = GetBranchName(branch.Name);
 
                                     _logger.LogInformation($"Processing branch: {branchName} in repository: {repoName}");
@@ -93,7 +90,7 @@ namespace Common.Services
                                         var commitMessage = commit.Comment;
                                         var jiraCardID = ExtractJiraCardID(commitMessage);
 
-                                        commitDataList.Add(new Commit
+                                        var model = new Commit
                                         {
                                             ProjectName = projectName,
                                             RepoName = repoName,
@@ -101,7 +98,16 @@ namespace Common.Services
                                             CommitDate = commitDate,
                                             CommitMessage = commitMessage,
                                             JiraCardID = jiraCardID
+                                        };
+
+                                        await _dbContext.SingleMergeAsync(model, options =>
+                                        {
+                                            options.IncludeGraph = true;
+                                            options.InsertKeepIdentity = true;
+                                            options.MergeKeepIdentity = true;
                                         });
+
+                                        _logger.LogInformation($"Commit added to database: {commitDate} - {commitMessage}");
                                     }
                                 }
                                 catch (Exception ex)
@@ -117,12 +123,7 @@ namespace Common.Services
                     }
                 }
 
-                // 5. Sort the commit data by CommitDate
-                var sortedCommitData = commitDataList.OrderBy(cd => cd.CommitDate).ToList();
 
-                // Save the commit data to the database
-                await _dbContext.Commits.AddRangeAsync(sortedCommitData);
-                await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -131,7 +132,7 @@ namespace Common.Services
 
         }
 
-        private string GetBranchName(string fullBranchName)
+        public static string GetBranchName(string fullBranchName)
         {
             // Azure DevOps branch names are in the format 'refs/heads/branchName'
             return fullBranchName.Replace("refs/heads/", string.Empty);
