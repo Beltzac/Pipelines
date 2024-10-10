@@ -197,3 +197,5 @@ namespace Common.Services
                 _logger.LogInformation("No commit data available to export.");
             }
         }
+    }
+}
