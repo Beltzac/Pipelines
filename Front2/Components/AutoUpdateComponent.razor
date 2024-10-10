@@ -2,7 +2,7 @@
 @using static Common.Services.AutoUpdateService
 @inject IAutoUpdateService AutoUpdateService
 
-@if (updateAvailable)
+@if (updateAvailable && downloadProgress == 0)
 {
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
         <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> Update Available
