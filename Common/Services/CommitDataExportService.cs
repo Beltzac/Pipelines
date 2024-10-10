@@ -1,6 +1,7 @@
 ﻿using ClosedXML.Excel;
 using Common.ExternalApis;
 using Common.Models;
+using Common.Repositories;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -13,6 +14,7 @@ namespace Common.Services
         private readonly IGitHttpClient _gitClient;
         private readonly IConfigurationService _configService;
         private readonly ILogger<CommitDataExportService> _logger;
+        private readonly RepositoryDbContext _dbContext;
 
         public CommitDataExportService(
             IProjectHttpClient projectClient,
@@ -122,7 +124,6 @@ namespace Common.Services
                 _logger.LogError(ex, "An error occurred while exporting commit data.");
             }
 
-            return commitDataList;
         }
 
         private string GetBranchName(string fullBranchName)
