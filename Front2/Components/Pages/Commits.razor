@@ -35,7 +35,7 @@
             <li class="list-group-item">
                 <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
                 <br />
-                <em>@commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss")</em>
+                <em>@commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss")</em> by <strong>@commit.AuthorName</strong>
                 <br />
                 @((MarkupString)commit.CommitMessage.ToHtml())
             </li>
