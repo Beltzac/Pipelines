@@ -187,9 +187,9 @@ namespace Common.Services
         }
         public async Task ExportCommitDataAsync()
         {
-            var commitDataList = await FetchCommitDataAsync();
+            var commitDataList = await _dbContext.Commits.ToListAsync();
 
-            if (commitDataList.Any())
+            if (commitDataList != null && commitDataList.Any())
             {
                 // Export to Excel
                 string filePath = GenerateExcelFilePath();
