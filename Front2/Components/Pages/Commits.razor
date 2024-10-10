@@ -20,9 +20,8 @@
 
 <button class="btn btn-info text-nowrap" @onclick="async () => await SyncCommits()">Sync Commits</button>
 <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
-<div class="progress mt-2" style="height: 20px;">
-    <div class="progress-bar" role="progressbar" style="width: @progress%;" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">@progress%</div>
-</div>
+<ProgressBar ProgressValue="@progress" TextColor="black" Height="25px" Label="Buscando commits..." />
+
 
 @if (commitDataList != null && commitDataList.Any())
 {
@@ -77,3 +76,18 @@ else
         await CommitDataExportService.ExportCommitDataAsync();
     }
 }
+
+<style>
+    .progress {
+        position: relative;
+    }
+
+    .progress-text {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        color: black;
+        font-weight: bold;
+    }
+</style>
