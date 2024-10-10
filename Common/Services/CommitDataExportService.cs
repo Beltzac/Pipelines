@@ -119,7 +119,9 @@ namespace Common.Services
                 // 5. Sort the commit data by CommitDate
                 var sortedCommitData = commitDataList.OrderBy(cd => cd.CommitDate).ToList();
 
-                return sortedCommitData;
+                // Save the commit data to the database
+                await _dbContext.Commits.AddRangeAsync(sortedCommitData);
+                await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
             {
