@@ -221,7 +221,7 @@ namespace Common.Services
             var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
 
             var commitDataList = await _dbContext.Commits
-                .Where(c => c.AuthorName == config.Username && c.CommitDate >= twoMonthsAgo)
+                .Where(c => EF.Functions.Like(c.AuthorName, $"%{config.Username}%") && c.CommitDate >= twoMonthsAgo)
                 .ToListAsync();
 
             if (commitDataList != null && commitDataList.Any())
