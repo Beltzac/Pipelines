@@ -26,9 +26,9 @@ namespace Common.Services
             _logger = logger;
         }
 
-        public async Task<List<CommitData>> FetchCommitDataAsync()
+        public async Task<List<Commit>> FetchCommitDataAsync()
         {
-            var commitDataList = new List<CommitData>();
+            var commitDataList = new List<Commit>();
 
             try
             {
