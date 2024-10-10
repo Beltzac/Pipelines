@@ -16,20 +16,13 @@
 @inject ICommitDataExportService CommitDataExportService
 @inject IConfigurationService ConfigService
 
-
-
-
-
 <h3>Commits</h3>
 
-<div id="myDiffElement"></div>
-
-<button class="btn btn-primary text-nowrap" @onclick="async () => await FetchCommits()">Fetch Commits</button>
 <button class="btn btn-info text-nowrap" @onclick="async () => await SyncCommits()">Sync Commits</button>
+<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
 <div class="progress mt-2" style="height: 20px;">
     <div class="progress-bar" role="progressbar" style="width: @progress%;" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">@progress%</div>
 </div>
-<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
 
 @if (commitDataList != null && commitDataList.Any())
 {
@@ -50,8 +43,6 @@ else
 {
     <p>No commits fetched yet.</p>
 }
-
-
 
 @code {
 

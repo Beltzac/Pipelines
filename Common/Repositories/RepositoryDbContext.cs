@@ -1,3 +1,4 @@
+using Common.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -79,7 +80,7 @@ namespace Common.Repositories
                    .IsRequired()
                    .HasMaxLength(50);
 
-            builder.Property(c => c.Message)
+            builder.Property(c => c.CommitMessage)
                    .IsRequired()
                    .HasMaxLength(500);
 
@@ -111,11 +112,11 @@ namespace Common.Repositories
                 .ValueGeneratedNever();
 
             builder.Property(b => b.Status)
-                   .IsRequired(false) // Se não tem pipeline cadastrada não tem status
+                   .IsRequired(false) // Se nï¿½o tem pipeline cadastrada nï¿½o tem status
                    .HasMaxLength(50);
 
             builder.Property(b => b.Result)
-                   .IsRequired(false) // Se não tem pipeline cadastrada não tem result
+                   .IsRequired(false) // Se nï¿½o tem pipeline cadastrada nï¿½o tem result
                    .HasMaxLength(50);
 
             builder.Property(b => b.Url)
@@ -137,8 +138,8 @@ namespace Common.Repositories
             builder.HasOne(b => b.Commit)
                    .WithMany()
                    .HasForeignKey("CommitId")
-                   .IsRequired(false) // Make this relationship optional
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .IsRequired(false)
+                   .OnDelete(DeleteBehavior.NoAction);
         }
     }
 

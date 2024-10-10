@@ -1,4 +1,6 @@
 
+using Common.Models;
+
 public class Build
 {
     public int Id { get; set; }
