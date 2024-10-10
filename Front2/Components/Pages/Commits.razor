@@ -60,12 +60,7 @@ else
     private async Task FetchCommits()
     {
         var config = ConfigService.GetConfig();
-        commitDataList = await CommitDataExportService.GetCommitDataAsync();
-        commitDataList = commitDataList
-            .Where(c => c.AuthorName == config.Username)
-            .OrderByDescending(c => c.CommitDate)
-            .Take(100)
-            .ToList();
+        commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, 100);
     }
 
     private async Task DownloadConsul()
