@@ -13,6 +13,7 @@
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
 @inject ICommitDataExportService CommitDataExportService
+@inject IConfigurationService ConfigService
 
 
 
@@ -51,9 +52,20 @@ else
 
     private List<Commit> commitDataList = new List<Commit>();
 
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchCommits();
+    }
+
     private async Task FetchCommits()
     {
+        var config = ConfigService.GetConfig();
         commitDataList = await CommitDataExportService.GetCommitDataAsync();
+        commitDataList = commitDataList
+            .Where(c => c.AuthorName == config.Username)
+            .OrderByDescending(c => c.CommitDate)
+            .Take(100)
+            .ToList();
     }
 
     private async Task DownloadConsul()
