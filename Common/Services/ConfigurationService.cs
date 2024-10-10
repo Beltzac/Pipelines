@@ -69,8 +69,8 @@ public class ConfigModel
     public string PAT { get; set; }
     public string OrganizationUrl { get; set; }
     public string LocalCloneFolder { get; set; }
-    public string ConsulUrl { get; set; } = "https://consul-qa.tcp.com.br/v1/kv/?recurse";
-    public string ConsulFolder { get; set; } = @"C:\ConsulKV";
+    public string ConsulUrl { get; set; }
+    public string ConsulFolder { get; set; }
     public string RepositoryOwner { get; set; } = "beltzac";
     public string RepositoryName { get; set; } = "pipelines";
     public string UserAgent { get; set; } = "TcpDash";
