@@ -186,6 +186,11 @@ namespace Common.Services
                 workbook.SaveAs(filePath);
             }
         }
+        public async Task<List<Commit>> GetCommitDataAsync()
+        {
+            return await _dbContext.Commits.ToListAsync();
+        }
+
         public async Task ExportCommitDataAsync()
         {
             var commitDataList = await _dbContext.Commits.ToListAsync();

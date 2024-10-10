@@ -53,7 +53,7 @@ else
 
     private async Task FetchCommits()
     {
-        CommitDataExportService.FetchCommitDataAsync();
+        commitDataList = await CommitDataExportService.GetCommitDataAsync();
     }
 
     private async Task DownloadConsul()
