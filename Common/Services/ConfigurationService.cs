@@ -40,7 +40,8 @@ public class ConfigurationService : IConfigurationService
             {
                 PAT = "",
                 OrganizationUrl = "https://dev.azure.com/terminal-cp",
-                LocalCloneFolder = @"C:\repos"
+                LocalCloneFolder = @"C:\repos",
+                ConsulFolder = @"C:\ConsulKV"
             };
             SaveConfig();
         }
