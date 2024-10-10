@@ -217,7 +217,12 @@ namespace Common.Services
 
         public async Task ExportCommitDataAsync()
         {
-            var commitDataList = await _dbContext.Commits.ToListAsync();
+            var config = _configService.GetConfig();
+            var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
+
+            var commitDataList = await _dbContext.Commits
+                .Where(c => c.AuthorName == config.Username && c.CommitDate >= twoMonthsAgo)
+                .ToListAsync();
 
             if (commitDataList != null && commitDataList.Any())
             {
