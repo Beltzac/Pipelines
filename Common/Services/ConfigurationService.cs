@@ -73,6 +73,7 @@ public class ConfigModel
     public string ConsulUrl { get; set; }
     public string ConsulFolder { get; set; }
     public string RepositoryOwner { get; set; } = "beltzac";
+    public string Username { get; set; } = "Beltzac";
     public string RepositoryName { get; set; } = "pipelines";
     public string UserAgent { get; set; } = "TcpDash";
     public string AccessToken { get; set; }

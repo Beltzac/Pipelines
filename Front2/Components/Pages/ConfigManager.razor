@@ -9,6 +9,10 @@
     <ValidationSummary />
 
     <div class="form-group">
+        <label for="username">Username</label>
+        <InputText id="username" @bind-Value="config.Username" class="form-control" />
+        <ValidationMessage For="@(() => config.Username)" />
+    </div>
         <label for="pat">Personal Access Token (PAT)</label>
         <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
         <ValidationMessage For="@(() => config.PAT)" />
