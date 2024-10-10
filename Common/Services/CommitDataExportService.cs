@@ -20,15 +20,17 @@ namespace Common.Services
             IProjectHttpClient projectClient,
             IGitHttpClient gitClient,
             IConfigurationService configService,
-            ILogger<CommitDataExportService> logger)
+            ILogger<CommitDataExportService> logger,
+            RepositoryDbContext dbContext)
         {
             _projectClient = projectClient;
             _gitClient = gitClient;
             _configService = configService;
             _logger = logger;
+            _dbContext = dbContext;
         }
 
-        public async Task<List<Commit>> FetchCommitDataAsync()
+        public async Task FetchCommitDataAsync()
         {
             var commitDataList = new List<Commit>();
 
