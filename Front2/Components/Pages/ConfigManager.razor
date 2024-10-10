@@ -8,44 +8,63 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <div class="form-group">
-        <label for="username">Username</label>
-        <InputText id="username" @bind-Value="config.Username" class="form-control" />
-        <ValidationMessage For="@(() => config.Username)" />
-    </div>
-        <label for="pat">Personal Access Token (PAT)</label>
-        <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
-        <ValidationMessage For="@(() => config.PAT)" />
-    </div>
-
-    <div class="form-group">
-        <label for="orgUrl">Organization URL</label>
-        <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control" />
-        <ValidationMessage For="@(() => config.OrganizationUrl)" />
-    </div>
-
-    <div class="form-group">
-        <label for="cloneFolder">Local Clone Folder</label>
-        <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control" />
-        <ValidationMessage For="@(() => config.LocalCloneFolder)" />
+    <div class="card mb-3">
+        <div class="card-header">User Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <InputText id="username" @bind-Value="config.Username" class="form-control" />
+                <ValidationMessage For="@(() => config.Username)" />
+            </div>
+            <div class="form-group">
+                <label for="pat">Personal Access Token (PAT)</label>
+                <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
+                <ValidationMessage For="@(() => config.PAT)" />
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="consulUrl">Consul URL</label>
-        <InputText id="consulUrl" @bind-Value="config.ConsulUrl" class="form-control" />
-        <ValidationMessage For="@(() => config.ConsulUrl)" />
+    <div class="card mb-3">
+        <div class="card-header">Organization Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="orgUrl">Organization URL</label>
+                <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control" />
+                <ValidationMessage For="@(() => config.OrganizationUrl)" />
+            </div>
+            <div class="form-group">
+                <label for="cloneFolder">Local Clone Folder</label>
+                <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control" />
+                <ValidationMessage For="@(() => config.LocalCloneFolder)" />
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="consulFolder">Consul Folder</label>
-        <InputText id="consulFolder" @bind-Value="config.ConsulFolder" class="form-control" />
-        <ValidationMessage For="@(() => config.ConsulFolder)" />
+    <div class="card mb-3">
+        <div class="card-header">Consul Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="consulUrl">Consul URL</label>
+                <InputText id="consulUrl" @bind-Value="config.ConsulUrl" class="form-control" />
+                <ValidationMessage For="@(() => config.ConsulUrl)" />
+            </div>
+            <div class="form-group">
+                <label for="consulFolder">Consul Folder</label>
+                <InputText id="consulFolder" @bind-Value="config.ConsulFolder" class="form-control" />
+                <ValidationMessage For="@(() => config.ConsulFolder)" />
+            </div>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="githubToken">Github Token</label>
-        <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control" />
-        <ValidationMessage For="@(() => config.AccessToken)" />
+    <div class="card mb-3">
+        <div class="card-header">GitHub Configuration</div>
+        <div class="card-body">
+            <div class="form-group">
+                <label for="githubToken">Github Token</label>
+                <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control" />
+                <ValidationMessage For="@(() => config.AccessToken)" />
+            </div>
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
