@@ -2,7 +2,6 @@
 using Common.ExternalApis;
 using Common.Models;
 using Common.Repositories;
-using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -189,8 +188,10 @@ namespace Common.Services
         }
         public async Task<List<Commit>> GetRecentCommitsAsync(string username, int limit = 100)
         {
+            string trimmedFilter = username.Trim();
+
             return await _dbContext.Commits
-                .Where(c => c.AuthorName == username)
+                .Where(x => EF.Functions.Like(x.AuthorName, $"%{trimmedFilter}%"))
                 .OrderByDescending(c => c.CommitDate)
                 .Take(limit)
                 .ToListAsync();

@@ -25,7 +25,7 @@
 <div id="myDiffElement"></div>
 
 <button class="btn btn-primary text-nowrap" @onclick="async () => await FetchCommits()">Fetch Commits</button>
-<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadConsul()">Download to Excel</button>
+<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
 
 @if (commitDataList != null && commitDataList.Any())
 {
@@ -64,7 +64,7 @@ else
         commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, 100);
     }
 
-    private async Task DownloadConsul()
+    private async Task DownloadCommits()
     {
         await CommitDataExportService.ExportCommitDataAsync();
     }
