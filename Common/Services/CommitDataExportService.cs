@@ -157,7 +157,7 @@ namespace Common.Services
         {
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
             string fileName = $"CommitData_{timestamp}.xlsx";
-            string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Exports");
+            string directory = Path.GetTempPath();
 
             if (!Directory.Exists(directory))
             {
