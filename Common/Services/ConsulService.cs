@@ -7,15 +7,19 @@ namespace Common.Services
     {
         private readonly ILogger<ConsulService> _logger;
 
-        public ConsulService(ILogger<ConsulService> logger)
+        private readonly IConfigurationService _configService;
+
+        public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
             _logger = logger;
+            _configService = configService;
         }
 
         public async Task DownloadConsul()
         {
-            string consulUrl = "https://consul-qa.tcp.com.br/v1/kv/?recurse";
-            string downloadFolder = "C:\\ConsulKV"; // Change this to your desired download folder
+            var config = _configService.GetConfig();
+            string consulUrl = config.OrganizationUrl + "/v1/kv/?recurse";
+            string downloadFolder = config.LocalCloneFolder; // Assuming this is the desired download folder
 
             if (!Directory.Exists(downloadFolder))
             {
