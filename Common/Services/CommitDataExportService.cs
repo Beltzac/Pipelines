@@ -4,6 +4,7 @@ using Common.Models;
 using Common.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -86,7 +87,7 @@ namespace Common.Services
                                     _logger.LogInformation($"Processing branch: {branchName} in repository: {repoName}");
 
                                     // 4. List commits by the user from the configuration in the last 30 days
-                                    var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, _configService.GetConfig().Username, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+                                    var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, _configService.GetConfig().Username, DateTime.UtcNow.AddDays(-5), DateTime.UtcNow);
 
                                     foreach (var commit in commits)
                                     {
@@ -96,6 +97,10 @@ namespace Common.Services
 
                                         var model = new Commit
                                         {
+                                            Id = commit.CommitId,
+                                            Url = commit.Url,
+                                            AuthorEmail = commit.Author.Email,
+                                            AuthorName = commit.Author.Name,
                                             ProjectName = projectName,
                                             RepoName = repoName,
                                             BranchName = branchName,
@@ -211,6 +216,10 @@ namespace Common.Services
                 // Export to Excel
                 string filePath = GenerateExcelFilePath();
                 ExportToExcel(commitDataList, filePath);
+
+                // Open the file in the default application
+                Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+
 
                 _logger.LogInformation($"Commit data exported to {filePath}");
             }
