@@ -121,6 +121,8 @@ namespace Common.Services
             {
                 _logger.LogError(ex, "An error occurred while exporting commit data.");
             }
+
+            return commitDataList;
         }
 
         private string GetBranchName(string fullBranchName)
