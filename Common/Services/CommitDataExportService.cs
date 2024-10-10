@@ -187,9 +187,13 @@ namespace Common.Services
                 workbook.SaveAs(filePath);
             }
         }
-        public async Task<List<Commit>> GetCommitDataAsync()
+        public async Task<List<Commit>> GetRecentCommitsAsync(string username, int limit = 100)
         {
-            return await _dbContext.Commits.ToListAsync();
+            return await _dbContext.Commits
+                .Where(c => c.AuthorName == username)
+                .OrderByDescending(c => c.CommitDate)
+                .Take(limit)
+                .ToListAsync();
         }
 
         public async Task ExportCommitDataAsync()
