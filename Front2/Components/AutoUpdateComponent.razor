@@ -4,19 +4,23 @@
 
 @if (updateAvailable && downloadProgress == 0)
 {
+    <!-- Show the 'Update Available' link -->
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
         <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> Update Available
-        <div class="progress mt-2" style="height: 20px;">
-            <div class="progress-bar" role="progressbar" style="width: @downloadProgress%;" aria-valuenow="@downloadProgress" aria-valuemin="0" aria-valuemax="100">@downloadProgress%</div>
-        </div>
     </a>
+}
+else if (updateAvailable && downloadProgress > 0)
+{
+    <ProgressBar ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
 }
 else
 {
+    <!-- Show 'Up to Date' when no update is available -->
     <a class="nav-link disabled" href="#">
         <span class="bi bi-cloud-check" aria-hidden="true"></span> Up to Date
     </a>
 }
+
 
 @code {
     private bool updateAvailable = false;

@@ -1,0 +1,105 @@
+﻿@using Microsoft.AspNetCore.Components
+
+<div class="progress-container" style="position: relative; height:@Height; margin-top: 1rem;">
+    <div class="progress" style="height: 100%;">
+        <div class="progress-bar @GetProgressBarClass()"
+             role="progressbar"
+             style="width: @(ProgressValue)%;"
+             aria-valuenow="@ProgressValue"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             @attributes="AdditionalAttributes">
+        </div>
+        @if (ProgressValue > 0 && ProgressValue < 100)
+        {
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <span class="progress-label" style="color:@TextColor;">@ProgressValue% - @Label</span>
+            }
+            else
+            {
+                <span class="progress-text" style="color:@TextColor;">@ProgressValue%</span>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// The current progress value (0 to 100).
+    /// </summary>
+    [Parameter]
+    public int ProgressValue { get; set; } = 0;
+
+    /// <summary>
+    /// The color of the progress text.
+    /// </summary>
+    [Parameter]
+    public string TextColor { get; set; } = "black";
+
+    /// <summary>
+    /// The height of the progress bar. Accepts any valid CSS height value (e.g., "20px", "1.5rem").
+    /// </summary>
+    [Parameter]
+    public string Height { get; set; } = "20px";
+
+    /// <summary>
+    /// An optional label to display alongside the progress percentage.
+    /// </summary>
+    [Parameter]
+    public string Label { get; set; }
+
+    /// <summary>
+    /// Additional attributes to pass to the progress bar div.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // Ensure ProgressValue is within 0-100
+        if (ProgressValue < 0)
+        {
+            ProgressValue = 0;
+        }
+        else if (ProgressValue > 100)
+        {
+            ProgressValue = 100;
+        }
+    }
+
+    /// <summary>
+    /// Determines the CSS class for the progress bar based on the progress value.
+    /// </summary>
+    /// <returns>A Bootstrap background color class.</returns>
+    private string GetProgressBarClass()
+    {
+        if (ProgressValue >= 80)
+        {
+            return "bg-success";
+        }
+        else if (ProgressValue >= 50)
+        {
+            return "bg-warning";
+        }
+        else
+        {
+            return "bg-danger";
+        }
+    }
+}
+
+<style>
+    .progress-container {
+        position: relative;
+    }
+
+    .progress-text, .progress-label {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+</style>
