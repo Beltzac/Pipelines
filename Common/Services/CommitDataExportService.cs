@@ -88,7 +88,7 @@ namespace Common.Services
                                         var commitMessage = commit.Comment;
                                         var jiraCardID = ExtractJiraCardID(commitMessage);
 
-                                        commitDataList.Add(new CommitData
+                                        commitDataList.Add(new Commit
                                         {
                                             ProjectName = projectName,
                                             RepoName = repoName,
@@ -131,7 +131,7 @@ namespace Common.Services
             return fullBranchName.Replace("refs/heads/", string.Empty);
         }
 
-        private string ExtractJiraCardID(string commitMessage)
+        public static string ExtractJiraCardID(string commitMessage)
         {
             var match = Regex.Match(commitMessage, @"\b[A-Z0-9]+-[0-9]+\b");
             return match.Success ? match.Value : string.Empty;
@@ -151,7 +151,7 @@ namespace Common.Services
             return Path.Combine(directory, fileName);
         }
 
-        private void ExportToExcel(List<CommitData> data, string filePath)
+        private void ExportToExcel(List<Commit> data, string filePath)
         {
             using (var workbook = new XLWorkbook())
             {
