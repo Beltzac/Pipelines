@@ -180,8 +180,6 @@ namespace Common.Services
                 workbook.SaveAs(filePath);
             }
         }
-    }
-}
         public async Task ExportCommitDataAsync()
         {
             var commitDataList = await FetchCommitDataAsync();
