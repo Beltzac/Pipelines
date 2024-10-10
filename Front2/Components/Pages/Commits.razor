@@ -21,13 +21,41 @@
 
 <div id="myDiffElement"></div>
 
-<button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
+<button class="btn btn-primary text-nowrap" @onclick="async () => await FetchCommits()">Fetch Commits</button>
+<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadConsul()">Download to Excel</button>
+
+@if (commitDataList != null && commitDataList.Any())
+{
+    <ul class="list-group mt-3">
+        @foreach (var commit in commitDataList)
+        {
+            <li class="list-group-item">
+                <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
+                <br />
+                <em>@commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss")</em>
+                <br />
+                @commit.CommitMessage
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>No commits fetched yet.</p>
+}
 
 
 
 @code {
 
-    private async ValueTask DownloadConsul()
+    private List<CommitData> commitDataList = new List<CommitData>();
+
+    private async Task FetchCommits()
+    {
+        commitDataList = await CommitDataExportService.FetchCommitDataAsync();
+    }
+
+    private async Task DownloadConsul()
     {
         await CommitDataExportService.ExportCommitDataAsync();
     }

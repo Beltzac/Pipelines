@@ -26,7 +26,7 @@ namespace Common.Services
             _logger = logger;
         }
 
-        public async Task ExportCommitDataAsync()
+        public async Task<List<CommitData>> FetchCommitDataAsync()
         {
             var commitDataList = new List<CommitData>();
 
@@ -115,11 +115,7 @@ namespace Common.Services
                 // 5. Sort the commit data by CommitDate
                 var sortedCommitData = commitDataList.OrderBy(cd => cd.CommitDate).ToList();
 
-                // 6. Export to Excel
-                string filePath = GenerateExcelFilePath();
-                ExportToExcel(sortedCommitData, filePath);
-
-                _logger.LogInformation($"Commit data exported to {filePath}");
+                return sortedCommitData;
             }
             catch (Exception ex)
             {
