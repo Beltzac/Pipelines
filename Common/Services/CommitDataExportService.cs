@@ -172,24 +172,32 @@ namespace Common.Services
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("Commit Data");
-                worksheet.Cell(1, 1).Value = "Project Name";
-                worksheet.Cell(1, 2).Value = "Repository Name";
-                worksheet.Cell(1, 3).Value = "Branch Name";
-                worksheet.Cell(1, 4).Value = "Commit Date";
-                worksheet.Cell(1, 5).Value = "Commit Message";
-                worksheet.Cell(1, 6).Value = "JIRA Card ID";
+                worksheet.Cell(1, 1).Value = "Commit ID";
+                worksheet.Cell(1, 2).Value = "Commit Message";
+                worksheet.Cell(1, 3).Value = "URL";
+                worksheet.Cell(1, 4).Value = "Author Name";
+                worksheet.Cell(1, 5).Value = "Author Email";
+                worksheet.Cell(1, 6).Value = "Project Name";
+                worksheet.Cell(1, 7).Value = "Repository Name";
+                worksheet.Cell(1, 8).Value = "Branch Name";
+                worksheet.Cell(1, 9).Value = "Commit Date";
+                worksheet.Cell(1, 10).Value = "JIRA Card ID";
 
                 for (int i = 0; i < data.Count; i++)
                 {
                     var commit = data[i];
                     int row = i + 2;
 
-                    worksheet.Cell(row, 1).Value = commit.ProjectName;
-                    worksheet.Cell(row, 2).Value = commit.RepoName;
-                    worksheet.Cell(row, 3).Value = commit.BranchName;
-                    worksheet.Cell(row, 4).Value = commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss");
-                    worksheet.Cell(row, 5).Value = commit.CommitMessage;
-                    worksheet.Cell(row, 6).Value = commit.JiraCardID;
+                    worksheet.Cell(row, 1).Value = commit.Id;
+                    worksheet.Cell(row, 2).Value = commit.CommitMessage;
+                    worksheet.Cell(row, 3).Value = commit.Url;
+                    worksheet.Cell(row, 4).Value = commit.AuthorName;
+                    worksheet.Cell(row, 5).Value = commit.AuthorEmail;
+                    worksheet.Cell(row, 6).Value = commit.ProjectName;
+                    worksheet.Cell(row, 7).Value = commit.RepoName;
+                    worksheet.Cell(row, 8).Value = commit.BranchName;
+                    worksheet.Cell(row, 9).Value = commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss");
+                    worksheet.Cell(row, 10).Value = commit.JiraCardID;
                 }
 
                 worksheet.Columns().AdjustToContents();
