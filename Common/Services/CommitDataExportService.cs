@@ -2,6 +2,7 @@
 using Common.ExternalApis;
 using Common.Models;
 using Common.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text.RegularExpressions;
