@@ -226,7 +226,12 @@ namespace Common.Services
                     Message = commit.Comment,
                     Url = commit.RemoteUrl,
                     AuthorName = commit.Author.Name,
-                    AuthorEmail = commit.Author.Email
+                    AuthorEmail = commit.Author.Email,
+                    ProjectName = buildInfo.Project,
+                    RepoName = buildInfo.Name,
+                    BranchName = GetBranchName(commit.Branch),
+                    CommitDate = commit.Author.Date.ToUniversalTime(),
+                    JiraCardID = ExtractJiraCardID(commit.Comment)
                 };
             }
             catch (Exception ex)
