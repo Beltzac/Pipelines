@@ -1,4 +1,4 @@
-﻿@page "/consul"
+﻿@page "/commits"
 @inject ISignalRClientService SignalRClientService
 @using Common
 @using Common.Services
@@ -17,7 +17,7 @@
 
 
 
-<h3>Consul</h3>
+<h3>Commits</h3>
 
 <div id="myDiffElement"></div>
 
@@ -29,6 +29,6 @@
 
     private async ValueTask DownloadConsul()
     {
-        await ConsulService.DownloadConsul();
+        await CommitDataExportService.ExportCommitDataAsync();
     }
 }
