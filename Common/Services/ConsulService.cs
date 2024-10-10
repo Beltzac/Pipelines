@@ -18,8 +18,8 @@ namespace Common.Services
         public async Task DownloadConsul()
         {
             var config = _configService.GetConfig();
-            string consulUrl = config.OrganizationUrl + "/v1/kv/?recurse";
-            string downloadFolder = config.LocalCloneFolder; // Assuming this is the desired download folder
+            string consulUrl = config.ConsulUrl;
+            string downloadFolder = config.ConsulFolder;
 
             if (!Directory.Exists(downloadFolder))
             {
