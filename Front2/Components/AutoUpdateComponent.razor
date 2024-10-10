@@ -6,9 +6,9 @@
 {
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
         <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> Update Available
-    <div class="progress mt-2" style="height: 20px;" hidden="@(!updateAvailable || downloadProgress == 0)">
-        <div class="progress-bar" role="progressbar" style="width: @downloadProgress%;" aria-valuenow="@downloadProgress" aria-valuemin="0" aria-valuemax="100">@downloadProgress%</div>
-    </div>
+        <div class="progress mt-2" style="height: 20px;" hidden="@(!updateAvailable || downloadProgress == 0)">
+            <div class="progress-bar" role="progressbar" style="width: @downloadProgress%;" aria-valuenow="@downloadProgress" aria-valuemin="0" aria-valuemax="100">@downloadProgress%</div>
+        </div>
     </a>
 }
 else
