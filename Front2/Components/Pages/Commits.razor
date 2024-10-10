@@ -69,6 +69,18 @@ else
         commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, 100);
     }
 
+    private async Task SyncCommits()
+    {
+        var progressHandler = new Progress<int>(value =>
+        {
+            progress = value;
+            StateHasChanged();
+        });
+
+        await CommitDataExportService.FetchCommitDataAsync(progressHandler);
+        toastService.ShowSuccess("Commits synchronized successfully!");
+    }
+
     private async Task DownloadCommits()
     {
         await CommitDataExportService.ExportCommitDataAsync();
