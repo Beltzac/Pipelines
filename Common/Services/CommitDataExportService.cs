@@ -182,3 +182,20 @@ namespace Common.Services
         }
     }
 }
+        public async Task ExportCommitDataAsync()
+        {
+            var commitDataList = await FetchCommitDataAsync();
+
+            if (commitDataList.Any())
+            {
+                // Export to Excel
+                string filePath = GenerateExcelFilePath();
+                ExportToExcel(commitDataList, filePath);
+
+                _logger.LogInformation($"Commit data exported to {filePath}");
+            }
+            else
+            {
+                _logger.LogInformation("No commit data available to export.");
+            }
+        }
