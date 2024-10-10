@@ -45,7 +45,6 @@ namespace Common.Services
                 {
                     currentProject++;
                     progress?.Report((currentProject * 100) / totalProjects);
-                {
                     string projectName = project.Name;
 
                     // Skip specific projects
