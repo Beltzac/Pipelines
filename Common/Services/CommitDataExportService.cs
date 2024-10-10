@@ -31,14 +31,20 @@ namespace Common.Services
             _dbContext = dbContext;
         }
 
-        public async Task FetchCommitDataAsync()
+        public async Task FetchCommitDataAsync(IProgress<int> progress = null)
         {
             try
             {
                 // 1. List all projects
                 var projects = await _projectClient.GetProjects();
 
+                int totalProjects = projects.Count;
+                int currentProject = 0;
+
                 foreach (var project in projects)
+                {
+                    currentProject++;
+                    progress?.Report((currentProject * 100) / totalProjects);
                 {
                     string projectName = project.Name;
 

@@ -6,6 +6,6 @@ namespace Common.Services
     {
         Task<List<Commit>> GetRecentCommitsAsync(string username, int limit = 100);
         Task ExportCommitDataAsync();
-        Task FetchCommitDataAsync();
+        Task FetchCommitDataAsync(IProgress<int> progress = null);
     }
 }
