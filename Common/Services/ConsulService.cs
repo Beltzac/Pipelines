@@ -29,6 +29,7 @@ namespace Common.Services
             }
 
             return keys;
+        }
 
         public async Task DownloadConsul()
         {
