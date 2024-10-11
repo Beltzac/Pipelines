@@ -28,6 +28,33 @@ namespace Common.Services
                 string value = kv["Value"]?.ToString() ?? string.Empty;
                 byte[] valueBytes = Convert.FromBase64String(value);
                 string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
+
+                if (isRecursive)
+                {
+                    decodedValue = ResolveRecursiveValues(decodedValue, keyValues);
+                }
+
+                keyValues[key] = decodedValue;
+            }
+        }
+
+        private string ResolveRecursiveValues(string value, Dictionary<string, string> keyValues)
+        {
+            var regex = new Regex(@"{{\s*key\s*'([^']+)'\s*}}");
+            return regex.Replace(value, match =>
+            {
+                var referencedKey = match.Groups[1].Value;
+                if (keyValues.TryGetValue(referencedKey, out var referencedValue))
+                {
+                    return ResolveRecursiveValues(referencedValue, keyValues);
+                }
+                return match.Value; // Return the original if not found
+            });
+            {
+                string key = kv["Key"].ToString();
+                string value = kv["Value"]?.ToString() ?? string.Empty;
+                byte[] valueBytes = Convert.FromBase64String(value);
+                string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
                 keyValues[key] = decodedValue;
             }
 
