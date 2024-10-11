@@ -36,6 +36,13 @@
     </ul>
 </div>
 
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
+    <label class="form-check-label" for="recursiveToggle">
+        Enable Recursive Values
+    </label>
+</div>
+
 <button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
 <button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
 
@@ -46,6 +53,8 @@
     private Dictionary<string, string> consulKeyValues = new Dictionary<string, string>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
+
+    private bool isRecursive = false;
 
     private IEnumerable<KeyValuePair<string, string>> filteredConsulKeyValues =>
         consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
