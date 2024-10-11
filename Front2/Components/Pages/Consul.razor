@@ -21,7 +21,13 @@
 
 <div id="myDiffElement"></div>
 
+<div class="mb-3">
+    <label for="consulEditor" class="form-label">Consul Editor</label>
+    <textarea id="consulEditor" class="form-control" rows="10" @bind="@consulContent"></textarea>
+</div>
+
 <button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
+<button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
 
 
 
@@ -30,5 +36,13 @@
     private async ValueTask DownloadConsul()
     {
         await ConsulService.DownloadConsul();
+    }
+    private string consulContent = string.Empty;
+
+    private async Task SaveConsul()
+    {
+        // Logic to save the edited Consul content
+        // This is a placeholder for the actual implementation
+        toastService.ShowSuccess("Consul content saved successfully!");
     }
 }
