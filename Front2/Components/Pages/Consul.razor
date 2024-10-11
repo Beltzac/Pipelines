@@ -61,7 +61,7 @@
 
     private async ValueTask DownloadConsul()
     {
-        consulKeyValues = await ConsulService.GetConsulKeyValues();
+        consulKeyValues = await ConsulService.GetConsulKeyValues(isRecursive);
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
 

@@ -13,9 +13,10 @@ namespace Common.Services
         {
             _logger = logger;
             _configService = configService;
+            return keyValues;
         }
 
-        public async Task<Dictionary<string, string>> GetConsulKeyValues()
+        public async Task<Dictionary<string, string>> GetConsulKeyValues(bool isRecursive)
         {
             var config = _configService.GetConfig();
             string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
