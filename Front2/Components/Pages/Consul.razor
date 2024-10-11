@@ -18,15 +18,22 @@
 
 <div class="mb-3">
     <label for="consulEditor" class="form-label">Consul Editor</label>
-    <div>
-        @foreach (var kvp in consulKeyValues)
+    <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
+
+    <ul>
+        @foreach (var kvp in filteredConsulKeyValues)
         {
-            <div>
-                <strong>@kvp.Key:</strong>
-                <pre>@kvp.Value</pre>
-            </div>
+            <li>
+                <button class="btn btn-link" @onclick="() => ToggleKeyVisibility(kvp.Key)">
+                    @kvp.Key
+                </button>
+                @if (visibleKeys.Contains(kvp.Key))
+                {
+                    <pre>@kvp.Value</pre>
+                }
+            </li>
         }
-    </div>
+    </ul>
 </div>
 
 <button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
@@ -36,13 +43,30 @@
 
 @code {
 
+    private Dictionary<string, string> consulKeyValues = new Dictionary<string, string>();
+    private List<string> visibleKeys = new List<string>();
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<KeyValuePair<string, string>> filteredConsulKeyValues =>
+        consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
     private async ValueTask DownloadConsul()
     {
         consulKeyValues = await ConsulService.GetConsulKeyValues();
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
-    private Dictionary<string, string> consulKeyValues = new Dictionary<string, string>();
-    private string consulContent = string.Empty;
+
+    private void ToggleKeyVisibility(string key)
+    {
+        if (visibleKeys.Contains(key))
+        {
+            visibleKeys.Remove(key);
+        }
+        else
+        {
+            visibleKeys.Add(key);
+        }
+    }
 
     private async Task SaveConsul()
     {
