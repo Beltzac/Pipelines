@@ -1,4 +1,6 @@
-﻿namespace Common.Services
+﻿using Common.Models;
+
+namespace Common.Services
 {
     public interface IConsulService
     {
