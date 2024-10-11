@@ -46,6 +46,9 @@
                 <button class="btn" @onclick="() => ToggleKeyVisibility(kvp.Key)">
                     @kvp.Key
                 </button>
+                <button class="btn btn-link" @onclick="() => OpenConsulUrl(kvp.Value.Url)">
+                    Open in Consul
+                </button>
                 @if (visibleKeys.Contains(kvp.Key))
                 {
                     <pre>@kvp.Value.Value</pre>
@@ -57,14 +60,14 @@
 
 @code {
 
-    private Dictionary<string, (string Value, bool IsValidJson)> consulKeyValues = new Dictionary<string, (string, bool)>();
+    private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
 
     private bool isRecursive = false;
     private bool showInvalidOnly = false;
 
-    private IEnumerable<KeyValuePair<string, (string Value, bool IsValidJson)>> filteredConsulKeyValues =>
+    private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
         consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
             && (!showInvalidOnly || !kvp.Value.IsValidJson));
 
@@ -92,5 +95,9 @@
         // Logic to save the edited Consul content
         // This is a placeholder for the actual implementation
         toastService.ShowSuccess("Consul content saved successfully!");
+    }
+    private void OpenConsulUrl(string url)
+    {
+        JS.InvokeVoidAsync("open", url, "_blank");
     }
 }
