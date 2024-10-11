@@ -109,9 +109,15 @@
     }
     private async Task SaveKeyValue(string key, string value)
     {
-        // Logic to save the specific key-value pair
-        // This is a placeholder for the actual implementation
-        toastService.ShowSuccess($"Key '{key}' saved successfully!");
+        try
+        {
+            await ConsulService.UpdateConsulKeyValue(key, value);
+            toastService.ShowSuccess($"Key '{key}' saved successfully!");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Failed to save key '{key}': {ex.Message}");
+        }
     }
 
     private void OpenConsulUrl(string url)

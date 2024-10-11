@@ -7,5 +7,6 @@ namespace Common.Services
         Task DownloadConsul();
         Task<List<string>> GetConsulKeys();
         Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues();
+        Task UpdateConsulKeyValue(string key, string value);
     }
 }

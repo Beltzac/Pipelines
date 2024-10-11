@@ -19,6 +19,17 @@ namespace Common.Services
             _configService = configService;
         }
 
+        public async Task UpdateConsulKeyValue(string key, string value)
+        {
+            var config = _configService.GetConfig();
+            string consulUrl = $"{config.ConsulUrl}/v1/kv/{key}";
+            HttpClient client = new HttpClient();
+            var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await client.PutAsync(consulUrl, content);
+            response.EnsureSuccessStatusCode();
+            _logger.LogInformation("Updated key: {Key}", key);
+        }
+
         private async Task<string> GetDatacenterAsync()
         {
             var config = _configService.GetConfig();
