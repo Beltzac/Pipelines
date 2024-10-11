@@ -15,6 +15,21 @@ namespace Common.Services
             _configService = configService;
         }
 
+        public async Task<List<string>> GetConsulKeys()
+        {
+            var config = _configService.GetConfig();
+            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
+            var kvData = await FetchConsulKV(consulUrl);
+
+            List<string> keys = new List<string>();
+            foreach (var kv in kvData)
+            {
+                string key = kv["Key"].ToString();
+                keys.Add(key);
+            }
+
+            return keys;
+
         public async Task DownloadConsul()
         {
             var config = _configService.GetConfig();
