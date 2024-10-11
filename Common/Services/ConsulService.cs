@@ -15,6 +15,25 @@ namespace Common.Services
             _configService = configService;
         }
 
+        public async Task<Dictionary<string, string>> GetConsulKeyValues()
+        {
+            var config = _configService.GetConfig();
+            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
+            var kvData = await FetchConsulKV(consulUrl);
+
+            Dictionary<string, string> keyValues = new Dictionary<string, string>();
+            foreach (var kv in kvData)
+            {
+                string key = kv["Key"].ToString();
+                string value = kv["Value"]?.ToString() ?? string.Empty;
+                byte[] valueBytes = Convert.FromBase64String(value);
+                string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
+                keyValues[key] = decodedValue;
+            }
+
+            return keyValues;
+        }
+
         public async Task<List<string>> GetConsulKeys()
         {
             var config = _configService.GetConfig();

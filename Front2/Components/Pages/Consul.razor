@@ -18,12 +18,15 @@
 
 <div class="mb-3">
     <label for="consulEditor" class="form-label">Consul Editor</label>
-    <ul>
-        @foreach (var key in consulKeys)
+    <div>
+        @foreach (var kvp in consulKeyValues)
         {
-            <li>@key</li>
+            <div>
+                <strong>@kvp.Key:</strong>
+                <pre>@kvp.Value</pre>
+            </div>
         }
-    </ul>
+    </div>
 </div>
 
 <button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
@@ -35,10 +38,10 @@
 
     private async ValueTask DownloadConsul()
     {
-        consulKeys = await ConsulService.GetConsulKeys();
-        toastService.ShowSuccess("Consul keys downloaded successfully!");
+        consulKeyValues = await ConsulService.GetConsulKeyValues();
+        toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
-    private List<string> consulKeys = new List<string>();
+    private Dictionary<string, string> consulKeyValues = new Dictionary<string, string>();
     private string consulContent = string.Empty;
 
     private async Task SaveConsul()
