@@ -76,7 +76,7 @@ namespace Common.Services
 
             if (looksLikeJson)
             {
-                strInput = $"[{strInput}]"; // Pra testar se objetos soltos tambÈm podem ser um array
+                strInput = $"[{strInput}]"; // Pra testar se objetos soltos tamb√©m podem ser um array
             }
 
             if (looksLikeProperty)
@@ -179,7 +179,7 @@ namespace Common.Services
 
         private bool IsDateTime(string value)
         {
-            // 09/18/2023 13:16:28 n„o È considerado uma data v·lida (foma americana)
+            // 09/18/2023 13:16:28 n√£o √© considerado uma data v√°lida (foma americana)
             return DateTime.TryParse(value, out _);
         }
 
