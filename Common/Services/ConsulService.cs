@@ -20,7 +20,7 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task<Dictionary<string, (string Value, bool IsValidJson)>> GetConsulKeyValues(bool isRecursive)
+        public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(bool isRecursive)
         {
             var config = _configService.GetConfig();
             string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
@@ -44,13 +44,19 @@ namespace Common.Services
                 }
             }
 
-            Dictionary<string, (string Value, bool IsValidJson)> keyValuesWithJson = new Dictionary<string, (string Value, bool IsValidJson)>();
+            Dictionary<string, ConsulKeyValue> keyValuesWithJson = new Dictionary<string, ConsulKeyValue>();
 
             foreach (var keyValue in keyValues)
             {
                 string value = keyValue.Value;
                 bool isValidJson = IsValidFormated(keyValue.Key, value);
-                keyValuesWithJson[keyValue.Key] = (value, isValidJson);
+                string url = $"{config.ConsulUrl}/ui/dc1/kv/{keyValue.Key}";
+                keyValuesWithJson[keyValue.Key] = new ConsulKeyValue
+                {
+                    Value = value,
+                    IsValidJson = isValidJson,
+                    Url = url
+                };
             }
 
             return keyValuesWithJson;
