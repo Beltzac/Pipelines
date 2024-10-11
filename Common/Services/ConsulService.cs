@@ -25,6 +25,7 @@ namespace Common.Services
             string consulUrl = $"{config.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
             var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
+            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
             HttpResponseMessage response = await client.PutAsync(consulUrl, content);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("Updated key: {Key}", key);
@@ -35,6 +36,7 @@ namespace Common.Services
             var config = _configService.GetConfig();
             string consulUrl = config.ConsulUrl + "/v1/agent/self";
             HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(consulUrl);
             response.EnsureSuccessStatusCode();
 
@@ -293,6 +295,7 @@ namespace Common.Services
         async Task<JArray> FetchConsulKV(string url)
         {
             HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
