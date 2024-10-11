@@ -54,11 +54,11 @@
                 {
                     @if (isRecursive)
                     {
-                        <pre>@kvp.Value.ValueRecursive</pre>
+                        <textarea class="form-control" readonly>@kvp.Value.ValueRecursive</textarea>
                     }
                     else
                     {
-                        <pre>@kvp.Value.Value</pre>
+                        <textarea class="form-control">@kvp.Value.Value</textarea>
                     }
                 }
             </li>
