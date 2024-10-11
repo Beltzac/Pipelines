@@ -57,7 +57,7 @@
 
     private bool isRecursive = false;
 
-    private IEnumerable<KeyValuePair<string, string>> filteredConsulKeyValues =>
+    private IEnumerable<KeyValuePair<string, (string Value, bool IsValidJson)>> filteredConsulKeyValues =>
         consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
 
     private async ValueTask DownloadConsul()
