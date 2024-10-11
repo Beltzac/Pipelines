@@ -1,4 +1,4 @@
-namespace Common.Services
+namespace Common.Models
 {
     public class ConsulKeyValue
     {

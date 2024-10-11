@@ -21,11 +21,6 @@
                 <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
                 <ValidationMessage For="@(() => config.PAT)" />
             </div>
-            <div class="form-group">
-                <label for="consulToken">Consul Token</label>
-                <InputText id="consulToken" @bind-Value="config.ConsulToken" class="form-control" />
-                <ValidationMessage For="@(() => config.ConsulToken)" />
-            </div>
         </div>
     </div>
 
@@ -57,6 +52,11 @@
                 <label for="consulFolder">Consul Folder</label>
                 <InputText id="consulFolder" @bind-Value="config.ConsulFolder" class="form-control" />
                 <ValidationMessage For="@(() => config.ConsulFolder)" />
+            </div>
+            <div class="form-group">
+                <label for="consulToken">Consul Token</label>
+                <InputText id="consulToken" @bind-Value="config.ConsulToken" class="form-control" />
+                <ValidationMessage For="@(() => config.ConsulToken)" />
             </div>
         </div>
     </div>

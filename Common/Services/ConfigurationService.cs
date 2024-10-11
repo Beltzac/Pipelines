@@ -72,6 +72,7 @@ public class ConfigModel
     public string LocalCloneFolder { get; set; }
     public string ConsulUrl { get; set; }
     public string ConsulFolder { get; set; }
+    public string ConsulToken { get; set; }
     public string RepositoryOwner { get; set; } = "beltzac";
     public string Username { get; set; } = "Beltzac";
     public string RepositoryName { get; set; } = "pipelines";
