@@ -36,7 +36,6 @@
 <button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
 
 <div class="mb-3">
-    <label for="consulEditor" class="form-label">Consul Editor</label>
     <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
 
     <ul>
@@ -44,7 +43,7 @@
         {
             <li>
                 <span>@(kvp.Value.IsValidJson ? "✔️" : "❌")</span>
-                <button class="btn btn-link" @onclick="() => ToggleKeyVisibility(kvp.Key)">
+                <button class="btn" @onclick="() => ToggleKeyVisibility(kvp.Key)">
                     @kvp.Key
                 </button>
                 @if (visibleKeys.Contains(kvp.Key))

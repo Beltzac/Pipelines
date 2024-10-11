@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Data.SqlClient;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Common.Services
@@ -99,7 +102,85 @@ namespace Common.Services
                 return true;
             }
 
+            var isDateTime = IsDateTime(strInput);
+            if (isDateTime)
+            {
+                return true;
+            }
+
+            var isConnectionString = IsConnectionString(strInput);
+            if (isConnectionString)
+            {
+                return true;
+            }
+
+            var isPath = IsPath(strInput);
+            if (isPath)
+            {
+                return true;
+            }
+
+            var isSimpleString = IsSimpleString(strInput);
+            if (isSimpleString)
+            {
+                return true;
+            }
+
+            var isBasicAuth = IsBasicAuth(strInput);
+            if (isBasicAuth)
+            {
+                return true;
+            }
+
             return false;
+        }
+
+        public bool IsBasicAuth(string value)
+        {
+            // Validate if the value is a Basic Auth header
+            // And if it is base64 encoded
+            // with : separator
+
+            if (!value.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            try
+            {
+                var base64Value = value.Substring("Basic ".Length);
+
+                var decodedValue = Encoding.UTF8.GetString(Convert.FromBase64String(base64Value));
+
+                return decodedValue.Contains(":");
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool IsSimpleString(string value)
+        {
+            // No whitespace, no line breaks
+            return !value.Contains(" ") && !value.Contains("\n");
+        }
+
+        public bool IsPath(string value)
+        {
+            char[] invalidPathChars = Path.GetInvalidPathChars();
+            return (value.Contains("\\") || value.Contains("/")) && !value.Any(c => invalidPathChars.Contains(c));
+        }
+
+        private bool IsConnectionString(string value)
+        {
+            return value.Contains("Data Source=") || value.Contains("Database=") || value.Contains("mongodb://");
+        }
+
+        private bool IsDateTime(string value)
+        {
+            // 09/18/2023 13:16:28 não é considerado uma data válida (foma americana)
+            return DateTime.TryParse(value, out _);
         }
 
         private bool IsJson(string value)
@@ -117,8 +198,7 @@ namespace Common.Services
 
         public static bool IsNumeric(string text)
         {
-            double test;
-            return double.TryParse(text, out test);
+            return double.TryParse(text, out _);
         }
 
         bool IsValidURL(string URL)
