@@ -16,6 +16,16 @@
 
 <h3>Consul</h3>
 
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
+    <label class="form-check-label" for="recursiveToggle">
+        Enable Recursive Values
+    </label>
+</div>
+
+<button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
+<button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
+
 <div class="mb-3">
     <label for="consulEditor" class="form-label">Consul Editor</label>
     <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
@@ -35,18 +45,6 @@
         }
     </ul>
 </div>
-
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
-    <label class="form-check-label" for="recursiveToggle">
-        Enable Recursive Values
-    </label>
-</div>
-
-<button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
-<button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
-
-
 
 @code {
 
