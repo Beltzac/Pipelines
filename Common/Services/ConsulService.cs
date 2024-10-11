@@ -20,6 +20,19 @@ namespace Common.Services
             _configService = configService;
         }
 
+        private async Task<string> GetDatacenterAsync()
+        {
+            var config = _configService.GetConfig();
+            string consulUrl = config.ConsulUrl + "/v1/agent/self";
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync(consulUrl);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var json = JObject.Parse(responseBody);
+            return json["Config"]["Datacenter"].ToString();
+        }
+
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(bool isRecursive)
         {
             var config = _configService.GetConfig();
@@ -50,7 +63,8 @@ namespace Common.Services
             {
                 string value = keyValue.Value;
                 bool isValidJson = IsValidFormated(keyValue.Key, value);
-                string url = $"{config.ConsulUrl}/ui/dc1/kv/{keyValue.Key}";
+                string datacenter = await GetDatacenterAsync();
+                string url = $"{config.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}";
                 keyValuesWithJson[keyValue.Key] = new ConsulKeyValue
                 {
                     Value = value,
