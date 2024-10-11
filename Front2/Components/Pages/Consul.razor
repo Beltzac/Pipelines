@@ -23,7 +23,12 @@
 
 <div class="mb-3">
     <label for="consulEditor" class="form-label">Consul Editor</label>
-    <textarea id="consulEditor" class="form-control" rows="10" @bind="@consulContent"></textarea>
+    <ul>
+        @foreach (var key in consulKeys)
+        {
+            <li>@key</li>
+        }
+    </ul>
 </div>
 
 <button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
@@ -35,8 +40,10 @@
 
     private async ValueTask DownloadConsul()
     {
-        await ConsulService.DownloadConsul();
+        consulKeys = await ConsulService.GetConsulKeys();
+        toastService.ShowSuccess("Consul keys downloaded successfully!");
     }
+    private List<string> consulKeys = new List<string>();
     private string consulContent = string.Empty;
 
     private async Task SaveConsul()

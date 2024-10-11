@@ -3,5 +3,6 @@
     public interface IConsulService
     {
         Task DownloadConsul();
+        Task<List<string>> GetConsulKeys();
     }
 }
