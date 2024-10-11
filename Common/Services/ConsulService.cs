@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Data.SqlClient;
-using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -33,7 +31,7 @@ namespace Common.Services
             return json["Config"]["Datacenter"].ToString();
         }
 
-        public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(bool isRecursive)
+        public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues()
         {
             var config = _configService.GetConfig();
             string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
@@ -49,25 +47,21 @@ namespace Common.Services
                 keyValues[key] = decodedValue;
             }
 
-            if (isRecursive)
-            {
-                foreach (var kv in keyValues)
-                {
-                    keyValues[kv.Key] = ResolveRecursiveValues(kv.Value, keyValues);
-                }
-            }
-
             Dictionary<string, ConsulKeyValue> keyValuesWithJson = new Dictionary<string, ConsulKeyValue>();
+            string datacenter = await GetDatacenterAsync();
 
             foreach (var keyValue in keyValues)
             {
                 string value = keyValue.Value;
-                bool isValidJson = IsValidFormated(keyValue.Key, value);
-                string datacenter = await GetDatacenterAsync();
-                string url = $"{config.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}";
+                string url = $"{config.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}/edit";
+
+                var recursiveValue = ResolveRecursiveValues(value, keyValues);
+                bool isValidJson = IsValidFormated(keyValue.Key, recursiveValue);
+
                 keyValuesWithJson[keyValue.Key] = new ConsulKeyValue
                 {
                     Value = value,
+                    ValueRecursive = recursiveValue,
                     IsValidJson = isValidJson,
                     Url = url
                 };
@@ -90,9 +84,9 @@ namespace Common.Services
             }
 
             var isJson = key.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
-            var looksLikeJson =  strInput.Trim().StartsWith("{");
+            var looksLikeJson = strInput.Trim().StartsWith("{");
             var looksLikeArray = strInput.Trim().StartsWith("[");
-            var looksLikeProperty = strInput.Trim().StartsWith("\""); 
+            var looksLikeProperty = strInput.Trim().StartsWith("\"");
 
             if (looksLikeJson)
             {
