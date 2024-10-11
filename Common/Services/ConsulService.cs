@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
@@ -9,12 +10,6 @@ namespace Common.Services
         private readonly ILogger<ConsulService> _logger;
 
         private readonly IConfigurationService _configService;
-
-        public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
-        {
-            _logger = logger;
-            _configService = configService;
-        }
 
         public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
@@ -35,16 +30,102 @@ namespace Common.Services
                 string value = kv["Value"]?.ToString() ?? string.Empty;
                 byte[] valueBytes = Convert.FromBase64String(value);
                 string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
-
-                if (isRecursive)
-                {
-                    decodedValue = ResolveRecursiveValues(decodedValue, keyValues);
-                }
-
                 keyValues[key] = decodedValue;
             }
 
-            return keyValues;
+            if (isRecursive)
+            {
+                foreach (var kv in keyValues)
+                {
+                    keyValues[kv.Key] = ResolveRecursiveValues(kv.Value, keyValues);
+                }
+            }
+
+            Dictionary<string, (string Value, bool IsValidJson)> keyValuesWithJson = new Dictionary<string, (string Value, bool IsValidJson)>();
+
+            foreach (var keyValue in keyValues)
+            {
+                string value = keyValue.Value;
+                bool isValidJson = IsValidFormated(keyValue.Key, value);
+                keyValuesWithJson[keyValue.Key] = (value, isValidJson);
+            }
+
+            return keyValuesWithJson;
+        }
+
+        private bool IsValidFormated(string key, string strInput)
+        {
+            if (string.IsNullOrWhiteSpace(strInput))
+            {
+                return true;
+            }
+
+            var isLock = key.EndsWith(".lock", StringComparison.OrdinalIgnoreCase);
+            if (isLock)
+            {
+                return true;
+            }
+
+            var isJson = key.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+            var looksLikeJson =  strInput.Trim().StartsWith("{");
+            var looksLikeArray = strInput.Trim().StartsWith("[");
+            var looksLikeProperty = strInput.Trim().StartsWith("\""); 
+
+            if (looksLikeJson)
+            {
+                strInput = $"[{strInput}]"; // Pra testar se objetos soltos também podem ser um array
+            }
+
+            if (looksLikeProperty)
+            {
+                strInput = $"{{{strInput}}}"; // Pra testar se props soltas podem montar um obj
+            }
+
+            if (isJson || looksLikeJson || looksLikeArray || looksLikeProperty)
+            {
+                return IsJson(strInput);
+            }
+
+            // Check simple numbers
+            var isNumber = IsNumeric(strInput);
+            if (isNumber)
+            {
+                return true;
+            }
+
+            var isUrl = IsValidURL(strInput);
+            if (isUrl)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsJson(string value)
+        {
+            try
+            {
+                var obj = JToken.Parse(value);
+                return true;
+            }
+            catch (JsonReaderException)
+            {
+                return false;
+            }
+        }
+
+        public static bool IsNumeric(string text)
+        {
+            double test;
+            return double.TryParse(text, out test);
+        }
+
+        bool IsValidURL(string URL)
+        {
+            string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
+            Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            return Rgx.IsMatch(URL);
         }
 
         private string ResolveRecursiveValues(string value, Dictionary<string, string> keyValues)
@@ -52,11 +133,14 @@ namespace Common.Services
             var regex = new Regex(@"{{\s*key\s*'([^']+)'\s*}}");
             return regex.Replace(value, match =>
             {
-                var referencedKey = match.Groups[1].Value;
+                var referencedKey = match.Groups[1].Value.Trim('/');
                 if (keyValues.TryGetValue(referencedKey, out var referencedValue))
                 {
                     return ResolveRecursiveValues(referencedValue, keyValues);
                 }
+
+                _logger.LogWarning("Key not found: {Key}", referencedKey);
+
                 return match.Value; // Return the original if not found
             });
         }
