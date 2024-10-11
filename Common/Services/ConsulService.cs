@@ -295,6 +295,7 @@ namespace Common.Services
         async Task<JArray> FetchConsulKV(string url)
         {
             HttpClient client = new HttpClient();
+            var config = _configService.GetConfig();
             client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
