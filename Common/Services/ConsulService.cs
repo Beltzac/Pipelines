@@ -12,11 +12,57 @@ namespace Common.Services
 
         public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
+            var config = _configService.GetConfig();
+            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
+            var kvData = await FetchConsulKV(consulUrl);
+
+            Dictionary<string, (string Value, bool IsValidJson)> keyValues = new Dictionary<string, (string, bool)>();
+            foreach (var kv in kvData)
+            {
+                string key = kv["Key"].ToString();
+                string value = kv["Value"]?.ToString() ?? string.Empty;
+                byte[] valueBytes = Convert.FromBase64String(value);
+                string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
+
+                if (isRecursive)
+                {
+                    decodedValue = ResolveRecursiveValues(decodedValue, keyValues.ToDictionary(k => k.Key, k => k.Value.Value));
+                }
+
+                bool isValidJson = IsValidJson(decodedValue);
+                keyValues[key] = (decodedValue, isValidJson);
+            }
+
+            return keyValues;
+        }
+
+        private bool IsValidJson(string strInput)
+        {
+            if (string.IsNullOrWhiteSpace(strInput)) return false;
+            strInput = strInput.Trim();
+            if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || // For object
+                (strInput.StartsWith("[") && strInput.EndsWith("]")))   // For array
+            {
+                try
+                {
+                    var obj = JToken.Parse(strInput);
+                    return true;
+                }
+                catch (JsonReaderException)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
             _logger = logger;
             _configService = configService;
         }
 
-        public async Task<Dictionary<string, string>> GetConsulKeyValues(bool isRecursive)
+        public async Task<Dictionary<string, (string Value, bool IsValidJson)>> GetConsulKeyValues(bool isRecursive)
         {
             var config = _configService.GetConfig();
             string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
