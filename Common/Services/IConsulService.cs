@@ -4,6 +4,6 @@
     {
         Task DownloadConsul();
         Task<List<string>> GetConsulKeys();
-        Task<Dictionary<string, (string Value, bool IsValidJson)>> GetConsulKeyValues(bool isRecursive);
+        Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(bool isRecursive);
     }
 }
