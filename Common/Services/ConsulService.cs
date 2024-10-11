@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
 
 namespace Common.Services
 {
@@ -13,7 +14,6 @@ namespace Common.Services
         {
             _logger = logger;
             _configService = configService;
-            return keyValues;
         }
 
         public async Task<Dictionary<string, string>> GetConsulKeyValues(bool isRecursive)
@@ -37,6 +37,8 @@ namespace Common.Services
 
                 keyValues[key] = decodedValue;
             }
+
+            return keyValues;
         }
 
         private string ResolveRecursiveValues(string value, Dictionary<string, string> keyValues)
@@ -51,15 +53,6 @@ namespace Common.Services
                 }
                 return match.Value; // Return the original if not found
             });
-            {
-                string key = kv["Key"].ToString();
-                string value = kv["Value"]?.ToString() ?? string.Empty;
-                byte[] valueBytes = Convert.FromBase64String(value);
-                string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
-                keyValues[key] = decodedValue;
-            }
-
-            return keyValues;
         }
 
         public async Task<List<string>> GetConsulKeys()
