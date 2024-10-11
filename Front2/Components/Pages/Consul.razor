@@ -51,7 +51,14 @@
                 </button>
                 @if (visibleKeys.Contains(kvp.Key))
                 {
-                    <pre>@kvp.Value.Value</pre>
+                    @if (isRecursive)
+                    {
+                        <pre>@kvp.Value.ValueRecursive</pre>
+                    }
+                    else
+                    {
+                        <pre>@kvp.Value.Value</pre>
+                    }
                 }
             </li>
         }
@@ -73,7 +80,7 @@
 
     private async ValueTask DownloadConsul()
     {
-        consulKeyValues = await ConsulService.GetConsulKeyValues(isRecursive);
+        consulKeyValues = await ConsulService.GetConsulKeyValues();
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
 
