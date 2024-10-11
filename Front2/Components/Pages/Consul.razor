@@ -34,6 +34,7 @@
         @foreach (var kvp in filteredConsulKeyValues)
         {
             <li>
+                <span>@(IsValidJson(kvp.Value) ? "✔️" : "❌")</span>
                 <button class="btn btn-link" @onclick="() => ToggleKeyVisibility(kvp.Key)">
                     @kvp.Key
                 </button>
@@ -75,7 +76,28 @@
         }
     }
 
-    private async Task SaveConsul()
+    private bool IsValidJson(string strInput)
+    {
+        if (string.IsNullOrWhiteSpace(strInput)) return false;
+        strInput = strInput.Trim();
+        if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || // For object
+            (strInput.StartsWith("[") && strInput.EndsWith("]")))   // For array
+        {
+            try
+            {
+                var obj = JToken.Parse(strInput);
+                return true;
+            }
+            catch (JsonReaderException)
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
     {
         // Logic to save the edited Consul content
         // This is a placeholder for the actual implementation
