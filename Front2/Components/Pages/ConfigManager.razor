@@ -21,6 +21,11 @@
                 <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
                 <ValidationMessage For="@(() => config.PAT)" />
             </div>
+            <div class="form-group">
+                <label for="consulToken">Consul Token</label>
+                <InputText id="consulToken" @bind-Value="config.ConsulToken" class="form-control" />
+                <ValidationMessage For="@(() => config.ConsulToken)" />
+            </div>
         </div>
     </div>
 
