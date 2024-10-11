@@ -36,13 +36,13 @@
         @foreach (var kvp in filteredConsulKeyValues)
         {
             <li>
-                <span>@(IsValidJson(kvp.Value) ? "✔️" : "❌")</span>
+                <span>@(kvp.Value.IsValidJson ? "✔️" : "❌")</span>
                 <button class="btn btn-link" @onclick="() => ToggleKeyVisibility(kvp.Key)">
                     @kvp.Key
                 </button>
                 @if (visibleKeys.Contains(kvp.Key))
                 {
-                    <pre>@kvp.Value</pre>
+                    <pre>@kvp.Value.Value</pre>
                 }
             </li>
         }
@@ -51,7 +51,7 @@
 
 @code {
 
-    private Dictionary<string, string> consulKeyValues = new Dictionary<string, string>();
+    private Dictionary<string, (string Value, bool IsValidJson)> consulKeyValues = new Dictionary<string, (string, bool)>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
 
@@ -78,28 +78,6 @@
         }
     }
 
-    private bool IsValidJson(string strInput)
-    {
-        if (string.IsNullOrWhiteSpace(strInput)) return false;
-        strInput = strInput.Trim();
-        if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || // For object
-            (strInput.StartsWith("[") && strInput.EndsWith("]")))   // For array
-        {
-            try
-            {
-                var obj = JToken.Parse(strInput);
-                return true;
-            }
-            catch (JsonReaderException)
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
 
     private async Task SaveConsul()
     {
