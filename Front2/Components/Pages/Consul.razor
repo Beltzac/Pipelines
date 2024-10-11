@@ -63,9 +63,11 @@
     private string searchTerm = string.Empty;
 
     private bool isRecursive = false;
+    private bool showInvalidOnly = false;
 
     private IEnumerable<KeyValuePair<string, (string Value, bool IsValidJson)>> filteredConsulKeyValues =>
-        consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            && (!showInvalidOnly || !kvp.Value.IsValidJson));
 
     private async ValueTask DownloadConsul()
     {
