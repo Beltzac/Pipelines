@@ -16,28 +16,8 @@ namespace Common.Services
             _configService = configService;
         }
 
-        private bool IsValidJson(string strInput)
+        public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
-            if (string.IsNullOrWhiteSpace(strInput)) return false;
-            strInput = strInput.Trim();
-            if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || // For object
-                (strInput.StartsWith("[") && strInput.EndsWith("]")))   // For array
-            {
-                try
-                {
-                    var obj = JToken.Parse(strInput);
-                    return true;
-                }
-                catch (JsonReaderException)
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                return false;
-            }
-        }
             _logger = logger;
             _configService = configService;
         }
