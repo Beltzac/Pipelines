@@ -16,58 +16,131 @@
 @inject IConsulService ConsulService
 @inject ICommitDataExportService CommitDataExportService
 
+<h3>Consul Key Management</h3>
 
-<h3>Consul</h3>
+<div class="options floating-controls">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
+        <label class="form-check-label" for="recursiveToggle">
+            Enable Recursive Values
+        </label>
+    </div>
 
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
-    <label class="form-check-label" for="recursiveToggle">
-        Enable Recursive Values
-    </label>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="showInvalidOnly" />
+        <label class="form-check-label" for="showInvalidOnlyToggle">
+            Show Only Invalid Values
+        </label>
+    </div>
+
+    <div class="buttons">
+        <button class="btn btn-primary" @onclick="async () => await DownloadConsul()">Download Consul</button>
+        <button class="btn btn-success" @onclick="async () => await SaveConsul()">Save Consul</button>
+    </div>
+
+    <div class="search-container mb-3">
+        <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
+    </div>
 </div>
 
-<div class="form-check">
-    <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="showInvalidOnly" />
-    <label class="form-check-label" for="showInvalidOnlyToggle">
-        Show Only Invalid Values
-    </label>
-</div>
 
-<button class="btn btn-primary text-nowrap" @onclick="async () => await DownloadConsul()">Download Consul</button>
-<button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsul()">Save Consul</button>
 
-<div class="mb-3">
-    <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
-
-    <ul>
-        @foreach (var kvp in filteredConsulKeyValues)
-        {
-            <li>
+<ul class="key-list">
+    @foreach (var kvp in filteredConsulKeyValues)
+    {
+        <li class="key-item" @onclick="() => ToggleKeyVisibility(kvp.Key)" style="cursor: pointer;">
+            <div class="key-header">
                 <span>@(kvp.Value.IsValidJson ? "✔️" : "❌")</span>
-                <button class="btn" @onclick="() => ToggleKeyVisibility(kvp.Key)">
-                    @kvp.Key
-                </button>
-                <button class="btn btn-link" @onclick="() => OpenConsulUrl(kvp.Value.Url)">
+                <span class="key-name">@kvp.Key</span>
+                <button class="btn btn-primary open-consul" @onclick="(e) => { OpenConsulUrl(kvp.Value.Url); }">
                     Open in Consul
                 </button>
-                @if (visibleKeys.Contains(kvp.Key))
-                {
+            </div>
+            @if (visibleKeys.Contains(kvp.Key))
+            {
+                <div class="key-value-container">
                     @if (isRecursive)
                     {
-                        <textarea class="form-control" readonly style="width: 100%; height: 200px; white-space: nowrap; overflow-x: auto;">@kvp.Value.ValueRecursive</textarea>
+                        <textarea @bind="kvp.Value.Value" class="form-control" readonly></textarea>
                     }
                     else
                     {
-                        <textarea @bind="kvp.Value.Value" class="form-control" style="width: 100%; height: 200px; white-space: nowrap; overflow-x: auto;"></textarea>
-                        <button class="btn btn-secondary" @onclick="() => SaveKeyValue(kvp.Key, kvp.Value.Value)">
+                        <textarea @bind="kvp.Value.Value" class="form-control"></textarea>
+                        <button class="btn btn-secondary save-key" @onclick="() => SaveKeyValue(kvp.Key, kvp.Value.Value)">
                             Save
                         </button>
                     }
-                }
-            </li>
-        }
-    </ul>
-</div>
+                </div>
+            }
+        </li>
+    }
+</ul>
+
+<style>
+    .options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .floating-controls {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .search-container {
+        max-width: 500px;
+    }
+
+    .key-list {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .key-item {
+        border: 1px solid #ddd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
+    }
+
+    .key-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .key-name {
+        font-weight: bold;
+        text-align: left;
+    }
+
+    .key-value-container {
+        margin-top: 1rem;
+    }
+
+    textarea {
+        width: 100%;
+        height: 150px;
+        white-space: pre;
+        overflow-x: auto;
+        margin-bottom: 0.5rem;
+    }
+
+    .open-consul {
+        margin-left: auto;
+    }
+</style>
 
 @code {
 
@@ -100,13 +173,13 @@
         }
     }
 
-
     private async Task SaveConsul()
     {
         // Logic to save the edited Consul content
         // This is a placeholder for the actual implementation
         toastService.ShowSuccess("Consul content saved successfully!");
     }
+
     private async Task SaveKeyValue(string key, string value)
     {
         try

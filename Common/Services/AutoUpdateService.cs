@@ -145,11 +145,9 @@ namespace Common.Services
 
                         Console.WriteLine("Installer downloaded to " + installerFilePath);
 
-                        // Start the installer process
                         System.Diagnostics.Process.Start(installerFilePath);
 
-                        // Optionally, exit the application
-                        Environment.Exit(0);
+                        ElectronNET.API.Electron.App.Exit();
 
                         break;
                     }
