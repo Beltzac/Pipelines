@@ -29,6 +29,8 @@
             }
         </select>
     </div>
+
+    <div class="form-check">
         <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
         <label class="form-check-label" for="recursiveToggle">
             Enable Recursive Values
@@ -199,9 +201,15 @@
 
     private async Task SaveKeyValue(string key, string value)
     {
+        if (selectedConsulEnv == null)
+        {
+            toastService.ShowError("Please select a Consul environment.");
+            return;
+        }
+
         try
         {
-            await ConsulService.UpdateConsulKeyValue(key, value);
+            await ConsulService.UpdateConsulKeyValue(selectedConsulEnv, key, value);
             toastService.ShowSuccess($"Key '{key}' saved successfully!");
         }
         catch (Exception ex)
