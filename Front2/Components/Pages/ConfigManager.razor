@@ -87,11 +87,12 @@
     <div class="card mb-3">
         <div class="card-header">Ignore Repositories by Regex</div>
         <div class="card-body">
-            @foreach (var regex in config.IgnoreRepositoriesRegex)
+            @for (int i = 0; i < config.IgnoreRepositoriesRegex.Count; i++)
             {
+                var index = i; // Create a local copy of the loop variable
                 <div class="input-group mb-2">
-                    <InputText @bind-Value="regex" class="form-control" />
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveRegex(regex)">Remove</button>
+                    <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control" />
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveRegex(index)">Remove</button>
                 </div>
             }
             <button type="button" class="btn btn-secondary" @onclick="AddRegex">Add Regex</button>
@@ -126,9 +127,12 @@
         config.IgnoreRepositoriesRegex.Add(string.Empty);
     }
 
-    private void RemoveRegex(string regex)
+    private void RemoveRegex(int index)
     {
-        config.IgnoreRepositoriesRegex.Remove(regex);
+        if (index >= 0 && index < config.IgnoreRepositoriesRegex.Count)
+        {
+            config.IgnoreRepositoriesRegex.RemoveAt(index);
+        }
     }
 
     private async Task HandleValidSubmit()
