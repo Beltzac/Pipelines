@@ -46,7 +46,7 @@ namespace Common.Services
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
         {
             string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
-            var kvData = await FetchConsulKV(consulUrl);
+            var kvData = await FetchConsulKV(consulUrl, consulEnv);
 
             Dictionary<string, string> keyValues = new Dictionary<string, string>();
             foreach (var kv in kvData)
@@ -287,11 +287,10 @@ namespace Common.Services
             }
         }
 
-        async Task<JArray> FetchConsulKV(string url)
+        async Task<JArray> FetchConsulKV(string url, ConsulEnvironment consulEnv)
         {
             HttpClient client = new HttpClient();
-            var config = _configService.GetConfig();
-            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
+            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
