@@ -22,7 +22,7 @@
 <div class="options floating-controls">
     <div class="form-group">
         <label for="consulEnvSelect">Select Consul Environment</label>
-        <select id="consulEnvSelect" class="form-control" @bind-Value="selectedConsulEnv">
+        <select id="consulEnvSelect" class="form-control" @bind="selectedConsulEnv">
             @foreach (var env in config.ConsulEnvironments)
             {
                 <option value="@env">@env.Name</option>
