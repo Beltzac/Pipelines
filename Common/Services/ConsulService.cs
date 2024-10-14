@@ -22,7 +22,8 @@ namespace Common.Services
         public async Task UpdateConsulKeyValue(string key, string value)
         {
             var config = _configService.GetConfig();
-            string consulUrl = $"{config.ConsulUrl}/v1/kv/{key}";
+            var consulEnv = config.ConsulEnvironments.First(); // Select the appropriate environment
+            string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
             var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
             client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
