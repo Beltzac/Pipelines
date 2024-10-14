@@ -250,10 +250,9 @@ namespace Common.Services
             });
         }
 
-        public async Task<List<string>> GetConsulKeys()
+        public async Task<List<string>> GetConsulKeys(ConsulEnvironment consulEnv)
         {
-            var config = _configService.GetConfig();
-            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
+            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
             var kvData = await FetchConsulKV(consulUrl);
 
             List<string> keys = new List<string>();
@@ -266,11 +265,10 @@ namespace Common.Services
             return keys;
         }
 
-        public async Task DownloadConsul()
+        public async Task DownloadConsul(ConsulEnvironment consulEnv)
         {
-            var config = _configService.GetConfig();
-            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
-            string downloadFolder = config.ConsulFolder;
+            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
+            string downloadFolder = consulEnv.ConsulFolder;
 
             if (!Directory.Exists(downloadFolder))
             {
