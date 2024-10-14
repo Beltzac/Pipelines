@@ -25,7 +25,7 @@
         <select id="consulEnvSelect" class="form-control" @bind="selectedConsulEnv">
             @foreach (var env in config.ConsulEnvironments)
             {
-                <option value="@env">@env.Name</option>
+                <option value="@env.Name">@env.Name</option>
             }
         </select>
     </div>
@@ -156,7 +156,7 @@
 @code {
 
     private ConfigModel config = new ConfigModel();
-    private ConsulEnvironment selectedConsulEnv = new ConsulEnvironment();
+    private string selectedConsulEnv;
     private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
@@ -170,13 +170,14 @@
 
     private async ValueTask DownloadConsul()
     {
-        if (selectedConsulEnv == null)
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        if (consulEnv == null)
         {
             toastService.ShowError("Please select a Consul environment.");
             return;
         }
 
-        consulKeyValues = await ConsulService.GetConsulKeyValues(selectedConsulEnv);
+        consulKeyValues = await ConsulService.GetConsulKeyValues(consulEnv);
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
 
@@ -209,7 +210,14 @@
 
         try
         {
-            await ConsulService.UpdateConsulKeyValue(selectedConsulEnv, key, value);
+            var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+            if (consulEnv == null)
+            {
+                toastService.ShowError("Please select a valid Consul environment.");
+                return;
+            }
+
+            await ConsulService.UpdateConsulKeyValue(consulEnv, key, value);
             toastService.ShowSuccess($"Key '{key}' saved successfully!");
         }
         catch (Exception ex)
