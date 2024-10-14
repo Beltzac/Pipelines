@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
+﻿using ElectronNET.API;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Common.Services
 {

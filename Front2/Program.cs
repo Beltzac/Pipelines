@@ -14,12 +14,14 @@ using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder();
 
-// Set the ip address and port number
-builder.Host.ConfigureWebHostDefaults(webBuilder =>
+// Integrate Electron.NET with the Host
+builder.WebHost.UseElectron(args);
+
+// Configure the WebHost to set the URLs
+builder.WebHost.ConfigureKestrel((context, options) =>
 {
-    webBuilder.UseElectron(args);
-    var port = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 8001 : 8002;
-    webBuilder.UseUrls($"http://localhost:{port}");
+    var port = HybridSupport.IsElectronActive ? 8001 : 8002;
+    options.ListenAnyIP(port);
 });
 
 var logger = new LoggerConfiguration()
