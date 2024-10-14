@@ -69,6 +69,15 @@
                 <button type="button" class="btn btn-danger" @onclick="() => RemoveConsulEnvironment(i)">Remove</button>
             </div>
         </div>
+        if (config.ConsulEnvironments.Count == 1)
+        {
+            selectedConsulEnv = config.ConsulEnvironments[0].Name;
+        }
+    }
+
+    private void OnConsulEnvironmentSelected(ChangeEventArgs e)
+    {
+        selectedConsulEnv = e.Value.ToString();
     }
     <button type="button" class="btn btn-secondary" @onclick="AddConsulEnvironment">Add Consul Environment</button>
 
@@ -93,6 +102,8 @@
     {
         config = ConfigService.GetConfig();
     }
+
+    private string selectedConsulEnv;
 
     private void AddConsulEnvironment()
     {
