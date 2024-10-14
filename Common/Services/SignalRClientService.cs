@@ -9,7 +9,7 @@ namespace Common.Services
         public SignalRClientService()
         {
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl($"http://localhost:{(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 8001 : 8002)}/buildInfoHub")
+                .WithUrl($"http://localhost:{(HybridSupport.IsElectronActive ? 8001 : 8002)}/buildInfoHub")
                 .Build();
         }
 
