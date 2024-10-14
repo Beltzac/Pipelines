@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace Common.Services
@@ -26,6 +27,7 @@ namespace Common.Services
         private readonly ILogger<BuildInfoService> _logger;
         private readonly string _localCloneFolder;
         private readonly string _privateToken;
+        private readonly List<string> _repoRegexFilters;
 
         public BuildInfoService(
             IHubContext<BuildInfoHub> hubContext,
@@ -46,6 +48,7 @@ namespace Common.Services
             _gitClient = gitClient;
             _logger = logger;
             _privateToken = config.PAT;
+            _repoRegexFilters = config.IgnoreRepositoriesRegex;
         }
 
         public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
@@ -100,9 +103,10 @@ namespace Common.Services
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
-            var ignorePatterns = configService.GetConfig().IgnoreRepositoriesRegex;
             var query = _repositoryDatabase.Query()
-                .Where(repo => !ignorePatterns.Any(pattern => Regex.IsMatch(repo.Name, pattern)));
+                .Where(repo => !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern))
+                               && !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Project, pattern)));
+
             if (!string.IsNullOrEmpty(filter))
             {
                 var trimmedFilter = filter.Trim();
@@ -257,7 +261,7 @@ namespace Common.Services
 
         public async Task CloneAllRepositoriesAsync()
         {
-            var buildInfos = (await _repositoryDatabase.FindAllAsync()).ToList();
+            var buildInfos = await GetBuildInfoAsync();
 
             foreach (var buildInfo in buildInfos)
             {
@@ -352,7 +356,7 @@ namespace Common.Services
 
         public async Task<string> GenerateCloneCommands()
         {
-            var buildInfos = (await _repositoryDatabase.FindAllAsync()).ToList();
+            var buildInfos = await GetBuildInfoAsync();
             var commands = new StringBuilder();
 
             commands.AppendLine("@echo off");
