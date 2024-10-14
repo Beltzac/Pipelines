@@ -53,7 +53,7 @@
     </div>
 
     <div class="search-container mb-3">
-        <input type="text" class="form-control" placeholder="Search keys..." @oninput="UpdateSearchTerm" />
+        <input type="text" class="form-control" placeholder="Search keys/values" @oninput="UpdateSearchTerm" />
     </div>
 </div>
 
@@ -198,7 +198,12 @@
     }
 
     private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
-        consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+        consulKeyValues.Where(kvp => 
+            (
+                kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
+                (!isRecursive && kvp.Value.Value.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                (isRecursive && kvp.Value.ValueRecursive.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            )
             && (!showInvalidOnly || !kvp.Value.IsValidJson));
 
     protected override void OnInitialized()
