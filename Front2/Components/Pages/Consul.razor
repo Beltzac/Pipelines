@@ -22,7 +22,7 @@
 <div class="options floating-controls">
     <div class="form-group">
         <label for="consulEnvSelect">Select Consul Environment</label>
-        <select id="consulEnvSelect" class="form-control" @bind="selectedConsulEnv">
+        <select id="consulEnvSelect" class="form-control" @bind-Value="selectedConsulEnv">
             @foreach (var env in config.ConsulEnvironments)
             {
                 <option value="@env">@env.Name</option>
@@ -156,7 +156,7 @@
 @code {
 
     private ConfigModel config = new ConfigModel();
-    private ConsulEnvironment selectedConsulEnv;
+    private ConsulEnvironment selectedConsulEnv = new ConsulEnvironment();
     private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
