@@ -12,11 +12,4 @@
         public string UserAgent { get; set; } = "TcpDash";
         public string AccessToken { get; set; }
     }
-    public class ConsulEnvironment
-    {
-        public string Name { get; set; }
-        public string ConsulUrl { get; set; }
-        public string ConsulFolder { get; set; }
-        public string ConsulToken { get; set; }
-    }
 }
