@@ -53,7 +53,7 @@
     </div>
 
     <div class="search-container mb-3">
-        <input type="text" class="form-control" placeholder="Search keys..." @bind="searchTerm" />
+        <input type="text" class="form-control" placeholder="Search keys..." @oninput="UpdateSearchTerm" />
     </div>
 </div>
 
@@ -191,6 +191,11 @@
 
     private bool isRecursive = false;
     private bool showInvalidOnly = false;
+
+    private void UpdateSearchTerm(ChangeEventArgs e)
+    {
+        searchTerm = e.Value.ToString();
+    }
 
     private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
         consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
