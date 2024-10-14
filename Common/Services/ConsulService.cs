@@ -1,4 +1,5 @@
 using Common.Models;
+using Common.Utils;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -263,7 +264,7 @@ namespace Common.Services
             return keys;
         }
 
-        public async Task DownloadConsul(ConsulEnvironment consulEnv)
+        public async Task DownloadConsulAsync(ConsulEnvironment consulEnv)
         {
             string downloadFolder = consulEnv.ConsulFolder;
 
@@ -331,6 +332,11 @@ namespace Common.Services
                     _logger.LogInformation(ex, "Error: {Message}", ex.Message);
                 }
             }
+        }
+
+        public async Task OpenInVsCode(ConsulEnvironment env)
+        {
+            OpenFolderUtils.OpenWithVSCode(_logger, env.ConsulFolder);
         }
     }
 }
