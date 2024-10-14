@@ -19,10 +19,8 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task UpdateConsulKeyValue(string key, string value)
+        public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
-            var config = _configService.GetConfig();
-            var consulEnv = config.ConsulEnvironments.First(); // Select the appropriate environment
             string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
             var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
@@ -32,10 +30,9 @@ namespace Common.Services
             _logger.LogInformation("Updated key: {Key}", key);
         }
 
-        private async Task<string> GetDatacenterAsync()
+        private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
         {
-            var config = _configService.GetConfig();
-            string consulUrl = config.ConsulUrl + "/v1/agent/self";
+            string consulUrl = consulEnv.ConsulUrl + "/v1/agent/self";
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(consulUrl);
@@ -46,10 +43,9 @@ namespace Common.Services
             return json["Config"]["Datacenter"].ToString();
         }
 
-        public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues()
+        public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
         {
-            var config = _configService.GetConfig();
-            string consulUrl = config.ConsulUrl + "/v1/kv/?recurse";
+            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
             var kvData = await FetchConsulKV(consulUrl);
 
             Dictionary<string, string> keyValues = new Dictionary<string, string>();
@@ -63,7 +59,7 @@ namespace Common.Services
             }
 
             Dictionary<string, ConsulKeyValue> keyValuesWithJson = new Dictionary<string, ConsulKeyValue>();
-            string datacenter = await GetDatacenterAsync();
+            string datacenter = await GetDatacenterAsync(consulEnv);
 
             foreach (var keyValue in keyValues)
             {
