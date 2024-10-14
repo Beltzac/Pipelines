@@ -250,33 +250,12 @@ namespace Common.Services
             });
         }
 
-        public async Task<List<string>> GetConsulKeys(ConsulEnvironment consulEnv)
-        {
-            var kvData = await FetchConsulKV(consulEnv);
-
-            List<string> keys = new List<string>();
-            foreach (var kv in kvData)
-            {
-                string key = kv["Key"].ToString();
-                keys.Add(key);
-            }
-
-            return keys;
-        }
-
         public async Task DownloadConsulAsync(ConsulEnvironment consulEnv)
         {
-            string downloadFolder = consulEnv.ConsulFolder;
-
-            if (!Directory.Exists(downloadFolder))
-            {
-                Directory.CreateDirectory(downloadFolder);
-            }
-
             try
             {
-                var kvData = await FetchConsulKV(consulEnv);
-                await SaveKVToFiles(kvData, downloadFolder);
+                var consulData = await GetConsulKeyValues(consulEnv);
+                await SaveKVToFiles(consulEnv, consulData);
                 _logger.LogInformation("Download completed successfully.");
             }
             catch (Exception ex)
@@ -298,40 +277,53 @@ namespace Common.Services
             return JArray.Parse(responseBody);
         }
 
-        async Task SaveKVToFiles(JArray kvData, string folderPath)
+        async Task SaveKVToFiles(ConsulEnvironment consulEnv, Dictionary<string, ConsulKeyValue> consulData)
         {
-            foreach (var kv in kvData)
+
+            string folderPath = consulEnv.ConsulFolder;
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            foreach (var kv in consulData)
             {
                 try
                 {
-                    string key = kv["Key"].ToString();
-                    string value = kv["Value"]?.ToString() ?? string.Empty;
-
-                    // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
-                    string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
-                    string directory = Path.GetDirectoryName(filePath);
-
-                    if (!Directory.Exists(directory))
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
-
-                    // If the path ends with a slash, treat it as a directory
-                    if (kv["Value"] == null)
-                    {
-                        continue;
-                    }
-
-                    byte[] valueBytes = Convert.FromBase64String(value);
-                    await File.WriteAllBytesAsync(filePath, valueBytes);
-
-                    _logger.LogInformation("Saved: {FilePath}", filePath);
+                    var pathNormal = Path.Combine(folderPath, "original");
+                    var pathRecursive = Path.Combine(folderPath, "recursive");
+                    SaveKvToFile(pathNormal, kv.Key, kv.Value.Value);
+                    SaveKvToFile(pathRecursive, kv.Key, kv.Value.ValueRecursive);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogInformation(ex, "Error: {Message}", ex.Message);
                 }
             }
+        }
+
+        public void SaveKvToFile(string folderPath, string key, string value)
+        {
+            // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
+
+            string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
+            string directory = Path.GetDirectoryName(filePath);
+
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // If the path ends with a slash, treat it as a directory
+            if (value == null)
+            {
+                return;
+            }
+
+            File.WriteAllText(filePath, value);
+
+            _logger.LogInformation("Saved: {FilePath}", filePath);
         }
 
         public async Task OpenInVsCode(ConsulEnvironment env)
