@@ -19,12 +19,12 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task UpdateConsulKeyValue(string key, string value)
+        public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
             string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
             var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
-            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
+            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
             HttpResponseMessage response = await client.PutAsync(consulUrl, content);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("Updated key: {Key}", key);
