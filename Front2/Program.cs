@@ -18,7 +18,8 @@ var builder = WebApplication.CreateBuilder();
 builder.Host.ConfigureWebHostDefaults(webBuilder =>
 {
     webBuilder.UseElectron(args);
-    webBuilder.UseUrls("http://localhost:8001");
+    var port = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? 8001 : 8002;
+    webBuilder.UseUrls($"http://localhost:{port}");
 });
 
 var logger = new LoggerConfiguration()
