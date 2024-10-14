@@ -15,9 +15,9 @@ else if (updateAvailable && downloadProgress > 0)
 }
 else
 {
-    <!-- Show 'Up to Date' when no update is available -->
+    <!-- Show 'Up to Date' with current version when no update is available -->
     <a class="nav-link disabled" href="#">
-        <span class="bi bi-cloud-check" aria-hidden="true"></span> Up to Date
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> Up to Date (v@currentVersion)
     </a>
 }
 
@@ -26,6 +26,7 @@ else
     private bool updateAvailable = false;
     private int downloadProgress = 0;
     private Release latestRelease;
+    private string currentVersion = Assembly.GetEntryAssembly().GetName().Version.ToString();
 
     protected override async Task OnInitializedAsync()
     {
