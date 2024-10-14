@@ -14,12 +14,21 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
+@inject IConfigurationService ConfigService
 @inject ICommitDataExportService CommitDataExportService
 
 <h3>Consul Key Management</h3>
 
 <div class="options floating-controls">
-    <div class="form-check">
+    <div class="form-group">
+        <label for="consulEnvSelect">Select Consul Environment</label>
+        <select id="consulEnvSelect" class="form-control" @bind="selectedConsulEnv">
+            @foreach (var env in config.ConsulEnvironments)
+            {
+                <option value="@env">@env.Name</option>
+            }
+        </select>
+    </div>
         <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
         <label class="form-check-label" for="recursiveToggle">
             Enable Recursive Values
@@ -144,6 +153,8 @@
 
 @code {
 
+    private ConfigModel config = new ConfigModel();
+    private ConsulEnvironment selectedConsulEnv;
     private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
     private List<string> visibleKeys = new List<string>();
     private string searchTerm = string.Empty;
@@ -157,7 +168,13 @@
 
     private async ValueTask DownloadConsul()
     {
-        consulKeyValues = await ConsulService.GetConsulKeyValues();
+        if (selectedConsulEnv == null)
+        {
+            toastService.ShowError("Please select a Consul environment.");
+            return;
+        }
+
+        consulKeyValues = await ConsulService.GetConsulKeyValues(selectedConsulEnv);
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
 
