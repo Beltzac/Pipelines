@@ -1,4 +1,6 @@
 ﻿
+using Common.Models;
+
 public interface IConfigurationService
 {
     ConfigModel GetConfig();
