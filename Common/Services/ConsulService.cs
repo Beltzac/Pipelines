@@ -34,7 +34,7 @@ namespace Common.Services
         {
             string consulUrl = consulEnv.ConsulUrl + "/v1/agent/self";
             HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("X-Consul-Token", config.ConsulToken);
+            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
             HttpResponseMessage response = await client.GetAsync(consulUrl);
             response.EnsureSuccessStatusCode();
 
@@ -45,8 +45,7 @@ namespace Common.Services
 
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
-            var kvData = await FetchConsulKV(consulUrl, consulEnv);
+            var kvData = await FetchConsulKV(consulEnv);
 
             Dictionary<string, string> keyValues = new Dictionary<string, string>();
             foreach (var kv in kvData)
@@ -64,7 +63,7 @@ namespace Common.Services
             foreach (var keyValue in keyValues)
             {
                 string value = keyValue.Value;
-                string url = $"{config.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}/edit";
+                string url = $"{consulEnv.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}/edit";
 
                 var recursiveValue = ResolveRecursiveValues(value, keyValues);
                 bool isValidJson = IsValidFormated(keyValue.Key, recursiveValue);
@@ -252,8 +251,7 @@ namespace Common.Services
 
         public async Task<List<string>> GetConsulKeys(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
-            var kvData = await FetchConsulKV(consulUrl);
+            var kvData = await FetchConsulKV(consulEnv);
 
             List<string> keys = new List<string>();
             foreach (var kv in kvData)
@@ -267,7 +265,6 @@ namespace Common.Services
 
         public async Task DownloadConsul(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
             string downloadFolder = consulEnv.ConsulFolder;
 
             if (!Directory.Exists(downloadFolder))
@@ -277,7 +274,7 @@ namespace Common.Services
 
             try
             {
-                var kvData = await FetchConsulKV(consulUrl);
+                var kvData = await FetchConsulKV(consulEnv);
                 await SaveKVToFiles(kvData, downloadFolder);
                 _logger.LogInformation("Download completed successfully.");
             }
@@ -287,11 +284,13 @@ namespace Common.Services
             }
         }
 
-        async Task<JArray> FetchConsulKV(string url, ConsulEnvironment consulEnv)
+        async Task<JArray> FetchConsulKV(ConsulEnvironment consulEnv)
         {
+            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
+
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
-            HttpResponseMessage response = await client.GetAsync(url);
+            HttpResponseMessage response = await client.GetAsync(consulUrl);
             response.EnsureSuccessStatusCode();
 
             string responseBody = await response.Content.ReadAsStringAsync();

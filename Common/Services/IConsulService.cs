@@ -4,9 +4,9 @@ namespace Common.Services
 {
     public interface IConsulService
     {
-        Task DownloadConsul();
-        Task<List<string>> GetConsulKeys();
-        Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues();
-        Task UpdateConsulKeyValue(string key, string value);
+        Task DownloadConsul(ConsulEnvironment consulEnv);
+        Task<List<string>> GetConsulKeys(ConsulEnvironment consulEnv);
+        Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv);
+        Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value);
     }
 }
