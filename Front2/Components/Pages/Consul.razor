@@ -91,6 +91,40 @@
 </ul>
 
 <style>
+    .floating-controls {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 1rem 2rem; /* Increase horizontal padding for better spacing */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.5rem; /* Adds consistent spacing between elements */
+    }
+
+    .form-group {
+        flex: 1 1 200px; /* Adjust size based on available space */
+        min-width: 150px;
+    }
+
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem; /* Spacing between checkbox and label */
+    }
+
+    .buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .search-container {
+        max-width: 300px;
+        flex: 1 1 200px;
+    }
+
     .options {
         display: flex;
         justify-content: space-between;
@@ -105,15 +139,6 @@
         z-index: 1000;
         padding: 1rem;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .search-container {
-        max-width: 500px;
     }
 
     .key-list {
