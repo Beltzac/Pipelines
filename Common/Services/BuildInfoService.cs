@@ -1,5 +1,6 @@
 ﻿using Common.ExternalApis;
 using Common.Repositories;
+using Common.Utils;
 using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -315,19 +316,6 @@ namespace Common.Services
             }
         }
 
-        public void OpenFolder(string localPath)
-        {
-            if (Directory.Exists(localPath))
-            {
-                System.Diagnostics.Process.Start(new ProcessStartInfo
-                {
-                    FileName = localPath,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-        }
-
         public async Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId)
         {
             var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
@@ -335,7 +323,7 @@ namespace Common.Services
             if (buildInfo != null)
             {
                 var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
-                OpenProject(localPath);
+                OpenFolderUtils.OpenProject(_logger, localPath);
             }
             else
             {
@@ -343,116 +331,9 @@ namespace Common.Services
             }
         }
 
-        public string FindSolutionFile(string folderPath)
-        {
-            // Search in the top directory
-            string slnFile = Directory.GetFiles(folderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
-
-            if (slnFile == null)
-            {
-                // Search in the src folder if the solution file wasn't found in the top directory
-                string srcFolderPath = Path.Combine(folderPath, "src");
-                if (Directory.Exists(srcFolderPath))
-                {
-                    slnFile = Directory.GetFiles(srcFolderPath, "*.sln", SearchOption.TopDirectoryOnly).FirstOrDefault();
-                }
-            }
-
-            return slnFile;
-        }
-
-        private void OpenProject(string folderPath)
-        {
-            if (Directory.Exists(folderPath))
-            {
-                var slnFile = FindSolutionFile(folderPath);
-
-                if (slnFile != null)
-                {
-                    OpenWithVisualStudio(slnFile);
-                }
-                else if (Directory.GetDirectories(folderPath, "src", SearchOption.AllDirectories).Any())
-                {
-                    OpenWithVSCode(folderPath);
-                }
-                else
-                {
-                    OpenFolder(folderPath);
-                }
-            }
-            else
-            {
-                _logger.LogInformation($"Directory {folderPath} does not exist.");
-            }
-        }
-
-        private void OpenWithVisualStudio(string slnFile)
-        {
-            try
-            {
-                var requiresAdmin = SolutionContainsTopshelf(slnFile);
-
-                var processStartInfo = new ProcessStartInfo
-                {
-                    FileName = "devenv.exe",
-                    Arguments = $"\"{slnFile}\"",
-                    UseShellExecute = true,
-                    Verb = requiresAdmin ? "runas" : ""
-                };
-
-                System.Diagnostics.Process.Start(processStartInfo);
-                _logger.LogInformation($"Opening {slnFile} with Visual Studio{(requiresAdmin ? " as Administrator" : "")}.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error opening {slnFile} with Visual Studio");
-            }
-        }
-
-        private bool SolutionContainsTopshelf(string slnFile)
-        {
-            var solutionDirectory = Path.GetDirectoryName(slnFile);
-            var projectFiles = Directory.GetFiles(solutionDirectory, "*.csproj", SearchOption.AllDirectories);
-
-            return projectFiles.Any(ProjectContainsTopshelfReference);
-        }
-
-        private bool ProjectContainsTopshelfReference(string projectFile)
-        {
-            var xmlDoc = new XmlDocument();
-            xmlDoc.Load(projectFile);
-
-            var references = xmlDoc.GetElementsByTagName("Reference");
-            if (references.Cast<XmlNode>().Any(node => node.Attributes["Include"]?.Value.Contains("Topshelf") == true))
-                return true;
-
-            var packageReferences = xmlDoc.GetElementsByTagName("PackageReference");
-            return packageReferences.Cast<XmlNode>().Any(node => node.Attributes["Include"]?.Value == "Topshelf");
-        }
-
-        private void OpenWithVSCode(string folderPath)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(new ProcessStartInfo
-                {
-                    FileName = "code-insiders.cmd",
-                    Arguments = $"\"{folderPath}\"",
-                    UseShellExecute = true,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                });
-                _logger.LogInformation($"Opening {folderPath} with VS Code.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error opening {folderPath} with VS Code");
-            }
-        }
-
         public async Task OpenCloneFolderInVsCode()
         {
-            OpenWithVSCode(_localCloneFolder);
+            OpenFolderUtils.OpenWithVSCode(_logger, _localCloneFolder);
         }
 
         private async Task UpsertAndPublish(Repository buildInfo)

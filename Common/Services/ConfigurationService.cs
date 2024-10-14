@@ -38,13 +38,6 @@ public class ConfigurationService : IConfigurationService
         else
         {
             _config = new ConfigModel();
-            _config.ConsulEnvironments.Add(new ConsulEnvironment
-            {
-                Name = "Default",
-                ConsulUrl = "http://localhost:8500",
-                ConsulFolder = @"C:\ConsulKV",
-                ConsulToken = ""
-            });
             SaveConfig();
         }
     }

@@ -14,12 +14,12 @@
         <div class="card-body">
             <div class="form-group">
                 <label for="username">Username</label>
-                <InputText id="username" @bind="config.Username" class="form-control" />
+                <InputText id="username" @bind-Value="config.Username" class="form-control"/>
                 <ValidationMessage For="@(() => config.Username)" />
             </div>
             <div class="form-group">
                 <label for="pat">Personal Access Token (PAT)</label>
-                <InputText id="pat" @bind="config.PAT" class="form-control" />
+                <InputText id="pat" @bind-Value="config.PAT" class="form-control"/>
                 <ValidationMessage For="@(() => config.PAT)" />
             </div>
         </div>
@@ -30,49 +30,45 @@
         <div class="card-body">
             <div class="form-group">
                 <label for="orgUrl">Organization URL</label>
-                <InputText id="orgUrl" @bind="config.OrganizationUrl" class="form-control" />
+                <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control"/>
                 <ValidationMessage For="@(() => config.OrganizationUrl)" />
             </div>
             <div class="form-group">
                 <label for="cloneFolder">Local Clone Folder</label>
-                <InputText id="cloneFolder" @bind="config.LocalCloneFolder" class="form-control" />
+                <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
                 <ValidationMessage For="@(() => config.LocalCloneFolder)" />
             </div>
         </div>
     </div>
 
-    @for (int i = 0; i < config.ConsulEnvironments.Count; i++)
+    @foreach (var env in config.ConsulEnvironments)
     {
         <div class="card mb-3">
-            <div class="card-header">@config.ConsulEnvironments[i].Name Configuration</div>
+            <div class="card-header">@env.Name Configuration</div>
             <div class="card-body">
                 <div class="form-group">
                     <label for="consulName">Consul Environment Name</label>
-                    <InputText id="consulName" @bind="config.ConsulEnvironments[i].Name" class="form-control" />
-                    <ValidationMessage For="@(() => config.ConsulEnvironments[i].Name)" />
+                    <InputText id="consulName" @bind-Value="env.Name" class="form-control"/>
+                    <ValidationMessage For="@(() => env.Name)" />
                 </div>
                 <div class="form-group">
                     <label for="consulUrl">Consul URL</label>
-                    <InputText id="consulUrl" @bind="config.ConsulEnvironments[i].ConsulUrl" class="form-control" />
-                    <ValidationMessage For="@(() => config.ConsulEnvironments[i].ConsulUrl)" />
+                    <InputText id="consulUrl" @bind-Value="env.ConsulUrl" class="form-control"/>
+                    <ValidationMessage For="@(() => env.ConsulUrl)" />
                 </div>
                 <div class="form-group">
                     <label for="consulFolder">Consul Folder</label>
-                    <InputText id="consulFolder" @bind="config.ConsulEnvironments[i].ConsulFolder" class="form-control" />
-                    <ValidationMessage For="@(() => config.ConsulEnvironments[i].ConsulFolder)" />
+                    <InputText id="consulFolder" @bind-Value="env.ConsulFolder" class="form-control"/>
+                    <ValidationMessage For="@(() => env.ConsulFolder)" />
                 </div>
                 <div class="form-group">
                     <label for="consulToken">Consul Token</label>
-                    <InputText id="consulToken" @bind="config.ConsulEnvironments[i].ConsulToken" class="form-control" />
-                    <ValidationMessage For="@(() => config.ConsulEnvironments[i].ConsulToken)" />
+                    <InputText id="consulToken" @bind-Value="env.ConsulToken" class="form-control"/>
+                    <ValidationMessage For="@(() => env.ConsulToken)" />
                 </div>
-                <button type="button" class="btn btn-danger" @onclick="() => RemoveConsulEnvironment(i)">Remove</button>
+                <button type="button" class="btn btn-danger" @onclick="() => RemoveConsulEnvironment(env)">Remove</button>
             </div>
         </div>
-        if (config.ConsulEnvironments.Count == 1)
-        {
-            selectedConsulEnv = config.ConsulEnvironments[0].Name;
-        }
     }
 
     <button type="button" class="btn btn-secondary" @onclick="AddConsulEnvironment">Add Consul Environment</button>
@@ -82,7 +78,7 @@
         <div class="card-body">
             <div class="form-group">
                 <label for="githubToken">Github Token</label>
-                <InputText id="githubToken" @bind="config.AccessToken" class="form-control" />
+                <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control"/>
                 <ValidationMessage For="@(() => config.AccessToken)" />
             </div>
         </div>
@@ -106,9 +102,9 @@
         config.ConsulEnvironments.Add(new ConsulEnvironment());
     }
 
-    private void RemoveConsulEnvironment(int index)
+    private void RemoveConsulEnvironment(ConsulEnvironment env)
     {
-        config.ConsulEnvironments.RemoveAt(index);
+        config.ConsulEnvironments.Remove(env);
     }
 
     private async Task HandleValidSubmit()

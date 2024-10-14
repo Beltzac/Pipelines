@@ -30,6 +30,8 @@
         </select>
     </div>
 
+
+
     <div class="form-check">
         <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
         <label class="form-check-label" for="recursiveToggle">
@@ -45,8 +47,9 @@
     </div>
 
     <div class="buttons">
-        <button class="btn btn-primary" @onclick="async () => await DownloadConsul()">Download Consul</button>
-        <button class="btn btn-success" @onclick="async () => await SaveConsul()">Save Consul</button>
+        <button class="btn btn-primary" @onclick="async () => await LoadConsul()">Load Consul</button>
+        <button class="btn btn-success" @onclick="async () => await SaveConsulToFolder()">Save To Folder</button>
+        <button class="btn btn-secondary" @onclick="async () => await OpenFolderInVsCode()">Open Folder in VS Code</button>
     </div>
 
     <div class="search-container mb-3">
@@ -72,12 +75,12 @@
                 <div class="key-value-container">
                     @if (isRecursive)
                     {
-                        <textarea @bind="kvp.Value.Value" class="form-control" readonly></textarea>
+                        <textarea @bind="kvp.Value.ValueRecursive" class="form-control" readonly></textarea>
                     }
                     else
                     {
                         <textarea @bind="kvp.Value.Value" class="form-control"></textarea>
-                        <button class="btn btn-secondary save-key" @onclick="() => SaveKeyValue(kvp.Key, kvp.Value.Value)">
+                        <button class="btn btn-secondary save-key" @onclick="() => SaveKeyValueToConsul(kvp.Key, kvp.Value.Value)">
                             Save
                         </button>
                     }
@@ -155,7 +158,7 @@
 
 @code {
 
-    private ConfigModel config = new ConfigModel();
+    private ConfigModel config;
     private string selectedConsulEnv;
     private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
     private List<string> visibleKeys = new List<string>();
@@ -168,7 +171,17 @@
         consulKeyValues.Where(kvp => kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
             && (!showInvalidOnly || !kvp.Value.IsValidJson));
 
-    private async ValueTask DownloadConsul()
+    protected override void OnInitialized()
+    {
+        config = ConfigService.GetConfig();
+
+        if (config.ConsulEnvironments.Any())
+        {
+            selectedConsulEnv = config.ConsulEnvironments.First().Name;
+        }
+    }
+
+    private async ValueTask LoadConsul()
     {
         var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
         if (consulEnv == null)
@@ -193,14 +206,20 @@
         }
     }
 
-    private async Task SaveConsul()
+    private async Task SaveConsulToFolder()
     {
-        // Logic to save the edited Consul content
-        // This is a placeholder for the actual implementation
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        if (consulEnv == null)
+        {
+            toastService.ShowError("Please select a Consul environment.");
+            return;
+        }
+
+        await ConsulService.DownloadConsulAsync(consulEnv);
         toastService.ShowSuccess("Consul content saved successfully!");
     }
 
-    private async Task SaveKeyValue(string key, string value)
+    private async Task SaveKeyValueToConsul(string key, string value)
     {
         if (selectedConsulEnv == null)
         {
@@ -229,5 +248,17 @@
     private void OpenConsulUrl(string url)
     {
         JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task OpenFolderInVsCode()
+    {
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        if (consulEnv == null)
+        {
+            toastService.ShowError("Please select a Consul environment.");
+            return;
+        }
+
+        await ConsulService.OpenInVsCode(consulEnv);
     }
 }
