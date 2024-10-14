@@ -19,7 +19,7 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
+        public async Task UpdateConsulKeyValue(string key, string value)
         {
             string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
