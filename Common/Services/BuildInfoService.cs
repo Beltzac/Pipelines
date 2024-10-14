@@ -100,7 +100,9 @@ namespace Common.Services
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
-            var query = _repositoryDatabase.Query();
+            var ignorePatterns = configService.GetConfig().IgnoreRepositoriesRegex;
+            var query = _repositoryDatabase.Query()
+                .Where(repo => !ignorePatterns.Any(pattern => Regex.IsMatch(repo.Name, pattern)));
             if (!string.IsNullOrEmpty(filter))
             {
                 var trimmedFilter = filter.Trim();
