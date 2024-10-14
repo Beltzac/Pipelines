@@ -46,6 +46,10 @@
             <div class="card-header">@consulEnv.Name Configuration</div>
             <div class="card-body">
                 <div class="form-group">
+                    <label for="consulName">Consul Environment Name</label>
+                    <InputText id="consulName" @bind-Value="consulEnv.Name" class="form-control" />
+                    <ValidationMessage For="@(() => consulEnv.Name)" />
+                </div>
                     <label for="consulUrl">Consul URL</label>
                     <InputText id="consulUrl" @bind-Value="consulEnv.ConsulUrl" class="form-control" />
                     <ValidationMessage For="@(() => consulEnv.ConsulUrl)" />
