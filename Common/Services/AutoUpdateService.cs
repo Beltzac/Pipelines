@@ -27,6 +27,15 @@ namespace Common.Services
         }
 
         /// <summary>
+        /// Gets the current version of the application.
+        /// </summary>
+        public Version GetCurrentVersion()
+        {
+            bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+            return isDevelopment ? Version.Parse("0.0.0") : Assembly.GetEntryAssembly().GetName().Version;
+        }
+
+        /// <summary>
         /// Checks for updates and performs the update if available.
         /// </summary>
         public async Task<Release> CheckForUpdatesAsync()
