@@ -69,6 +69,15 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
+      - name: Cache Electron
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/cache@v2
+        with:
+          path: Front2/obj/Host
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
       - name: Install ElectronNET.CLI
         if: startsWith(github.ref, 'refs/tags/')
         run: dotnet tool install ElectronNET.CLI --global
