@@ -6,7 +6,7 @@
 {
     <!-- Show the 'Update Available' link -->
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
-        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> Update Available
+        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> @($"v{latestRelease.tag_name}") Available!
     </a>
 }
 else if (updateAvailable && downloadProgress > 0)
@@ -17,7 +17,7 @@ else
 {
     <!-- Show 'Up to Date' with current version when no update is available -->
     <a class="nav-link disabled" href="#">
-        <span class="bi bi-cloud-check" aria-hidden="true"></span> Up to Date (v@currentVersion)
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"v{currentVersion}") 
     </a>
 }
 
@@ -31,11 +31,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         currentVersion = AutoUpdateService.GetCurrentVersion().ToString();
-        await CheckForUpdatesAsync();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
         await CheckForUpdatesAsync();
     }
 

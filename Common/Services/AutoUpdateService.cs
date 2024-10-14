@@ -44,14 +44,8 @@ namespace Common.Services
             // check if it is dev or release
 
 
-            Version currentVersion = Version.Parse("0.0.0");            
-            bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+            Version currentVersion = GetCurrentVersion();
 
-            if (!isDevelopment)
-            {
-                currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-            }
-                
             Console.WriteLine("Current version: " + currentVersion);
 
             // GitHub API URL for the latest release
