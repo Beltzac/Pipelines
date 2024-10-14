@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
+using System.Diagnostics;
 
 namespace Common.Services
 {
@@ -145,8 +146,19 @@ namespace Common.Services
 
                         Console.WriteLine("Installer downloaded to " + installerFilePath);
 
-                        System.Diagnostics.Process.Start(installerFilePath);
+                        // Prepare the command to execute
+                        string cmdCommand = $"/C timeout /T 5 /NOBREAK & start \"\" \"{installerFilePath}\"";
 
+                        // Start the cmd process
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "cmd.exe",
+                            Arguments = cmdCommand,
+                            CreateNoWindow = true,
+                            WindowStyle = ProcessWindowStyle.Hidden
+                        });
+
+                        // Exit the Electron app
                         ElectronNET.API.Electron.App.Exit();
 
                         break;
