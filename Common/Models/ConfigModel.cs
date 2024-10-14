@@ -11,5 +11,6 @@
         public string RepositoryName { get; set; } = "pipelines";
         public string UserAgent { get; set; } = "TcpDash";
         public string AccessToken { get; set; }
+        public List<string> IgnoreRepositoriesRegex { get; set; } = new List<string>();
     }
 }

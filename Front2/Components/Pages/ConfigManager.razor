@@ -84,6 +84,20 @@
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-header">Ignore Repositories by Regex</div>
+        <div class="card-body">
+            @foreach (var regex in config.IgnoreRepositoriesRegex)
+            {
+                <div class="input-group mb-2">
+                    <InputText @bind-Value="regex" class="form-control" />
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveRegex(regex)">Remove</button>
+                </div>
+            }
+            <button type="button" class="btn btn-secondary" @onclick="AddRegex">Add Regex</button>
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
 </EditForm>
 
@@ -105,6 +119,16 @@
     private void RemoveConsulEnvironment(ConsulEnvironment env)
     {
         config.ConsulEnvironments.Remove(env);
+    }
+
+    private void AddRegex()
+    {
+        config.IgnoreRepositoriesRegex.Add(string.Empty);
+    }
+
+    private void RemoveRegex(string regex)
+    {
+        config.IgnoreRepositoriesRegex.Remove(regex);
     }
 
     private async Task HandleValidSubmit()
