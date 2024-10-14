@@ -14,6 +14,13 @@ using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder();
 
+// Set the ip address and port number
+builder.Host.ConfigureWebHostDefaults(webBuilder =>
+{
+    webBuilder.UseElectron(args);
+    webBuilder.UseUrls("http://localhost:8001");
+});
+
 var logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
@@ -28,7 +35,6 @@ builder.Services.AddRazorComponents()
         o.DetailedErrors = true;
     });
 
-builder.WebHost.UseElectron(args);
 builder.Services.AddElectron();
 
 builder.Services.AddCustomServices();
