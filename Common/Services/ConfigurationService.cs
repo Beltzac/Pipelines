@@ -37,13 +37,14 @@ public class ConfigurationService : IConfigurationService
         }
         else
         {
-            _config = new ConfigModel
+            _config = new ConfigModel();
+            _config.ConsulEnvironments.Add(new ConsulEnvironment
             {
-                PAT = "",
-                OrganizationUrl = "https://dev.azure.com/terminal-cp",
-                LocalCloneFolder = @"C:\repos",
-                ConsulFolder = @"C:\ConsulKV"
-            };
+                Name = "Default",
+                ConsulUrl = "http://localhost:8500",
+                ConsulFolder = @"C:\ConsulKV",
+                ConsulToken = ""
+            });
             SaveConfig();
         }
     }
