@@ -1,3 +1,4 @@
+using Common.Models;
 using FluentAssertions;
 
 namespace Tests
