@@ -92,7 +92,6 @@
     protected override void OnInitialized()
     {
         config = ConfigService.GetConfig();
-        selectedConsulEnv = config.ConsulEnvironments.FirstOrDefault();
     }
 
     private void AddConsulEnvironment()
