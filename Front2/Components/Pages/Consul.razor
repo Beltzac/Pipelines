@@ -62,8 +62,8 @@
 <ul class="key-list">
     @foreach (var kvp in filteredConsulKeyValues)
     {
-        <li class="key-item" @onclick="() => ToggleKeyVisibility(kvp.Key)" style="cursor: pointer;">
-            <div class="key-header">
+        <li class="key-item">
+            <div class="key-header" @onclick="() => ToggleKeyVisibility(kvp.Key)" style="cursor: pointer;">
                 <span>@(kvp.Value.IsValidJson ? "✔️" : "❌")</span>
                 <span class="key-name">@kvp.Key</span>
                 <button class="btn btn-primary open-consul" @onclick="(e) => { OpenConsulUrl(kvp.Value.Url); }">
