@@ -8,6 +8,8 @@ using Quartz;
 using Serilog;
 using ShellLink;
 using System.Runtime.InteropServices;
+using System.Text;
+using Vanara.PInvoke;
 
 // electronize start
 // electronize build /target win
@@ -232,7 +234,27 @@ async Task OpenWeb(bool warmUp = false)
         return;
     }
 
-    if (await window.IsMinimizedAsync() || !await window.IsVisibleAsync())
+    var windowList = new List<string>();
+
+    User32.EnumWindows((hWnd, lParam) =>
+    {
+        if (User32.IsWindowVisible(hWnd))
+        {
+            int length = User32.GetWindowTextLength(hWnd);
+            StringBuilder title = new StringBuilder(length + 1);
+            User32.GetWindowText(hWnd, title, title.Capacity);
+
+            if (!string.IsNullOrWhiteSpace(title.ToString()))
+            {
+                windowList.Add(title.ToString());
+            }
+        }
+        return true;
+    }, IntPtr.Zero);
+
+    var topWindow = windowList.FirstOrDefault();
+
+    if (topWindow == null || topWindow.ToString() != (await window.GetTitleAsync()))
     {
         window.Maximize();
         window.Focus();
