@@ -21,7 +21,7 @@ builder.WebHost.UseElectron(args);
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
     var port = HybridSupport.IsElectronActive ? 8001 : 8002;
-    options.ListenAnyIP(port);
+    options.ListenLocalhost(port);
 });
 
 var logger = new LoggerConfiguration()
