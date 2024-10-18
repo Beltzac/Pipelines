@@ -351,7 +351,7 @@ namespace Common.Services
             await _repositoryDatabase.UpsertAsync(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
 
-            var isMine = buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
+            var isMine = true;// buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
 
             if (isMine)
             {
