@@ -30,7 +30,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        currentVersion = AutoUpdateService.GetCurrentVersion().ToString();
+        currentVersion = Common.Services.AutoUpdateService.GetCurrentVersion().ToString();
         await CheckForUpdatesAsync();
     }
 

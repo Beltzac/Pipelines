@@ -6,6 +6,5 @@ namespace Common.Services
     {
         Task<AutoUpdateService.Release> CheckForUpdatesAsync();
         Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback);
-        Version GetCurrentVersion();
     }
 }

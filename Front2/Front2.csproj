@@ -14,10 +14,13 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
+    <PackageReference Include="BlazorApplicationInsights" Version="3.1.0" />
     <PackageReference Include="Blazored.Toast" Version="4.2.1" />
     <PackageReference Include="ElectronNET.API" Version="23.6.2" />
     <PackageReference Include="LibGit2Sharp" Version="0.30.0" />
     <PackageReference Include="Markdig" Version="0.37.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.0-rc.2.24474.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0-rc.2.24474.1">
       <PrivateAssets>all</PrivateAssets>
@@ -30,8 +33,11 @@
     <PackageReference Include="Quartz.Serialization.Json" Version="3.13.0" />
     <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.BrowserConsole" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="SQLite" Version="3.13.0" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="9.0.0-rc.2.24473.5" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.4" />

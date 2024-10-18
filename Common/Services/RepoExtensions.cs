@@ -2,10 +2,10 @@
 {
     public static class RepoExtensions
     {
-        private const int MIN_UPDATE_TIME = 10;
-        private const int MAX_UPDATE_TIME = 3600;
-        private const int MIN_TIME_SINCE_UPDATE = 24 * 60 * 60;
-        private const int MAX_TIME_SINCE_UPDATE = 604800; // 1 week in seconds
+        private const int MIN_UPDATE_TIME = 60 * 3; // 3 minute in seconds
+        private const int MAX_UPDATE_TIME = 60 * 60 * 4; // 4 hours in seconds
+        private const int MIN_TIME_SINCE_UPDATE = 6 * 60 * 60; // 1/4 day in seconds
+        private const int MAX_TIME_SINCE_UPDATE = 60 * 60 * 24 * 30; // 30 days in seconds
 
         private static readonly Random _random = new Random();
 

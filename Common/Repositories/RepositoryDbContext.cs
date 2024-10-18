@@ -1,6 +1,10 @@
+using AppAny.Quartz.EntityFrameworkCore.Migrations;
+using AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite;
 using Common.Models;
+using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Common.Repositories
@@ -8,14 +12,26 @@ namespace Common.Repositories
     //dotnet ef migrations add MapearCampos --project Common
     public class RepositoryDbContext : DbContext
     {
-        public RepositoryDbContext(DbContextOptions<RepositoryDbContext> options)
+
+        private readonly TelemetryClient _telemetryClient;
+        private readonly IConfigurationService _configService;
+        private readonly ConfigModel _config;
+
+        public RepositoryDbContext(DbContextOptions<RepositoryDbContext> options, TelemetryClient telemetryClient, IConfigurationService configService)
             : base(options)
         {
+            _telemetryClient = telemetryClient;
+            _configService = configService;
+            _config = _configService.GetConfig();
         }
 
-        public RepositoryDbContext()
-        {
-        }
+        //public RepositoryDbContext()
+        //{
+        //    _config = new ConfigModel()
+        //    {
+        //        LocalCloneFolder = "C:\\repos\\"
+        //    };
+        //}
 
         public DbSet<Commit> Commits { get; set; }
         public DbSet<Build> Builds { get; set; }
@@ -26,20 +42,20 @@ namespace Common.Repositories
         {
             if (!optionsBuilder.IsConfigured)
             {
-                // Define the path to your SQLite database
-                var databasePath = @"C:\repos\Builds.db";
-
-                // Construct the connection string with WAL enabled
-                var connectionString = $"Data Source={databasePath};Journal Mode=WAL";
-
-                // Configure the DbContext to use SQLite with the specified connection string
+                var databasePath = Path.Combine(_config.LocalCloneFolder, "Builds.db");
+                var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
                 optionsBuilder.UseSqlite(connectionString)
                     .EnableSensitiveDataLogging();
+
+                if (_telemetryClient != null)
+                    optionsBuilder.AddInterceptors(new ApplicationInsightsDbCommandInterceptor(_telemetryClient));
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.AddQuartz(builder => builder.UseSqlite());
+
             modelBuilder.ApplyConfiguration(new CommitConfiguration());
             modelBuilder.ApplyConfiguration(new BuildConfiguration());
             modelBuilder.ApplyConfiguration(new PipelineConfiguration());

@@ -2,6 +2,7 @@ using Blazored.Toast;
 using Common.ExternalApis;
 using Common.Repositories;
 using Common.Services;
+using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -19,14 +20,7 @@ namespace Common.Utils
             services.AddSignalR();
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddEntityFrameworkSqlite();
-            services.AddDbContextFactory<RepositoryDbContext>(options =>
-            {
-                var configService = services.BuildServiceProvider().GetRequiredService<IConfigurationService>();
-                var config = configService.GetConfig();
-                var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
-                var connectionString = $"Data Source={databasePath}";
-                options.UseSqlite(connectionString);
-            });
+            services.AddDbContextFactory<RepositoryDbContext>();
 
             services.AddScoped<IRepositoryDatabase, SqliteRepositoryDatabase>();
 
