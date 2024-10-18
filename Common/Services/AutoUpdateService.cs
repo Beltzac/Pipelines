@@ -29,10 +29,10 @@ namespace Common.Services
         /// <summary>
         /// Gets the current version of the application.
         /// </summary>
-        public Version GetCurrentVersion()
+        public static Version GetCurrentVersion()
         {
             bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-            return isDevelopment ? Version.Parse("0.0.0") : Assembly.GetEntryAssembly().GetName().Version;
+            return isDevelopment ? Version.Parse("0.0.0.0") : Assembly.GetEntryAssembly().GetName().Version;
         }
 
         /// <summary>

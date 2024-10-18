@@ -1,8 +1,12 @@
-﻿using Common.Repositories;
+﻿using BlazorApplicationInsights;
+using Common.Repositories;
 using Common.Services;
 using Common.Utils;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DependencyCollector;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
@@ -26,11 +30,12 @@ builder.WebHost.ConfigureKestrel((context, options) =>
     options.ListenLocalhost(port);
 });
 
-var logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateLogger();
-
-builder.Host.UseSerilog(logger);
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .WriteTo.ApplicationInsights(services.GetRequiredService<TelemetryConfiguration>(), TelemetryConverter.Traces)
+        .WriteTo.Console();
+});
 
 builder.Services.AddAntiforgery();
 builder.Services.AddRazorComponents()
@@ -51,6 +56,20 @@ builder.Services.AddQuartz(q =>
         .StartNow(),
         job => job.WithIdentity("BuildInfoJob")
     );
+
+    var provider = builder.Services.BuildServiceProvider();
+    var configService = provider.GetRequiredService<IConfigurationService>();
+    var config = configService.GetConfig();
+    var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
+    var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
+
+    q.UsePersistentStore(s =>
+    {
+        s.UseProperties = true;
+        s.UseNewtonsoftJsonSerializer();
+        s.Properties["quartz.jobStore.txIsolationLevelSerializable"] = "true";
+        s.UseSQLite(connectionString);
+    });
 });
 
 builder.Services.AddQuartzHostedService(q =>
@@ -58,6 +77,29 @@ builder.Services.AddQuartzHostedService(q =>
     q.WaitForJobsToComplete = true;
     q.AwaitApplicationStarted = true;
 });
+
+builder.Services.AddApplicationInsightsTelemetry(opt => 
+{
+    opt.ConnectionString = "InstrumentationKey=dc41b1b0-0640-43b1-b968-6e33c1d4463c;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=7a9dc142-a6d0-4ad7-b6c3-e6af1e56d4ad";
+    opt.ApplicationVersion = AutoUpdateService.GetCurrentVersion().ToString();
+});
+
+builder.Services.AddBlazorApplicationInsights(opt =>
+{
+    opt.ConnectionString = "InstrumentationKey=dc41b1b0-0640-43b1-b968-6e33c1d4463c;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=7a9dc142-a6d0-4ad7-b6c3-e6af1e56d4ad";
+    opt.AutoTrackPageVisitTime = true;
+});
+
+builder.Services.AddApplicationInsightsTelemetryWorkerService(opt =>
+{
+    opt.ConnectionString = "InstrumentationKey=dc41b1b0-0640-43b1-b968-6e33c1d4463c;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=7a9dc142-a6d0-4ad7-b6c3-e6af1e56d4ad";
+    opt.ApplicationVersion = AutoUpdateService.GetCurrentVersion().ToString();
+});
+
+//builder.Services.ConfigureTelemetryModule<DependencyTrackingTelemetryModule>((module, o) =>
+//{
+//    module.EnableSqlCommandTextInstrumentation = true;
+//});
 
 var app = builder.Build();
 
@@ -247,6 +289,7 @@ async Task OpenWeb(bool warmUp = false)
             if (!string.IsNullOrWhiteSpace(title.ToString()))
             {
                 windowList.Add(title.ToString());
+                Console.WriteLine("Window: " + title.ToString());
             }
         }
         return true;

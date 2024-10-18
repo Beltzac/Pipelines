@@ -1,6 +1,8 @@
 ﻿using Common.ExternalApis;
 using Common.Repositories;
 using Common.Utils;
+using ElectronNET.API.Entities;
+using ElectronNET.API;
 using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +29,7 @@ namespace Common.Services
         private readonly ILogger<BuildInfoService> _logger;
         private readonly string _localCloneFolder;
         private readonly string _privateToken;
+        private readonly string _name;
         private readonly List<string> _repoRegexFilters;
 
         public BuildInfoService(
@@ -40,6 +43,7 @@ namespace Common.Services
         {
             var config = configService.GetConfig();
 
+            _name = config.Username;
             _localCloneFolder = config.LocalCloneFolder;
             _repositoryDatabase = repositoryDatabase;
             _hubContext = hubContext;
@@ -346,6 +350,20 @@ namespace Common.Services
         {
             await _repositoryDatabase.UpsertAsync(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+
+            var isMine = buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
+
+            if (isMine)
+            {
+                if (HybridSupport.IsElectronActive)
+                {
+                    Electron.Notification.Show(
+                       new NotificationOptions(
+                           buildInfo.Path,
+                           buildInfo.Pipeline.Last.Status
+                       ));
+                }
+            }
         }
 
         public async Task Delete(Guid id)
