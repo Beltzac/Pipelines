@@ -1,8 +1,8 @@
 ﻿using Common.ExternalApis;
 using Common.Repositories;
 using Common.Utils;
-using ElectronNET.API.Entities;
 using ElectronNET.API;
+using ElectronNET.API.Entities;
 using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +11,9 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
-using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Xml;
 
 namespace Common.Services
 {

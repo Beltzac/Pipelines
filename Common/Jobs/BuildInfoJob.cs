@@ -3,7 +3,6 @@ using Common.Services;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Abstractions;
 using Quartz;
 
 public class BuildInfoJob : IJob

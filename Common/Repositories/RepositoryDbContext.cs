@@ -4,8 +4,6 @@ using Common.Models;
 using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Common.Repositories
 {
