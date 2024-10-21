@@ -219,7 +219,11 @@ namespace Common.Services
             foreach (var log in logs)
             {
                 var logLines = await _buildClient.GetBuildLogLinesAsync(projectName, buildId, log.Id);
-                content.AppendLine(string.Join("\n", logLines));
+
+                if (logLines.Contains("error", StringComparer.OrdinalIgnoreCase) || logLines.Contains("exception", StringComparer.OrdinalIgnoreCase))
+                {
+                    content.AppendLine(string.Join("\n", logLines));
+                }
             }
 
             _logger.LogInformation($"Got logs for Build ID {buildId}");
@@ -351,7 +355,7 @@ namespace Common.Services
             await _repositoryDatabase.UpsertAsync(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
 
-            var isMine = true;// buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
+            var isMine = buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
 
             if (isMine)
             {
