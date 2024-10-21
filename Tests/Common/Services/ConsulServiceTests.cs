@@ -5,6 +5,7 @@ using Moq;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using FluentAssertions;
+using Moq.Protected;
 
 namespace Tests.Common.Services
 {
@@ -94,8 +95,8 @@ namespace Tests.Common.Services
         }
 
         [Test]
-        [TestCase("Basic dXNlcjpwYXNzd29yZA==", true)]
-        [TestCase("NotBasicAuth", false)]
+        [Arguments("Basic dXNlcjpwYXNzd29yZA==", true)]
+        [Arguments("NotBasicAuth", false)]
         public void IsBasicAuth_ShouldValidateCorrectly(string value, bool expected)
         {
             // Act
