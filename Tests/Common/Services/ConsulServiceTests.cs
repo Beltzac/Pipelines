@@ -8,11 +8,12 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Xunit;
+using TUnit;
 
 namespace Tests.Common.Services
 {
-    public class ConsulServiceTests
+    [TestFixture]
+    public class ConsulServiceTests : TestBase
     {
         private readonly Mock<ILogger<ConsulService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
@@ -25,7 +26,7 @@ namespace Tests.Common.Services
             _consulService = new ConsulService(_loggerMock.Object, _configServiceMock.Object);
         }
 
-        [Fact]
+        [Test]
         public async Task UpdateConsulKeyValue_ShouldLogInformation_WhenSuccessful()
         {
             // Arrange
@@ -58,7 +59,7 @@ namespace Tests.Common.Services
             );
         }
 
-        [Fact]
+        [Test]
         public async Task GetConsulKeyValues_ShouldReturnKeyValueDictionary()
         {
             // Arrange
@@ -97,9 +98,9 @@ namespace Tests.Common.Services
             Assert.Equal("testValue", result["test/key"].Value);
         }
 
-        [Theory]
-        [InlineData("Basic dXNlcjpwYXNzd29yZA==", true)]
-        [InlineData("NotBasicAuth", false)]
+        [Test]
+        [TestCase("Basic dXNlcjpwYXNzd29yZA==", true)]
+        [TestCase("NotBasicAuth", false)]
         public void IsBasicAuth_ShouldValidateCorrectly(string value, bool expected)
         {
             // Act
