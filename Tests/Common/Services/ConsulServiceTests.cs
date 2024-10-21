@@ -1,0 +1,112 @@
+using Common.Models;
+using Common.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace Tests.Common.Services
+{
+    public class ConsulServiceTests
+    {
+        private readonly Mock<ILogger<ConsulService>> _loggerMock;
+        private readonly Mock<IConfigurationService> _configServiceMock;
+        private readonly ConsulService _consulService;
+
+        public ConsulServiceTests()
+        {
+            _loggerMock = new Mock<ILogger<ConsulService>>();
+            _configServiceMock = new Mock<IConfigurationService>();
+            _consulService = new ConsulService(_loggerMock.Object, _configServiceMock.Object);
+        }
+
+        [Fact]
+        public async Task UpdateConsulKeyValue_ShouldLogInformation_WhenSuccessful()
+        {
+            // Arrange
+            var consulEnv = new ConsulEnvironment { ConsulUrl = "http://localhost:8500", ConsulToken = "token" };
+            var key = "test/key";
+            var value = "testValue";
+
+            var handlerMock = new Mock<HttpMessageHandler>();
+            handlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                });
+
+            var httpClient = new HttpClient(handlerMock.Object);
+
+            // Act
+            await _consulService.UpdateConsulKeyValue(consulEnv, key, value);
+
+            // Assert
+            _loggerMock.Verify(
+                x => x.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()),
+                Times.Once
+            );
+        }
+
+        [Fact]
+        public async Task GetConsulKeyValues_ShouldReturnKeyValueDictionary()
+        {
+            // Arrange
+            var consulEnv = new ConsulEnvironment { ConsulUrl = "http://localhost:8500", ConsulToken = "token" };
+            var kvData = new JArray
+            {
+                new JObject
+                {
+                    { "Key", "test/key" },
+                    { "Value", Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("testValue")) }
+                }
+            };
+
+            var handlerMock = new Mock<HttpMessageHandler>();
+            handlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(kvData.ToString())
+                });
+
+            var httpClient = new HttpClient(handlerMock.Object);
+
+            // Act
+            var result = await _consulService.GetConsulKeyValues(consulEnv);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Contains("test/key", result.Keys);
+            Assert.Equal("testValue", result["test/key"].Value);
+        }
+
+        [Theory]
+        [InlineData("Basic dXNlcjpwYXNzd29yZA==", true)]
+        [InlineData("NotBasicAuth", false)]
+        public void IsBasicAuth_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsBasicAuth(value);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+    }
+}
