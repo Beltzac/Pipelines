@@ -23,6 +23,78 @@ namespace Tests.Common.Services
         }
 
         [Test]
+        [Arguments("123", true)]
+        [Arguments("abc", false)]
+        public void IsNumeric_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsNumeric(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        [Arguments("http://example.com", true)]
+        [Arguments("not-a-url", false)]
+        public void IsValidURL_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsValidURL(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        [Arguments("Data Source=myServerAddress;Database=myDataBase;", true)]
+        [Arguments("random-string", false)]
+        public void IsConnectionString_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsConnectionString(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        [Arguments("2024-10-21", true)]
+        [Arguments("not-a-date", false)]
+        public void IsDateTime_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsDateTime(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        [Arguments("C:\\path\\to\\file", true)]
+        [Arguments("invalid|path", false)]
+        public void IsPath_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsPath(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
+        [Arguments("simpleString", true)]
+        [Arguments("string with spaces", false)]
+        public void IsSimpleString_ShouldValidateCorrectly(string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsSimpleString(value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
+
+        [Test]
         public async Task UpdateConsulKeyValue_ShouldLogInformation_WhenSuccessful()
         {
             // Arrange
