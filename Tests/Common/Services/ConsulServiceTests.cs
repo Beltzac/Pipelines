@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json.Linq;
 using System.Net;
+using FluentAssertions;
 
 namespace Tests.Common.Services
 {
@@ -87,9 +88,9 @@ namespace Tests.Common.Services
             var result = await _consulService.GetConsulKeyValues(consulEnv);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Contains("test/key", result.Keys);
-            Assert.Equal("testValue", result["test/key"].Value);
+            result.Should().NotBeNull();
+            result.Keys.Should().Contain("test/key");
+            result["test/key"].Value.Should().Be("testValue");
         }
 
         [Test]
@@ -101,7 +102,7 @@ namespace Tests.Common.Services
             var result = _consulService.IsBasicAuth(value);
 
             // Assert
-            Assert.Equal(expected, result);
+            result.Should().Be(expected);
         }
     }
 }
