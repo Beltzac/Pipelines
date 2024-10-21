@@ -3,17 +3,11 @@ using Common.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using TUnit;
 
 namespace Tests.Common.Services
 {
-    [TestFixture]
-    public class ConsulServiceTests : TestBase
+    public class ConsulServiceTests
     {
         private readonly Mock<ILogger<ConsulService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
