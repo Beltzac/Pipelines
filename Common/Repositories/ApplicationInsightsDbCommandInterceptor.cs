@@ -3,8 +3,6 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Common.Repositories
 {

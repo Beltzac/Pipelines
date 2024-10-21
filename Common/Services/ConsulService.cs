@@ -81,7 +81,7 @@ namespace Common.Services
             return keyValuesWithJson;
         }
 
-        private bool IsValidFormated(string key, string strInput)
+        public bool IsValidFormated(string key, string strInput)
         {
             if (string.IsNullOrWhiteSpace(strInput))
             {
@@ -197,18 +197,18 @@ namespace Common.Services
             return (value.Contains("\\") || value.Contains("/")) && !value.Any(c => invalidPathChars.Contains(c));
         }
 
-        private bool IsConnectionString(string value)
+        public bool IsConnectionString(string value)
         {
             return value.Contains("Data Source=") || value.Contains("Database=") || value.Contains("mongodb://");
         }
 
-        private bool IsDateTime(string value)
+        public bool IsDateTime(string value)
         {
             // 09/18/2023 13:16:28 não é considerado uma data válida (foma americana)
             return DateTime.TryParse(value, out _);
         }
 
-        private bool IsJson(string value)
+        public bool IsJson(string value)
         {
             try
             {
@@ -221,12 +221,12 @@ namespace Common.Services
             }
         }
 
-        public static bool IsNumeric(string text)
+        public bool IsNumeric(string text)
         {
             return double.TryParse(text, out _);
         }
 
-        bool IsValidURL(string URL)
+        public bool IsValidURL(string URL)
         {
             string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
             Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);

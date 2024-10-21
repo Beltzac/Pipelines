@@ -1,12 +1,7 @@
-﻿using System;
-using System.Net.Http;
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.SignalR;
-using System.Diagnostics;
 
 namespace Common.Services
 {

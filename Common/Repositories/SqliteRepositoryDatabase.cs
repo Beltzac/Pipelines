@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Repositories
@@ -27,9 +26,9 @@ namespace Common.Repositories
         public async Task UpsertAsync(Repository repository)
         {
             await using var context = _contextFactory.CreateDbContext();
-            await context.SingleMergeAsync(repository, options => 
-            { 
-                options.IncludeGraph = true; 
+            await context.SingleMergeAsync(repository, options =>
+            {
+                options.IncludeGraph = true;
                 options.InsertKeepIdentity = true;
                 options.MergeKeepIdentity = true;
             });

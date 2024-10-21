@@ -1,5 +1,4 @@
 ﻿using Microsoft.TeamFoundation.Build.WebApi;
-using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using System.Linq.Expressions;
 

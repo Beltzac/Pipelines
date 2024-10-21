@@ -2,8 +2,6 @@ using Blazored.Toast;
 using Common.ExternalApis;
 using Common.Repositories;
 using Common.Services;
-using Microsoft.ApplicationInsights;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
