@@ -296,31 +296,27 @@ namespace Common.Services
             {
                 _logger.LogInformation($"Repository {buildInfo.Name} already cloned to {localPath}");
                 buildInfo.MasterClonned = true;
-                await UpsertAndPublish(buildInfo);
+                await UpsertAndPublish(buildInfo, false);
                 return;
             }
 
             try
             {
-                var repo = await _gitClient.GetRepositoryAsync(buildInfo.Project, buildInfo.Id);
-                if (repo != null)
+                Directory.CreateDirectory(localPath);
+                var cloneOptions = new CloneOptions
                 {
-                    Directory.CreateDirectory(localPath);
-                    var cloneOptions = new CloneOptions
-                    {
-                        Checkout = true
-                    };
+                    Checkout = true
+                };
 
-                    cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
-                    cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken };
+                cloneOptions.FetchOptions.CertificateCheck = (cert, valid, host) => true;
+                cloneOptions.FetchOptions.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken };
 
-                    LibGit2Sharp.Repository.Clone(repo.RemoteUrl, localPath, cloneOptions);
+                LibGit2Sharp.Repository.Clone(buildInfo.CloneUrl, localPath, cloneOptions);
 
-                    buildInfo.MasterClonned = true;
-                    await UpsertAndPublish(buildInfo);
+                buildInfo.MasterClonned = true;
+                await UpsertAndPublish(buildInfo, false);
 
-                    _logger.LogInformation($"Repository {repo.Name} cloned to {localPath}");
-                }
+                _logger.LogInformation($"Repository {buildInfo.Name} cloned to {localPath}");
             }
             catch (Exception ex)
             {
@@ -348,10 +344,15 @@ namespace Common.Services
             OpenFolderUtils.OpenWithVSCode(_logger, _localCloneFolder);
         }
 
-        private async Task UpsertAndPublish(Repository buildInfo)
+        private async Task UpsertAndPublish(Repository buildInfo, bool notify = true)
         {
             await _repositoryDatabase.UpsertAsync(buildInfo);
             await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+
+            if (!notify)
+            {
+                return;
+            }
 
             var isMine = buildInfo.Pipeline?.Last?.Commit?.AuthorName?.Trim().Contains(_name, StringComparison.OrdinalIgnoreCase) ?? false;
 
