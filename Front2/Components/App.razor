@@ -52,14 +52,7 @@
     [JSInvokable]
     public static async Task OpenExternal(string url)
     {
-        if (ElectronNET.API.HybridSupport.IsElectronActive)
-        {
-            await ElectronNET.API.Electron.Shell.OpenExternalAsync(url);
-        }
-        else
-        {
-            url = url.Replace("&", "^&");
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
-        }
+        url = url.Replace("&", "^&");
+        await Common.Utils.OpenFolderUtils.OpenUrlAsync(url);
     }
 }
