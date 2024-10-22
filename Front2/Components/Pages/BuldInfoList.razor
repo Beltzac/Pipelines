@@ -29,6 +29,11 @@
         link.click();
         document.body.removeChild(link);
     }
+
+    private void NavigateToPRCreation()
+    {
+        NavigationManager.NavigateTo("/prcreation");
+    }
 </script>
 
 <style>
@@ -86,6 +91,7 @@
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
     <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
+    <button class="btn btn-primary text-nowrap" @onclick="NavigateToPRCreation">Create PR</button>
 </div>
 
 
