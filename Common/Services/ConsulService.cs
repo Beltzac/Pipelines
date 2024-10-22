@@ -1,6 +1,7 @@
 using Common.Models;
 using Common.Utils;
 using Microsoft.Extensions.Logging;
+using Flurl.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
@@ -23,23 +24,18 @@ namespace Common.Services
         public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
             string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
-            HttpClient client = new HttpClient();
-            var content = new StringContent(value, Encoding.UTF8, "application/json");
-            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
-            HttpResponseMessage response = await client.PutAsync(consulUrl, content);
-            response.EnsureSuccessStatusCode();
+            var response = await consulUrl
+                .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                .PutStringAsync(value);
             _logger.LogInformation("Updated key: {Key}", key);
         }
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
         {
             string consulUrl = consulEnv.ConsulUrl + "/v1/agent/self";
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
-            HttpResponseMessage response = await client.GetAsync(consulUrl);
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await consulUrl
+                .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                .GetStringAsync();
             var json = JObject.Parse(responseBody);
             return json["Config"]["Datacenter"].ToString();
         }
@@ -268,12 +264,9 @@ namespace Common.Services
         {
             string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
-            HttpResponseMessage response = await client.GetAsync(consulUrl);
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await consulUrl
+                .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                .GetStringAsync();
             return JArray.Parse(responseBody);
         }
 
