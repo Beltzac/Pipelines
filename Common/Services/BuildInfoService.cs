@@ -14,6 +14,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Common.Services
 {
@@ -63,7 +64,7 @@ namespace Common.Services
                 return;
             }
 
-            var url = $"{_organizationUrl}/{repo.Project}/_git/{repo.Name}/pullrequests?_a=mine";
+            var url = Path.Combine(_organizationUrl, repo.Project, "_git", repo.Name, "pullrequests?_a=mine");
             await Electron.Shell.OpenExternalAsync(url);
         }
 
