@@ -86,7 +86,7 @@
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
     <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
-    <button class="btn btn-primary text-nowrap" @onclick="NavigateToPRCreation">Create PR</button>
+    <button class="btn btn-primary text-nowrap" @onclick="() => NavigateToPRCreation(selectedRepo)">Create PR</button>
 </div>
 
 
@@ -330,9 +330,15 @@ else
         };
     }
 
-    private async Task NavigateToPRCreation()
+    private async Task NavigateToPRCreation(Repository repo)
     {
-        var url = "https://dev.azure.com/terminal-cp/Agendamento/_git/TcpAgendamento/pullrequests?_a=mine";
+        if (repo == null)
+        {
+            _logger.LogWarning("No repository selected for PR creation.");
+            return;
+        }
+
+        var url = $"https://dev.azure.com/terminal-cp/{repo.Project}/_git/{repo.Name}/pullrequests?_a=mine";
         await Electron.Shell.OpenExternalAsync(url);
     }
 }
