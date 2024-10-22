@@ -24,7 +24,10 @@ namespace Common.Services
 
         public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
-            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "kv", key);
+            string consulUrl = consulEnv.ConsulUrl
+                .AppendPathSegment("v1")
+                .AppendPathSegment("kv")
+                .AppendPathSegment(key);
             var response = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
@@ -33,7 +36,10 @@ namespace Common.Services
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
         {
-            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "agent", "self");
+            string consulUrl = consulEnv.ConsulUrl
+                .AppendPathSegment("v1")
+                .AppendPathSegment("agent")
+                .AppendPathSegment("self");
             var responseBody = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
@@ -61,7 +67,12 @@ namespace Common.Services
             foreach (var keyValue in keyValues)
             {
                 string value = keyValue.Value;
-                string url = Url.Combine(consulEnv.ConsulUrl, "ui", datacenter, "kv", keyValue.Key, "edit");
+                string url = consulEnv.ConsulUrl
+                    .AppendPathSegment("ui")
+                    .AppendPathSegment(datacenter)
+                    .AppendPathSegment("kv")
+                    .AppendPathSegment(keyValue.Key)
+                    .AppendPathSegment("edit");
 
                 var recursiveValue = ResolveRecursiveValues(value, keyValues);
                 bool isValidJson = IsValidFormated(keyValue.Key, recursiveValue);
@@ -263,7 +274,10 @@ namespace Common.Services
 
         async Task<JArray> FetchConsulKV(ConsulEnvironment consulEnv)
         {
-            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "kv") + "/?recurse";
+            string consulUrl = consulEnv.ConsulUrl
+                .AppendPathSegment("v1")
+                .AppendPathSegment("kv")
+                .SetQueryParams(new { recurse = "" });
 
             var responseBody = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)

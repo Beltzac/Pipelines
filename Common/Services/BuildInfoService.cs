@@ -65,7 +65,11 @@ namespace Common.Services
                 return;
             }
 
-            var url = Url.Combine(_organizationUrl, repo.Project, "_git", repo.Name, "pullrequests?_a=mine");
+            var url = _organizationUrl
+                .AppendPathSegment(repo.Project)
+                .AppendPathSegment("_git")
+                .AppendPathSegment(repo.Name)
+                .SetQueryParams(new { _a = "mine" });
             await OpenFolderUtils.OpenUrlAsync(url);
         }
 
