@@ -24,7 +24,7 @@ namespace Common.Services
         {
             string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
             HttpClient client = new HttpClient();
-            var content = new StringContent(Convert.ToBase64String(Encoding.UTF8.GetBytes(value)), Encoding.UTF8, "application/json");
+            var content = new StringContent(value, Encoding.UTF8, "application/json");
             client.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
             HttpResponseMessage response = await client.PutAsync(consulUrl, content);
             response.EnsureSuccessStatusCode();
