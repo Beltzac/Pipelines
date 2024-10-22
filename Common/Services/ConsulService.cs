@@ -23,7 +23,7 @@ namespace Common.Services
 
         public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
-            string consulUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
+            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "kv", key);
             var response = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
@@ -32,7 +32,7 @@ namespace Common.Services
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl + "/v1/agent/self";
+            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "agent", "self");
             var responseBody = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
@@ -60,7 +60,7 @@ namespace Common.Services
             foreach (var keyValue in keyValues)
             {
                 string value = keyValue.Value;
-                string url = $"{consulEnv.ConsulUrl}/ui/{datacenter}/kv/{keyValue.Key}/edit";
+                string url = Url.Combine(consulEnv.ConsulUrl, "ui", datacenter, "kv", keyValue.Key, "edit");
 
                 var recursiveValue = ResolveRecursiveValues(value, keyValues);
                 bool isValidJson = IsValidFormated(keyValue.Key, recursiveValue);
@@ -262,7 +262,7 @@ namespace Common.Services
 
         async Task<JArray> FetchConsulKV(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl + "/v1/kv/?recurse";
+            string consulUrl = Url.Combine(consulEnv.ConsulUrl, "v1", "kv") + "/?recurse";
 
             var responseBody = await consulUrl
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
