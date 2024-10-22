@@ -30,9 +30,10 @@
         document.body.removeChild(link);
     }
 
-    private void NavigateToPRCreation()
+    private async Task NavigateToPRCreation()
     {
-        NavigationManager.NavigateTo("/prcreation");
+        var url = "https://dev.azure.com/terminal-cp/Agendamento/_git/TcpAgendamento/pullrequests?_a=mine";
+        await Electron.Shell.OpenExternalAsync(url);
     }
 </script>
 
