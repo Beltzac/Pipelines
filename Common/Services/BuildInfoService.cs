@@ -132,10 +132,10 @@ namespace Common.Services
             return await _repositoryDatabase.Query().Where(x => x.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task<string> GetBuildErrorLogsAsync(Guid id)
+        public async Task<string?> GetBuildErrorLogsAsync(Guid id)
         {
             var repo = await _repositoryDatabase.FindByIdAsync(id);
-            return await Task.FromResult(repo?.Pipeline?.Last?.ErrorLogs);
+            return repo?.Pipeline?.Last?.ErrorLogs;
         }
 
         public async Task FetchBuildInfoAsync()
@@ -363,7 +363,7 @@ namespace Common.Services
                     Electron.Notification.Show(
                        new NotificationOptions(
                            buildInfo.Path,
-                           buildInfo.Pipeline.Last.Status
+                           buildInfo.Pipeline?.Last?.Status
                        ));
                 }
             }
