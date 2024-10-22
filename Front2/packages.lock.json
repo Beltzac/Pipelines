@@ -410,6 +410,19 @@
           "Microsoft.EntityFrameworkCore.Relational": "8.0.0"
         }
       },
+      "Flurl": {
+        "type": "Transitive",
+        "resolved": "4.0.0",
+        "contentHash": "rpts69yYgvJqg6PPgqShBQEZ4aNzWQqWpWppcT0oDWxDCIsBqiod4pj6LQZdhk+1OozLFagemldMRACdHF3CsA=="
+      },
+      "Flurl.Http": {
+        "type": "Transitive",
+        "resolved": "4.0.2",
+        "contentHash": "9vCqFFyceA11yplkFD8AbCFFTvG1Lrw3tpsgOpL5sLUc28p6zcvGszNleuT6nDymRvtt5eS+rqUX+bRztg1fhA==",
+        "dependencies": {
+          "Flurl": "4.0.0"
+        }
+      },
       "FuzzyString": {
         "type": "Transitive",
         "resolved": "1.0.0",
@@ -1743,11 +1756,11 @@
       },
       "System.Configuration.ConfigurationManager": {
         "type": "Transitive",
-        "resolved": "9.0.0-rc.1.24431.7",
-        "contentHash": "rrmFwEYq9QloK5ohBFdaFyFPtCJc7d8HxAAPuc8cCt4dOYQM/VFIoMGsTDsYhurCLVS8yzBYsENZtAFJ7Tap/w==",
+        "resolved": "9.0.0-rc.2.24473.5",
+        "contentHash": "4f6sY++OiBxsho7BSScMDs94Oa/UbC92kpAei3w9mswEziMIlGav9miEoCm5pY1rOMYMtMRr2lBq9GDhlN/Bog==",
         "dependencies": {
-          "System.Diagnostics.EventLog": "9.0.0-rc.1.24431.7",
-          "System.Security.Cryptography.ProtectedData": "9.0.0-rc.1.24431.7"
+          "System.Diagnostics.EventLog": "9.0.0-rc.2.24473.5",
+          "System.Security.Cryptography.ProtectedData": "9.0.0-rc.2.24473.5"
         }
       },
       "System.Console": {
@@ -1805,8 +1818,8 @@
       },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
-        "resolved": "9.0.0-rc.1.24431.7",
-        "contentHash": "ARI0u0Z1/eVTCeb6G4oS/xdTX0xvHPuIoT1IAHsRlOYzgzgmoXZxzH28AMD8etSCDXCBT+0icbcHMsNjOQlxDg=="
+        "resolved": "9.0.0-rc.2.24473.5",
+        "contentHash": "d37ltVHeoZ0yLGFN1igt0FyIMz5mWPPTm/gDftPcQdefQx8NrLWr3YXv7nUe5WcfQmlk4yDT5kHIIqIXxz5xgg=="
       },
       "System.Diagnostics.PerformanceCounter": {
         "type": "Transitive",
@@ -2429,8 +2442,8 @@
       },
       "System.Security.Cryptography.ProtectedData": {
         "type": "Transitive",
-        "resolved": "9.0.0-rc.1.24431.7",
-        "contentHash": "oPjLCPnuxKQ8lXyY4PPgbwuTu1qpeZGLbh4/c+o1ZcLXuLJlpKYOu9HmqvWD9VpReAFOp72a1GYRSsMmJKZ9aQ=="
+        "resolved": "9.0.0-rc.2.24473.5",
+        "contentHash": "WmEKZcNdOoUSEVQVTs8LsD0WdnliOij0G4s9ljfVTFekI82JWk3WfvlpFzDsc7sXO12w/ckXrkaaRkiUBT8Gyw=="
       },
       "System.Security.Cryptography.X509Certificates": {
         "type": "Transitive",
@@ -2705,11 +2718,11 @@
       },
       "Z.EntityFramework.Extensions.EFCore": {
         "type": "Transitive",
-        "resolved": "9.0.0-rc.1.24451.1-02",
-        "contentHash": "J1SiBCV68b+peq/NRPwdMPdWQDXfzYZR8emp0yrVSO1VW2XEUur5fJ1/FJwy4aye/8MsnhL35XrfrMhL7mazrQ==",
+        "resolved": "9.0.0-rc.2.24474.1-01",
+        "contentHash": "rQkTQJTZ0GsmN36TEk4ScsB4r5so6ytvRgMiokr/ZjE8FRy7+mJX0cpLYYYBqBr7vB/EN8f2CwDL5Ht6GAgoWw==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "9.0.0-rc.1.24451.1",
-          "System.Configuration.ConfigurationManager": "9.0.0-rc.1.24431.7"
+          "Microsoft.EntityFrameworkCore.Relational": "9.0.0-rc.2.24474.1",
+          "System.Configuration.ConfigurationManager": "9.0.0-rc.2.24473.5"
         }
       },
       "common": {
@@ -2725,6 +2738,8 @@
           "DiffPlex": "[1.7.2, )",
           "ElectronNET.API": "[23.6.2, )",
           "FlexLabs.EntityFrameworkCore.Upsert": "[8.0.0, )",
+          "Flurl": "[4.0.0, )",
+          "Flurl.Http": "[4.0.2, )",
           "FuzzyString": "[1.0.0, )",
           "H.NotifyIcon": "[2.1.3, )",
           "LibGit2Sharp": "[0.30.0, )",
@@ -2741,7 +2756,7 @@
           "Quartz": "[3.13.0, )",
           "Quartz.AspNetCore": "[3.13.0, )",
           "System.Linq.Async": "[6.0.1, )",
-          "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.1.24451.1-02, )"
+          "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.2.24474.1-01, )"
         }
       }
     }

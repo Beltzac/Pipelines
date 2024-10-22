@@ -24,25 +24,25 @@ namespace Common.Services
 
         public async Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value)
         {
-            string consulUrl = consulEnv.ConsulUrl
+            var response = await consulEnv.ConsulUrl
                 .AppendPathSegment("v1")
                 .AppendPathSegment("kv")
-                .AppendPathSegment(key);
-            var response = await consulUrl
+                .AppendPathSegment(key)
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
+
             _logger.LogInformation("Updated key: {Key}", key);
         }
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl
+            var responseBody = await consulEnv.ConsulUrl
                 .AppendPathSegment("v1")
                 .AppendPathSegment("agent")
-                .AppendPathSegment("self");
-            var responseBody = await consulUrl
+                .AppendPathSegment("self")
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
+
             var json = JObject.Parse(responseBody);
             return json["Config"]["Datacenter"].ToString();
         }
@@ -274,14 +274,13 @@ namespace Common.Services
 
         async Task<JArray> FetchConsulKV(ConsulEnvironment consulEnv)
         {
-            string consulUrl = consulEnv.ConsulUrl
+            var responseBody = await consulEnv.ConsulUrl
                 .AppendPathSegment("v1")
                 .AppendPathSegment("kv")
-                .SetQueryParams(new { recurse = "" });
-
-            var responseBody = await consulUrl
+                .SetQueryParams(new { recurse = "" })
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
+
             return JArray.Parse(responseBody);
         }
 
