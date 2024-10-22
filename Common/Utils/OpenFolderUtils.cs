@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ElectronNET.API;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Xml;
 
@@ -6,6 +7,22 @@ namespace Common.Utils
 {
     public static class OpenFolderUtils
     {
+
+        public static async Task OpenUrlAsync(string url)
+        {
+            if (HybridSupport.IsElectronActive)
+            {
+                await Electron.Shell.OpenExternalAsync(url);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+
         public static void OpenFolder(string localPath)
         {
             if (Directory.Exists(localPath))
