@@ -25,27 +25,27 @@ public class ConfigurationService : IConfigurationService
             Directory.CreateDirectory(appFolder);
         }
 
-        LoadConfig();
+        LoadConfigAsync().GetAwaiter().GetResult();
     }
 
-    private void LoadConfig()
+    private async Task LoadConfigAsync()
     {
         if (File.Exists(_configPath))
         {
-            string jsonConfig = File.ReadAllText(_configPath);
+            string jsonConfig = await File.ReadAllTextAsync(_configPath);
             _config = JsonSerializer.Deserialize<ConfigModel>(jsonConfig);
         }
         else
         {
             _config = new ConfigModel();
-            SaveConfig();
+            await SaveConfigAsync();
         }
     }
 
-    private void SaveConfig()
+    private async Task SaveConfigAsync()
     {
         string jsonConfig = JsonSerializer.Serialize(_config, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(_configPath, jsonConfig);
+        await File.WriteAllTextAsync(_configPath, jsonConfig);
     }
 
     public ConfigModel GetConfig()
@@ -56,6 +56,6 @@ public class ConfigurationService : IConfigurationService
     public async Task SaveConfigAsync(ConfigModel config)
     {
         _config = config;
-        await Task.Run(() => SaveConfig());
+        await Task.Run(() => SaveConfigAsync());
     }
 }
