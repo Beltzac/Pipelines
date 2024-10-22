@@ -78,6 +78,7 @@
 
     <Item OnClick="@DeleteClickAsync">Delete</Item>
     <Item OnClick="@RefetchClickAsync">Refetch</Item>
+    <Item OnClick="@NavigateToPRCreation">Open PR</Item>
 </ContextMenu>
 
 <div class="mb-3 d-flex align-items-center sticky-filter">
@@ -86,7 +87,6 @@
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
     <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
-    <button class="btn btn-primary text-nowrap" @onclick="() => NavigateToPRCreation(selectedRepo)">Create PR</button>
 </div>
 
 
@@ -286,34 +286,40 @@ else
     {
         var repo = e.Data as Repository;
         var url = repo.Pipeline.Last.Commit.Url;
-        await Electron.Shell.OpenExternalAsync(url);
+        await OpenFolderUtils.OpenUrlAsync(url);
     }
 
     async Task OpenRepositoryClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         var url = repo.Url;
-        await Electron.Shell.OpenExternalAsync(url);
+        await OpenFolderUtils.OpenUrlAsync(url);
     }
 
     async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         var url = repo.Pipeline.Last.Url;
-        await Electron.Shell.OpenExternalAsync(url);
+        await OpenFolderUtils.OpenUrlAsync(url);
     }   
     
     async Task OpenSonarClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         var url = $"https://sonarcloud.io/project/branches_list?id={repo.Project.Replace('.', '-')}-{repo.Name.Replace('.', '-')}";
-        await Electron.Shell.OpenExternalAsync(url);
+        await OpenFolderUtils.OpenUrlAsync(url);
     }
 
     async Task OpenLogDetailsClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         NavigationManager.NavigateTo($"/logdetails/{repo.Id}");
+    }
+
+    async Task NavigateToPRCreation(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        await BuildInfoService.NavigateToPRCreationAsync(repo);
     }
 
     private StatusIndicator.Status GetStatusIndicator(Repository repo)
@@ -328,10 +334,5 @@ else
             _ when repo.Pipeline.Last.Result == "Failed" => StatusIndicator.Status.Error,
             _ => StatusIndicator.Status.Unknown,
         };
-    }
-
-    private async Task NavigateToPRCreation(Repository repo)
-    {
-        await BuildInfoService.NavigateToPRCreationAsync(repo);
     }
 }

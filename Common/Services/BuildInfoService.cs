@@ -65,7 +65,7 @@ namespace Common.Services
             }
 
             var url = Path.Combine(_organizationUrl, repo.Project, "_git", repo.Name, "pullrequests?_a=mine");
-            await Electron.Shell.OpenExternalAsync(url);
+            await OpenFolderUtils.OpenUrlAsync(url);
         }
 
         public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
