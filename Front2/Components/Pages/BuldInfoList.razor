@@ -29,12 +29,6 @@
         link.click();
         document.body.removeChild(link);
     }
-
-    private async Task NavigateToPRCreation()
-    {
-        var url = "https://dev.azure.com/terminal-cp/Agendamento/_git/TcpAgendamento/pullrequests?_a=mine";
-        await Electron.Shell.OpenExternalAsync(url);
-    }
 </script>
 
 <style>
@@ -334,5 +328,11 @@ else
             _ when repo.Pipeline.Last.Result == "Failed" => StatusIndicator.Status.Error,
             _ => StatusIndicator.Status.Unknown,
         };
+    }
+
+    private async Task NavigateToPRCreation()
+    {
+        var url = "https://dev.azure.com/terminal-cp/Agendamento/_git/TcpAgendamento/pullrequests?_a=mine";
+        await Electron.Shell.OpenExternalAsync(url);
     }
 }
