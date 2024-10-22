@@ -56,6 +56,6 @@ public class ConfigurationService : IConfigurationService
     public async Task SaveConfigAsync(ConfigModel config)
     {
         _config = config;
-        await Task.Run(() => SaveConfigAsync());
+        await SaveConfigAsync();
     }
 }
