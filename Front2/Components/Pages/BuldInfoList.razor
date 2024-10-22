@@ -332,13 +332,6 @@ else
 
     private async Task NavigateToPRCreation(Repository repo)
     {
-        if (repo == null)
-        {
-            _logger.LogWarning("No repository selected for PR creation.");
-            return;
-        }
-
-        var url = $"https://dev.azure.com/terminal-cp/{repo.Project}/_git/{repo.Name}/pullrequests?_a=mine";
-        await Electron.Shell.OpenExternalAsync(url);
+        await BuildInfoService.NavigateToPRCreationAsync(repo);
     }
 }

@@ -20,5 +20,6 @@ namespace Common.Services
         Expression<Func<Repository, DateTime>> GetLatestBuildDetailsExpression();
         Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId);
         Task OpenCloneFolderInVsCode();
+        Task NavigateToPRCreationAsync(Repository repo);
     }
 }

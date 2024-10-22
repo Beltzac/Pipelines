@@ -29,6 +29,7 @@ namespace Common.Services
         private readonly string _privateToken;
         private readonly string _name;
         private readonly List<string> _repoRegexFilters;
+        private readonly string _basePrUrl;
 
         public BuildInfoService(
             IHubContext<BuildInfoHub> hubContext,
@@ -51,6 +52,19 @@ namespace Common.Services
             _logger = logger;
             _privateToken = config.PAT;
             _repoRegexFilters = config.IgnoreRepositoriesRegex;
+            _basePrUrl = config.BasePrUrl; // Assuming BasePrUrl is a property in your config
+        }
+
+        public async Task NavigateToPRCreationAsync(Repository repo)
+        {
+            if (repo == null)
+            {
+                _logger.LogWarning("No repository selected for PR creation.");
+                return;
+            }
+
+            var url = $"{_basePrUrl}/{repo.Project}/_git/{repo.Name}/pullrequests?_a=mine";
+            await Electron.Shell.OpenExternalAsync(url);
         }
 
         public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
