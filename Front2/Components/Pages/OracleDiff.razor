@@ -89,7 +89,7 @@
                     <div class="d2h-files-diff">
                         <div class="d2h-file-side-diff">
                             <div class="d-flex justify-content-end mb-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.oldName}}', '${sourceEnv}')">
                                     <i class="bi bi-download"></i> Source
                                 </button>
                             </div>
@@ -103,7 +103,7 @@
                         </div>
                         <div class="d2h-file-side-diff">
                             <div class="d-flex justify-content-end mb-2">
-                                <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}', '${targetEnv}')">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.newName}}', '${targetEnv}')">
                                     <i class="bi bi-download"></i> Target
                                 </button>
                             </div>
@@ -158,8 +158,6 @@
             selectedSourceEnv = environments[0].Name;
             selectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
         }
-
-        await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this), nameof(ExportViewDDL));
     }
 
     [JSInvokable]
@@ -221,6 +219,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this));
+        }
+
         if (firstRender && environments.Count >= 2)
         {
             await CompareEnvironments();
