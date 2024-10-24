@@ -167,38 +167,6 @@
         }
     }
 
-    private async Task ExportViewDDL(string viewName, string envName)
-    {
-        try
-        {
-            var config = ConfigService.GetConfig();
-            var env = config.OracleEnvironments.FirstOrDefault(e => e.Name == envName);
-            
-            if (env == null)
-            {
-                toastService.ShowError($"Environment {envName} not found");
-                return;
-            }
-
-            var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
-            if (!string.IsNullOrEmpty(ddl))
-            {
-                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql";
-                var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
-                await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
-                toastService.ShowSuccess($"Downloaded {fileName}");
-            }
-            else
-            {
-                toastService.ShowError($"View {viewName} not found in {envName}");
-            }
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Error exporting DDL: {ex.Message}");
-        }
-    }
-
     [JSInvokable]
     public async Task ExportViewDDL(string viewName, string envName)
     {
