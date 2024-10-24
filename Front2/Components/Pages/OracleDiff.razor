@@ -54,7 +54,7 @@
 
 <script>
 
-    window.initializeDiff2Html = function(diffString) {
+    window.initializeDiff2Html = function(diffString, sourceEnv, targetEnv) {
 
         //var hljs = require('highlight.js');
 
@@ -86,7 +86,7 @@
                 <span class="d2h-file-name-wrapper">
                     {{>fileIcon}}
                     <span class="d2h-file-name">{{file.fileName}}</span>
-                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${selectedSourceEnv}')">
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
                         <i class="bi bi-download"></i> Source
                     </button>
                     <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${selectedTargetEnv}')">
@@ -194,7 +194,7 @@
             var diff = String.Join("\r\n", differences.Values);
             // Store environment variables
             //await JS.InvokeVoidAsync("window.setEnvironments", selectedSourceEnv, selectedTargetEnv);
-            await JS.InvokeVoidAsync("initializeDiff2Html", diff);
+            await JS.InvokeVoidAsync("initializeDiff2Html", diff, selectedSourceEnv, selectedTargetEnv);
         }
         catch (Exception ex)
         {
