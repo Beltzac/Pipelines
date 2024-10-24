@@ -180,8 +180,7 @@
             if (!string.IsNullOrEmpty(ddl))
             {
                 var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql".Replace(" ", "_");
-                var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
-                await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
+                await DownloadFile(fileName, ddl);
                 toastService.ShowSuccess($"Downloaded {fileName}");
             }
             else
@@ -193,6 +192,13 @@
         {
             toastService.ShowError($"Error exporting DDL: {ex.Message}");
         }
+    }
+
+    private async Task DownloadFile(string fileName, string fileContent)
+    {
+        var byteArray = System.Text.Encoding.UTF8.GetBytes(fileContent);
+        var base64Content = Convert.ToBase64String(byteArray);
+        await JS.InvokeVoidAsync("downloadFile", fileName, base64Content);
     }
 
     private async Task CompareEnvironments()
@@ -208,7 +214,6 @@
             differences = OracleSchemaService.Compare(selectedSourceEnv, selectedTargetEnv);
             var diff = String.Join("\r\n", differences.Values);
             // Store environment variables
-            //await JS.InvokeVoidAsync("window.setEnvironments", selectedSourceEnv, selectedTargetEnv);
             await JS.InvokeVoidAsync("initializeDiff2Html", diff, selectedSourceEnv, selectedTargetEnv);
         }
         catch (Exception ex)
