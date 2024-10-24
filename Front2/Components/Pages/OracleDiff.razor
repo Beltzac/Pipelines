@@ -80,7 +80,22 @@
                   <span class="d2h-lines-deleted">{{deletedLines}}</span>
               </span>
             </span>
-        </li>`
+        </li>`,
+                "generic-wrapper": `<div class="d2h-wrapper">
+            <div class="d2h-file-header">
+                <span class="d2h-file-name-wrapper">
+                    {{>fileIcon}}
+                    <span class="d2h-file-name">{{file.fileName}}</span>
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${selectedSourceEnv}')">
+                        <i class="bi bi-download"></i> Source
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${selectedTargetEnv}')">
+                        <i class="bi bi-download"></i> Target
+                    </button>
+                </span>
+            </div>
+            {{{content}}}
+        </div>`
             }
         };
         console.log(hljs);
@@ -93,6 +108,11 @@
             block.classList.remove('plaintext'); // Remove the plaintext class
             block.classList.add('sql'); // Add the SQL language class
             hljs.highlightElement(block); // Highlight the block
+        });
+
+        // Add Bootstrap classes to buttons
+        document.querySelectorAll('.d2h-file-header button').forEach(button => {
+            button.classList.add('btn-sm', 'btn-outline-primary');
         });
 
         //diff2htmlUi.highlightCode();
