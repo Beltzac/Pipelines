@@ -97,7 +97,38 @@
 
 <h3>Build Information</h3>
 
-<div id="myDiffElement" style="max-width:80VW;"></div>
+<div class="mb-3">
+    <div class="row">
+        <div class="col">
+            <div id="myDiffElement" style="max-width:80VW;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">Download View Definitions</div>
+    <div class="card-body">
+        @if (differences != null && differences.Any())
+        {
+            <div class="list-group">
+                @foreach (var diff in differences)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@diff.Key</span>
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" @onclick="() => ExportViewDDL(diff.Key, selectedSourceEnv)">
+                                <i class="bi bi-download"></i> Source
+                            </button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => ExportViewDDL(diff.Key, selectedTargetEnv)">
+                                <i class="bi bi-download"></i> Target
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
 
 
 
@@ -116,6 +147,38 @@
         {
             selectedSourceEnv = environments[0].Name;
             selectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
+        }
+    }
+
+    private async Task ExportViewDDL(string viewName, string envName)
+    {
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var env = config.OracleEnvironments.FirstOrDefault(e => e.Name == envName);
+            
+            if (env == null)
+            {
+                toastService.ShowError($"Environment {envName} not found");
+                return;
+            }
+
+            var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
+            if (!string.IsNullOrEmpty(ddl))
+            {
+                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
+                await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
+                toastService.ShowSuccess($"Downloaded {fileName}");
+            }
+            else
+            {
+                toastService.ShowError($"View {viewName} not found in {envName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error exporting DDL: {ex.Message}");
         }
     }
 
