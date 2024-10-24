@@ -1,4 +1,5 @@
 ﻿using Common.Utils;
+using Common.Models;
 using CSharpDiff.Patches.Models;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
@@ -7,23 +8,29 @@ namespace Common.ExternalApis
 {
     public class OracleSchemaService : IOracleSchemaService
     {
-        string devConnectionString = "User Id=AHOY_ABELTZAC;Password=!Hunt93cey111;Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=racscandr.tcp.com.br)(PORT=1521))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=navisstby)));";
-        string qaConnectionString = "User Id=TCPAPI;Password=TCPAPI;Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=srvoracledbdev01.tcp.com.br)(PORT=1521))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=navisqa)));";
-        string schema = "TCPAPI";
-
         private readonly ILogger<OracleSchemaService> _logger;
+        private readonly IConfigurationService _configService;
 
-        public OracleSchemaService(ILogger<OracleSchemaService> logger)
+        public OracleSchemaService(ILogger<OracleSchemaService> logger, IConfigurationService configService)
         {
             _logger = logger;
+            _configService = configService;
         }
 
-        public Dictionary<string, string> Compare()
+        public Dictionary<string, string> Compare(string sourceEnvName, string targetEnvName)
         {
-            var devViews = GetViewDefinitions(devConnectionString, schema);
-            var qaViews = GetViewDefinitions(qaConnectionString, schema);
+            var config = _configService.GetConfig();
+            
+            var sourceEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvName)
+                ?? throw new ArgumentException($"Source environment '{sourceEnvName}' not found");
+                
+            var targetEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvName)
+                ?? throw new ArgumentException($"Target environment '{targetEnvName}' not found");
 
-            return CompareViewDefinitions(devViews, qaViews);
+            var sourceViews = GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
+            var targetViews = GetViewDefinitions(targetEnv.ConnectionString, targetEnv.Schema);
+
+            return CompareViewDefinitions(sourceViews, targetViews);
         }
 
         public Dictionary<string, string> GetViewDefinitions(string connectionString, string schema)
