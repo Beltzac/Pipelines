@@ -1,7 +1,9 @@
 @page "/config-manager"
 @using Common.Models
+@using Common.ExternalApis
 @inject IConfigurationService ConfigService
 @inject IToastService ToastService
+@inject IOracleSchemaService OracleService
 
 <h3>Configuration Manager</h3>
 
@@ -99,6 +101,38 @@
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-header">
+            Oracle Environments
+            <button class="btn btn-secondary btn-sm float-end" @onclick="AddOracleEnvironment">Add Environment</button>
+        </div>
+        <div class="card-body">
+            @foreach (var env in config.OracleEnvironments)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Name:</label>
+                            <InputText class="form-control" @bind-Value="env.Name" />
+                        </div>
+                        <div class="form-group">
+                            <label>Connection String:</label>
+                            <InputText class="form-control" @bind-Value="env.ConnectionString" type="password" />
+                        </div>
+                        <div class="form-group">
+                            <label>Schema:</label>
+                            <InputText class="form-control" @bind-Value="env.Schema" />
+                        </div>
+                        <div class="mt-2">
+                            <button class="btn btn-danger" @onclick="() => RemoveOracleEnvironment(env)">Remove</button>
+                            <button class="btn btn-secondary ms-2" @onclick="() => TestOracleConnection(env)">Test Connection</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
 </EditForm>
 
@@ -135,10 +169,66 @@
         }
     }
 
+    private void AddOracleEnvironment()
+    {
+        config.OracleEnvironments.Add(new OracleEnvironment());
+    }
+
+    private void RemoveOracleEnvironment(OracleEnvironment env)
+    {
+        config.OracleEnvironments.Remove(env);
+    }
+
+    private async Task TestOracleConnection(OracleEnvironment env)
+    {
+        try
+        {
+            var result = await OracleService.TestConnectionAsync(env.ConnectionString, env.Schema);
+            if (result)
+            {
+                ToastService.ShowSuccess("Connection test successful");
+            }
+            else
+            {
+                ToastService.ShowError("Connection test failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Connection test failed: {ex.Message}");
+        }
+    }
+
     private async Task HandleValidSubmit()
     {
-        await ConfigService.SaveConfigAsync(config);
-        ToastService.ShowSuccess("Configuration saved successfully!");
+        try
+        {
+            // Validate Oracle environments
+            var invalidOracleEnvs = config.OracleEnvironments.Where(e => 
+                string.IsNullOrWhiteSpace(e.Name) || 
+                string.IsNullOrWhiteSpace(e.ConnectionString) || 
+                string.IsNullOrWhiteSpace(e.Schema)).ToList();
+                
+            if (invalidOracleEnvs.Any())
+            {
+                ToastService.ShowError("All fields are required for Oracle environments");
+                return;
+            }
+
+            // Check for duplicate Oracle environment names
+            if (config.OracleEnvironments.GroupBy(e => e.Name).Any(g => g.Count() > 1))
+            {
+                ToastService.ShowError("Oracle environment names must be unique");
+                return;
+            }
+
+            await ConfigService.SaveConfigAsync(config);
+            ToastService.ShowSuccess("Configuration saved successfully!");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error saving configuration: {ex.Message}");
+        }
     }
 
     private void OnConsulEnvironmentSelected(ChangeEventArgs e)
