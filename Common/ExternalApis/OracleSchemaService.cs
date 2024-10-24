@@ -55,6 +55,29 @@ namespace Common.ExternalApis
             }
         }
 
+        public async Task<string> GetViewDefinitionAsync(string connectionString, string schema, string viewName)
+        {
+            using (var connection = new OracleConnection(connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand($"SELECT TEXT FROM ALL_VIEWS WHERE OWNER = :schema AND VIEW_NAME = :viewName", connection))
+                {
+                    command.InitialLONGFetchSize = -1;
+                    command.Parameters.Add(new OracleParameter("schema", schema));
+                    command.Parameters.Add(new OracleParameter("viewName", viewName));
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return reader.GetOracleString(0).Value;
+                        }
+                        return string.Empty;
+                    }
+                }
+            }
+        }
+
         public Dictionary<string, string> GetViewDefinitions(string connectionString, string schema)
         {
             var viewDefinitions = new Dictionary<string, string>();
