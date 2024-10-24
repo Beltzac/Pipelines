@@ -86,15 +86,6 @@
                       {{{filePath}}}
                     </div>
 
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="btn btn-sm btn-outline-primary" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
-                            <i class="bi bi-download"></i> Source
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${targetEnv}')">
-                            <i class="bi bi-download"></i> Target
-                        </button>
-                    </div>
-
                     <div class="d2h-files-diff">
                         <div class="d2h-file-side-diff">
                             <div class="d-flex justify-content-end mb-2">
@@ -157,7 +148,7 @@
     private string selectedTargetEnv;
     private Dictionary<string, string> differences;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         var config = ConfigService.GetConfig();
         environments = config.OracleEnvironments;
@@ -167,48 +158,44 @@
             selectedSourceEnv = environments[0].Name;
             selectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
         }
+
+        await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this), nameof(ExportViewDDL));
     }
 
     [JSInvokable]
-    public static async Task ExportViewDDL(string viewName, string envName)
+    public async Task ExportViewDDL(string viewName, string envName)
     {
-        Console.WriteLine(viewName + " " + envName);
-    }
-
-    // [JSInvokable]
-    // public async Task ExportViewDDL(string viewName, string envName)
-    // {
-    //     // Remove the .SQL extension that diff2html adds
-    //     viewName = viewName.Replace(".SQL", "");
-    //     try
-    //     {
-    //         var config = ConfigService.GetConfig();
-    //         var env = config.OracleEnvironments.FirstOrDefault(e => e.Name == envName);
+        // Remove the .SQL extension that diff2html adds
+        viewName = viewName.Replace(".SQL", "");
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var env = config.OracleEnvironments.FirstOrDefault(e => e.Name == envName);
             
-    //         if (env == null)
-    //         {
-    //             toastService.ShowError($"Environment {envName} not found");
-    //             return;
-    //         }
+            if (env == null)
+            {
+                toastService.ShowError($"Environment {envName} not found");
+                return;
+            }
 
-    //         var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
-    //         if (!string.IsNullOrEmpty(ddl))
-    //         {
-    //             var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql";
-    //             var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
-    //             await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
-    //             toastService.ShowSuccess($"Downloaded {fileName}");
-    //         }
-    //         else
-    //         {
-    //             toastService.ShowError($"View {viewName} not found in {envName}");
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         toastService.ShowError($"Error exporting DDL: {ex.Message}");
-    //     }
-    // }
+            var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
+            if (!string.IsNullOrEmpty(ddl))
+            {
+                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
+                await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
+                toastService.ShowSuccess($"Downloaded {fileName}");
+            }
+            else
+            {
+                toastService.ShowError($"View {viewName} not found in {envName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error exporting DDL: {ex.Message}");
+        }
+    }
 
     private async Task CompareEnvironments()
     {
