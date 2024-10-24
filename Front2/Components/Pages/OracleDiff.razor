@@ -47,8 +47,13 @@
 </div>
 
 <script>
-    // Initialize Blazor interop
-    window.blazorInstance = null;
+    window.sourceEnv = '';
+    window.targetEnv = '';
+    
+    window.setEnvironments = function(source, target) {
+        window.sourceEnv = source;
+        window.targetEnv = target;
+    };
     
     window.initializeDiff2Html = function (diffString) {
 
@@ -109,10 +114,10 @@
                         </div>
                     </div>
                     <div class="d2h-file-actions mt-2 mb-4">
-                        <button class="btn btn-sm btn-primary me-2" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.sourceEnv)">
+                        <button class="btn btn-sm btn-primary me-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.sourceEnv)">
                             <i class="bi bi-download"></i> Source
                         </button>
-                        <button class="btn btn-sm btn-primary" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.targetEnv)">
+                        <button class="btn btn-sm btn-primary" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.targetEnv)">
                             <i class="bi bi-download"></i> Target
                         </button>
                     </div>
@@ -169,7 +174,7 @@
     }
 
     [JSInvokable]
-    public async Task ExportViewDDL(string viewName, string envName)
+    public static async Task ExportViewDDL(string viewName, string envName)
     {
         // Remove the .SQL extension that diff2html adds
         viewName = viewName.Replace(".SQL", "");
@@ -215,10 +220,8 @@
         {
             differences = OracleSchemaService.Compare(selectedSourceEnv, selectedTargetEnv);
             var diff = String.Join("\r\n", differences.Values);
-            // Create JS reference and store environment variables
-            await JS.InvokeVoidAsync("window.blazorInstance", DotNetObjectReference.Create(this));
-            await JS.InvokeVoidAsync("window.sourceEnv", selectedSourceEnv);
-            await JS.InvokeVoidAsync("window.targetEnv", selectedTargetEnv);
+            // Store environment variables
+            await JS.InvokeVoidAsync("window.setEnvironments", selectedSourceEnv, selectedTargetEnv);
             await JS.InvokeVoidAsync("initializeDiff2Html", diff);
         }
         catch (Exception ex)
