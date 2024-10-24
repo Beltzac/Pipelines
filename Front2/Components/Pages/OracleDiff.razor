@@ -46,8 +46,9 @@
 </div>
 
 <script>
- 
-
+    // Initialize Blazor interop
+    window.blazorInstance = null;
+    
     window.initializeDiff2Html = function (diffString) {
 
         //var hljs = require('highlight.js');
@@ -213,9 +214,11 @@
         {
             differences = OracleSchemaService.Compare(selectedSourceEnv, selectedTargetEnv);
             var diff = String.Join("\r\n", differences.Values);
-            await JS.InvokeVoidAsync("window.blazorInstance = DotNet.createJSObjectReference(this)");
-            await JS.InvokeVoidAsync("window.sourceEnv = '" + selectedSourceEnv + "'");
-            await JS.InvokeVoidAsync("window.targetEnv = '" + selectedTargetEnv + "'");
+            // Create JS reference and store environment variables
+            var jsRef = DotNet.CreateJSObjectReference(this);
+            await JS.InvokeVoidAsync("window.blazorInstance", jsRef);
+            await JS.InvokeVoidAsync("window.sourceEnv", selectedSourceEnv);
+            await JS.InvokeVoidAsync("window.targetEnv", selectedTargetEnv);
             await JS.InvokeVoidAsync("initializeDiff2Html", diff);
         }
         catch (Exception ex)
