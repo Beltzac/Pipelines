@@ -82,8 +82,7 @@
                     </td>
                     <td class="{{type}}">
                         <div class="{{contentClass}}">
-                            {{#isContent}}{{{content}}}{{/isContent}}
-                            {{^isContent}}{{{content}}}{{/isContent}}
+                            {{{content}}}
                         </div>
                     </td>
                 </tr>`,
@@ -108,10 +107,10 @@
                         </div>
                     </div>
                     <div class="d2h-file-actions mt-2 mb-4">
-                        <button class="btn btn-sm btn-primary me-2" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}', window.sourceEnv)">
+                        <button class="btn btn-sm btn-primary me-2" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.sourceEnv)">
                             <i class="bi bi-download"></i> Source
                         </button>
-                        <button class="btn btn-sm btn-primary" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}', window.targetEnv)">
+                        <button class="btn btn-sm btn-primary" onclick="window.blazorInstance.invokeMethodAsync('ExportViewDDL', '{{file.fileName}}'.replace('.SQL', ''), window.targetEnv)">
                             <i class="bi bi-download"></i> Target
                         </button>
                     </div>
