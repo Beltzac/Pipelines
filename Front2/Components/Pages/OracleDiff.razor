@@ -179,7 +179,7 @@
             var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
             if (!string.IsNullOrEmpty(ddl))
             {
-                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql";
+                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql".Replace(" ", "_");
                 var bytes = System.Text.Encoding.UTF8.GetBytes(ddl);
                 await JS.InvokeVoidAsync("downloadFile", fileName, "text/plain", Convert.ToBase64String(bytes));
                 toastService.ShowSuccess($"Downloaded {fileName}");
