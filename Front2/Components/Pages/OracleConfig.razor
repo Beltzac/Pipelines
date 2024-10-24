@@ -2,6 +2,7 @@
 @using Common.Models
 @inject IConfigurationService ConfigService
 @inject IToastService toastService
+@inject IOracleSchemaService OracleService
 @rendermode InteractiveServer
 
 <h3>Oracle Environments Configuration</h3>
@@ -52,6 +53,26 @@
     private void RemoveEnvironment(OracleEnvironment env)
     {
         config.OracleEnvironments.Remove(env);
+    }
+
+    private async Task TestConnection(OracleEnvironment env)
+    {
+        try
+        {
+            var result = await OracleService.TestConnectionAsync(env.ConnectionString, env.Schema);
+            if (result)
+            {
+                toastService.ShowSuccess("Connection test successful");
+            }
+            else
+            {
+                toastService.ShowError("Connection test failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Connection test failed: {ex.Message}");
+        }
     }
 
     private async Task SaveConfig()
