@@ -86,12 +86,14 @@
                       {{{filePath}}}
                     </div>
 
-                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
-                        <i class="bi bi-download"></i> Source
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${targetEnv}')">
-                        <i class="bi bi-download"></i> Target
-                    </button>
+                    <div class="d-flex justify-content-end mb-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
+                            <i class="bi bi-download"></i> Source
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${targetEnv}')">
+                            <i class="bi bi-download"></i> Target
+                        </button>
+                    </div>
 
                     <div class="d2h-files-diff">
                         <div class="d2h-file-side-diff">
