@@ -81,10 +81,11 @@
               </span>
             </span>
         </li>`,
-                "generic-wrapper": `<div class="d2h-wrapper">
+                "side-by-side-file-diff": `<div class="d2h-file-side-diff">
             <div class="d2h-file-header">
-                    <span class="d2h-file-name-wrapper"> {{>fileIcon}} <span class="d2h-file-name">{{file.fileName}}</span>
-
+                <span class="d2h-file-name-wrapper">
+                    {{>fileIcon}}
+                    <span class="d2h-file-name">{{file.fileName}}</span>
                     <button class="btn btn-sm btn-outline-primary ms-2" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
                         <i class="bi bi-download"></i> Source
                     </button>
@@ -93,7 +94,26 @@
                     </button>
                 </span>
             </div>
-            {{{content}}}
+            <div class="d2h-files-diff">
+                <div class="d2h-file-side-diff">
+                    <div class="d2h-code-wrapper">
+                        <table class="d2h-diff-table">
+                            <tbody class="d2h-diff-tbody">
+                            {{{diffs.left}}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d2h-file-side-diff">
+                    <div class="d2h-code-wrapper">
+                        <table class="d2h-diff-table">
+                            <tbody class="d2h-diff-tbody">
+                            {{{diffs.right}}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>`
             }
         };
