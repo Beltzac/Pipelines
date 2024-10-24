@@ -12,8 +12,37 @@
 @inject IToastService toastService
 @rendermode InteractiveServer
 @inject IJSRuntime JS
+@inject IConfigurationService ConfigService
 
 <AnchorNavigation></AnchorNavigation>
+
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="form-group">
+            <label>Source Environment:</label>
+            <select class="form-control" @bind="selectedSourceEnv">
+                @foreach (var env in environments)
+                {
+                    <option value="@env.Name">@env.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="form-group">
+            <label>Target Environment:</label>
+            <select class="form-control" @bind="selectedTargetEnv">
+                @foreach (var env in environments)
+                {
+                    <option value="@env.Name">@env.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary mt-4" @onclick="CompareEnvironments">Compare</button>
+    </div>
+</div>
 
 <script>
  
@@ -72,18 +101,48 @@
 
 
 @code {
+    private List<OracleEnvironment> environments = new();
+    private string selectedSourceEnv;
+    private string selectedTargetEnv;
+    private Dictionary<string, string> differences;
+
+    protected override void OnInitialized()
+    {
+        var config = ConfigService.GetConfig();
+        environments = config.OracleEnvironments;
+        
+        if (environments.Any())
+        {
+            selectedSourceEnv = environments[0].Name;
+            selectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
+        }
+    }
+
+    private async Task CompareEnvironments()
+    {
+        if (string.IsNullOrEmpty(selectedSourceEnv) || string.IsNullOrEmpty(selectedTargetEnv))
+        {
+            toastService.ShowError("Please select both environments");
+            return;
+        }
+
+        try 
+        {
+            differences = OracleSchemaService.Compare(selectedSourceEnv, selectedTargetEnv);
+            var diff = String.Join("\r\n", differences.Values);
+            await JS.InvokeVoidAsync("initializeDiff2Html", diff);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error comparing environments: {ex.Message}");
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && environments.Count >= 2)
         {
-            var dict = OracleSchemaService.Compare();
-
-            //var diff = OracleDiffService.GetDiffString();
-            // Call JavaScript function to initialize diff2htmlUi after the page is rendered
-
-            var diff = String.Join("\r\n", dict.Values);
-
-            await JS.InvokeVoidAsync("initializeDiff2Html", diff);
+            await CompareEnvironments();
         }
     }
 }

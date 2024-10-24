@@ -1,0 +1,65 @@
+@page "/oracle-config"
+@inject IConfigurationService ConfigService
+@inject IToastService toastService
+@rendermode InteractiveServer
+
+<h3>Oracle Environments Configuration</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="AddEnvironment">Add Environment</button>
+</div>
+
+@foreach (var env in config.OracleEnvironments)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-group">
+                <label>Name:</label>
+                <input class="form-control" @bind="env.Name" />
+            </div>
+            <div class="form-group">
+                <label>Connection String:</label>
+                <input class="form-control" @bind="env.ConnectionString" type="password" />
+            </div>
+            <div class="form-group">
+                <label>Schema:</label>
+                <input class="form-control" @bind="env.Schema" />
+            </div>
+            <button class="btn btn-danger mt-2" @onclick="() => RemoveEnvironment(env)">Remove</button>
+        </div>
+    </div>
+}
+
+<button class="btn btn-primary" @onclick="SaveConfig">Save Configuration</button>
+
+@code {
+    private ConfigModel config = new();
+
+    protected override void OnInitialized()
+    {
+        config = ConfigService.GetConfig();
+    }
+
+    private void AddEnvironment()
+    {
+        config.OracleEnvironments.Add(new OracleEnvironment());
+    }
+
+    private void RemoveEnvironment(OracleEnvironment env)
+    {
+        config.OracleEnvironments.Remove(env);
+    }
+
+    private async Task SaveConfig()
+    {
+        try
+        {
+            await ConfigService.SaveConfigAsync(config);
+            toastService.ShowSuccess("Configuration saved successfully");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error saving configuration: {ex.Message}");
+        }
+    }
+}
