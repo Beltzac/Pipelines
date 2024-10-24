@@ -33,6 +33,28 @@ namespace Common.ExternalApis
             return CompareViewDefinitions(sourceViews, targetViews);
         }
 
+        public async Task<bool> TestConnectionAsync(string connectionString, string schema)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new OracleCommand($"SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = :schema", connection))
+                    {
+                        command.Parameters.Add(new OracleParameter("schema", schema));
+                        await command.ExecuteScalarAsync();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing Oracle connection");
+                return false;
+            }
+        }
+
         public Dictionary<string, string> GetViewDefinitions(string connectionString, string schema)
         {
             var viewDefinitions = new Dictionary<string, string>();
