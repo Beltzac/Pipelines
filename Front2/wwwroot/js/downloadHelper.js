@@ -1,6 +1,6 @@
 let dotNetReference;
 
-function setDotNetReference(reference, methodName) {
+function setDotNetReference(reference) {
     dotNetReference = reference;
 }
 
