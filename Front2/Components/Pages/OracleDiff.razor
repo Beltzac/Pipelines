@@ -97,6 +97,11 @@
 
                     <div class="d2h-files-diff">
                         <div class="d2h-file-side-diff">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${sourceEnv}')">
+                                    <i class="bi bi-download"></i> Source
+                                </button>
+                            </div>
                             <div class="d2h-code-wrapper">
                                 <table class="d2h-diff-table">
                                     <tbody class="d2h-diff-tbody">
@@ -106,6 +111,11 @@
                             </div>
                         </div>
                         <div class="d2h-file-side-diff">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="DotNet.invokeMethodAsync('Front2', 'ExportViewDDL', '{{file.fileName}}', '${targetEnv}')">
+                                    <i class="bi bi-download"></i> Target
+                                </button>
+                            </div>
                             <div class="d2h-code-wrapper">
                                 <table class="d2h-diff-table">
                                     <tbody class="d2h-diff-tbody">
