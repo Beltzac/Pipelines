@@ -25,18 +25,38 @@
 
 @if (commitDataList != null && commitDataList.Any())
 {
-    <ul class="list-group mt-3">
-        @foreach (var commit in commitDataList)
-        {
-            <li class="list-group-item">
-                <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
-                <br />
-                <em>@commit.CommitDate.ToString("yyyy-MM-dd HH:mm:ss")</em> by <strong>@commit.AuthorName</strong>
-                <br />
-                @((MarkupString)commit.CommitMessage.ToHtml())
-            </li>
-        }
-    </ul>
+    var groupedCommits = commitDataList
+        .GroupBy(c => c.CommitDate.Date)
+        .OrderByDescending(g => g.Key);
+
+    @foreach (var dayGroup in groupedCommits)
+    {
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">@dayGroup.Key.ToString("dddd, MMMM dd, yyyy")</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                @foreach (var commit in dayGroup.OrderByDescending(c => c.CommitDate))
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
+                                <br />
+                                <small class="text-muted">@commit.CommitDate.ToString("HH:mm:ss")</small> by <strong>@commit.AuthorName</strong>
+                                <br />
+                                @((MarkupString)commit.CommitMessage.ToHtml())
+                            </div>
+                            @if (!string.IsNullOrEmpty(commit.JiraCardID))
+                            {
+                                <span class="badge bg-secondary">@commit.JiraCardID</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
 }
 else
 {
