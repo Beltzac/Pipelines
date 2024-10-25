@@ -5,12 +5,14 @@ namespace Common.Utils
 {
     public static class StringExtensions
     {
-        public static string ToHtml(this string commit)
+        public static string ToHtml(this string commit, string projectName = null, string baseUrl = null)
         {
             if (string.IsNullOrEmpty(commit))
             {
                 return null;
             };
+
+            baseUrl = baseUrl?.TrimEnd('/') ?? "https://dev.azure.com/terminal-cp";
 
             // Define the patterns and replacements for different log levels using capture groups
             var replacements = new Dictionary<string, string>
@@ -46,7 +48,11 @@ namespace Common.Utils
             commit = Regex.Replace(commit, prPattern, match =>
             {
                 var prNumber = match.Groups[1].Value;
-                return $"<a href='https://dev.azure.com/terminalcp/Terminal/_git/Terminal/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
+                if (string.IsNullOrEmpty(projectName))
+                {
+                    return match.Value; // Return original text if no project context
+                }
+                return $"<a href='{baseUrl}/{projectName}/_git/{projectName}/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
             });
 
             // Adjust Jira links
