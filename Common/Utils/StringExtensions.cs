@@ -41,6 +41,14 @@ namespace Common.Utils
                 return $"<span class='log-docker-command'>{match.Value}</span>";
             });
 
+            // Identify and link PRs
+            var prPattern = @"(?:Merge[d]? pull request|Merged PR) #?(\d+)";
+            commit = Regex.Replace(commit, prPattern, match =>
+            {
+                var prNumber = match.Groups[1].Value;
+                return $"<a href='https://dev.azure.com/terminalcp/Terminal/_git/Terminal/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
+            });
+
             // Adjust Jira links
             var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
             commit = Regex.Replace(commit, pattern, match =>
