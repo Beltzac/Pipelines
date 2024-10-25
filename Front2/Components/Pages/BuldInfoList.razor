@@ -16,6 +16,7 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
+@inject IConfigurationService ConfigService
 @inject ILogger<NavigationManager> _logger;
 
 <h3>Build Information</h3>
@@ -106,7 +107,7 @@ else
 
 
                     <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
-                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.CommitMessage.ToHtml())</td>
+                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
 
                 </ContextMenuTrigger>
             }

@@ -1,18 +1,19 @@
-﻿using Markdig;
+﻿using Common.Models;
+using Markdig;
 using System.Text.RegularExpressions;
 
 namespace Common.Utils
 {
     public static class StringExtensions
     {
-        public static string ToHtml(this string commit, string projectName = null, string baseUrl = null)
+        public static string ToHtml(this Commit commit, ConfigModel config)
         {
-            if (string.IsNullOrEmpty(commit))
+            if (string.IsNullOrEmpty(commit.CommitMessage))
             {
                 return null;
             };
 
-            baseUrl = baseUrl?.TrimEnd('/') ?? "https://dev.azure.com/terminal-cp";
+            var message = commit.CommitMessage;
 
             // Define the patterns and replacements for different log levels using capture groups
             var replacements = new Dictionary<string, string>
@@ -26,38 +27,38 @@ namespace Common.Utils
             // Apply replacements using Regex with IgnoreCase option and capture groups
             foreach (var replacement in replacements)
             {
-                commit = Regex.Replace(commit, replacement.Key, replacement.Value, RegexOptions.IgnoreCase);
+                message = Regex.Replace(message, replacement.Key, replacement.Value, RegexOptions.IgnoreCase);
             }
 
             // Highlight timestamps
             var timestampPattern = @"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)";
-            commit = Regex.Replace(commit, timestampPattern, match =>
+            message = Regex.Replace(message, timestampPattern, match =>
             {
                 return $"<span class='log-timestamp'>{match.Value}</span>";
             });
 
             // Highlight docker commands
             var dockerCommandPattern = @"(##\[\w+\]/usr/bin/docker [^\n]+)";
-            commit = Regex.Replace(commit, dockerCommandPattern, match =>
+            message = Regex.Replace(message, dockerCommandPattern, match =>
             {
                 return $"<span class='log-docker-command'>{match.Value}</span>";
             });
 
             // Identify and link PRs
             var prPattern = @"(?:Merge[d]? pull request|Merged PR) #?(\d+)";
-            commit = Regex.Replace(commit, prPattern, match =>
+            message = Regex.Replace(message, prPattern, match =>
             {
                 var prNumber = match.Groups[1].Value;
-                if (string.IsNullOrEmpty(projectName))
+                if (string.IsNullOrEmpty(commit.ProjectName))
                 {
                     return match.Value; // Return original text if no project context
                 }
-                return $"<a href='{baseUrl}/{projectName}/_git/{projectName}/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
+                return $"<a href='{config.OrganizationUrl}/{commit.ProjectName}/_git/{commit.RepoName}/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
             });
 
             // Adjust Jira links
             var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
-            commit = Regex.Replace(commit, pattern, match =>
+            message = Regex.Replace(message, pattern, match =>
             {
                 return $"{match.Value.TrimEnd(':').TrimEnd('-')} -";
             });
@@ -79,7 +80,7 @@ namespace Common.Utils
               })
               .Build();
 
-            return Markdown.ToHtml(commit, pipeline);
+            return Markdown.ToHtml(message, pipeline);
 
             //return logs;
         }
