@@ -4,7 +4,7 @@ namespace Common.Services
 {
     public interface ICommitDataExportService
     {
-        Task<List<Commit>> GetRecentCommitsAsync(string username, int limit = 100);
+        Task<List<Commit>> GetRecentCommitsAsync(string username);
         Task ExportCommitDataAsync();
         Task FetchCommitDataAsync(IProgress<int> progress = null);
     }

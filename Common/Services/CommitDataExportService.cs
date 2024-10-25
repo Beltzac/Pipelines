@@ -204,16 +204,14 @@ namespace Common.Services
                 workbook.SaveAs(filePath);
             }
         }
-        public async Task<List<Commit>> GetRecentCommitsAsync(string username, int limit = 100)
+        public async Task<List<Commit>> GetRecentCommitsAsync(string username)
         {
             string trimmedFilter = username.Trim();
-            var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
-
+            var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
 
             return await _dbContext.Commits
-                .Where(x => EF.Functions.Like(x.AuthorName, $"%{trimmedFilter}%") && x.CommitDate >= twoMonthsAgo)
+                .Where(x => EF.Functions.Like(x.AuthorName, $"%{trimmedFilter}%") && x.CommitDate >= oneMonthAgo)
                 .OrderByDescending(c => c.CommitDate)
-                .Take(limit)
                 .ToListAsync();
         }
 

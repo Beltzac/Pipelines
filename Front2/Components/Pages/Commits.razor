@@ -76,7 +76,7 @@ else
     private async Task FetchCommits()
     {
         var config = ConfigService.GetConfig();
-        commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, 100);
+        commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username);
     }
 
     private async Task SyncCommits()
