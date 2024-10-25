@@ -45,7 +45,7 @@
                                 <br />
                                 <small class="text-muted">@commit.CommitDate.ToString("HH:mm:ss")</small> by <strong>@commit.AuthorName</strong>
                                 <br />
-                                @((MarkupString)commit.CommitMessage.ToHtml())
+                                @((MarkupString)commit.CommitMessage.ToHtml(commit.ProjectName, ConfigService.GetConfig().BaseUrl))
                             </div>
                             @if (!string.IsNullOrEmpty(commit.JiraCardID))
                             {
