@@ -14,7 +14,7 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task<List<RequisicaoExecucao>> ExecuteQueryAsync(
+        public async Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,
             DateTime? startDate = null,
             DateTime? endDate = null,
@@ -24,7 +24,8 @@ namespace Common.Services
             string? nomeFluxo = null,
             int? userId = null,
             int? execucaoId = null,
-            int maxRows = 10,
+            int pageSize = 10,
+            int pageNumber = 1,
             string? httpStatusRange = null,
             string? responseStatus = null,
             CancellationToken cancellationToken = default)
@@ -64,7 +65,7 @@ namespace Common.Services
                 totalCount = reader.GetInt32("TotalCount");
             }
 
-            return (result, totalCount);
+            return (Results: result, TotalCount: totalCount);
         }
 
         private string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
