@@ -149,8 +149,8 @@
                                     <div class="btn-group btn-group-sm">
                                         <button class="btn btn-outline-secondary" @onclick="() => FormatRequest()">Format</button>
                                         <button class="btn btn-outline-secondary" @onclick="() => ConvertRequest()"
-                                                disabled="@(!DataFormatUtils.IsJson(selectedItem?.Requisicao) && !DataFormatUtils.IsXml(selectedItem?.Requisicao))">
-                                            @(DataFormatUtils.IsJson(selectedItem?.Requisicao) ? "To XML" : "To JSON")
+                                                disabled="@(!DataFormatUtils.IsJson(formattedRequest) && !DataFormatUtils.IsXml(formattedRequest))">
+                                            @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
                                         </button>
                                     </div>
                                 </div>
@@ -162,8 +162,8 @@
                                     <div class="btn-group btn-group-sm">
                                         <button class="btn btn-outline-secondary" @onclick="() => FormatResponse()">Format</button>
                                         <button class="btn btn-outline-secondary" @onclick="() => ConvertResponse()"
-                                                disabled="@(!DataFormatUtils.IsJson(selectedItem?.Resposta) && !DataFormatUtils.IsXml(selectedItem?.Resposta))">
-                                            @(DataFormatUtils.IsJson(selectedItem?.Resposta) ? "To XML" : "To JSON")
+                                                disabled="@(!DataFormatUtils.IsJson(formattedResponse) && !DataFormatUtils.IsXml(formattedResponse))">
+                                            @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
                                         </button>
                                     </div>
                                 </div>
