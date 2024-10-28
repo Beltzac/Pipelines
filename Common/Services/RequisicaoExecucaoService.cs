@@ -37,12 +37,13 @@ namespace Common.Services
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows, httpStatusRange, responseStatus);
+            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
 
             var result = new List<RequisicaoExecucao>();
+            int totalCount = 0;
             using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAsync(cancellationToken))
             {
                 result.Add(new RequisicaoExecucao
                 {
@@ -60,13 +61,14 @@ namespace Common.Services
                     DataInicio = reader.IsDBNull("DATA_INICIO") ? DateTime.MinValue : reader.GetDateTime("DATA_INICIO"),
                     IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO")
                 });
+                totalCount = reader.GetInt32("TotalCount");
             }
 
-            return result;
+            return (result, totalCount);
         }
 
         private string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
-            string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int maxRows,
+            string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int pageSize, int pageNumber,
             string? httpStatusRange, string? responseStatus)
         {
             var conditions = new List<string>();
@@ -140,11 +142,21 @@ WITH RequisicaoExecucao AS (
     LEFT JOIN TCPESB.MENSAGEM RESP ON E.ID_MSG_SAIDA = RESP.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM ERRO ON E.ID_MSG_ERRO = ERRO.ID_MENSAGEM
 )
-SELECT RE.* 
-FROM RequisicaoExecucao RE
-{whereClause}
-ORDER BY RE.DATA_INICIO DESC
-FETCH FIRST {maxRows} ROWS ONLY";
+WITH CountQuery AS (
+    SELECT COUNT(*) as TotalCount
+    FROM RequisicaoExecucao RE
+    {whereClause}
+),
+PagedQuery AS (
+    SELECT RE.* 
+    FROM RequisicaoExecucao RE
+    {whereClause}
+    ORDER BY RE.DATA_INICIO DESC
+    OFFSET {(pageNumber - 1) * pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY
+)
+SELECT q.*, c.TotalCount
+FROM PagedQuery q
+CROSS JOIN CountQuery c";
         }
 
         public async Task<Dictionary<int, string>> GetUsersAsync(string environment, string? searchText = null)
