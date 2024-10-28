@@ -4,7 +4,7 @@ using System.Data;
 
 namespace Common.Services
 {
-    public class RequisicaoExecucaoService
+    public class RequisicaoExecucaoService : IRequisicaoExecucaoService
     {
         private readonly ConfigModel _config;
 
@@ -35,7 +35,7 @@ namespace Common.Services
 
             var result = new List<RequisicaoExecucao>();
             using var reader = await cmd.ExecuteReaderAsync();
-            
+
             while (await reader.ReadAsync())
             {
                 result.Add(new RequisicaoExecucao
@@ -59,37 +59,37 @@ namespace Common.Services
             return result;
         }
 
-        private string BuildQuery(DateTime? startDate, string? urlFilter, string? httpMethod, 
+        private string BuildQuery(DateTime? startDate, string? urlFilter, string? httpMethod,
             string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int maxRows)
         {
             var conditions = new List<string>();
 
             if (startDate.HasValue)
                 conditions.Add($"RE.DATA_INICIO > TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
-            
+
             if (!string.IsNullOrEmpty(urlFilter))
                 conditions.Add($"RE.URL LIKE '%{urlFilter}%'");
-            
+
             if (!string.IsNullOrEmpty(httpMethod))
                 conditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
-            
+
             if (containerNumbers?.Any() == true)
             {
                 var containerConditions = containerNumbers.Select(c => $"RE.REQUISICAO LIKE '%{c}%'");
                 conditions.Add($"({string.Join(" OR ", containerConditions)})");
             }
-            
+
             if (!string.IsNullOrEmpty(nomeFluxo))
                 conditions.Add($"RE.NOME_FLUXO = '{nomeFluxo}'");
-            
+
             if (userId.HasValue)
                 conditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");
-            
+
             if (execucaoId.HasValue)
                 conditions.Add($"RE.ID_EXECUCAO = {execucaoId}");
 
-            var whereClause = conditions.Any() 
-                ? $"WHERE {string.Join(" AND ", conditions)}" 
+            var whereClause = conditions.Any()
+                ? $"WHERE {string.Join(" AND ", conditions)}"
                 : "WHERE 1=1";
 
             return @$"
