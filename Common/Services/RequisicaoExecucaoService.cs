@@ -58,7 +58,7 @@ namespace Common.Services
                     NomeFluxo = reader.IsDBNull("NOME_FLUXO") ? null : reader.GetString("NOME_FLUXO"),
                     EndPoint = reader.IsDBNull("END_POINT") ? null : reader.GetString("END_POINT"),
                     Url = reader.IsDBNull("URL") ? null : reader.GetString("URL"),
-                    Duration = reader.IsDBNull(10) ? null : reader.GetValue(10) as TimeSpan?,
+                    Duration = reader.IsDBNull("DELAY") ? null : reader.GetTimeSpan("DELAY"),
                     DataInicio = reader.IsDBNull("DATA_INICIO") ? DateTime.MinValue : reader.GetDateTime("DATA_INICIO"),
                     IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO")
                 });
