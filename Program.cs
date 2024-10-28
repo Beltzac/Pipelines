@@ -1,1 +1,1 @@
-builder.Services.AddScoped<RequisicaoExecucaoService>();
+builder.Services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
