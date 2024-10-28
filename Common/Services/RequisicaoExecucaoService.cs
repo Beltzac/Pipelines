@@ -123,7 +123,7 @@ ORDER BY RE.DATA_INICIO DESC
 FETCH FIRST {maxRows} ROWS ONLY";
         }
 
-        public async Task<Dictionary<int, string>> GetUsersAsync(string environment)
+        public async Task<Dictionary<int, string>> GetUsersAsync(string environment, string? searchText = null)
         {
             var config = _configService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
@@ -133,7 +133,13 @@ FETCH FIRST {maxRows} ROWS ONLY";
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"SELECT id_usuario, login FROM TCPCAD.login FETCH FIRST 10 ROWS ONLY";
+            cmd.CommandText = @"
+                SELECT id_usuario, login 
+                FROM TCPCAD.login 
+                WHERE UPPER(login) LIKE '%' || UPPER(:searchText) || '%'
+                FETCH FIRST 10 ROWS ONLY";
+            
+            cmd.Parameters.Add(new OracleParameter("searchText", searchText ?? string.Empty));
 
             var users = new Dictionary<int, string>();
             using var reader = await cmd.ExecuteReaderAsync();

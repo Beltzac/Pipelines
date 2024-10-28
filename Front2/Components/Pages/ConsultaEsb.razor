@@ -219,7 +219,7 @@
         
         if (!string.IsNullOrEmpty(selectedEnvironment))
         {
-            users = await RequisicaoService.GetUsersAsync(selectedEnvironment);
+            users = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
         }
     }
 
