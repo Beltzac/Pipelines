@@ -106,8 +106,14 @@
     </div>
 
     <div class="col-12">
-        <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
-        <button class="btn btn-secondary ms-2" @onclick="CancelSearch">Cancel</button>
+        @if (isLoading)
+        {
+            <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+        }
+        else
+        {
+            <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
+        }
     </div>
 </div>
 
