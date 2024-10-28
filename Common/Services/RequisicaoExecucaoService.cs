@@ -42,19 +42,19 @@ namespace Common.Services
             {
                 result.Add(new RequisicaoExecucao
                 {
-                    Source = reader.GetString("SOURCE"),
+                    Source = reader.IsDBNull("SOURCE") ? null : reader.GetString("SOURCE"),
                     IdExecucao = reader.GetInt32("ID_EXECUCAO"),
                     HttpMethod = reader.IsDBNull("HTTP_METHOD") ? null : reader.GetString("HTTP_METHOD"),
                     HttpStatusCode = reader.IsDBNull("HTTP_STATUS_CODE") ? null : reader.GetString("HTTP_STATUS_CODE"),
                     Requisicao = reader.IsDBNull("REQUISICAO") ? null : reader.GetString("REQUISICAO"),
                     Resposta = reader.IsDBNull("RESPOSTA") ? null : reader.GetString("RESPOSTA"),
                     Erro = reader.IsDBNull("ERRO") ? null : reader.GetString("ERRO"),
-                    NomeFluxo = reader.GetString("NOME_FLUXO"),
+                    NomeFluxo = reader.IsDBNull("NOME_FLUXO") ? null : reader.GetString("NOME_FLUXO"),
                     EndPoint = reader.IsDBNull("END_POINT") ? null : reader.GetString("END_POINT"),
                     Url = reader.IsDBNull("URL") ? null : reader.GetString("URL"),
                     Duration = reader.IsDBNull(10) ? null : reader.GetValue(10) as TimeSpan?,
-                    DataInicio = reader.GetDateTime("DATA_INICIO"),
-                    IdUsuarioInclusao = reader.GetInt32("ID_USUARIO_INCLUSAO")
+                    DataInicio = reader.IsDBNull("DATA_INICIO") ? DateTime.MinValue : reader.GetDateTime("DATA_INICIO"),
+                    IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO")
                 });
             }
 
