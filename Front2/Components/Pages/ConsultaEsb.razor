@@ -107,6 +107,7 @@
 
     <div class="col-12">
         <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
+        <button class="btn btn-secondary ms-2" @onclick="CancelSearch">Cancel</button>
     </div>
 </div>
 
@@ -325,6 +326,21 @@ else if (results != null)
     private void CloseModal()
     {
         selectedItem = null;
+    }
+
+    private void CancelSearch()
+    {
+        startDate = null;
+        urlFilter = null;
+        httpMethod = null;
+        containerNumbers = null;
+        nomeFluxo = null;
+        userId = null;
+        execucaoId = null;
+        maxRows = 10;
+        httpStatusRange = null;
+        responseStatus = null;
+        results = null;
     }
 
     private string GetResponseStatus(string? response)
