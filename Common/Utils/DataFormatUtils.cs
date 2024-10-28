@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Xml.Linq;
 using System.Xml;
+using System.Text.RegularExpressions;
 
 namespace Common.Utils
 {
@@ -30,6 +31,34 @@ namespace Common.Utils
             catch
             {
                 return xml;
+            }
+        }
+
+        public static bool IsJson(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            try
+            {
+                JsonSerializer.Deserialize<JsonElement>(text);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool IsXml(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            try
+            {
+                XDocument.Parse(text);
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 

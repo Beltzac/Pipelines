@@ -134,8 +134,9 @@
                                     <h6>Request</h6>
                                     <div class="btn-group btn-group-sm">
                                         <button class="btn btn-outline-secondary" @onclick="() => FormatRequest()">Format</button>
-                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertRequest()">
-                                            @(isRequestJson ? "To XML" : "To JSON")
+                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertRequest()"
+                                                disabled="@(!DataFormatUtils.IsJson(selectedItem?.Requisicao) && !DataFormatUtils.IsXml(selectedItem?.Requisicao))">
+                                            @(DataFormatUtils.IsJson(selectedItem?.Requisicao) ? "To XML" : "To JSON")
                                         </button>
                                     </div>
                                 </div>
@@ -146,8 +147,9 @@
                                     <h6>Response</h6>
                                     <div class="btn-group btn-group-sm">
                                         <button class="btn btn-outline-secondary" @onclick="() => FormatResponse()">Format</button>
-                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertResponse()">
-                                            @(isResponseJson ? "To XML" : "To JSON")
+                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertResponse()"
+                                                disabled="@(!DataFormatUtils.IsJson(selectedItem?.Resposta) && !DataFormatUtils.IsXml(selectedItem?.Resposta))">
+                                            @(DataFormatUtils.IsJson(selectedItem?.Resposta) ? "To XML" : "To JSON")
                                         </button>
                                     </div>
                                 </div>
@@ -219,16 +221,11 @@
 
     private string formattedRequest = "";
     private string formattedResponse = "";
-    private bool isRequestJson = true;
-    private bool isResponseJson = true;
-
     private void ShowDetails(RequisicaoExecucao item)
     {
         selectedItem = item;
         formattedRequest = item.Requisicao;
         formattedResponse = item.Resposta;
-        isRequestJson = true;
-        isResponseJson = true;
     }
 
     private void FormatRequest()
@@ -250,19 +247,27 @@
     private void ConvertRequest()
     {
         if (selectedItem?.Requisicao == null) return;
-        formattedRequest = isRequestJson
-            ? DataFormatUtils.JsonToXml(selectedItem.Requisicao)
-            : DataFormatUtils.XmlToJson(selectedItem.Requisicao);
-        isRequestJson = !isRequestJson;
+        if (DataFormatUtils.IsJson(selectedItem.Requisicao))
+        {
+            formattedRequest = DataFormatUtils.JsonToXml(selectedItem.Requisicao);
+        }
+        else if (DataFormatUtils.IsXml(selectedItem.Requisicao))
+        {
+            formattedRequest = DataFormatUtils.XmlToJson(selectedItem.Requisicao);
+        }
     }
 
     private void ConvertResponse()
     {
         if (selectedItem?.Resposta == null) return;
-        formattedResponse = isResponseJson
-            ? DataFormatUtils.JsonToXml(selectedItem.Resposta)
-            : DataFormatUtils.XmlToJson(selectedItem.Resposta);
-        isResponseJson = !isResponseJson;
+        if (DataFormatUtils.IsJson(selectedItem.Resposta))
+        {
+            formattedResponse = DataFormatUtils.JsonToXml(selectedItem.Resposta);
+        }
+        else if (DataFormatUtils.IsXml(selectedItem.Resposta))
+        {
+            formattedResponse = DataFormatUtils.XmlToJson(selectedItem.Resposta);
+        }
     }
 
     private void CloseModal()
