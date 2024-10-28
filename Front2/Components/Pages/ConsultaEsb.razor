@@ -357,13 +357,12 @@ else if (results != null)
             if (DataFormatUtils.IsJson(response))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(response, @"""Status""\s*:\s*""?([^"",}\s]+)");
-                var status = match.Success ? match.Groups[1].Value : "";
-                return status == "1" ? "Success" : status == "2" ? "Error" : status;
+                return match.Success ? (match.Groups[1].Value == "1" ? "Success" : match.Groups[1].Value == "2" ? "Error" : match.Groups[1].Value) : "";
             }
             else if (DataFormatUtils.IsXml(response))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(response, @"<Status>\s*([^<\s]+)");
-                return match.Success ? match.Groups[1].Value : "";
+                return match.Success ? (match.Groups[1].Value == "1" ? "Success" : match.Groups[1].Value == "2" ? "Error" : match.Groups[1].Value) : "";
             }
         }
         catch
