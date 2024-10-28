@@ -357,7 +357,8 @@ else if (results != null)
             if (DataFormatUtils.IsJson(response))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(response, @"""Status""\s*:\s*""?([^"",}\s]+)");
-                return match.Success ? match.Groups[1].Value : "";
+                var status = match.Success ? match.Groups[1].Value : "";
+                return status == "1" ? "Success" : status == "2" ? "Error" : status;
             }
             else if (DataFormatUtils.IsXml(response))
             {
