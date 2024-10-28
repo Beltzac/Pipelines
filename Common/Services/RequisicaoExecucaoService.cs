@@ -122,5 +122,28 @@ FROM RequisicaoExecucao RE
 ORDER BY RE.DATA_INICIO DESC
 FETCH FIRST {maxRows} ROWS ONLY";
         }
+
+        public async Task<Dictionary<int, string>> GetUsersAsync(string environment)
+        {
+            var config = _configService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
+                ?? throw new ArgumentException($"Environment {environment} not found");
+
+            using var connection = new OracleConnection(oracleEnv.ConnectionString);
+            await connection.OpenAsync();
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"SELECT id_usuario, login FROM TCPCAD.login FETCH FIRST 10 ROWS ONLY";
+
+            var users = new Dictionary<int, string>();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                users[reader.GetInt32(0)] = reader.GetString(1);
+            }
+
+            return users;
+        }
     }
 }
