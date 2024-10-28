@@ -269,27 +269,29 @@
     private void ConvertRequest()
     {
         if (selectedItem?.Requisicao == null) return;
-        if (DataFormatUtils.IsJson(selectedItem.Requisicao))
+        if (DataFormatUtils.IsJson(formattedRequest))
         {
-            formattedRequest = DataFormatUtils.JsonToXml(selectedItem.Requisicao);
+            formattedRequest = DataFormatUtils.JsonToXml(formattedRequest);
         }
-        else if (DataFormatUtils.IsXml(selectedItem.Requisicao))
+        else if (DataFormatUtils.IsXml(formattedRequest))
         {
-            formattedRequest = DataFormatUtils.XmlToJson(selectedItem.Requisicao);
+            formattedRequest = DataFormatUtils.XmlToJson(formattedRequest);
         }
+        StateHasChanged();
     }
 
     private void ConvertResponse()
     {
         if (selectedItem?.Resposta == null) return;
-        if (DataFormatUtils.IsJson(selectedItem.Resposta))
+        if (DataFormatUtils.IsJson(formattedResponse))
         {
-            formattedResponse = DataFormatUtils.JsonToXml(selectedItem.Resposta);
+            formattedResponse = DataFormatUtils.JsonToXml(formattedResponse);
         }
-        else if (DataFormatUtils.IsXml(selectedItem.Resposta))
+        else if (DataFormatUtils.IsXml(formattedResponse))
         {
-            formattedResponse = DataFormatUtils.XmlToJson(selectedItem.Resposta);
+            formattedResponse = DataFormatUtils.XmlToJson(formattedResponse);
         }
+        StateHasChanged();
     }
 
     private void CloseModal()
