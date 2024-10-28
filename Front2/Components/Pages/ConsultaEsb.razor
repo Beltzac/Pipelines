@@ -146,26 +146,20 @@
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6>Request</h6>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" @onclick="() => FormatRequest()">Format</button>
-                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertRequest()"
-                                                disabled="@(!DataFormatUtils.IsJson(formattedRequest) && !DataFormatUtils.IsXml(formattedRequest))">
-                                            @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
-                                        </button>
-                                    </div>
+                                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()"
+                                            disabled="@(!DataFormatUtils.IsJson(formattedRequest) && !DataFormatUtils.IsXml(formattedRequest))">
+                                        @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
+                                    </button>
                                 </div>
                                 <pre class="pre-scrollable">@formattedRequest</pre>
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6>Response</h6>
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-secondary" @onclick="() => FormatResponse()">Format</button>
-                                        <button class="btn btn-outline-secondary" @onclick="() => ConvertResponse()"
-                                                disabled="@(!DataFormatUtils.IsJson(formattedResponse) && !DataFormatUtils.IsXml(formattedResponse))">
-                                            @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
-                                        </button>
-                                    </div>
+                                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()"
+                                            disabled="@(!DataFormatUtils.IsJson(formattedResponse) && !DataFormatUtils.IsXml(formattedResponse))">
+                                        @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
+                                    </button>
                                 </div>
                                 <pre class="pre-scrollable">@formattedResponse</pre>
                             </div>
@@ -242,25 +236,19 @@
     private void ShowDetails(RequisicaoExecucao item)
     {
         selectedItem = item;
-        formattedRequest = item.Requisicao;
-        formattedResponse = item.Resposta;
+        formattedRequest = DataFormatUtils.IsJson(item.Requisicao) 
+            ? DataFormatUtils.FormatJson(item.Requisicao)
+            : DataFormatUtils.IsXml(item.Requisicao)
+                ? DataFormatUtils.FormatXml(item.Requisicao)
+                : item.Requisicao;
+                
+        formattedResponse = DataFormatUtils.IsJson(item.Resposta)
+            ? DataFormatUtils.FormatJson(item.Resposta)
+            : DataFormatUtils.IsXml(item.Resposta)
+                ? DataFormatUtils.FormatXml(item.Resposta)
+                : item.Resposta;
     }
 
-    private void FormatRequest()
-    {
-        if (selectedItem?.Requisicao == null) return;
-        formattedRequest = DataFormatUtils.IsJson(selectedItem.Requisicao)
-            ? DataFormatUtils.FormatJson(selectedItem.Requisicao)
-            : DataFormatUtils.FormatXml(selectedItem.Requisicao);
-    }
-
-    private void FormatResponse()
-    {
-        if (selectedItem?.Resposta == null) return;
-        formattedResponse = DataFormatUtils.IsJson(selectedItem.Resposta)
-            ? DataFormatUtils.FormatJson(selectedItem.Resposta)
-            : DataFormatUtils.FormatXml(selectedItem.Resposta);
-    }
 
     private void ConvertRequest()
     {
