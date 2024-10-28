@@ -202,25 +202,21 @@
     private RequisicaoExecucao selectedItem;
 
     private ConfigModel config;
-    private Dictionary<int, string> users = new();
 
     private async Task<IEnumerable<KeyValuePair<int, string>>> SearchUsers(string searchText)
     {
-        if (string.IsNullOrWhiteSpace(searchText))
-            return users;
+        if (string.IsNullOrEmpty(selectedEnvironment))
+        {
+            return new List<KeyValuePair<int, string>>();
+        }
 
-        return users.Where(u => u.Value.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        return await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
     }
 
     protected override async Task OnInitializedAsync()
     {
         config = ConfigService.GetConfig();
         selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-        
-        if (!string.IsNullOrEmpty(selectedEnvironment))
-        {
-            users = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
-        }
     }
 
     private async Task ExecuteQuery()
