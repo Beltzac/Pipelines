@@ -2,7 +2,7 @@
  @using Common.Models
  @using Common.Services
  @inject RequisicaoExecucaoService RequisicaoService
- @inject ConfigModel Config
+ @inject IConfigurationService ConfigService
 
 <h3>Requisição Execução Query</h3>
 
@@ -10,7 +10,7 @@
     <div class="col-md-3">
         <label class="form-label">Environment</label>
         <select class="form-select" @bind="selectedEnvironment">
-            @foreach (var env in Config.OracleEnvironments)
+            @foreach (var env in config.OracleEnvironments)
             {
                 <option value="@env.Name">@env.Name</option>
             }
@@ -162,9 +162,12 @@
     private List<RequisicaoExecucao> results;
     private RequisicaoExecucao selectedItem;
 
+    private ConfigModel config;
+
     protected override void OnInitialized()
     {
-        selectedEnvironment = Config.OracleEnvironments.FirstOrDefault()?.Name;
+        config = ConfigService.GetConfig();
+        selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
     }
 
     private async Task ExecuteQuery()
