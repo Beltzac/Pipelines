@@ -35,7 +35,7 @@ namespace Common.Services
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows);
+            cmd.CommandText = BuildQuery(startDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows, httpStatusRange, responseStatus);
 
             var result = new List<RequisicaoExecucao>();
             using var reader = await cmd.ExecuteReaderAsync();
