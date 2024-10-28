@@ -90,7 +90,15 @@
     </div>
 </div>
 
-@if (results != null)
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center mt-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (results != null)
 {
     <div class="mt-4">
         <table class="table table-striped">
@@ -213,13 +221,18 @@
         selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
     }
 
+    private bool isLoading = false;
+
     private async Task ExecuteQuery()
     {
-        var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
-            ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
-            : null;
+        try 
+        {
+            isLoading = true;
+            var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
+                ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
+                : null;
 
-        results = await RequisicaoService.ExecuteQueryAsync(
+            results = await RequisicaoService.ExecuteQueryAsync(
             selectedEnvironment,
             startDate,
             urlFilter,
@@ -229,6 +242,11 @@
             userId,
             execucaoId,
             maxRows);
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private string formattedRequest = "";
