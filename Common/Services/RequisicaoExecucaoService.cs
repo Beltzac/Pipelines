@@ -125,7 +125,7 @@ namespace Common.Services
 WITH RequisicaoExecucao AS (
     SELECT 'Requisição' AS SOURCE, E.ID_EXECUCAO, e.HTTP_METHOD, e.HTTP_STATUS_CODE,
            REQ.CONTEUDO AS REQUISICAO, RESP.CONTEUDO AS RESPOSTA, NULL as ERRO,
-           E.NOME_FLUXO, E.END_POINT, E.URL, e.data_fim - e.data_inicio,
+           E.NOME_FLUXO, E.END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO
     FROM TCPESB.REQUISICAO E
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
@@ -136,7 +136,7 @@ WITH RequisicaoExecucao AS (
     SELECT 'Execução' AS SOURCE, E.ID_EXECUCAO, null as HTTP_METHOD,
            null as HTTP_STATUS_CODE, REQ.CONTEUDO AS REQUISICAO,
            RESP.CONTEUDO AS RESPOSTA, ERRO.CONTEUDO AS ERRO,
-           E.NOME_FLUXO, null as END_POINT, E.URL, e.data_fim - e.data_inicio,
+           E.NOME_FLUXO, null as END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO
     FROM TCPESB.EXECUCAO E
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
