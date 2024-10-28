@@ -127,7 +127,8 @@ else if (results != null)
                     <th>Source</th>
                     <th>ID</th>
                     <th>Method</th>
-                    <th>Status</th>
+                    <th>HTTP Status</th>
+                    <th>Response Status</th>
                     <th>Flow</th>
                     <th>URL</th>
                     <th>Start Date</th>
@@ -143,6 +144,7 @@ else if (results != null)
                         <td>@item.IdExecucao</td>
                         <td>@item.HttpMethod</td>
                         <td>@item.HttpStatusCode</td>
+                        <td>@(GetResponseStatus(item.Resposta))</td>
                         <td>@item.NomeFluxo</td>
                         <td>@item.Url</td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
@@ -323,5 +325,31 @@ else if (results != null)
     private void CloseModal()
     {
         selectedItem = null;
+    }
+
+    private string GetResponseStatus(string? response)
+    {
+        if (string.IsNullOrEmpty(response)) return "";
+
+        try
+        {
+            if (DataFormatUtils.IsJson(response))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(response, @"""Status""\s*:\s*""?([^"",}\s]+)");
+                return match.Success ? match.Groups[1].Value : "";
+            }
+            else if (DataFormatUtils.IsXml(response))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(response, @"<Status>\s*([^<\s]+)");
+                return match.Success ? match.Groups[1].Value : "";
+            }
+        }
+        catch
+        {
+            // If there's any error parsing, return empty string
+            return "";
+        }
+
+        return "";
     }
  }
