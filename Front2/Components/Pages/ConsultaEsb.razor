@@ -85,6 +85,26 @@
         <input type="number" class="form-control" @bind="maxRows">
     </div>
 
+    <div class="col-md-3">
+        <label class="form-label">HTTP Status Range</label>
+        <select class="form-select" @bind="httpStatusRange">
+            <option value="">All</option>
+            <option value="2xx">2xx (Success)</option>
+            <option value="3xx">3xx (Redirection)</option>
+            <option value="4xx">4xx (Client Error)</option>
+            <option value="5xx">5xx (Server Error)</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Response Status</label>
+        <select class="form-select" @bind="responseStatus">
+            <option value="">All</option>
+            <option value="1">Success</option>
+            <option value="2">Error</option>
+        </select>
+    </div>
+
     <div class="col-12">
         <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
     </div>
@@ -199,6 +219,8 @@ else if (results != null)
     private int? userId;
     private int? execucaoId;
     private int maxRows = 10;
+    private string? httpStatusRange;
+    private string? responseStatus;
 
     private List<RequisicaoExecucao> results;
     private RequisicaoExecucao selectedItem;
@@ -241,7 +263,9 @@ else if (results != null)
             nomeFluxo,
             userId,
             execucaoId,
-            maxRows);
+            maxRows,
+            httpStatusRange,
+            responseStatus);
         }
         finally
         {

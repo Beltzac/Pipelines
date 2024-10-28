@@ -23,7 +23,9 @@ namespace Common.Services
             string? nomeFluxo = null,
             int? userId = null,
             int? execucaoId = null,
-            int maxRows = 10)
+            int maxRows = 10,
+            string? httpStatusRange = null,
+            string? responseStatus = null)
         {
             var config = _configService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
@@ -62,7 +64,8 @@ namespace Common.Services
         }
 
         private string BuildQuery(DateTime? startDate, string? urlFilter, string? httpMethod,
-            string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int maxRows)
+            string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int maxRows,
+            string? httpStatusRange, string? responseStatus)
         {
             var conditions = new List<string>();
 
@@ -89,6 +92,23 @@ namespace Common.Services
 
             if (execucaoId.HasValue)
                 conditions.Add($"RE.ID_EXECUCAO = {execucaoId}");
+
+            if (!string.IsNullOrEmpty(httpStatusRange))
+            {
+                var range = httpStatusRange.Replace("xx", "");
+                conditions.Add($"RE.HTTP_STATUS_CODE LIKE '{range}%'");
+            }
+
+            if (!string.IsNullOrEmpty(responseStatus))
+            {
+                conditions.Add(@"
+                    (
+                        (REGEXP_LIKE(RE.RESPOSTA, '<Status>\s*' || :responseStatus || '\s*</Status>') AND REGEXP_LIKE(RE.RESPOSTA, '(?s)^.*<.*>.*$'))
+                        OR
+                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*' || :responseStatus || '\s*[,}]') AND REGEXP_LIKE(RE.RESPOSTA, '(?s)^.*{.*}.*$'))
+                    )");
+                cmd.Parameters.Add(new OracleParameter("responseStatus", responseStatus));
+            }
 
             var whereClause = conditions.Any()
                 ? $"WHERE {string.Join(" AND ", conditions)}"
