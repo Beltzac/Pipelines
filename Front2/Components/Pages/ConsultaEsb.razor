@@ -252,7 +252,7 @@
     private void FormatRequest()
     {
         if (selectedItem?.Requisicao == null) return;
-        formattedRequest = isRequestJson 
+        formattedRequest = DataFormatUtils.IsJson(selectedItem.Requisicao)
             ? DataFormatUtils.FormatJson(selectedItem.Requisicao)
             : DataFormatUtils.FormatXml(selectedItem.Requisicao);
     }
@@ -260,7 +260,7 @@
     private void FormatResponse()
     {
         if (selectedItem?.Resposta == null) return;
-        formattedResponse = isResponseJson
+        formattedResponse = DataFormatUtils.IsJson(selectedItem.Resposta)
             ? DataFormatUtils.FormatJson(selectedItem.Resposta)
             : DataFormatUtils.FormatXml(selectedItem.Resposta);
     }
