@@ -142,6 +142,7 @@
                     <th>URL</th>
                     <th>Start Date</th>
                     <th>User ID</th>
+                    <th>Delay</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -158,6 +159,7 @@
                         <td>@item.Url</td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td>@item.IdUsuarioInclusao</td>
+                        <td>@(item.Duration?.ToString(@"hh\:mm\:ss\.fff") ?? "")</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
                                 Details
