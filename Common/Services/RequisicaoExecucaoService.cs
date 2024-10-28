@@ -25,7 +25,8 @@ namespace Common.Services
             int? execucaoId = null,
             int maxRows = 10,
             string? httpStatusRange = null,
-            string? responseStatus = null)
+            string? responseStatus = null,
+            CancellationToken cancellationToken = default)
         {
             var config = _configService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
@@ -38,7 +39,7 @@ namespace Common.Services
             cmd.CommandText = BuildQuery(startDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows, httpStatusRange, responseStatus);
 
             var result = new List<RequisicaoExecucao>();
-            using var reader = await cmd.ExecuteReaderAsync();
+            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
             while (await reader.ReadAsync())
             {

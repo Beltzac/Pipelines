@@ -247,11 +247,14 @@ else if (results != null)
     }
 
     private bool isLoading = false;
+    private CancellationTokenSource? cts;
 
     private async Task ExecuteQuery()
     {
         try 
         {
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
             isLoading = true;
             var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
                 ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
@@ -268,7 +271,8 @@ else if (results != null)
             execucaoId,
             maxRows,
             httpStatusRange,
-            responseStatus);
+            responseStatus,
+            cts.Token);
         }
         finally
         {
@@ -330,17 +334,8 @@ else if (results != null)
 
     private void CancelSearch()
     {
-        startDate = null;
-        urlFilter = null;
-        httpMethod = null;
-        containerNumbers = null;
-        nomeFluxo = null;
-        userId = null;
-        execucaoId = null;
-        maxRows = 10;
-        httpStatusRange = null;
-        responseStatus = null;
-        results = null;
+        cts?.Cancel();
+        isLoading = false;
     }
 
     private string GetResponseStatus(string? response)
