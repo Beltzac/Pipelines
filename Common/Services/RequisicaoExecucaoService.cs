@@ -1,4 +1,5 @@
 using Common.Models;
+using Common.Services;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 
@@ -6,11 +7,11 @@ namespace Common.Services
 {
     public class RequisicaoExecucaoService : IRequisicaoExecucaoService
     {
-        private readonly ConfigModel _config;
+        private readonly IConfigurationService _configService;
 
-        public RequisicaoExecucaoService(ConfigModel config)
+        public RequisicaoExecucaoService(IConfigurationService configService)
         {
-            _config = config;
+            _configService = configService;
         }
 
         public async Task<List<RequisicaoExecucao>> ExecuteQueryAsync(
@@ -24,7 +25,8 @@ namespace Common.Services
             int? execucaoId = null,
             int maxRows = 10)
         {
-            var oracleEnv = _config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
+            var config = _configService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
                 ?? throw new ArgumentException($"Environment {environment} not found");
 
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
