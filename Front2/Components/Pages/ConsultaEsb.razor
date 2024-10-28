@@ -1,0 +1,197 @@
+﻿@page "/consulta-esb"
+ @using Common.Models
+ @using Common.Services
+ @inject RequisicaoExecucaoService RequisicaoService
+ @inject ConfigModel Config
+
+<h3>Requisição Execução Query</h3>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <label class="form-label">Environment</label>
+        <select class="form-select" @bind="selectedEnvironment">
+            @foreach (var env in Config.OracleEnvironments)
+            {
+                <option value="@env.Name">@env.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Start Date</label>
+        <input type="datetime-local" class="form-control" @bind="startDate">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">URL Filter</label>
+        <input type="text" class="form-control" @bind="urlFilter">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">HTTP Method</label>
+        <select class="form-select" @bind="httpMethod">
+            <option value="">All</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Container Numbers</label>
+        <input type="text" class="form-control" @bind="containerNumbers"
+               placeholder="Comma separated values">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Nome Fluxo</label>
+        <input type="text" class="form-control" @bind="nomeFluxo">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">User ID</label>
+        <input type="number" class="form-control" @bind="userId">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Execução ID</label>
+        <input type="number" class="form-control" @bind="execucaoId">
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Max Rows</label>
+        <input type="number" class="form-control" @bind="maxRows">
+    </div>
+
+    <div class="col-12">
+        <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
+    </div>
+</div>
+
+@if (results != null)
+{
+    <div class="mt-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>ID</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Flow</th>
+                    <th>URL</th>
+                    <th>Start Date</th>
+                    <th>User ID</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in results)
+                {
+                    <tr>
+                        <td>@item.Source</td>
+                        <td>@item.IdExecucao</td>
+                        <td>@item.HttpMethod</td>
+                        <td>@item.HttpStatusCode</td>
+                        <td>@item.NomeFluxo</td>
+                        <td>@item.Url</td>
+                        <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@item.IdUsuarioInclusao</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
+                                Details
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (selectedItem != null)
+{
+    <div class="modal fade show" style="display: block" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Execution Details</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Request</h6>
+                                <pre class="pre-scrollable">@selectedItem.Requisicao</pre>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Response</h6>
+                                <pre class="pre-scrollable">@selectedItem.Resposta</pre>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(selectedItem.Erro))
+                        {
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6>Error</h6>
+                                    <pre class="pre-scrollable">@selectedItem.Erro</pre>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private string selectedEnvironment;
+    private DateTime? startDate;
+    private string urlFilter;
+    private string httpMethod;
+    private string containerNumbers;
+    private string nomeFluxo;
+    private int? userId;
+    private int? execucaoId;
+    private int maxRows = 10;
+
+    private List<RequisicaoExecucao> results;
+    private RequisicaoExecucao selectedItem;
+
+    protected override void OnInitialized()
+    {
+        selectedEnvironment = Config.OracleEnvironments.FirstOrDefault()?.Name;
+    }
+
+    private async Task ExecuteQuery()
+    {
+        var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
+            ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
+            : null;
+
+        results = await RequisicaoService.ExecuteQueryAsync(
+            selectedEnvironment,
+            startDate,
+            urlFilter,
+            httpMethod,
+            containerNumbersArray,
+            nomeFluxo,
+            userId,
+            execucaoId,
+            maxRows);
+    }
+
+    private void ShowDetails(RequisicaoExecucao item)
+    {
+        selectedItem = item;
+    }
+
+    private void CloseModal()
+    {
+        selectedItem = null;
+    }
+ }
