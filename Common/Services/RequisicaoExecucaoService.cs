@@ -17,6 +17,7 @@ namespace Common.Services
         public async Task<List<RequisicaoExecucao>> ExecuteQueryAsync(
             string environment,
             DateTime? startDate = null,
+            DateTime? endDate = null,
             string? urlFilter = null,
             string? httpMethod = null,
             string[]? containerNumbers = null,
@@ -36,7 +37,7 @@ namespace Common.Services
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows, httpStatusRange, responseStatus);
+            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, maxRows, httpStatusRange, responseStatus);
 
             var result = new List<RequisicaoExecucao>();
             using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
@@ -64,14 +65,17 @@ namespace Common.Services
             return result;
         }
 
-        private string BuildQuery(DateTime? startDate, string? urlFilter, string? httpMethod,
+        private string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
             string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int maxRows,
             string? httpStatusRange, string? responseStatus)
         {
             var conditions = new List<string>();
 
             if (startDate.HasValue)
-                conditions.Add($"RE.DATA_INICIO > TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+                conditions.Add($"RE.DATA_INICIO >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+
+            if (endDate.HasValue)
+                conditions.Add($"RE.DATA_INICIO <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
             if (!string.IsNullOrEmpty(urlFilter))
                 conditions.Add($"RE.URL LIKE '%{urlFilter}%'");

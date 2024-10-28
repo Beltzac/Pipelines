@@ -25,6 +25,11 @@
     </div>
 
     <div class="col-md-3">
+        <label class="form-label">End Date</label>
+        <input type="datetime-local" class="form-control" @bind="endDate">
+    </div>
+
+    <div class="col-md-3">
         <label class="form-label">URL Filter</label>
         <input type="text" class="form-control" @bind="urlFilter">
     </div>
@@ -225,6 +230,7 @@ else if (results != null)
 @code {
     private string selectedEnvironment;
     private DateTime? startDate;
+    private DateTime? endDate;
     private string urlFilter;
     private string httpMethod;
     private string containerNumbers;
@@ -273,6 +279,7 @@ else if (results != null)
             results = await RequisicaoService.ExecuteQueryAsync(
             selectedEnvironment,
             startDate,
+            endDate,
             urlFilter,
             httpMethod,
             containerNumbersArray,
