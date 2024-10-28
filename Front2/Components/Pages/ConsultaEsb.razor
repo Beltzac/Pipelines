@@ -59,6 +59,7 @@
                           ValueExpression="() => userId"
                           ValueChanged="(int? val) => userId = val"
                           SearchMethod="SearchUsers"
+                          ConvertMethod="item => item.Key"
                           EnableDropDown="true"
                           placeholder="Search user..."
                           class="form-control">
