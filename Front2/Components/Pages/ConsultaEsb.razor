@@ -177,20 +177,24 @@ else if (results != null)
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6>Request</h6>
-                                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()"
-                                            disabled="@(!DataFormatUtils.IsJson(formattedRequest) && !DataFormatUtils.IsXml(formattedRequest))">
-                                        @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
-                                    </button>
+                                    @if (DataFormatUtils.IsJson(formattedRequest) || DataFormatUtils.IsXml(formattedRequest))
+                                    {
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
+                                            @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
+                                        </button>
+                                    }
                                 </div>
                                 <pre class="pre-scrollable">@formattedRequest</pre>
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6>Response</h6>
-                                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()"
-                                            disabled="@(!DataFormatUtils.IsJson(formattedResponse) && !DataFormatUtils.IsXml(formattedResponse))">
-                                        @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
-                                    </button>
+                                    @if (DataFormatUtils.IsJson(formattedResponse) || DataFormatUtils.IsXml(formattedResponse))
+                                    {
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
+                                            @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
+                                        </button>
+                                    }
                                 </div>
                                 <pre class="pre-scrollable">@formattedResponse</pre>
                             </div>
