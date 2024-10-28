@@ -69,6 +69,7 @@ namespace Common.Utils
             services.AddScoped<IConsulService, ConsulService>();
             services.AddBlazoredToast();
             services.AddBlazorContextMenu();
+            services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
