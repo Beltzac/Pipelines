@@ -5,6 +5,7 @@
 @using Blazored.Typeahead
 @inject IRequisicaoExecucaoService RequisicaoService
 @inject IConfigurationService ConfigService
+@inject IJSRuntime JSRuntime
 
 <h3>Requisição Execução Query</h3>
 
@@ -217,7 +218,12 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6>Request</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6>Request</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedRequest)">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
                                     @if (DataFormatUtils.IsJson(formattedRequest) || DataFormatUtils.IsXml(formattedRequest))
                                     {
                                         <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
@@ -229,7 +235,12 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6>Response</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6>Response</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedResponse)">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
                                     @if (DataFormatUtils.IsJson(formattedResponse) || DataFormatUtils.IsXml(formattedResponse))
                                     {
                                         <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
@@ -244,7 +255,12 @@
                         {
                             <div class="row mt-3">
                                 <div class="col-12">
-                                    <h6>Error</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6>Error</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(selectedItem.Erro)">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
                                     <pre class="pre-scrollable">@selectedItem.Erro</pre>
                                 </div>
                             </div>
@@ -388,6 +404,14 @@
     {
         cts?.Cancel();
         isLoading = false;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
     }
 
     private string GetResponseStatus(string? response)
