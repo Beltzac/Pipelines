@@ -216,52 +216,72 @@
                 <div class="modal-body">
                     <div class="container-fluid">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6>Request</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedRequest)">
-                                            <i class="bi bi-clipboard"></i> Copy
-                                        </button>
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Request</h6>
+                                        <div>
+                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(formattedRequest)">
+                                                <i class="bi bi-clipboard"></i> Copy
+                                            </button>
+                                            @if (DataFormatUtils.IsJson(formattedRequest) || DataFormatUtils.IsXml(formattedRequest))
+                                            {
+                                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
+                                                    @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
+                                                </button>
+                                            }
+                                        </div>
                                     </div>
-                                    @if (DataFormatUtils.IsJson(formattedRequest) || DataFormatUtils.IsXml(formattedRequest))
-                                    {
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
-                                            @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
-                                        </button>
-                                    }
+                                    <div class="card-body p-0">
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedRequest</pre>
+                                    </div>
                                 </div>
-                                <pre class="pre-scrollable">@formattedRequest</pre>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6>Response</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedResponse)">
-                                            <i class="bi bi-clipboard"></i> Copy
-                                        </button>
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Response</h6>
+                                        <div>
+                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(formattedResponse)">
+                                                <i class="bi bi-clipboard"></i> Copy
+                                            </button>
+                                            @if (DataFormatUtils.IsJson(formattedResponse) || DataFormatUtils.IsXml(formattedResponse))
+                                            {
+                                                <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
+                                                    @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
+                                                </button>
+                                            }
+                                        </div>
                                     </div>
-                                    @if (DataFormatUtils.IsJson(formattedResponse) || DataFormatUtils.IsXml(formattedResponse))
-                                    {
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
-                                            @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
-                                        </button>
-                                    }
+                                    <div class="card-body p-0">
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedResponse</pre>
+                                    </div>
                                 </div>
-                                <pre class="pre-scrollable">@formattedResponse</pre>
                             </div>
                         </div>
                         @if (!string.IsNullOrEmpty(selectedItem.Erro))
                         {
-                            <div class="row mt-3">
+                            <div class="row">
                                 <div class="col-12">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6>Error</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(selectedItem.Erro)">
-                                            <i class="bi bi-clipboard"></i> Copy
-                                        </button>
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0">Error</h6>
+                                            <div>
+                                                <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(selectedItem.Erro)">
+                                                    <i class="bi bi-clipboard"></i> Copy
+                                                </button>
+                                                @if (DataFormatUtils.IsJson(selectedItem.Erro) || DataFormatUtils.IsXml(selectedItem.Erro))
+                                                {
+                                                    <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertError()">
+                                                        @(DataFormatUtils.IsJson(selectedItem.Erro) ? "To XML" : "To JSON")
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedError</pre>
+                                        </div>
                                     </div>
-                                    <pre class="pre-scrollable">@selectedItem.Erro</pre>
                                 </div>
                             </div>
                         }
@@ -350,6 +370,7 @@
 
     private string formattedRequest = "";
     private string formattedResponse = "";
+    private string formattedError = "";
     private void ShowDetails(RequisicaoExecucao item)
     {
         selectedItem = item;
@@ -364,6 +385,12 @@
             : DataFormatUtils.IsXml(item.Resposta)
                 ? DataFormatUtils.FormatXml(item.Resposta)
                 : item.Resposta;
+
+        formattedError = DataFormatUtils.IsJson(item.Erro)
+            ? DataFormatUtils.FormatJson(item.Erro)
+            : DataFormatUtils.IsXml(item.Erro)
+                ? DataFormatUtils.FormatXml(item.Erro)
+                : item.Erro ?? "";
     }
 
 
@@ -391,6 +418,20 @@
         else if (DataFormatUtils.IsXml(formattedResponse))
         {
             formattedResponse = DataFormatUtils.XmlToJson(formattedResponse);
+        }
+        StateHasChanged();
+    }
+
+    private void ConvertError()
+    {
+        if (selectedItem?.Erro == null) return;
+        if (DataFormatUtils.IsJson(formattedError))
+        {
+            formattedError = DataFormatUtils.JsonToXml(formattedError);
+        }
+        else if (DataFormatUtils.IsXml(formattedError))
+        {
+            formattedError = DataFormatUtils.XmlToJson(formattedError);
         }
         StateHasChanged();
     }
