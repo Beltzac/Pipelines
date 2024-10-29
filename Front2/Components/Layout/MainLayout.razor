@@ -1,9 +1,11 @@
 ﻿@inherits LayoutComponentBase
 @using Blazored.Toast.Configuration
+@inject IThemeService ThemeService
+@implements IDisposable
 
 <BlazoredToasts Position="ToastPosition.BottomRight" Timeout="5" ShowProgressBar="true" MaxToastCount="3" />
 
-<div class="page">
+<div class="page" data-theme="@(ThemeService.IsDarkMode ? "dark" : "light")">
   
     <div class="sidebar">
         <NavMenu />
@@ -21,4 +23,21 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ThemeService.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnThemeChanged(object sender, EventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+}
 
