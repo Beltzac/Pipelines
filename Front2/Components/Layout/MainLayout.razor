@@ -34,7 +34,15 @@
     protected override async Task OnInitializedAsync()
     {
         ThemeService.ThemeChanged += OnThemeChanged;
-        await UpdateThemeAttribute();
+        //await UpdateThemeAttribute();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+           await UpdateThemeAttribute();
+        }
     }
 
     private async void OnThemeChanged(object sender, EventArgs e)
