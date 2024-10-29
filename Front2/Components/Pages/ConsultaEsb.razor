@@ -131,7 +131,7 @@
         </div>
     </div>
 </div>
-
+</div>
 @if (isLoading)
 {
     <div class="d-flex justify-content-center mt-4">
@@ -376,11 +376,13 @@
         }
         else if (key == "Escape")
         {
-            ClearFilters();
+            await ClearFilters();
         }
+
+        StateHasChanged();
     }
 
-    private void ClearFilters()
+    private async Task ClearFilters()
     {
         urlFilter = null;
         httpMethod = null;
@@ -393,7 +395,7 @@
         startDate = DateTime.Now.AddHours(-24);
         endDate = DateTime.Now;
         currentPage = 1;
-        ExecuteQuery();
+        await ExecuteQuery();
     }
 
     private string GetStatusBadgeClass(string? statusCode)
@@ -416,6 +418,9 @@
             cts?.Cancel();
             cts = new CancellationTokenSource();
             isLoading = true;
+
+            StateHasChanged();
+
             var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
                 ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
                 : null;
