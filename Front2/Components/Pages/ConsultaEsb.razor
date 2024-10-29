@@ -139,11 +139,10 @@
                     <th>Method</th>
                     <th>HTTP Status</th>
                     <th>Response Status</th>
-                    <th>Flow</th>
-                    <th>URL</th>
+                    <th>URL / Fluxo</th>
                     <th>Start Date</th>
                     <th>User ID</th>
-                    <th>Delay</th>
+                    <th>Delay (Segundos)</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -156,11 +155,10 @@
                         <td>@item.HttpMethod</td>
                         <td>@item.HttpStatusCode</td>
                         <td>@(GetResponseStatus(item.Resposta))</td>
-                        <td>@item.NomeFluxo</td>
-                        <td>@item.Url</td>
+                        <td>@(item.Url ?? item.NomeFluxo)</td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td>@item.IdUsuarioInclusao</td>
-                        <td>@(item.Duration?.ToString(@"hh\:mm\:ss\.fff") ?? "")</td>
+                        <td>@(item.Duration?.TotalSeconds)</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
                                 Details
