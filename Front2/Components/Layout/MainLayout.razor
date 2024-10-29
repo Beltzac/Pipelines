@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using Blazored.Toast.Configuration
+@using Front2.Components
 @inject IThemeService ThemeService
 @implements IDisposable
 
@@ -9,6 +10,7 @@
   
     <div class="sidebar">
         <NavMenu />
+        <ThemeToggle />
     </div> 
 
     <main>

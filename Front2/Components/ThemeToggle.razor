@@ -1,0 +1,34 @@
+@inject IThemeService ThemeService
+
+<button class="theme-toggle" @onclick="ToggleTheme">
+    @if (ThemeService.IsDarkMode)
+    {
+        <i class="fas fa-sun"></i>
+    }
+    else
+    {
+        <i class="fas fa-moon"></i>
+    }
+</button>
+
+<style>
+    .theme-toggle {
+        background: none;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+    }
+
+    .theme-toggle:hover {
+        background-color: var(--hover-color);
+    }
+</style>
+
+@code {
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
+}
