@@ -15,7 +15,7 @@ else if (updateAvailable && downloadProgress > 0)
 }
 else
 {
-    <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync">
+    <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync" title="Click to check for updates">
         <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"v{currentVersion}") 
     </a>
 }
