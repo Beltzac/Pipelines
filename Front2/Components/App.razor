@@ -39,6 +39,9 @@
     <script src="js/keyboardShortcuts.js"></script>
 
     <script>
+        window.setTheme = (theme) => {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        }
         // Abrir links externamente
         document.body.addEventListener('click', event => {
             if (event.target.tagName.toLowerCase() === 'a' && event.target.target === '_blank') {
