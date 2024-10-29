@@ -6,6 +6,7 @@
 @inject IRequisicaoExecucaoService RequisicaoService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 <h3>Requisição Execução Query</h3>
 
@@ -342,6 +343,67 @@
     {
         config = ConfigService.GetConfig();
         selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
+        
+        // Set default date range to last 24 hours
+        endDate = DateTime.Now;
+        startDate = endDate?.AddHours(-24);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("addKeyboardShortcuts", objRef);
+        }
+    }
+
+    private DotNetObjectReference<ConsultaEsb>? objRef;
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            objRef.Dispose();
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleKeyPress(string key)
+    {
+        if (key == "Enter")
+        {
+            await ExecuteQuery();
+        }
+        else if (key == "Escape")
+        {
+            ClearFilters();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        urlFilter = null;
+        httpMethod = null;
+        containerNumbers = null;
+        nomeFluxo = null;
+        userId = null;
+        execucaoId = null;
+        httpStatusRange = null;
+        responseStatus = null;
+        startDate = DateTime.Now.AddHours(-24);
+        endDate = DateTime.Now;
+        currentPage = 1;
+        ExecuteQuery();
+    }
+
+    private string GetStatusBadgeClass(string? statusCode)
+    {
+        if (string.IsNullOrEmpty(statusCode)) return "bg-secondary";
+        return statusCode.StartsWith("2") ? "bg-success" :
+               statusCode.StartsWith("3") ? "bg-info" :
+               statusCode.StartsWith("4") ? "bg-warning" :
+               statusCode.StartsWith("5") ? "bg-danger" :
+               "bg-secondary";
     }
 
     private bool isLoading = false;
