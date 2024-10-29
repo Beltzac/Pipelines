@@ -8,8 +8,7 @@
 
 <BlazoredToasts Position="ToastPosition.BottomRight" Timeout="5" ShowProgressBar="true" MaxToastCount="3" />
 
-<div class="page @(ThemeService.IsDarkMode ? "dark-theme" : "light-theme")">
-  
+<div class="page">
     <div class="sidebar">
         <NavMenu />
         <div class="sidebar-footer">
@@ -31,29 +30,22 @@
 </div>
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         ThemeService.ThemeChanged += OnThemeChanged;
-        //await UpdateThemeAttribute();
+        SetThemeClass();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void OnThemeChanged(object sender, EventArgs e)
     {
-        if (firstRender)
-        {
-           await UpdateThemeAttribute();
-        }
+        SetThemeClass();
+        StateHasChanged();
     }
 
-    private async void OnThemeChanged(object sender, EventArgs e)
+    private void SetThemeClass()
     {
-        await UpdateThemeAttribute();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task UpdateThemeAttribute()
-    {
-        await JSRuntime.InvokeVoidAsync("eval", $"document.body.setAttribute('data-theme', '{(ThemeService.IsDarkMode ? "dark" : "light")}')");
+        var theme = ThemeService.IsDarkMode ? "dark" : "light";
+        JSRuntime.InvokeVoidAsync("setTheme", theme);
     }
 
     public void Dispose()
