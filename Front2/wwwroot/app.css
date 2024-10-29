@@ -105,17 +105,17 @@ h1:focus {
 
 @keyframes changeColor {
     0%, 100% {
-        border-top-color: #3498db;
+        border-top-color: var(--primary-color);
     }
-    /* Blue for InProgress */
+    /* Primary color for InProgress */
     33% {
-        border-top-color: green;
+        border-top-color: var(--success-color, green);
     }
-    /* Green for Succeeded */
+    /* Success color for Succeeded */
     66% {
-        border-top-color: red;
+        border-top-color: var(--error-color, red);
     }
-    /* Red for Failed */
+    /* Error color for Failed */
 }
 
 .status-completed {

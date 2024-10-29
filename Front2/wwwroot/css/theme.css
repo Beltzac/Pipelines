@@ -6,6 +6,8 @@
     --secondary-color: #6c757d;
     --border-color: #dee2e6;
     --hover-color: #f8f9fa;
+    --success-color: #28a745;
+    --error-color: #dc3545;
 }
 
 [data-theme='dark'] {
@@ -15,4 +17,6 @@
     --secondary-color: #8b949e;
     --border-color: #30363d;
     --hover-color: #2d2d2d;
+    --success-color: #3fb950;
+    --error-color: #f85149;
 }
