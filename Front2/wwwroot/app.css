@@ -107,15 +107,12 @@ h1:focus {
     0%, 100% {
         border-top-color: var(--primary-color);
     }
-    /* Primary color for InProgress */
     33% {
-        border-top-color: var(--success-color, green);
+        border-top-color: var(--success-color);
     }
-    /* Success color for Succeeded */
     66% {
-        border-top-color: var(--error-color, red);
+        border-top-color: var(--error-color);
     }
-    /* Error color for Failed */
 }
 
 .status-completed {
