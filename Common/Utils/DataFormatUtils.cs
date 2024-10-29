@@ -1,7 +1,5 @@
 using System.Text.Json;
 using System.Xml.Linq;
-using System.Xml;
-using System.Text.RegularExpressions;
 
 namespace Common.Utils
 {

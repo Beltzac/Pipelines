@@ -106,13 +106,9 @@ namespace Common.Utils
                 {
                     OpenWithVisualStudio(logger, slnFile);
                 }
-                else if (Directory.GetDirectories(folderPath, "src", SearchOption.AllDirectories).Any())
-                {
-                    OpenWithVSCode(logger, folderPath);
-                }
                 else
                 {
-                    OpenFolder(folderPath);
+                    OpenWithVSCode(logger, folderPath);
                 }
             }
             else
