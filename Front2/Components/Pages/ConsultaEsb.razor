@@ -9,7 +9,16 @@
 
 <h3>Requisição Execução Query</h3>
 
-<div class="row g-3">
+<div class="accordion mb-3" id="filterAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                Filters
+            </button>
+        </h2>
+        <div id="filterCollapse" class="accordion-collapse collapse show">
+            <div class="accordion-body">
+                <div class="row g-3">
     <div class="col-md-3">
         <label class="form-label">Environment</label>
         <select class="form-select" @bind="selectedEnvironment">
@@ -116,6 +125,9 @@
         {
             <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
         }
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -153,7 +165,11 @@
                         <td>@item.Source</td>
                         <td>@item.IdExecucao</td>
                         <td>@item.HttpMethod</td>
-                        <td>@item.HttpStatusCode</td>
+                        <td>
+                            <span class="badge @GetStatusBadgeClass(item.HttpStatusCode)">
+                                @item.HttpStatusCode
+                            </span>
+                        </td>
                         <td>@(GetResponseStatus(item.Resposta))</td>
                         <td>@(item.Url ?? item.NomeFluxo)</td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
