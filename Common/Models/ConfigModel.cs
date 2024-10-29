@@ -2,6 +2,7 @@
 {
     public class ConfigModel
     {
+        public bool IsDarkMode { get; set; }
         public string PAT { get; set; }
         public string OrganizationUrl { get; set; }
         public string LocalCloneFolder { get; set; }
