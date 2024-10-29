@@ -166,7 +166,9 @@
                             </span>
                         </td>
                         <td>@(GetResponseStatus(item.Resposta))</td>
-                        <td>@(item.Url ?? item.NomeFluxo)</td>
+                        <td title="@(item.Url ?? item.NomeFluxo)" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @(item.Url ?? item.NomeFluxo)
+                        </td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td>@item.IdUsuarioInclusao</td>
                         <td>@(item.Duration?.TotalSeconds)</td>
