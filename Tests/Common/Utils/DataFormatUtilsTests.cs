@@ -82,8 +82,8 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.XmlToJson(input);
 
             // Assert
-            Assert.Contains("\"name\": \"test\"", result);
-            Assert.Contains("\"value\": \"123\"", result);
+            result.Should().Contain("\"name\": \"test\"");
+            result.Should().Contain("\"value\": \"123\"");
         }
     }
 }
