@@ -28,9 +28,9 @@ namespace Common.Tests.Utils
             var result = commit.ToHtml(_config);
 
             // Assert
-            Assert.Contains("<span class='log-error'>ERROR</span>", result);
-            Assert.Contains("<span class='log-warning'>WARNING</span>", result);
-            Assert.Contains("<span class='log-info'>INFO</span>", result);
+            result.Should().Contain("<span class='log-error'>ERROR</span>");
+            result.Should().Contain("<span class='log-warning'>WARNING</span>");
+            result.Should().Contain("<span class='log-info'>INFO</span>");
         }
 
         [Test]
@@ -46,7 +46,7 @@ namespace Common.Tests.Utils
             var result = commit.ToHtml(_config);
 
             // Assert
-            Assert.Contains("<span class='log-timestamp'>2023-01-01T12:00:00.0000000Z</span>", result);
+            result.Should().Contain("<span class='log-timestamp'>2023-01-01T12:00:00.0000000Z</span>");
         }
 
         [Test]
@@ -64,7 +64,7 @@ namespace Common.Tests.Utils
             var result = commit.ToHtml(_config);
 
             // Assert
-            Assert.Contains($"<a href='{_config.OrganizationUrl}/project/_git/repo/pullrequest/123'", result);
+            result.Should().Contain($"<a href='{_config.OrganizationUrl}/project/_git/repo/pullrequest/123'");
         }
 
         [Test]
@@ -80,7 +80,7 @@ namespace Common.Tests.Utils
             var result = commit.ToHtml(_config);
 
             // Assert
-            Assert.Contains("<span class='log-docker-command'>##[command]/usr/bin/docker build -t test .</span>", result);
+            result.Should().Contain("<span class='log-docker-command'>##[command]/usr/bin/docker build -t test .</span>");
         }
     }
 }
