@@ -28,7 +28,7 @@ namespace Common.Tests.Utils
                 var result = OpenFolderUtils.FindSolutionFile(tempPath);
 
                 // Assert
-                Assert.Equal(solutionPath, result);
+                result.Should().Be(solutionPath);
             }
             finally
             {
@@ -60,7 +60,7 @@ namespace Common.Tests.Utils
                 var result = OpenFolderUtils.ProjectContainsTopshelfReference(projectPath);
 
                 // Assert
-                Assert.True(result);
+                result.Should().BeTrue();
             }
             finally
             {
@@ -92,7 +92,7 @@ namespace Common.Tests.Utils
                 var result = OpenFolderUtils.ProjectContainsTopshelfReference(projectPath);
 
                 // Assert
-                Assert.False(result);
+                result.Should().BeFalse();
             }
             finally
             {

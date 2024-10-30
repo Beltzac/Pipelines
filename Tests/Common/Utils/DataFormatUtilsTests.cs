@@ -29,7 +29,7 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.FormatJson(input);
 
             // Assert
-            Assert.Equal(input, result);
+            result.Should().Be(input);
         }
 
         [Test]
@@ -42,7 +42,7 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.IsJson(input);
 
             // Assert
-            Assert.True(result);
+            result.Should().BeTrue();
         }
 
         [Test]
@@ -55,7 +55,7 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.IsJson(input);
 
             // Assert
-            Assert.False(result);
+            result.Should().BeFalse();
         }
 
         [Test]
@@ -68,8 +68,8 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.JsonToXml(input);
 
             // Assert
-            Assert.Contains("<name>test</name>", result);
-            Assert.Contains("<value>123</value>", result);
+            result.Should().Contain("<name>test</name>");
+            result.Should().Contain("<value>123</value>");
         }
 
         [Test]
