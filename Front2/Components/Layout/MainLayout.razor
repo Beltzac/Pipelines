@@ -4,16 +4,12 @@
 @using Front2.Components
 @inject IThemeService ThemeService
 @inject IJSRuntime JSRuntime
-@implements IDisposable
 
 <BlazoredToasts Position="ToastPosition.BottomRight" Timeout="5" ShowProgressBar="true" MaxToastCount="3" />
 
 <div class="page">
     <div class="sidebar">
         <NavMenu />
-        <div class="sidebar-footer">
-            <ThemeToggle />
-        </div>
     </div> 
 
     <main>
@@ -28,29 +24,3 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
-
-@code {
-    protected override void OnInitialized()
-    {
-        ThemeService.ThemeChanged += OnThemeChanged;
-        SetThemeClass();
-    }
-
-    private void OnThemeChanged(object sender, EventArgs e)
-    {
-        SetThemeClass();
-        StateHasChanged();
-    }
-
-    private void SetThemeClass()
-    {
-        var theme = ThemeService.IsDarkMode ? "dark" : "light";
-        JSRuntime.InvokeVoidAsync("setTheme", theme);
-    }
-
-    public void Dispose()
-    {
-        ThemeService.ThemeChanged -= OnThemeChanged;
-    }
-}
-
