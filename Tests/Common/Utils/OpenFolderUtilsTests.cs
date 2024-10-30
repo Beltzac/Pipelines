@@ -1,4 +1,5 @@
 using Common.Utils;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
