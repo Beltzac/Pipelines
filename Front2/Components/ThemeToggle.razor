@@ -3,16 +3,16 @@
 
 @implements IDisposable
 
-<button class="theme-toggle" @onclick="ToggleTheme">
+<a class="nav-link" href="#" @onclick="ToggleTheme">
     @if (isDark)
     {
-        <i class="bi bi-sun"></i>
+        <span class="bi bi-sun"></span> @("Toggle Theme")
     }
     else
     {
-        <i class="bi bi-moon"></i>
+        <span class="bi bi-moon"></span> @("Toggle Theme")
     }
-</button>
+</a>
 
 <style>
     .theme-toggle {
