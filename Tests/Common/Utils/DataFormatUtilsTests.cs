@@ -85,5 +85,51 @@ namespace Common.Tests.Utils
             result.Should().Contain("\"name\": \"test\"");
             result.Should().Contain("\"value\": \"123\"");
         }
+
+        [Test]
+        public void JsonToXml_ArrayJson_ReturnsCorrectXml()
+        {
+            // Arrange
+            var input = "{\"items\":[1,2,3],\"names\":[\"a\",\"b\"]}";
+
+            // Act
+            var result = DataFormatUtils.JsonToXml(input);
+
+            // Assert
+            result.Should().Contain("<items><item>1</item><item>2</item><item>3</item></items>");
+            result.Should().Contain("<names><item>a</item><item>b</item></names>");
+        }
+
+        [Test]
+        public void XmlToJson_ArrayXml_ReturnsCorrectJson()
+        {
+            // Arrange
+            var input = "<root><items><item>1</item><item>2</item><item>3</item></items></root>";
+
+            // Act
+            var result = DataFormatUtils.XmlToJson(input);
+
+            // Assert
+            result.Should().Contain("\"items\": [");
+            result.Should().Contain("\"1\"");
+            result.Should().Contain("\"2\"");
+            result.Should().Contain("\"3\"");
+        }
+
+        [Test]
+        public void JsonToXml_ComplexArrayJson_ReturnsCorrectXml()
+        {
+            // Arrange
+            var input = "{\"users\":[{\"name\":\"John\",\"age\":30},{\"name\":\"Jane\",\"age\":25}]}";
+
+            // Act
+            var result = DataFormatUtils.JsonToXml(input);
+
+            // Assert
+            result.Should().Contain("<users>");
+            result.Should().Contain("<item><name>John</name><age>30</age></item>");
+            result.Should().Contain("<item><name>Jane</name><age>25</age></item>");
+            result.Should().Contain("</users>");
+        }
     }
 }
