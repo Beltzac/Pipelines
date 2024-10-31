@@ -165,7 +165,7 @@
                             @(item.Url ?? item.NomeFluxo)
                         </td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td>@item.IdUsuarioInclusao</td>
+                        <td>@(userLogins.TryGetValue(item.IdUsuarioInclusao, out var login) ? login : item.IdUsuarioInclusao.ToString())</td>
                         <td>@(item.Duration?.TotalSeconds.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
@@ -317,6 +317,7 @@
 
     private List<RequisicaoExecucao> results;
     private RequisicaoExecucao selectedItem;
+    private Dictionary<int, string> userLogins = new();
 
     private ConfigModel config;
 
@@ -415,6 +416,10 @@
             var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
                 ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
                 : null;
+
+            // Get all unique user IDs from the current results
+            var uniqueUserIds = results?.Select(r => r.IdUsuarioInclusao).Distinct().ToList() ?? new List<int>();
+            userLogins = await RequisicaoService.GetUsersAsync(selectedEnvironment);
 
             var (queryResults, total) = await RequisicaoService.ExecuteQueryAsync(
             selectedEnvironment,
