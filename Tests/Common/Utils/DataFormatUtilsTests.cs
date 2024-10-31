@@ -131,5 +131,36 @@ namespace Common.Tests.Utils
             result.Should().Contain("<item><name>Jane</name><age>25</age></item>");
             result.Should().Contain("</users>");
         }
+
+        [Test]
+        public void JsonToXml_SingleElementArrayJson_ReturnsCorrectXml()
+        {
+            // Arrange
+            var input = "{\"items\":[42],\"names\":[\"single\"]}";
+
+            // Act
+            var result = DataFormatUtils.JsonToXml(input);
+
+            // Assert
+            result.Should().Contain("<items><item>42</item></items>");
+            result.Should().Contain("<names><item>single</item></names>");
+        }
+
+        [Test]
+        public void XmlToJson_SingleElementArrayXml_ReturnsCorrectJson()
+        {
+            // Arrange
+            var input = "<root><items><item>42</item></items><names><item>single</item></names></root>";
+
+            // Act
+            var result = DataFormatUtils.XmlToJson(input);
+
+            // Assert
+            result.Should().Contain("\"items\": [");
+            result.Should().Contain("\"42\"");
+            result.Should().Contain("\"names\": [");
+            result.Should().Contain("\"single\"");
+            result.Should().NotContain("\"item\":");
+        }
     }
 }
