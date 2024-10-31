@@ -66,15 +66,15 @@
                           ValueExpression="() => userId"
                           ValueChanged="(int? val) => userId = val"
                           SearchMethod="SearchUsers"
-                          ConvertMethod="item => item.Key"
+                          ConvertMethod="@(item => item.Key)"
                           EnableDropDown="true"
                           placeholder="Search user..."
                           class="form-control">
-            <SelectedTemplate>
-                @context.Value (@context.Key)
+            <SelectedTemplate Context="user">
+                @(userLogins.TryGetValue(user, out var login) ? $"{login} ({user})" : user.ToString())
             </SelectedTemplate>
-            <ResultTemplate>
-                @context.Value (@context.Key)
+            <ResultTemplate Context="kvp">
+                @kvp.Value (@kvp.Key)
             </ResultTemplate>
             <NotFoundTemplate>
                 No users found
