@@ -59,7 +59,8 @@ namespace Common.Services
                     Url = reader.IsDBNull("URL") ? null : reader.GetString("URL"),
                     Duration = reader.IsDBNull(reader.GetOrdinal("DELAY")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DELAY")),
                     DataInicio = reader.IsDBNull("DATA_INICIO") ? DateTime.MinValue : reader.GetDateTime("DATA_INICIO"),
-                    IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO")
+                    IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO"),
+                    UserLogin = reader.IsDBNull("USER_LOGIN") ? null : reader.GetString("USER_LOGIN")
                 });
                 totalCount = reader.GetInt32("TotalCount");
             }
@@ -122,8 +123,9 @@ WITH RequisicaoExecucao AS (
     SELECT 'Requisição' AS SOURCE, E.ID_EXECUCAO, e.HTTP_METHOD, e.HTTP_STATUS_CODE,
            REQ.CONTEUDO AS REQUISICAO, RESP.CONTEUDO AS RESPOSTA, NULL as ERRO,
            E.NOME_FLUXO, E.END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
-           E.DATA_INICIO, E.ID_USUARIO_INCLUSAO
+           E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.REQUISICAO E
+    LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM RESP ON E.ID_MSG_SAIDA = RESP.ID_MENSAGEM
 
@@ -133,8 +135,9 @@ WITH RequisicaoExecucao AS (
            null as HTTP_STATUS_CODE, REQ.CONTEUDO AS REQUISICAO,
            RESP.CONTEUDO AS RESPOSTA, ERRO.CONTEUDO AS ERRO,
            E.NOME_FLUXO, null as END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
-           E.DATA_INICIO, E.ID_USUARIO_INCLUSAO
+           E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.EXECUCAO E
+    LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM RESP ON E.ID_MSG_SAIDA = RESP.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM ERRO ON E.ID_MSG_ERRO = ERRO.ID_MENSAGEM
