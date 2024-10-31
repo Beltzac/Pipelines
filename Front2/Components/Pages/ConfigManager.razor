@@ -6,7 +6,7 @@
 @inject IOracleSchemaService OracleService
 @inject IJSRuntime JSRuntime
 
-<div class="container-fluid">
+<div class="container-fluid pb-5">
     <h3 class="mb-4">Configuration Manager</h3>
 
     <EditForm Model="@config" OnValidSubmit="HandleValidSubmit">
@@ -172,14 +172,11 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-12">
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save Configuration
-                    </button>
-                </div>
-            </div>
+        <div class="position-fixed bottom-0 end-0 p-4" style="z-index: 1030;">
+            <button type="submit" class="btn btn-primary btn-lg shadow-lg rounded-circle p-3">
+                <i class="fas fa-save fa-lg"></i>
+                <span class="visually-hidden">Save Configuration</span>
+            </button>
         </div>
     </EditForm>
 </div>
