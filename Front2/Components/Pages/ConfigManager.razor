@@ -6,136 +6,183 @@
 @inject IOracleSchemaService OracleService
 @inject IJSRuntime JSRuntime
 
-<h3>Configuration Manager</h3>
+<div class="container-fluid">
+    <h3 class="mb-4">Configuration Manager</h3>
 
-<EditForm Model="@config" OnValidSubmit="HandleValidSubmit">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+    <EditForm Model="@config" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
 
-    <div class="card mb-3">
-        <div class="card-header">User Configuration</div>
-        <div class="card-body">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <InputText id="username" @bind-Value="config.Username" class="form-control"/>
-                <ValidationMessage For="@(() => config.Username)" />
-            </div>
-            <div class="form-group">
-                <label for="pat">Personal Access Token (PAT)</label>
-                <InputText id="pat" @bind-Value="config.PAT" class="form-control"/>
-                <ValidationMessage For="@(() => config.PAT)" />
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">Organization Configuration</div>
-        <div class="card-body">
-            <div class="form-group">
-                <label for="orgUrl">Organization URL</label>
-                <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control"/>
-                <ValidationMessage For="@(() => config.OrganizationUrl)" />
-            </div>
-            <div class="form-group">
-                <label for="cloneFolder">Local Clone Folder</label>
-                <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
-                <ValidationMessage For="@(() => config.LocalCloneFolder)" />
-            </div>
-        </div>
-    </div>
-
-    @foreach (var env in config.ConsulEnvironments)
-    {
-        <div class="card mb-3">
-            <div class="card-header">@env.Name Configuration</div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label for="consulName">Consul Environment Name</label>
-                    <InputText id="consulName" @bind-Value="env.Name" class="form-control"/>
-                    <ValidationMessage For="@(() => env.Name)" />
-                </div>
-                <div class="form-group">
-                    <label for="consulUrl">Consul URL</label>
-                    <InputText id="consulUrl" @bind-Value="env.ConsulUrl" class="form-control"/>
-                    <ValidationMessage For="@(() => env.ConsulUrl)" />
-                </div>
-                <div class="form-group">
-                    <label for="consulFolder">Consul Folder</label>
-                    <InputText id="consulFolder" @bind-Value="env.ConsulFolder" class="form-control"/>
-                    <ValidationMessage For="@(() => env.ConsulFolder)" />
-                </div>
-                <div class="form-group">
-                    <label for="consulToken">Consul Token</label>
-                    <InputText id="consulToken" @bind-Value="env.ConsulToken" class="form-control"/>
-                    <ValidationMessage For="@(() => env.ConsulToken)" />
-                </div>
-                <button type="button" class="btn btn-danger" @onclick="() => RemoveConsulEnvironment(env)">Remove</button>
-            </div>
-        </div>
-    }
-
-    <button type="button" class="btn btn-secondary" @onclick="AddConsulEnvironment">Add Consul Environment</button>
-
-    <div class="card mb-3">
-        <div class="card-header">GitHub Configuration</div>
-        <div class="card-body">
-            <div class="form-group">
-                <label for="githubToken">Github Token</label>
-                <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control"/>
-                <ValidationMessage For="@(() => config.AccessToken)" />
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">Ignore Repositories by Regex</div>
-        <div class="card-body">
-            @for (int i = 0; i < config.IgnoreRepositoriesRegex.Count; i++)
-            {
-                var index = i; // Create a local copy of the loop variable
-                <div class="input-group mb-2">
-                    <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control" />
-                    <button type="button" class="btn btn-danger" @onclick="() => RemoveRegex(index)">Remove</button>
-                </div>
-            }
-            <button type="button" class="btn btn-secondary" @onclick="AddRegex">Add Regex</button>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header">
-            Oracle Environments
-            <button class="btn btn-secondary btn-sm float-end" @onclick="AddOracleEnvironment">Add Environment</button>
-        </div>
-        <div class="card-body">
-            @foreach (var env in config.OracleEnvironments)
-            {
-                <div class="card mb-3">
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-md-6">
+                <!-- User and Organization Settings -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Basic Settings</h5>
+                    </div>
                     <div class="card-body">
-                        <div class="form-group">
-                            <label>Name:</label>
-                            <InputText class="form-control" @bind-Value="env.Name" />
+                        <h6 class="card-subtitle mb-3">User Configuration</h6>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <InputText id="username" @bind-Value="config.Username" class="form-control"/>
+                            <ValidationMessage For="@(() => config.Username)" />
                         </div>
-                        <div class="form-group">
-                            <label>Connection String:</label>
-                            <InputText class="form-control" @bind-Value="env.ConnectionString" />
+                        <div class="mb-3">
+                            <label for="pat" class="form-label">Personal Access Token (PAT)</label>
+                            <InputText id="pat" @bind-Value="config.PAT" class="form-control"/>
+                            <ValidationMessage For="@(() => config.PAT)" />
                         </div>
-                        <div class="form-group">
-                            <label>Schema:</label>
-                            <InputText class="form-control" @bind-Value="env.Schema" />
+
+                        <hr class="my-4"/>
+
+                        <h6 class="card-subtitle mb-3">Organization Configuration</h6>
+                        <div class="mb-3">
+                            <label for="orgUrl" class="form-label">Organization URL</label>
+                            <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control"/>
+                            <ValidationMessage For="@(() => config.OrganizationUrl)" />
                         </div>
-                        <div class="mt-2">
-                            <button class="btn btn-danger" @onclick="() => RemoveOracleEnvironment(env)">Remove</button>
-                            <button class="btn btn-secondary ms-2" @onclick="() => TestOracleConnection(env)">Test Connection</button>
+                        <div class="mb-3">
+                            <label for="cloneFolder" class="form-label">Local Clone Folder</label>
+                            <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
+                            <ValidationMessage For="@(() => config.LocalCloneFolder)" />
                         </div>
                     </div>
                 </div>
-            }
-        </div>
-    </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-</EditForm>
+                <!-- GitHub Settings -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">GitHub Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="githubToken" class="form-label">Github Token</label>
+                            <InputText id="githubToken" @bind-Value="config.AccessToken" class="form-control"/>
+                            <ValidationMessage For="@(() => config.AccessToken)" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repository Ignore Rules -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Repository Ignore Rules</h5>
+                    </div>
+                    <div class="card-body">
+                        @for (int i = 0; i < config.IgnoreRepositoriesRegex.Count; i++)
+                        {
+                            var index = i;
+                            <div class="input-group mb-2">
+                                <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control" placeholder="Enter regex pattern"/>
+                                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveRegex(index)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        }
+                        <button type="button" class="btn btn-outline-secondary" @onclick="AddRegex">
+                            <i class="fas fa-plus"></i> Add Pattern
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-md-6">
+                <!-- Consul Environments -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Consul Environments</h5>
+                        <button type="button" class="btn btn-light btn-sm" @onclick="AddConsulEnvironment">
+                            <i class="fas fa-plus"></i> Add Environment
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var env in config.ConsulEnvironments)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Environment Name</label>
+                                        <InputText @bind-Value="env.Name" class="form-control"/>
+                                        <ValidationMessage For="@(() => env.Name)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Consul URL</label>
+                                        <InputText @bind-Value="env.ConsulUrl" class="form-control"/>
+                                        <ValidationMessage For="@(() => env.ConsulUrl)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Consul Folder</label>
+                                        <InputText @bind-Value="env.ConsulFolder" class="form-control"/>
+                                        <ValidationMessage For="@(() => env.ConsulFolder)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Consul Token</label>
+                                        <InputText @bind-Value="env.ConsulToken" class="form-control"/>
+                                        <ValidationMessage For="@(() => env.ConsulToken)" />
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveConsulEnvironment(env)">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Oracle Environments -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Oracle Environments</h5>
+                        <button type="button" class="btn btn-light btn-sm" @onclick="AddOracleEnvironment">
+                            <i class="fas fa-plus"></i> Add Environment
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var env in config.OracleEnvironments)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Name</label>
+                                        <InputText @bind-Value="env.Name" class="form-control"/>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection String</label>
+                                        <InputText @bind-Value="env.ConnectionString" class="form-control"/>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Schema</label>
+                                        <InputText @bind-Value="env.Schema" class="form-control"/>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveOracleEnvironment(env)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="() => TestOracleConnection(env)">
+                                            <i class="fas fa-plug"></i> Test Connection
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
 
 @code {
     private ConfigModel config = new ConfigModel();
