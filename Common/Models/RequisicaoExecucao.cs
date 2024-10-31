@@ -15,5 +15,6 @@ namespace Common.Models
         public TimeSpan? Duration { get; set; }
         public DateTime DataInicio { get; set; }
         public int IdUsuarioInclusao { get; set; }
+        public string? UserLogin { get; set; }
     }
 }
