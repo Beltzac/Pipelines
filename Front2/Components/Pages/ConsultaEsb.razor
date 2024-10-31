@@ -321,14 +321,15 @@
 
     private ConfigModel config;
 
-    private async Task<IEnumerable<KeyValuePair<int, string>>> SearchUsers(string searchText)
+    private async Task<IEnumerable<KeyValuePair<int?, string>>> SearchUsers(string searchText)
     {
         if (string.IsNullOrEmpty(selectedEnvironment))
         {
             return new List<KeyValuePair<int, string>>();
         }
 
-        return await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
+        var users = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
+        return users.Select(kvp => new KeyValuePair<int?, string>(kvp.Key, kvp.Value));
     }
 
     protected override async Task OnInitializedAsync()
