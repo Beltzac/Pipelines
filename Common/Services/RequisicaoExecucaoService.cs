@@ -37,7 +37,7 @@ namespace Common.Services
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, nomeFluxo, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
+            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
 
             var result = new List<RequisicaoExecucao>();
             int totalCount = 0;
@@ -68,7 +68,7 @@ namespace Common.Services
         }
 
         private string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
-            string[]? containerNumbers, string? nomeFluxo, int? userId, int? execucaoId, int pageSize, int pageNumber,
+            string[]? containerNumbers, int? userId, int? execucaoId, int pageSize, int pageNumber,
             string? httpStatusRange, string? responseStatus)
         {
             var conditions = new List<string>();
