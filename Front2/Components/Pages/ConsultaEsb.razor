@@ -61,20 +61,20 @@
     <div class="col-md-3">
         <label class="form-label">User</label>
         <BlazoredTypeahead TItem="KeyValuePair<int, string>"
-                          TValue="int?"
-                          Value="userId"
-                          ValueExpression="() => userId"
-                          ValueChanged="(int? val) => userId = val"
-                          SearchMethod="SearchUsers"
-                          ConvertMethod="@(item => (int?)item.Key)"
+                           TValue="KeyValuePair<int, string>?"
+                           ConvertMethod="x => x"
+                         
+            
+                          SearchMethod="async x => await SearchUsers(x)"
+                          @bind-Value="@user"
                           EnableDropDown="true"
                           placeholder="Search user..."
                           class="form-control">
             <SelectedTemplate Context="user">
-                @(userLogins.TryGetValue(user, out var login) ? $"{login} ({user})" : user.ToString())
+                        @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
             </SelectedTemplate>
             <ResultTemplate Context="kvp">
-                @kvp.Value (@kvp.Key)
+                    @($"{kvp.Value} ({kvp.Key})")
             </ResultTemplate>
             <NotFoundTemplate>
                 No users found
@@ -307,7 +307,7 @@
     private string httpMethod;
     private string containerNumbers;
     private string nomeFluxo;
-    private int? userId;
+    private KeyValuePair<int, string>? user;
     private int? execucaoId;
     private int currentPage = 1;
     private int pageSize = 10;
@@ -321,15 +321,15 @@
 
     private ConfigModel config;
 
-    private async Task<IEnumerable<KeyValuePair<int?, string>>> SearchUsers(string searchText)
+    private async Task<List<KeyValuePair<int, string>>> SearchUsers(string searchText)
     {
         if (string.IsNullOrEmpty(selectedEnvironment))
         {
             return new List<KeyValuePair<int, string>>();
         }
 
-        var users = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
-        return users.Select(kvp => new KeyValuePair<int?, string>(kvp.Key, kvp.Value));
+        userLogins = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
+        return userLogins.Select(kvp => new KeyValuePair<int, string>(kvp.Key, kvp.Value)).ToList();
     }
 
     protected override async Task OnInitializedAsync()
@@ -381,7 +381,7 @@
         httpMethod = null;
         containerNumbers = null;
         nomeFluxo = null;
-        userId = null;
+        user = null;
         execucaoId = null;
         httpStatusRange = null;
         responseStatus = null;
@@ -429,7 +429,7 @@
             urlFilter,
             httpMethod,
             containerNumbersArray,
-            userId,
+            user?.Key,
             execucaoId,
             pageSize,
             currentPage,
