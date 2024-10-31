@@ -107,9 +107,9 @@ namespace Common.Services
             {
                 conditions.Add(@"
                     (
-                        (REGEXP_LIKE(RE.RESPOSTA, '<Status>\s*' || '" + responseStatus + @"' || '\s*</Status>') AND REGEXP_LIKE(RE.RESPOSTA, '(?s)^.*<.*>.*$'))
+                        (REGEXP_LIKE(RE.RESPOSTA, '<Status>' || '" + responseStatus + @"'  || '</Status>'))
                         OR
-                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*' || '" + responseStatus + @"' || '\s*[,}]') AND REGEXP_LIKE(RE.RESPOSTA, '(?s)^.*{.*}.*$'))
+                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*""?' || '" + responseStatus + @"' || '""?[\s,}]'))
                     )");
             }
 
