@@ -165,7 +165,7 @@
                             @(item.Url ?? item.NomeFluxo)
                         </td>
                         <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td>@(userLogins.TryGetValue(item.IdUsuarioInclusao, out var login) ? login : item.IdUsuarioInclusao.ToString())</td>
+                        <td>@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</td>
                         <td>@(item.Duration?.TotalSeconds.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
