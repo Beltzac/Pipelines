@@ -21,7 +21,6 @@ namespace Common.Services
             string? urlFilter = null,
             string? httpMethod = null,
             string[]? containerNumbers = null,
-            string? nomeFluxo = null,
             int? userId = null,
             int? execucaoId = null,
             int pageSize = 10,
@@ -81,7 +80,7 @@ namespace Common.Services
                 conditions.Add($"RE.DATA_INICIO <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
             if (!string.IsNullOrEmpty(urlFilter))
-                conditions.Add($"RE.URL LIKE '%{urlFilter}%'");
+                conditions.Add($"(RE.URL LIKE '%{urlFilter}%' OR RE.NOME_FLUXO LIKE '%{urlFilter}%')");
 
             if (!string.IsNullOrEmpty(httpMethod))
                 conditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
@@ -91,9 +90,6 @@ namespace Common.Services
                 var containerConditions = containerNumbers.Select(c => $"RE.REQUISICAO LIKE '%{c}%'");
                 conditions.Add($"({string.Join(" OR ", containerConditions)})");
             }
-
-            if (!string.IsNullOrEmpty(nomeFluxo))
-                conditions.Add($"RE.NOME_FLUXO = '{nomeFluxo}'");
 
             if (userId.HasValue)
                 conditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");

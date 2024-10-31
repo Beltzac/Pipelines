@@ -37,8 +37,8 @@
     </div>
 
     <div class="col-md-3">
-        <label class="form-label">URL Filter</label>
-        <input type="text" class="form-control" @bind="urlFilter">
+        <label class="form-label">URL/Nome Fluxo Filter</label>
+        <input type="text" class="form-control" @bind="urlFilter" placeholder="Search URL or Nome Fluxo">
     </div>
 
     <div class="col-md-3">
@@ -56,11 +56,6 @@
         <label class="form-label">Container Numbers</label>
         <input type="text" class="form-control" @bind="containerNumbers"
                placeholder="Comma separated values">
-    </div>
-
-    <div class="col-md-3">
-        <label class="form-label">Nome Fluxo</label>
-        <input type="text" class="form-control" @bind="nomeFluxo">
     </div>
 
     <div class="col-md-3">
@@ -428,7 +423,6 @@
             urlFilter,
             httpMethod,
             containerNumbersArray,
-            nomeFluxo,
             userId,
             execucaoId,
             pageSize,
