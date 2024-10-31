@@ -11,7 +11,6 @@ namespace Common.Services
             string? urlFilter = null,
             string? httpMethod = null,
             string[]? containerNumbers = null,
-            string? nomeFluxo = null,
             int? userId = null,
             int? execucaoId = null,
             int pageSize = 10,
