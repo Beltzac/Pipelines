@@ -235,22 +235,22 @@
       },
       "Microsoft.TeamFoundationServer.Client": {
         "type": "Direct",
-        "requested": "[19.245.0-preview, )",
-        "resolved": "19.245.0-preview",
-        "contentHash": "scPNh9/lal7mRZ3Vky8Xs6i2RQevT+QFquZ+D25mnaRfxwcQD4WcTQs3bWOTRHBaZ3mTiB2OXQZQOhSpJn3IOw==",
+        "requested": "[19.246.0-preview, )",
+        "resolved": "19.246.0-preview",
+        "contentHash": "Pp24KP4Q3HJWh+mqysRMOU+UqKhU79a6vJ4QMoSf9QRG2SKQm43WYVyO090f5sfeosB0bEwn/aTXviej8OqtQQ==",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.7",
-          "Microsoft.TeamFoundation.DistributedTask.Common.Contracts": "[19.245.0-preview]",
-          "Microsoft.VisualStudio.Services.Client": "[19.245.0-preview]",
+          "Microsoft.TeamFoundation.DistributedTask.Common.Contracts": "[19.246.0-preview]",
+          "Microsoft.VisualStudio.Services.Client": "[19.246.0-preview]",
           "Newtonsoft.Json": "13.0.3",
           "System.ComponentModel.Annotations": "5.0.0"
         }
       },
       "Microsoft.VisualStudio.Services.Client": {
         "type": "Direct",
-        "requested": "[19.245.0-preview, )",
-        "resolved": "19.245.0-preview",
-        "contentHash": "qWX2p7KBfDzfdG+hLFU2TxRko8BpzLRXtGz9TJC++kwJIWzyvQ6ofTbwhckC/4CcW6J+/9ysZ9FYtkml8RLFkw==",
+        "requested": "[19.246.0-preview, )",
+        "resolved": "19.246.0-preview",
+        "contentHash": "ngeGW0B5MtIHknGkKB1rKMkgiVnbk2iRAfrIJVRCMnRiuQt0nPAErrbYBPtVP2yo+mYaRlYwbqO9+B6OA4xjiA==",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.7",
           "Microsoft.Data.SqlClient": "5.2.1",
@@ -880,10 +880,10 @@
       },
       "Microsoft.TeamFoundation.DistributedTask.Common.Contracts": {
         "type": "Transitive",
-        "resolved": "19.245.0-preview",
-        "contentHash": "oRgu4Kw1tvWHulvL4zOgeNjwH9zVlw7ZhQ0J3/QVvATD/vsO1Bvb5yGCrpNiblz4J8NGhNDnI06lAJet1dQmjw==",
+        "resolved": "19.246.0-preview",
+        "contentHash": "lu7q8xKPvX5Tfxb/I/IqCsE+tTPUW9+cGRZS02olT74NTMrcU+rfT5qwREIisBZHp6UVQ33aWXNxz66L7yi6bA==",
         "dependencies": {
-          "Microsoft.VisualStudio.Services.Client": "[19.245.0-preview]"
+          "Microsoft.VisualStudio.Services.Client": "[19.246.0-preview]"
         }
       },
       "Microsoft.Win32.Primitives": {
