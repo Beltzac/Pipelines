@@ -1,7 +1,7 @@
 ﻿@using Common.Services
 
 <!DOCTYPE html>
-<html lang="en" data-theme="@(ThemeService.IsDarkMode ? "dark" : "light")">
+<html lang="en" @data-theme="@(ThemeService.IsDarkMode ? "dark" : "light")">
 
 <head>
     <meta charset="utf-8" />
@@ -21,10 +21,12 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" /> 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="~/css/app.css" />
+    
     <link rel="stylesheet" href="Front2.styles.css" />
     <link href="_content/Blazor.ContextMenu/blazorContextMenu.min.css" rel="stylesheet" />
     <link href="_content/Blazored.Typeahead/blazored-typeahead.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/app.css" />
 
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
@@ -74,7 +76,7 @@
 
     public void Dispose()
     {
-        ThemeService.ThemeChanged -= OnThemeChanged;
+        //ThemeService.ThemeChanged -= OnThemeChanged;
     }
 
     [JSInvokable]
