@@ -1,7 +1,7 @@
 ﻿@using Common.Services
 
 <!DOCTYPE html>
-<html lang="en" @data-theme="@(ThemeService.IsDarkMode ? "dark" : "light")">
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
@@ -58,28 +58,7 @@
 
 </html>
 
-@implements IDisposable
-
 @code {
-    [Inject] 
-    public IThemeService ThemeService { get; set; }
-
-    protected override void OnInitialized()
-    {
-        ThemeService.ThemeChanged += OnThemeChanged;
-        base.OnInitialized();
-    }
-
-    private void OnThemeChanged(object sender, EventArgs e)
-    {
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        //ThemeService.ThemeChanged -= OnThemeChanged;
-    }
-
     [JSInvokable]
     public static async Task OpenExternal(string url)
     {
