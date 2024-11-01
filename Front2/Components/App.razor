@@ -55,6 +55,8 @@
 
 </html>
 
+@implements IDisposable
+
 @code {
     [Inject] 
     public IThemeService ThemeService { get; set; }
@@ -67,7 +69,7 @@
 
     private void OnThemeChanged(object sender, EventArgs e)
     {
-        InvokeAsync(StateHasChanged);
+        StateHasChanged();
     }
 
     public void Dispose()
