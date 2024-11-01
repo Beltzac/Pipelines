@@ -10,6 +10,7 @@
     <IsTestProject>true</IsTestProject>
 	<IsTestingPlatformApplication>true</IsTestingPlatformApplication>
 	<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+	<Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +23,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Moq.EntityFrameworkCore" Version="8.0.1.2" />
-    <PackageReference Include="TUnit" Version="0.2.145" />
+    <PackageReference Include="TUnit" Version="0.2.176" />
   </ItemGroup>
 
   <ItemGroup>

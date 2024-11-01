@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+	<Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,8 +35,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0-rc.2.24474.1" />
-    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.245.0-preview" />
-    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.245.0-preview" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
+    <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.246.0-preview" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.6.0" />
     <PackageReference Include="Quartz" Version="3.13.0" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />

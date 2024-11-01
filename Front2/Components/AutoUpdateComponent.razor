@@ -13,19 +13,25 @@ else if (updateAvailable && downloadProgress > 0)
 {
     <ProgressBar ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
 }
+else if (isLoading)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
 else
 {
     <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync" title="Click to check for updates">
-        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"v{currentVersion}") 
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"v{currentVersion}")
     </a>
 }
-
 
 @code {
     private bool updateAvailable = false;
     private int downloadProgress = 0;
     private Release latestRelease;
     private string currentVersion;
+    private bool isLoading = false; // New loading state
 
     protected override async Task OnInitializedAsync()
     {
@@ -35,8 +41,16 @@ else
 
     private async Task CheckForUpdatesAsync()
     {
-        latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
-        updateAvailable = latestRelease != null;
+        isLoading = true; // Set loading state to true
+        try
+        {
+            latestRelease = await AutoUpdateService.CheckForUpdatesAsync();
+            updateAvailable = latestRelease != null;
+        }
+        finally
+        {
+            isLoading = false; // Ensure loading state is set to false
+        }
     }
 
     private async Task DownloadUpdateAsync()
