@@ -22,7 +22,6 @@
 <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
 <ProgressBar ProgressValue="@progress" TextColor="black" Height="25px" Label="Buscando commits..." />
 
-
 @if (commitDataList != null && commitDataList.Any())
 {
     var groupedCommits = commitDataList
@@ -49,7 +48,7 @@
                             </div>
                             @if (!string.IsNullOrEmpty(commit.JiraCardID))
                             {
-                                <span class="badge bg-secondary">@commit.JiraCardID</span>
+                                <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
                             }
                         </div>
                     </li>
@@ -64,7 +63,6 @@ else
 }
 
 @code {
-
     private List<Commit> commitDataList = new List<Commit>();
     private int progress = 0;
 
@@ -95,6 +93,12 @@ else
     {
         await CommitDataExportService.ExportCommitDataAsync();
     }
+
+    private async Task CopyToClipboard(string jiraCardID)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
+        toastService.ShowSuccess($"Copied {jiraCardID} to clipboard!");
+    }
 }
 
 <style>
@@ -109,5 +113,9 @@ else
         transform: translate(-50%, -50%);
         color: black;
         font-weight: bold;
+    }
+
+    .clickable-badge {
+        cursor: pointer; /* Change cursor to pointer on hover */
     }
 </style>
