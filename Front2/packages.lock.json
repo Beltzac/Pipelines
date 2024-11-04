@@ -152,9 +152,9 @@
       },
       "Quartz": {
         "type": "Direct",
-        "requested": "[3.13.0, )",
-        "resolved": "3.13.0",
-        "contentHash": "ddD1CPjWcDMbKdAhzuna3Ng23Sdv1YtuHbFMdAAFw0eBEj9jnadYkDWiKGo/c7BMnbI/ruuyd370sKVgdMCkDA==",
+        "requested": "[3.13.1, )",
+        "resolved": "3.13.1",
+        "contentHash": "0S4/gYb/FRQfek65OPAmszbdEmtc4Fq/jSeA5XFnvMIjYL9Zr8g9jWoKneEFzAFJGlESjFULtaUFzValHvqu4A==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "2.1.1"
         }
@@ -183,12 +183,12 @@
       },
       "Quartz.Serialization.Json": {
         "type": "Direct",
-        "requested": "[3.13.0, )",
-        "resolved": "3.13.0",
-        "contentHash": "Nm8klDppHsttLLfbchWOAOb2bB5mgwbuALpNY+a8Yd+C4kx6RiTvmwbM2l/8qifMOcJxyFvfWTWyoB69ubwTWw==",
+        "requested": "[3.13.1, )",
+        "resolved": "3.13.1",
+        "contentHash": "TnEG0sDE5H4/u3k+V+Y+FkNCJHksaCwHamxG9r7iCHXEywCboLgsqfuFYIlp4VyunJYFDJIfhpT+hBY9rC5BJw==",
         "dependencies": {
           "Newtonsoft.Json": "13.0.1",
-          "Quartz": "3.13.0"
+          "Quartz": "3.13.1"
         }
       },
       "securifybv.ShellLink": {
