@@ -269,26 +269,7 @@ async Task OpenWeb(bool warmUp = false)
         return;
     }
 
-    var windowList = new List<string>();
-
-    User32.EnumWindows((hWnd, lParam) =>
-    {
-        if (User32.IsWindowVisible(hWnd))
-        {
-            int length = User32.GetWindowTextLength(hWnd);
-            StringBuilder title = new StringBuilder(length + 1);
-            User32.GetWindowText(hWnd, title, title.Capacity);
-
-            if (!string.IsNullOrWhiteSpace(title.ToString()))
-            {
-                windowList.Add(title.ToString());
-                Console.WriteLine("Window: " + title.ToString());
-            }
-        }
-        return true;
-    }, IntPtr.Zero);
-
-    var topWindow = windowList.FirstOrDefault();
+    var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
 
     if (topWindow == null || topWindow.ToString() != (await window.GetTitleAsync()))
     {

@@ -83,5 +83,33 @@ namespace Common.Tests.Utils
             // Assert
             result.Should().Contain("<span class='log-docker-command'>##[command]/usr/bin/docker build -t test .</span>");
         }
+
+        [Test]
+        public void ToHtml_WithJiraLink_HasJiraLink()
+        {
+            // Arrange
+            var commit = new Commit
+            {
+                CommitMessage = "JIRA-123: Test message"
+            };
+            // Act
+            var result = commit.ToHtml(_config);
+            // Assert
+            result.Should().Contain("<a href=");
+        }
+
+    
+        public void ToHtml_WithJiraLink_HasJiraLink2()
+        {
+            // Arrange
+            var commit = new Commit
+            {
+                CommitMessage = "RSPN2023-385: Não precisamos da chave mais"
+            };
+            // Act
+            var result = commit.ToHtml(_config);
+            // Assert
+            result.Should().Contain("<a href=");
+        }
     }
 }

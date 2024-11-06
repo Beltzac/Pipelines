@@ -114,11 +114,11 @@
           "Flurl": "4.0.0"
         }
       },
-      "FuzzyString": {
+      "FuzzySharp": {
         "type": "Direct",
-        "requested": "[1.0.0, )",
-        "resolved": "1.0.0",
-        "contentHash": "TdCDH1s8A2jCrZJiZKZ+vHp0JIfrH1/9b4DUYF5/UQH681fQFK2oUakRSGnm1xD07fFzIJ+TDMtsPszd3YHKbQ=="
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "sBKqWxw3g//peYxDZ8JipRlyPbIyBtgzqBVA5GqwHVeqtIrw75maGXAllztf+1aJhchD+drcQIgf2mFho8ZV8A=="
       },
       "H.NotifyIcon": {
         "type": "Direct",
@@ -308,6 +308,18 @@
         "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
+        }
+      },
+      "Vanara.PInvoke.User32": {
+        "type": "Direct",
+        "requested": "[4.0.4, )",
+        "resolved": "4.0.4",
+        "contentHash": "d9Wuop6LuE2mIkUpVDSMdXsbJqSFgMXMrBgYMOy29mQZzRMcbqp7bczeC9oxziAZsmQoO2nZ8FCf/SjZOKiGiw==",
+        "dependencies": {
+          "Vanara.Core": "4.0.4",
+          "Vanara.PInvoke.Gdi32": "4.0.4",
+          "Vanara.PInvoke.Kernel32": "4.0.4",
+          "Vanara.PInvoke.Shared": "4.0.4"
         }
       },
       "Z.EntityFramework.Extensions.EFCore": {
@@ -2177,6 +2189,38 @@
           "System.Xml.ReaderWriter": "4.3.0",
           "System.Xml.XPath": "4.3.0",
           "System.Xml.XmlDocument": "4.3.0"
+        }
+      },
+      "Vanara.Core": {
+        "type": "Transitive",
+        "resolved": "4.0.4",
+        "contentHash": "nw80UaQg9vaDc4DUu2RSLtJvcQMzz3Ys5okYNYKt2QIzaZMn2oBdKxrx0s3RA6RwqZ4wEW6/1Wyp6pJAI2G5JQ=="
+      },
+      "Vanara.PInvoke.Gdi32": {
+        "type": "Transitive",
+        "resolved": "4.0.4",
+        "contentHash": "IzEAVwQ205cd/+2VwkWeG+oe7x792Oadc0mo2aqw4Lf0pYrd9v/C4KMetObaXVrY0v4wJoMY/P17vYvYFHZZ0Q==",
+        "dependencies": {
+          "Vanara.Core": "4.0.4",
+          "Vanara.PInvoke.Shared": "4.0.4"
+        }
+      },
+      "Vanara.PInvoke.Kernel32": {
+        "type": "Transitive",
+        "resolved": "4.0.4",
+        "contentHash": "VdyvgUaPuTL5GQEhnfzC3rOskbXVBipdMsBmTpiEa9tEj2Gk7QkNs8Kfki+9/x/BUwnIn4c0/XT+HTJ1x5yAnw==",
+        "dependencies": {
+          "Vanara.Core": "4.0.4",
+          "Vanara.PInvoke.Shared": "4.0.4"
+        }
+      },
+      "Vanara.PInvoke.Shared": {
+        "type": "Transitive",
+        "resolved": "4.0.4",
+        "contentHash": "b14beVrX7644+NwbXlHMwZnbeHfpmfE1RvJgC9Bqcmx7WfeFpEAg1u4Bv5aQTvIIqTFYa0x5zwy7kSEwM1ol5Q==",
+        "dependencies": {
+          "Microsoft.Win32.Registry": "5.0.0",
+          "Vanara.Core": "4.0.4"
         }
       }
     }
