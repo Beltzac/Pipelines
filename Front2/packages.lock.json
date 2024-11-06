@@ -158,9 +158,9 @@
       },
       "Quartz": {
         "type": "Direct",
-        "requested": "[3.13.0, )",
-        "resolved": "3.13.0",
-        "contentHash": "ddD1CPjWcDMbKdAhzuna3Ng23Sdv1YtuHbFMdAAFw0eBEj9jnadYkDWiKGo/c7BMnbI/ruuyd370sKVgdMCkDA==",
+        "requested": "[3.13.1, )",
+        "resolved": "3.13.1",
+        "contentHash": "0S4/gYb/FRQfek65OPAmszbdEmtc4Fq/jSeA5XFnvMIjYL9Zr8g9jWoKneEFzAFJGlESjFULtaUFzValHvqu4A==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "2.1.1"
         }
@@ -2764,7 +2764,7 @@
           "Microsoft.TeamFoundationServer.Client": "[19.246.0-preview, )",
           "Microsoft.VisualStudio.Services.Client": "[19.246.0-preview, )",
           "Oracle.ManagedDataAccess.Core": "[23.6.0, )",
-          "Quartz": "[3.13.0, )",
+          "Quartz": "[3.13.1, )",
           "Quartz.AspNetCore": "[3.13.0, )",
           "System.Linq.Async": "[6.0.1, )",
           "Vanara.PInvoke.User32": "[4.0.4, )",

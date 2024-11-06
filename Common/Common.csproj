@@ -38,7 +38,7 @@
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.246.0-preview" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.6.0" />
-    <PackageReference Include="Quartz" Version="3.13.0" />
+    <PackageReference Include="Quartz" Version="3.13.1" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.4" />
