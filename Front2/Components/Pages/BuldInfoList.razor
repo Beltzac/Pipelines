@@ -3,6 +3,7 @@
 @using Common
 @using Common.Services
 @using ElectronNET.API
+@using FuzzySharp
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
@@ -131,13 +132,20 @@ else
             .Throttle(TimeSpan.FromMilliseconds(500))
             .Subscribe(async x =>
             {
+                var janelas = WindowUtils.EnumerarJanelas().Distinct();
+
                 buildInfos = await BuildInfoService.GetBuildInfoAsync(x);
+
+                //Put the builds that there is a window open in first place
+                buildInfos = buildInfos
+                    .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
+                    .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
+                    .ToList();
+                
+
                 _logger.LogInformation(x);
                 await InvokeAsync(StateHasChanged);
             });
-
-        buildInfos = await BuildInfoService.GetBuildInfoAsync(filter);
-
 
         await SignalRClientService.StartAsync(async id =>
         {
@@ -145,9 +153,26 @@ else
         });
     }
 
+    public static double CountMatchingWindows(IEnumerable<string> titles, string project, string name)
+    {
+        if (!titles.Any())
+        {
+            return 0;
+        }
+
+        return titles.Max(x => Math.Max(Fuzz.PartialRatio(project, x, FuzzySharp.PreProcess.PreprocessMode.Full), Fuzz.PartialRatio(name, x, FuzzySharp.PreProcess.PreprocessMode.Full)));
+    }
+
+    public static int CountMatchingWords(IEnumerable<string> array1, IEnumerable<string> array2)
+    {
+        // Find matching words and count them
+        var matchingWords = array1.Intersect(array2);
+        return matchingWords.Count();
+    }
+
     private async Task ReloadById(Guid id, Action<Repository> action)
     {
-        if (buildInfos.Any(b => b.Id == id))
+        if (buildInfos != null && buildInfos.Any(b => b.Id == id))
         {
             var update = false;
 
@@ -185,6 +210,7 @@ else
         if (firstRender)
         {
             await filterInputElement.FocusAsync();
+            _searchEvents.OnNext(filter); // Primeiro load
         }
     }
 

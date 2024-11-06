@@ -56,6 +56,12 @@
           "System.Drawing.Common": "7.0.0"
         }
       },
+      "FuzzySharp": {
+        "type": "Direct",
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "sBKqWxw3g//peYxDZ8JipRlyPbIyBtgzqBVA5GqwHVeqtIrw75maGXAllztf+1aJhchD+drcQIgf2mFho8ZV8A=="
+      },
       "LibGit2Sharp": {
         "type": "Direct",
         "requested": "[0.30.0, )",
@@ -432,11 +438,6 @@
         "dependencies": {
           "Flurl": "4.0.0"
         }
-      },
-      "FuzzyString": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "TdCDH1s8A2jCrZJiZKZ+vHp0JIfrH1/9b4DUYF5/UQH681fQFK2oUakRSGnm1xD07fFzIJ+TDMtsPszd3YHKbQ=="
       },
       "H.GeneratedIcons.System.Drawing": {
         "type": "Transitive",
@@ -2750,7 +2751,7 @@
           "FlexLabs.EntityFrameworkCore.Upsert": "[8.0.0, )",
           "Flurl": "[4.0.0, )",
           "Flurl.Http": "[4.0.2, )",
-          "FuzzyString": "[1.0.0, )",
+          "FuzzySharp": "[2.0.2, )",
           "H.NotifyIcon": "[2.1.4, )",
           "LibGit2Sharp": "[0.30.0, )",
           "Markdig": "[0.38.0, )",
@@ -2766,6 +2767,7 @@
           "Quartz": "[3.13.0, )",
           "Quartz.AspNetCore": "[3.13.0, )",
           "System.Linq.Async": "[6.0.1, )",
+          "Vanara.PInvoke.User32": "[4.0.4, )",
           "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.2.24474.1-01, )"
         }
       }
