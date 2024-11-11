@@ -271,9 +271,9 @@
       },
       "Oracle.ManagedDataAccess.Core": {
         "type": "Direct",
-        "requested": "[23.6.0, )",
-        "resolved": "23.6.0",
-        "contentHash": "dh9lSGv6DUU7e92HULZOFYdpRQuIPy6B4dlN5zT3eyhRU9lsVbu8CYdyB7yLAdPNx4Egpq75uP2Qcr98PhTbmg==",
+        "requested": "[23.6.1, )",
+        "resolved": "23.6.1",
+        "contentHash": "Oc8AX7xme05xrp4/aCxKBH4+bpWgMCFafXI7LbLO/7OBMJLZRXhMtejDgIb8aYvIVyV7vSdAy3LkCYcJorxn1A==",
         "dependencies": {
           "System.Diagnostics.PerformanceCounter": "8.0.0",
           "System.DirectoryServices.Protocols": "8.0.0",
