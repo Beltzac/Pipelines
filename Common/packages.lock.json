@@ -324,9 +324,9 @@
       },
       "Z.EntityFramework.Extensions.EFCore": {
         "type": "Direct",
-        "requested": "[9.0.0-rc.2.24474.1-01, )",
-        "resolved": "9.0.0-rc.2.24474.1-01",
-        "contentHash": "rQkTQJTZ0GsmN36TEk4ScsB4r5so6ytvRgMiokr/ZjE8FRy7+mJX0cpLYYYBqBr7vB/EN8f2CwDL5Ht6GAgoWw==",
+        "requested": "[9.0.0-rc.2.24474.1-02, )",
+        "resolved": "9.0.0-rc.2.24474.1-02",
+        "contentHash": "sQ+aLV4KXxqnnnFrzjiPe8l4280S/h6bI3BUWq96u7CV4TDYSJgrTsocR28rxUt0S6ABWftVyXQ0xumkQAaXPw==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "9.0.0-rc.2.24474.1",
           "System.Configuration.ConfigurationManager": "9.0.0-rc.2.24473.5"
