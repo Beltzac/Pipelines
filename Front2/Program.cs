@@ -1,9 +1,10 @@
-﻿using BlazorApplicationInsights;
+﻿﻿﻿﻿using BlazorApplicationInsights;
 using Common.Repositories;
 using Common.Services;
 using Common.Utils;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
+using Front2.Services;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
@@ -93,6 +94,8 @@ builder.Services.AddApplicationInsightsTelemetryWorkerService(opt =>
     opt.ConnectionString = "InstrumentationKey=dc41b1b0-0640-43b1-b968-6e33c1d4463c;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=7a9dc142-a6d0-4ad7-b6c3-e6af1e56d4ad";
     opt.ApplicationVersion = AutoUpdateService.GetCurrentVersion().ToString();
 });
+
+builder.Services.AddScoped<ConsulPageStateService>();
 
 var app = builder.Build();
 
