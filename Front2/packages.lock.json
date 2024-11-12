@@ -1374,8 +1374,8 @@
       },
       "Oracle.ManagedDataAccess.Core": {
         "type": "Transitive",
-        "resolved": "23.6.0",
-        "contentHash": "dh9lSGv6DUU7e92HULZOFYdpRQuIPy6B4dlN5zT3eyhRU9lsVbu8CYdyB7yLAdPNx4Egpq75uP2Qcr98PhTbmg==",
+        "resolved": "23.6.1",
+        "contentHash": "Oc8AX7xme05xrp4/aCxKBH4+bpWgMCFafXI7LbLO/7OBMJLZRXhMtejDgIb8aYvIVyV7vSdAy3LkCYcJorxn1A==",
         "dependencies": {
           "System.Diagnostics.PerformanceCounter": "8.0.0",
           "System.DirectoryServices.Protocols": "8.0.0",
@@ -2729,8 +2729,8 @@
       },
       "Z.EntityFramework.Extensions.EFCore": {
         "type": "Transitive",
-        "resolved": "9.0.0-rc.2.24474.1-01",
-        "contentHash": "rQkTQJTZ0GsmN36TEk4ScsB4r5so6ytvRgMiokr/ZjE8FRy7+mJX0cpLYYYBqBr7vB/EN8f2CwDL5Ht6GAgoWw==",
+        "resolved": "9.0.0-rc.2.24474.1-02",
+        "contentHash": "sQ+aLV4KXxqnnnFrzjiPe8l4280S/h6bI3BUWq96u7CV4TDYSJgrTsocR28rxUt0S6ABWftVyXQ0xumkQAaXPw==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "9.0.0-rc.2.24474.1",
           "System.Configuration.ConfigurationManager": "9.0.0-rc.2.24473.5"
@@ -2763,12 +2763,12 @@
           "Microsoft.EntityFrameworkCore.Sqlite": "[9.0.0-rc.2.24474.1, )",
           "Microsoft.TeamFoundationServer.Client": "[19.246.0-preview, )",
           "Microsoft.VisualStudio.Services.Client": "[19.246.0-preview, )",
-          "Oracle.ManagedDataAccess.Core": "[23.6.0, )",
+          "Oracle.ManagedDataAccess.Core": "[23.6.1, )",
           "Quartz": "[3.13.1, )",
           "Quartz.AspNetCore": "[3.13.0, )",
           "System.Linq.Async": "[6.0.1, )",
           "Vanara.PInvoke.User32": "[4.0.4, )",
-          "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.2.24474.1-01, )"
+          "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.2.24474.1-02, )"
         }
       }
     }
