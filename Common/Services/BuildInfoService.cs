@@ -131,12 +131,15 @@ namespace Common.Services
 
             if (!string.IsNullOrEmpty(filter))
             {
-                var trimmedFilter = filter.Trim();
+                var parts = filter.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                query = query.Where(x =>
-                    EF.Functions.Like(x.Project, $"%{trimmedFilter}%") ||
-                    EF.Functions.Like(x.Name, $"%{trimmedFilter}%") ||
-                    EF.Functions.Like(x.Pipeline.Last.Commit.AuthorName, $"%{trimmedFilter}%"));
+                foreach (var part in parts)
+                {
+                    query = query.Where(x =>
+                        EF.Functions.Like(x.Project, $"%{part}%") ||
+                        EF.Functions.Like(x.Name, $"%{part}%") ||
+                        EF.Functions.Like(x.Pipeline.Last.Commit.AuthorName, $"%{part}%"));
+                }
             }
 
             var results = query.ToList();
