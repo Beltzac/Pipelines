@@ -4,6 +4,7 @@
 @using Common
 @using Common.Services
 @using Common.Utils
+@using Front2.Services
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
@@ -17,13 +18,15 @@
 @inject IConsulService ConsulService
 @inject IConfigurationService ConfigService
 @inject ICommitDataExportService CommitDataExportService
+@inject ConsulPageStateService ConsulPageStateService
+@implements IDisposable
 
 <h3>Consul Key Management</h3>
 
 <div class="options floating-controls">
     <div class="form-group">
         <label for="consulEnvSelect">Select Consul Environment</label>
-        <select id="consulEnvSelect" class="form-control" @bind="selectedConsulEnv">
+        <select id="consulEnvSelect" class="form-control" @bind="ConsulPageStateService.SelectedConsulEnv">
             @foreach (var env in config.ConsulEnvironments)
             {
                 <option value="@env.Name">@env.Name</option>
@@ -31,17 +34,15 @@
         </select>
     </div>
 
-
-
     <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="isRecursive" />
+        <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="ConsulPageStateService.IsRecursive" />
         <label class="form-check-label" for="recursiveToggle">
             Enable Recursive Values
         </label>
     </div>
 
     <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="showInvalidOnly" />
+        <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="ConsulPageStateService.ShowInvalidOnly" />
         <label class="form-check-label" for="showInvalidOnlyToggle">
             Show Only Invalid Values
         </label>
@@ -54,11 +55,9 @@
     </div>
 
     <div class="search-container mb-3">
-        <input type="text" class="form-control" placeholder="Search keys/values" @oninput="UpdateSearchTerm" />
+        <input type="text" class="form-control" placeholder="Search keys/values" @bind="ConsulPageStateService.SearchTerm" />
     </div>
 </div>
-
-
 
 <ul class="key-list">
     @foreach (var kvp in filteredConsulKeyValues)
@@ -71,10 +70,10 @@
                     Open in Consul
                 </button>
             </div>
-            @if (visibleKeys.Contains(kvp.Key))
+            @if (ConsulPageStateService.VisibleKeys.Contains(kvp.Key))
             {
                 <div class="key-value-container">
-                    @if (isRecursive)
+                    @if (ConsulPageStateService.IsRecursive)
                     {
                         <textarea @bind="kvp.Value.ValueRecursive" class="form-control" readonly></textarea>
                     }
@@ -97,23 +96,23 @@
         top: 0;
         background-color: #fff;
         z-index: 1000;
-        padding: 1rem 2rem; /* Increase horizontal padding for better spacing */
+        padding: 1rem 2rem;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 1.5rem; /* Adds consistent spacing between elements */
+        gap: 1.5rem;
     }
 
     .form-group {
-        flex: 1 1 200px; /* Adjust size based on available space */
+        flex: 1 1 200px;
         min-width: 150px;
     }
 
     .form-check {
         display: flex;
         align-items: center;
-        gap: 0.5rem; /* Spacing between checkbox and label */
+        gap: 0.5rem;
     }
 
     .buttons {
@@ -183,68 +182,58 @@
 </style>
 
 @code {
-
     private ConfigModel config;
-    private string selectedConsulEnv;
-    private Dictionary<string, ConsulKeyValue> consulKeyValues = new Dictionary<string, ConsulKeyValue>();
-    private List<string> visibleKeys = new List<string>();
-    private string searchTerm = string.Empty;
-
-    private bool isRecursive = false;
-    private bool showInvalidOnly = false;
-
-    private void UpdateSearchTerm(ChangeEventArgs e)
-    {
-        searchTerm = e.Value.ToString();
-    }
 
     private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
-        consulKeyValues.Where(kvp => 
+        ConsulPageStateService.ConsulKeyValues.Where(kvp =>
             (
-                kvp.Key.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || 
-                (!isRecursive && kvp.Value.Value.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                (isRecursive && kvp.Value.ValueRecursive.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                kvp.Key.Contains(ConsulPageStateService.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (!ConsulPageStateService.IsRecursive && kvp.Value.Value.Contains(ConsulPageStateService.SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                (ConsulPageStateService.IsRecursive && kvp.Value.ValueRecursive.Contains(ConsulPageStateService.SearchTerm, StringComparison.OrdinalIgnoreCase))
             )
-            && (!showInvalidOnly || !kvp.Value.IsValidJson));
+            && (!ConsulPageStateService.ShowInvalidOnly || !kvp.Value.IsValidJson));
 
     protected override void OnInitialized()
     {
+        ConsulPageStateService.OnChange += StateHasChanged;
+
         config = ConfigService.GetConfig();
 
         if (config.ConsulEnvironments.Any())
         {
-            selectedConsulEnv = config.ConsulEnvironments.First().Name;
+            ConsulPageStateService.SelectedConsulEnv = config.ConsulEnvironments.First().Name;
         }
     }
 
     private async ValueTask LoadConsul()
     {
-        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulPageStateService.SelectedConsulEnv);
         if (consulEnv == null)
         {
             toastService.ShowError("Please select a Consul environment.");
             return;
         }
 
-        consulKeyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+        var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+        ConsulPageStateService.SetConsulKeyValues(keyValues);
         toastService.ShowSuccess("Consul key-values downloaded successfully!");
     }
 
     private void ToggleKeyVisibility(string key)
     {
-        if (visibleKeys.Contains(key))
+        if (ConsulPageStateService.VisibleKeys.Contains(key))
         {
-            visibleKeys.Remove(key);
+            ConsulPageStateService.RemoveVisibleKey(key);
         }
         else
         {
-            visibleKeys.Add(key);
+            ConsulPageStateService.AddVisibleKey(key);
         }
     }
 
     private async Task SaveConsulToFolder()
     {
-        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulPageStateService.SelectedConsulEnv);
         if (consulEnv == null)
         {
             toastService.ShowError("Please select a Consul environment.");
@@ -257,7 +246,7 @@
 
     private async Task SaveKeyValueToConsul(string key, string value)
     {
-        if (selectedConsulEnv == null)
+        if (ConsulPageStateService.SelectedConsulEnv == null)
         {
             toastService.ShowError("Please select a Consul environment.");
             return;
@@ -265,7 +254,7 @@
 
         try
         {
-            var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+            var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulPageStateService.SelectedConsulEnv);
             if (consulEnv == null)
             {
                 toastService.ShowError("Please select a valid Consul environment.");
@@ -288,7 +277,7 @@
 
     private async Task OpenFolderInVsCode()
     {
-        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == selectedConsulEnv);
+        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulPageStateService.SelectedConsulEnv);
         if (consulEnv == null)
         {
             toastService.ShowError("Please select a Consul environment.");
@@ -296,5 +285,10 @@
         }
 
         await ConsulService.OpenInVsCode(consulEnv);
+    }
+
+    public void Dispose()
+    {
+        ConsulPageStateService.OnChange -= StateHasChanged;
     }
 }
