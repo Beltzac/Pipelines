@@ -271,9 +271,9 @@
       },
       "Oracle.ManagedDataAccess.Core": {
         "type": "Direct",
-        "requested": "[23.6.0, )",
-        "resolved": "23.6.0",
-        "contentHash": "dh9lSGv6DUU7e92HULZOFYdpRQuIPy6B4dlN5zT3eyhRU9lsVbu8CYdyB7yLAdPNx4Egpq75uP2Qcr98PhTbmg==",
+        "requested": "[23.6.1, )",
+        "resolved": "23.6.1",
+        "contentHash": "Oc8AX7xme05xrp4/aCxKBH4+bpWgMCFafXI7LbLO/7OBMJLZRXhMtejDgIb8aYvIVyV7vSdAy3LkCYcJorxn1A==",
         "dependencies": {
           "System.Diagnostics.PerformanceCounter": "8.0.0",
           "System.DirectoryServices.Protocols": "8.0.0",
@@ -283,9 +283,9 @@
       },
       "Quartz": {
         "type": "Direct",
-        "requested": "[3.13.0, )",
-        "resolved": "3.13.0",
-        "contentHash": "ddD1CPjWcDMbKdAhzuna3Ng23Sdv1YtuHbFMdAAFw0eBEj9jnadYkDWiKGo/c7BMnbI/ruuyd370sKVgdMCkDA==",
+        "requested": "[3.13.1, )",
+        "resolved": "3.13.1",
+        "contentHash": "0S4/gYb/FRQfek65OPAmszbdEmtc4Fq/jSeA5XFnvMIjYL9Zr8g9jWoKneEFzAFJGlESjFULtaUFzValHvqu4A==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "2.1.1"
         }
@@ -324,9 +324,9 @@
       },
       "Z.EntityFramework.Extensions.EFCore": {
         "type": "Direct",
-        "requested": "[9.0.0-rc.2.24474.1-01, )",
-        "resolved": "9.0.0-rc.2.24474.1-01",
-        "contentHash": "rQkTQJTZ0GsmN36TEk4ScsB4r5so6ytvRgMiokr/ZjE8FRy7+mJX0cpLYYYBqBr7vB/EN8f2CwDL5Ht6GAgoWw==",
+        "requested": "[9.0.0-rc.2.24474.1-02, )",
+        "resolved": "9.0.0-rc.2.24474.1-02",
+        "contentHash": "sQ+aLV4KXxqnnnFrzjiPe8l4280S/h6bI3BUWq96u7CV4TDYSJgrTsocR28rxUt0S6ABWftVyXQ0xumkQAaXPw==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "9.0.0-rc.2.24474.1",
           "System.Configuration.ConfigurationManager": "9.0.0-rc.2.24473.5"
