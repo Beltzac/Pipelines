@@ -136,17 +136,15 @@ else
             {
                 var janelas = WindowUtils.EnumerarJanelas().Distinct();
 
-                BuildInfoStateService.BuildInfos = await BuildInfoService.GetBuildInfoAsync(x);
+                var infos = await BuildInfoService.GetBuildInfoAsync(x);
 
                 //Put the builds that there is a window open in first place
-                BuildInfoStateService.BuildInfos = BuildInfoStateService.BuildInfos
+                infos = infos
                     .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
                     .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
                     .ToList();
 
-
-                _logger.LogInformation(x);
-                await InvokeAsync(StateHasChanged);
+                BuildInfoStateService.BuildInfos = infos;
             });
 
         await SignalRClientService.StartAsync(async id =>
@@ -169,34 +167,26 @@ else
     {
         if (BuildInfoStateService.BuildInfos != null && BuildInfoStateService.BuildInfos.Any(b => b.Id == id))
         {
-            var update = false;
+            var infos = BuildInfoStateService.BuildInfos;
 
             // Remove the existing build info with the specified id
-            var count = BuildInfoStateService.BuildInfos.RemoveAll(b => b.Id == id);
-            if (count > 0)
-            {
-                update = true;
-            };
+            infos.RemoveAll(b => b.Id == id);
 
             var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
             if (newBuildInfo != null)
             {
-                BuildInfoStateService.BuildInfos.Add(newBuildInfo);
+                var janelas = WindowUtils.EnumerarJanelas().Distinct();
+
+                infos.Add(newBuildInfo);
+
+                infos = infos.OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
+                    .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
+                    .ToList();
+
                 action(newBuildInfo);
-
-                // Compile the expression into a Func
-                var keySelector = BuildInfoService.GetLatestBuildDetailsExpression().Compile();
-
-                // Sort the list in place
-                BuildInfoStateService.BuildInfos.Sort((x, y) => keySelector(y).CompareTo(keySelector(x)));
-
-                update = true;
             }
 
-            if (update)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
+            BuildInfoStateService.BuildInfos = infos;
         }
     }
 
