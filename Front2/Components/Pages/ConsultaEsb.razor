@@ -6,7 +6,8 @@
 @inject IRequisicaoExecucaoService RequisicaoService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
-@implements IAsyncDisposable
+@inject ConsultaEsbStateService ConsultaEsbStateService
+@implements IDisposable
 
 <h3>Requisição Execução Query</h3>
 
@@ -16,112 +17,109 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-    <div class="col-md-3">
-        <label class="form-label">Environment</label>
-        <select class="form-select" @bind="selectedEnvironment">
-            @foreach (var env in config.OracleEnvironments)
-            {
-                <option value="@env.Name">@env.Name</option>
-            }
-        </select>
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">Environment</label>
+                <select class="form-select" @bind="ConsultaEsbStateService.SelectedEnvironment">
+                    @foreach (var env in config.OracleEnvironments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">Start Date</label>
-        <input type="datetime-local" class="form-control" @bind="startDate">
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">Start Date</label>
+                <input type="datetime-local" class="form-control" @bind="ConsultaEsbStateService.StartDate">
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">End Date</label>
-        <input type="datetime-local" class="form-control" @bind="endDate">
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">End Date</label>
+                <input type="datetime-local" class="form-control" @bind="ConsultaEsbStateService.EndDate">
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">URL/Nome Fluxo Filter</label>
-        <input type="text" class="form-control" @bind="urlFilter" placeholder="Search URL or Nome Fluxo">
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">URL/Nome Fluxo Filter</label>
+                <input type="text" class="form-control" @bind="ConsultaEsbStateService.UrlFilter" placeholder="Search URL or Nome Fluxo">
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">HTTP Method</label>
-        <select class="form-select" @bind="httpMethod">
-            <option value="">All</option>
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="DELETE">DELETE</option>
-        </select>
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">HTTP Method</label>
+                <select class="form-select" @bind="ConsultaEsbStateService.HttpMethod">
+                    <option value="">All</option>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">Container Numbers</label>
-        <input type="text" class="form-control" @bind="containerNumbers"
-               placeholder="Comma separated values">
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">Container Numbers</label>
+                <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values">
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">User</label>
-        <BlazoredTypeahead TItem="KeyValuePair<int, string>"
-                           TValue="KeyValuePair<int, string>?"
-                           ConvertMethod="x => x"
-                         
-            
-                          SearchMethod="async x => await SearchUsers(x)"
-                          @bind-Value="@user"
-                          EnableDropDown="true"
-                          placeholder="Search user..."
-                          class="form-control">
-            <SelectedTemplate Context="user">
+            <div class="col-md-3">
+                <label class="form-label">User</label>
+                <BlazoredTypeahead TItem="KeyValuePair<int, string>"
+                TValue="KeyValuePair<int, string>?"
+                ConvertMethod="x => x"
+                SearchMethod="async x => await SearchUsers(x)"
+                @bind-Value="@ConsultaEsbStateService.User"
+                EnableDropDown="true"
+                placeholder="Search user..."
+                class="form-control">
+                    <SelectedTemplate Context="user">
                         @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
-            </SelectedTemplate>
-            <ResultTemplate Context="kvp">
-                    @($"{kvp.Value} ({kvp.Key})")
-            </ResultTemplate>
-            <NotFoundTemplate>
-                No users found
-            </NotFoundTemplate>
-        </BlazoredTypeahead>
-    </div>
+                    </SelectedTemplate>
+                    <ResultTemplate Context="kvp">
+                        @($"{kvp.Value} ({kvp.Key})")
+                    </ResultTemplate>
+                    <NotFoundTemplate>
+                        No users found
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">Execução ID</label>
-        <input type="number" class="form-control" @bind="execucaoId">
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">Execução ID</label>
+                <input type="number" class="form-control" @bind="ConsultaEsbStateService.ExecucaoId">
+            </div>
 
+            <div class="col-md-3">
+                <label class="form-label">HTTP Status Range</label>
+                <select class="form-select" @bind="ConsultaEsbStateService.HttpStatusRange">
+                    <option value="">All</option>
+                    <option value="2xx">2xx (Success)</option>
+                    <option value="3xx">3xx (Redirection)</option>
+                    <option value="4xx">4xx (Client Error)</option>
+                    <option value="5xx">5xx (Server Error)</option>
+                </select>
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">HTTP Status Range</label>
-        <select class="form-select" @bind="httpStatusRange">
-            <option value="">All</option>
-            <option value="2xx">2xx (Success)</option>
-            <option value="3xx">3xx (Redirection)</option>
-            <option value="4xx">4xx (Client Error)</option>
-            <option value="5xx">5xx (Server Error)</option>
-        </select>
-    </div>
+            <div class="col-md-3">
+                <label class="form-label">Response Status</label>
+                <select class="form-select" @bind="ConsultaEsbStateService.ResponseStatus">
+                    <option value="">All</option>
+                    <option value="1">Success</option>
+                    <option value="2">Error</option>
+                </select>
+            </div>
 
-    <div class="col-md-3">
-        <label class="form-label">Response Status</label>
-        <select class="form-select" @bind="responseStatus">
-            <option value="">All</option>
-            <option value="1">Success</option>
-            <option value="2">Error</option>
-        </select>
-    </div>
-
-    <div class="col-12">
-        @if (isLoading)
-        {
-            <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
-        }
-        else
-        {
-            <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
-        }
+            <div class="col-12">
+                @if (ConsultaEsbStateService.IsLoading)
+                {
+                    <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+                }
+                else
+                {
+                    <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
+                }
+            </div>
         </div>
     </div>
 </div>
-</div>
-@if (isLoading)
+
+@if (ConsultaEsbStateService.IsLoading)
 {
     <div class="d-flex justify-content-center mt-4">
         <div class="spinner-border text-primary" role="status">
@@ -130,7 +128,7 @@
     </div>
 }
 
-@if (results != null)
+@if (ConsultaEsbStateService.Results != null)
 {
     <div class="mt-4">
         <table class="table table-striped">
@@ -149,7 +147,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in results)
+                @foreach (var item in ConsultaEsbStateService.Results)
                 {
                     <tr>
                         <td>@item.Source</td>
@@ -179,38 +177,38 @@
     </div>
 }
 
-@if (results != null && totalCount > 0)
+@if (ConsultaEsbStateService.Results != null && ConsultaEsbStateService.TotalCount > 0)
 {
     <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
             <nav aria-label="Page navigation">
                 <ul class="pagination">
-                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                        <button class="page-link" @onclick="async () => { if(currentPage > 1) { currentPage--; await ExecuteQuery(); }}">Previous</button>
+                    <li class="page-item @(ConsultaEsbStateService.CurrentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="async () => { if(ConsultaEsbStateService.CurrentPage > 1) { ConsultaEsbStateService.CurrentPage--; await ExecuteQuery(); }}">Previous</button>
                     </li>
                     @{
-                        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-                        for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        var totalPages = (int)Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize);
+                        for (int i = Math.Max(1, ConsultaEsbStateService.CurrentPage - 2); i <= Math.Min(totalPages, ConsultaEsbStateService.CurrentPage + 2); i++)
                         {
                             var pageNumber = i;
-                            <li class="page-item @(currentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => { currentPage = pageNumber; await ExecuteQuery(); }">@pageNumber</button>
+                            <li class="page-item @(ConsultaEsbStateService.CurrentPage == pageNumber ? "active" : "")">
+                                <button class="page-link" @onclick="async () => { ConsultaEsbStateService.CurrentPage = pageNumber; await ExecuteQuery(); }">@pageNumber</button>
                             </li>
                         }
                     }
-                    <li class="page-item @(currentPage == Math.Ceiling(totalCount / (double)pageSize) ? "disabled" : "")">
-                        <button class="page-link" @onclick="async () => { if(currentPage < Math.Ceiling(totalCount / (double)pageSize)) { currentPage++; await ExecuteQuery(); }}">Next</button>
+                    <li class="page-item @(ConsultaEsbStateService.CurrentPage == Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize) ? "disabled" : "")">
+                        <button class="page-link" @onclick="async () => { if(ConsultaEsbStateService.CurrentPage < Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize)) { ConsultaEsbStateService.CurrentPage++; await ExecuteQuery(); }}">Next</button>
                     </li>
                 </ul>
             </nav>
         </div>
         <div>
-            Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount entries
+            Showing @((ConsultaEsbStateService.CurrentPage - 1) * ConsultaEsbStateService.PageSize + 1) to @Math.Min(ConsultaEsbStateService.CurrentPage * ConsultaEsbStateService.PageSize, ConsultaEsbStateService.TotalCount) of @ConsultaEsbStateService.TotalCount entries
         </div>
     </div>
 }
 
-@if (selectedItem != null)
+@if (ConsultaEsbStateService.SelectedItem != null)
 {
     <div class="modal fade show" style="display: block" tabindex="-1" @onclick="CloseModal">
         <div class="modal-dialog modal-xl">
@@ -227,19 +225,19 @@
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">Request</h6>
                                         <div>
-                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(formattedRequest)">
+                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.FormattedRequest)">
                                                 <i class="bi bi-clipboard"></i> Copy
                                             </button>
-                                            @if (DataFormatUtils.IsJson(formattedRequest) || DataFormatUtils.IsXml(formattedRequest))
+                                            @if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest) || DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedRequest))
                                             {
                                                 <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
-                                                    @(DataFormatUtils.IsJson(formattedRequest) ? "To XML" : "To JSON")
+                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest) ? "To XML" : "To JSON")
                                                 </button>
                                             }
                                         </div>
                                     </div>
                                     <div class="card-body p-0">
-                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedRequest</pre>
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@ConsultaEsbStateService.FormattedRequest</pre>
                                     </div>
                                 </div>
                             </div>
@@ -248,24 +246,24 @@
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">Response</h6>
                                         <div>
-                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(formattedResponse)">
+                                            <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.FormattedResponse)">
                                                 <i class="bi bi-clipboard"></i> Copy
                                             </button>
-                                            @if (DataFormatUtils.IsJson(formattedResponse) || DataFormatUtils.IsXml(formattedResponse))
+                                            @if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse) || DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedResponse))
                                             {
                                                 <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
-                                                    @(DataFormatUtils.IsJson(formattedResponse) ? "To XML" : "To JSON")
+                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse) ? "To XML" : "To JSON")
                                                 </button>
                                             }
                                         </div>
                                     </div>
                                     <div class="card-body p-0">
-                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedResponse</pre>
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@ConsultaEsbStateService.FormattedResponse</pre>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        @if (!string.IsNullOrEmpty(selectedItem.Erro))
+                        @if (!string.IsNullOrEmpty(ConsultaEsbStateService.SelectedItem.Erro))
                         {
                             <div class="row">
                                 <div class="col-12">
@@ -273,19 +271,19 @@
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <h6 class="mb-0">Error</h6>
                                             <div>
-                                                <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(selectedItem.Erro)">
+                                                <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.SelectedItem.Erro)">
                                                     <i class="bi bi-clipboard"></i> Copy
                                                 </button>
-                                                @if (DataFormatUtils.IsJson(selectedItem.Erro) || DataFormatUtils.IsXml(selectedItem.Erro))
+                                                @if (DataFormatUtils.IsJson(ConsultaEsbStateService.SelectedItem.Erro) || DataFormatUtils.IsXml(ConsultaEsbStateService.SelectedItem.Erro))
                                                 {
                                                     <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertError()">
-                                                        @(DataFormatUtils.IsJson(selectedItem.Erro) ? "To XML" : "To JSON")
+                                                        @(DataFormatUtils.IsJson(ConsultaEsbStateService.SelectedItem.Erro) ? "To XML" : "To JSON")
                                                     </button>
                                                 }
                                             </div>
                                         </div>
                                         <div class="card-body p-0">
-                                            <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedError</pre>
+                                            <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@ConsultaEsbStateService.FormattedError</pre>
                                         </div>
                                     </div>
                                 </div>
@@ -300,46 +298,38 @@
 }
 
 @code {
-    private string selectedEnvironment;
-    private DateTime? startDate;
-    private DateTime? endDate;
-    private string urlFilter;
-    private string httpMethod;
-    private string containerNumbers;
-    private string nomeFluxo;
-    private KeyValuePair<int, string>? user;
-    private int? execucaoId;
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private int totalCount = 0;
-    private string? httpStatusRange;
-    private string? responseStatus;
-
-    private List<RequisicaoExecucao> results;
-    private RequisicaoExecucao selectedItem;
-    private Dictionary<int, string> userLogins = new();
 
     private ConfigModel config;
 
+    protected override void OnInitialized()
+    {
+        ConsultaEsbStateService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ConsultaEsbStateService.OnChange -= StateHasChanged;
+    }
+
     private async Task<List<KeyValuePair<int, string>>> SearchUsers(string searchText)
     {
-        if (string.IsNullOrEmpty(selectedEnvironment))
+        if (string.IsNullOrEmpty(ConsultaEsbStateService.SelectedEnvironment))
         {
             return new List<KeyValuePair<int, string>>();
         }
 
-        userLogins = await RequisicaoService.GetUsersAsync(selectedEnvironment, searchText);
+        var userLogins = await RequisicaoService.GetUsersAsync(ConsultaEsbStateService.SelectedEnvironment, searchText);
         return userLogins.Select(kvp => new KeyValuePair<int, string>(kvp.Key, kvp.Value)).ToList();
     }
 
     protected override async Task OnInitializedAsync()
     {
         config = ConfigService.GetConfig();
-        selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-        
+        ConsultaEsbStateService.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
+
         // Set default date range to last 24 hours
-        endDate = DateTime.Now;
-        startDate = endDate?.AddHours(-24);
+        ConsultaEsbStateService.EndDate = DateTime.Now;
+        ConsultaEsbStateService.StartDate = ConsultaEsbStateService.EndDate?.AddHours(-24);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -377,17 +367,16 @@
 
     private async Task ClearFilters()
     {
-        urlFilter = null;
-        httpMethod = null;
-        containerNumbers = null;
-        nomeFluxo = null;
-        user = null;
-        execucaoId = null;
-        httpStatusRange = null;
-        responseStatus = null;
-        startDate = DateTime.Now.AddHours(-24);
-        endDate = DateTime.Now;
-        currentPage = 1;
+        ConsultaEsbStateService.UrlFilter = null;
+        ConsultaEsbStateService.HttpMethod = null;
+        ConsultaEsbStateService.ContainerNumbers = null;
+        ConsultaEsbStateService.User = null;
+        ConsultaEsbStateService.ExecucaoId = null;
+        ConsultaEsbStateService.HttpStatusRange = null;
+        ConsultaEsbStateService.ResponseStatus = null;
+        ConsultaEsbStateService.StartDate = DateTime.Now.AddHours(-24);
+        ConsultaEsbStateService.EndDate = DateTime.Now;
+        ConsultaEsbStateService.CurrentPage = 1;
         await ExecuteQuery();
     }
 
@@ -401,69 +390,61 @@
                "bg-secondary";
     }
 
-    private bool isLoading = false;
     private CancellationTokenSource? cts;
 
     private async Task ExecuteQuery()
     {
-        try 
+        try
         {
             cts?.Cancel();
             cts = new CancellationTokenSource();
-            isLoading = true;
+            ConsultaEsbStateService.IsLoading = true;
 
             StateHasChanged();
 
-            var containerNumbersArray = !string.IsNullOrEmpty(containerNumbers)
-                ? containerNumbers.Split(',').Select(x => x.Trim()).ToArray()
+            var containerNumbersArray = !string.IsNullOrEmpty(ConsultaEsbStateService.ContainerNumbers)
+                ? ConsultaEsbStateService.ContainerNumbers.Split(',').Select(x => x.Trim()).ToArray()
                 : null;
 
-            // Get all unique user IDs from the current results
-            var uniqueUserIds = results?.Select(r => r.IdUsuarioInclusao).Distinct().ToList() ?? new List<int>();
-            userLogins = await RequisicaoService.GetUsersAsync(selectedEnvironment);
-
             var (queryResults, total) = await RequisicaoService.ExecuteQueryAsync(
-            selectedEnvironment,
-            startDate,
-            endDate,
-            urlFilter,
-            httpMethod,
+            ConsultaEsbStateService.SelectedEnvironment,
+            ConsultaEsbStateService.StartDate,
+            ConsultaEsbStateService.EndDate,
+            ConsultaEsbStateService.UrlFilter,
+            ConsultaEsbStateService.HttpMethod,
             containerNumbersArray,
-            user?.Key,
-            execucaoId,
-            pageSize,
-            currentPage,
-            httpStatusRange,
-            responseStatus,
+            ConsultaEsbStateService.User?.Key,
+            ConsultaEsbStateService.ExecucaoId,
+            ConsultaEsbStateService.PageSize,
+            ConsultaEsbStateService.CurrentPage,
+            ConsultaEsbStateService.HttpStatusRange,
+            ConsultaEsbStateService.ResponseStatus,
             cts.Token);
-            results = queryResults;
-            totalCount = total;
+            ConsultaEsbStateService.Results = queryResults;
+            ConsultaEsbStateService.TotalCount = total;
         }
         finally
         {
-            isLoading = false;
+            ConsultaEsbStateService.IsLoading = false;
         }
     }
 
-    private string formattedRequest = "";
-    private string formattedResponse = "";
-    private string formattedError = "";
     private void ShowDetails(RequisicaoExecucao item)
     {
-        selectedItem = item;
-        formattedRequest = DataFormatUtils.IsJson(item.Requisicao) 
+        ConsultaEsbStateService.SelectedItem = item;
+        ConsultaEsbStateService.FormattedRequest = DataFormatUtils.IsJson(item.Requisicao)
             ? DataFormatUtils.FormatJson(item.Requisicao)
             : DataFormatUtils.IsXml(item.Requisicao)
                 ? DataFormatUtils.FormatXml(item.Requisicao)
                 : item.Requisicao;
-                
-        formattedResponse = DataFormatUtils.IsJson(item.Resposta)
+
+        ConsultaEsbStateService.FormattedResponse = DataFormatUtils.IsJson(item.Resposta)
             ? DataFormatUtils.FormatJson(item.Resposta)
             : DataFormatUtils.IsXml(item.Resposta)
                 ? DataFormatUtils.FormatXml(item.Resposta)
                 : item.Resposta;
 
-        formattedError = DataFormatUtils.IsJson(item.Erro)
+        ConsultaEsbStateService.FormattedError = DataFormatUtils.IsJson(item.Erro)
             ? DataFormatUtils.FormatJson(item.Erro)
             : DataFormatUtils.IsXml(item.Erro)
                 ? DataFormatUtils.FormatXml(item.Erro)
@@ -473,55 +454,55 @@
 
     private void ConvertRequest()
     {
-        if (selectedItem?.Requisicao == null) return;
-        if (DataFormatUtils.IsJson(formattedRequest))
+        if (ConsultaEsbStateService.SelectedItem?.Requisicao == null) return;
+        if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest))
         {
-            formattedRequest = DataFormatUtils.JsonToXml(formattedRequest);
+            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedRequest);
         }
-        else if (DataFormatUtils.IsXml(formattedRequest))
+        else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedRequest))
         {
-            formattedRequest = DataFormatUtils.XmlToJson(formattedRequest);
+            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedRequest);
         }
         StateHasChanged();
     }
 
     private void ConvertResponse()
     {
-        if (selectedItem?.Resposta == null) return;
-        if (DataFormatUtils.IsJson(formattedResponse))
+        if (ConsultaEsbStateService.SelectedItem?.Resposta == null) return;
+        if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse))
         {
-            formattedResponse = DataFormatUtils.JsonToXml(formattedResponse);
+            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedResponse);
         }
-        else if (DataFormatUtils.IsXml(formattedResponse))
+        else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedResponse))
         {
-            formattedResponse = DataFormatUtils.XmlToJson(formattedResponse);
+            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedResponse);
         }
         StateHasChanged();
     }
 
     private void ConvertError()
     {
-        if (selectedItem?.Erro == null) return;
-        if (DataFormatUtils.IsJson(formattedError))
+        if (ConsultaEsbStateService.SelectedItem?.Erro == null) return;
+        if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedError))
         {
-            formattedError = DataFormatUtils.JsonToXml(formattedError);
+            ConsultaEsbStateService.FormattedError = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedError);
         }
-        else if (DataFormatUtils.IsXml(formattedError))
+        else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedError))
         {
-            formattedError = DataFormatUtils.XmlToJson(formattedError);
+            ConsultaEsbStateService.FormattedError = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedError);
         }
         StateHasChanged();
     }
 
     private void CloseModal()
     {
-        selectedItem = null;
+        ConsultaEsbStateService.SelectedItem = null;
     }
 
     private void CancelSearch()
     {
         cts?.Cancel();
-        isLoading = false;
+        ConsultaEsbStateService.IsLoading = false;
     }
 
     private async Task CopyToClipboard(string text)
@@ -550,11 +531,11 @@
             }
         }
         catch
-        {
+    {
             // If there's any error parsing, return empty string
             return "";
         }
 
         return "";
     }
- }
+}

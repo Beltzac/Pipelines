@@ -19,6 +19,8 @@
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigService
 @inject ILogger<NavigationManager> _logger;
+@inject BuildInfoStateService BuildInfoStateService
+@implements IDisposable
 
 <h3>Build Information</h3>
 
@@ -73,7 +75,7 @@
 </ContextMenu>
 
 <div class="mb-3 d-flex align-items-center sticky-filter">
-    <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="filter" @oninput="OnFilterChange" />
+    <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
     <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
     <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
@@ -81,7 +83,7 @@
 </div>
 
 
-@if (buildInfos == null)
+@if (BuildInfoStateService.BuildInfos == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -97,7 +99,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var buildInfo in buildInfos.ToList())
+            @foreach (var buildInfo in BuildInfoStateService.BuildInfos.ToList())
             {
                 <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                     <td>
@@ -117,8 +119,6 @@ else
 }
 
 @code {
-    private List<Repository> buildInfos;
-    private string filter;
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
 
@@ -126,6 +126,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        BuildInfoStateService.OnChange += () => InvokeAsync(StateHasChanged);
+
         _searchEvents = new Subject<string>();
 
         _subscription = _searchEvents
@@ -134,14 +136,14 @@ else
             {
                 var janelas = WindowUtils.EnumerarJanelas().Distinct();
 
-                buildInfos = await BuildInfoService.GetBuildInfoAsync(x);
+                BuildInfoStateService.BuildInfos = await BuildInfoService.GetBuildInfoAsync(x);
 
                 //Put the builds that there is a window open in first place
-                buildInfos = buildInfos
+                BuildInfoStateService.BuildInfos = BuildInfoStateService.BuildInfos
                     .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
                     .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
                     .ToList();
-                
+
 
                 _logger.LogInformation(x);
                 await InvokeAsync(StateHasChanged);
@@ -163,21 +165,14 @@ else
         return titles.Max(x => Math.Max(Fuzz.PartialRatio(project, x, FuzzySharp.PreProcess.PreprocessMode.Full), Fuzz.PartialRatio(name, x, FuzzySharp.PreProcess.PreprocessMode.Full)));
     }
 
-    public static int CountMatchingWords(IEnumerable<string> array1, IEnumerable<string> array2)
-    {
-        // Find matching words and count them
-        var matchingWords = array1.Intersect(array2);
-        return matchingWords.Count();
-    }
-
     private async Task ReloadById(Guid id, Action<Repository> action)
     {
-        if (buildInfos != null && buildInfos.Any(b => b.Id == id))
+        if (BuildInfoStateService.BuildInfos != null && BuildInfoStateService.BuildInfos.Any(b => b.Id == id))
         {
             var update = false;
 
             // Remove the existing build info with the specified id
-            var count = buildInfos.RemoveAll(b => b.Id == id);
+            var count = BuildInfoStateService.BuildInfos.RemoveAll(b => b.Id == id);
             if (count > 0)
             {
                 update = true;
@@ -186,14 +181,14 @@ else
             var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
             if (newBuildInfo != null)
             {
-                buildInfos.Add(newBuildInfo);
+                BuildInfoStateService.BuildInfos.Add(newBuildInfo);
                 action(newBuildInfo);
 
                 // Compile the expression into a Func
                 var keySelector = BuildInfoService.GetLatestBuildDetailsExpression().Compile();
 
                 // Sort the list in place
-                buildInfos.Sort((x, y) => keySelector(y).CompareTo(keySelector(x)));
+                BuildInfoStateService.BuildInfos.Sort((x, y) => keySelector(y).CompareTo(keySelector(x)));
 
                 update = true;
             }
@@ -210,7 +205,7 @@ else
         if (firstRender)
         {
             await filterInputElement.FocusAsync();
-            _searchEvents.OnNext(filter); // Primeiro load
+            _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
         }
     }
 
@@ -223,8 +218,8 @@ else
 
     private async Task OnFilterChange(ChangeEventArgs e)
     {
-        filter = e.Value.ToString();
-        _searchEvents.OnNext(filter);
+        BuildInfoStateService.Filter = e.Value.ToString();
+        _searchEvents.OnNext(BuildInfoStateService.Filter);
     }
 
     //Global
@@ -255,8 +250,8 @@ else
 
     private async Task ClearFilter()
     {
-        filter = string.Empty;
-        await OnFilterChange(new ChangeEventArgs { Value = filter });
+        BuildInfoStateService.Filter = string.Empty;
+        await OnFilterChange(new ChangeEventArgs { Value = BuildInfoStateService.Filter });
         await filterInputElement.FocusAsync();
     }
 
@@ -317,8 +312,8 @@ else
         var repo = e.Data as Repository;
         var url = repo.Pipeline.Last.Url;
         await OpenFolderUtils.OpenUrlAsync(url);
-    }   
-    
+    }
+
     async Task OpenSonarClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
@@ -350,5 +345,10 @@ else
             _ when repo.Pipeline.Last.Result == "Failed" => StatusIndicator.Status.Error,
             _ => StatusIndicator.Status.Unknown,
         };
+    }
+
+    public void Dispose()
+    {
+        BuildInfoStateService.OnChange -= () => InvokeAsync(StateHasChanged);
     }
 }
