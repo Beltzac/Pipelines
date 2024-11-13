@@ -1,4 +1,4 @@
-﻿﻿﻿﻿using BlazorApplicationInsights;
+﻿using BlazorApplicationInsights;
 using Common.Repositories;
 using Common.Services;
 using Common.Utils;
@@ -11,8 +11,6 @@ using Quartz;
 using Serilog;
 using ShellLink;
 using System.Runtime.InteropServices;
-using System.Text;
-using Vanara.PInvoke;
 
 // electronize start
 // electronize build /target win
@@ -95,7 +93,7 @@ builder.Services.AddApplicationInsightsTelemetryWorkerService(opt =>
     opt.ApplicationVersion = AutoUpdateService.GetCurrentVersion().ToString();
 });
 
-builder.Services.AddScoped<ConsulPageStateService>();
+builder.Services.AddScoped<ConsulStateService>();
 
 var app = builder.Build();
 

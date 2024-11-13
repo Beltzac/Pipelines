@@ -2770,6 +2770,9 @@
           "Vanara.PInvoke.User32": "[4.0.4, )",
           "Z.EntityFramework.Extensions.EFCore": "[9.0.0-rc.2.24474.1-02, )"
         }
+      },
+      "generation": {
+        "type": "Project"
       }
     }
   }
