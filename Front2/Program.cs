@@ -11,6 +11,7 @@ using Quartz;
 using Serilog;
 using ShellLink;
 using System.Runtime.InteropServices;
+using Generation;
 
 // electronize start
 // electronize build /target win
@@ -93,7 +94,7 @@ builder.Services.AddApplicationInsightsTelemetryWorkerService(opt =>
     opt.ApplicationVersion = AutoUpdateService.GetCurrentVersion().ToString();
 });
 
-builder.Services.AddScoped<ConsulStateService>();
+builder.Services.AddStateServices();
 
 var app = builder.Build();
 
