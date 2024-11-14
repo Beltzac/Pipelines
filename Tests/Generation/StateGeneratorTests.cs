@@ -1,10 +1,8 @@
+using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
-using System.Reflection;
-using Xunit;
-using FluentAssertions;
 
 namespace Generation
 {
@@ -23,19 +21,19 @@ namespace TestNamespace
         public int Count { get; set; }
     }
 }";
-            
+
             // Act
             var outputs = GetGeneratedOutput(source);
 
             // Assert
             outputs.Should().HaveCount(2);
-            
+
             var serviceOutput = outputs.First(o => o.HintName == "TestStateService.g.cs");
             var serviceText = serviceOutput.SourceText.ToString();
             serviceText.Should().Contain("public partial class TestStateService")
                 .And.Contain("public string Name")
                 .And.Contain("public int Count");
-            
+
             var registrationOutput = outputs.First(o => o.HintName == "StateServiceRegistration.g.cs");
             registrationOutput.SourceText.ToString().Should().Contain("services.AddScoped<TestNamespace.TestStateService>();");
         }
@@ -59,7 +57,7 @@ namespace TestNamespace
             // Assert
             var serviceOutput = outputs.First(o => o.HintName == "ListStateService.g.cs");
             var sourceText = serviceOutput.SourceText.ToString();
-            
+
             sourceText.Should().Contain("public void AddItem(string item)")
                 .And.Contain("public void RemoveItem(string item)");
         }
@@ -83,7 +81,7 @@ namespace TestNamespace
             // Assert
             var serviceOutput = outputs.First(o => o.HintName == "DictionaryStateService.g.cs");
             var sourceText = serviceOutput.SourceText.ToString();
-            
+
             sourceText.Should().Contain("public void SetMappings(Dictionary<string, int> values)");
         }
 
@@ -115,7 +113,7 @@ namespace TestNamespace
                 MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(Dictionary<,>).Assembly.Location),
-                MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location),
+                MetadataReference.CreateFromFile(System.Reflection.Assembly.Load("netstandard").Location),
                 MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute).Assembly.Location)
             };
 
@@ -126,14 +124,14 @@ namespace TestNamespace
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             var generator = new StateGenerator();
-            
+
             GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
             driver = driver.RunGenerators(compilation);
-            
+
             return driver
                 .GetRunResult()
                 .GeneratedTrees
-                .Select(t => (t.FilePath, SourceText.From(t.GetText())))
+                .Select(t => (t.FilePath, t.GetText()))
                 .ToImmutableArray();
         }
     }
