@@ -1,7 +1,7 @@
 using Common.Utils;
 using FluentAssertions;
 
-namespace Common.Tests.Utils
+namespace Tests.Common.Utils
 {
     public class DataFormatUtilsTests
     {

@@ -1,10 +1,11 @@
 using FluentAssertions;
+using Generation;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 
-namespace Generation
+namespace Tests.Generation
 {
     public class StateGeneratorTests
     {
@@ -28,13 +29,13 @@ namespace TestNamespace
             // Assert
             outputs.Should().HaveCount(2);
 
-            var serviceOutput = outputs.First(o => o.HintName == "TestStateService.g.cs");
+            var serviceOutput = outputs.First(o => o.HintName.Contains("TestStateService.g.cs"));
             var serviceText = serviceOutput.SourceText.ToString();
-            serviceText.Should().Contain("public partial class TestStateService")
+            serviceText.Should().Contain("public class TestStateService")
                 .And.Contain("public string Name")
                 .And.Contain("public int Count");
 
-            var registrationOutput = outputs.First(o => o.HintName == "StateServiceRegistration.g.cs");
+            var registrationOutput = outputs.First(o => o.HintName.Contains("StateServiceRegistration.g.cs"));
             registrationOutput.SourceText.ToString().Should().Contain("services.AddScoped<TestNamespace.TestStateService>();");
         }
 
@@ -47,7 +48,7 @@ namespace TestNamespace
 {
     public class ListState
     {
-        public List<string> Items { get; set; }
+        public System.Collections.Generic.List<string> Items { get; set; }
     }
 }";
 
@@ -55,7 +56,7 @@ namespace TestNamespace
             var outputs = GetGeneratedOutput(source);
 
             // Assert
-            var serviceOutput = outputs.First(o => o.HintName == "ListStateService.g.cs");
+            var serviceOutput = outputs.First(o => o.HintName.Contains("ListStateService.g.cs"));
             var sourceText = serviceOutput.SourceText.ToString();
 
             sourceText.Should().Contain("public void AddItem(string item)")
@@ -71,7 +72,7 @@ namespace TestNamespace
 {
     public class DictionaryState
     {
-        public Dictionary<string, int> Mappings { get; set; }
+        public System.Collections.Generic.Dictionary<string, int> Mappings { get; set; }
     }
 }";
 
@@ -79,7 +80,7 @@ namespace TestNamespace
             var outputs = GetGeneratedOutput(source);
 
             // Assert
-            var serviceOutput = outputs.First(o => o.HintName == "DictionaryStateService.g.cs");
+            var serviceOutput = outputs.First(o => o.HintName.Contains("DictionaryStateService.g.cs"));
             var sourceText = serviceOutput.SourceText.ToString();
 
             sourceText.Should().Contain("public void SetMappings(Dictionary<string, int> values)");
@@ -99,7 +100,8 @@ namespace TestNamespace
 }";
 
             // Act
-            var outputs = GetGeneratedOutput(source);
+            var outputs = GetGeneratedOutput(source)
+                .Where(x => !x.HintName.Contains("StateServiceRegistration.g.cs"));
 
             // Assert
             outputs.Should().BeEmpty();

@@ -2,7 +2,7 @@ using Common.Models;
 using Common.Utils;
 using FluentAssertions;
 
-namespace Common.Tests.Utils
+namespace Tests.Common.Utils
 {
     public class StringExtensionsTests
     {

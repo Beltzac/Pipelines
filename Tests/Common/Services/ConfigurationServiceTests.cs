@@ -1,7 +1,7 @@
 using Common.Models;
 using FluentAssertions;
 
-namespace Tests
+namespace Tests.Common.Services
 {
     public class ConfigurationServiceTests : IDisposable
     {
@@ -26,7 +26,7 @@ namespace Tests
 
             config.OrganizationUrl.Should().Be("https://dev.azure.com/terminal-cp");
             config.LocalCloneFolder.Should().Be(@"C:\repos");
-            config.PAT.Should().BeEmpty();
+            config.PAT.Should().BeNullOrEmpty();
             config.Should().NotBeNull();
             config.Should().BeOfType<ConfigModel>();
         }

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Tests
+namespace Tests.Common.Services
 {
     public class BuildInfoServiceTests
     {

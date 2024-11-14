@@ -1,6 +1,6 @@
 using Common.Services;
 
-namespace Tests
+namespace Tests.Common.Services
 {
     public class SignalRClientServiceTests
     {
