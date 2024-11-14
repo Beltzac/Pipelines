@@ -10,6 +10,7 @@
     <PublishAot>False</PublishAot>
     <Platforms>AnyCPU;x64</Platforms>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\app.ico" />
