@@ -37,7 +37,14 @@ public class ConfigurationService : IConfigurationService
         }
         else
         {
-            _config = new ConfigModel();
+            _config = new ConfigModel
+            {
+                OrganizationUrl = "https://dev.azure.com/terminal-cp",
+                LocalCloneFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Source", "Repos"),
+                IgnoreRepositoriesRegex = new List<string>()
+            };
             await SaveConfigAsync();
         }
     }
