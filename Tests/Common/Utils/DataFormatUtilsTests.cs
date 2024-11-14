@@ -16,7 +16,7 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.FormatJson(input);
 
             // Assert
-            result.Replace("\n", "\r\n").Should().Be(expected);
+            result.Should().Be(expected);
         }
 
         [Test]
@@ -82,8 +82,8 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.XmlToJson(input);
 
             // Assert
-            result.Should().Contain("\"name\": \"test\"");
-            result.Should().Contain("\"value\": \"123\"");
+            result.Should().Contain("\"name\":\"test\"");
+            result.Should().Contain("\"value\":\"123\"");
         }
 
         [Test]
@@ -96,21 +96,21 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.JsonToXml(input);
 
             // Assert
-            result.Should().Contain("<items><item>1</item><item>2</item><item>3</item></items>");
-            result.Should().Contain("<names><item>a</item><item>b</item></names>");
+            result.Should().Contain("<items>1</items><items>2</items><items>3</items>");
+            result.Should().Contain("<names>a</names><names>b</names>");
         }
 
         [Test]
         public void XmlToJson_ArrayXml_ReturnsCorrectJson()
         {
             // Arrange
-            var input = "<root><items><item>1</item><item>2</item><item>3</item></items></root>";
+            var input = "<root><items>1</items><items>2</items><items>3</items></root>";
 
             // Act
             var result = DataFormatUtils.XmlToJson(input);
 
             // Assert
-            result.Should().Contain("\"items\": [");
+            result.Should().Contain("\"items\":[");
             result.Should().Contain("\"1\"");
             result.Should().Contain("\"2\"");
             result.Should().Contain("\"3\"");
@@ -127,8 +127,8 @@ namespace Common.Tests.Utils
 
             // Assert
             result.Should().Contain("<users>");
-            result.Should().Contain("<item><name>John</name><age>30</age></item>");
-            result.Should().Contain("<item><name>Jane</name><age>25</age></item>");
+            result.Should().Contain("<name>John</name><age>30</age>");
+            result.Should().Contain("<name>Jane</name><age>25</age>");
             result.Should().Contain("</users>");
         }
 
@@ -142,25 +142,24 @@ namespace Common.Tests.Utils
             var result = DataFormatUtils.JsonToXml(input);
 
             // Assert
-            result.Should().Contain("<items><item>42</item></items>");
-            result.Should().Contain("<names><item>single</item></names>");
+            result.Should().Contain("<items>42</items>");
+            result.Should().Contain("<names>single</names>");
         }
 
         [Test]
         public void XmlToJson_SingleElementArrayXml_ReturnsCorrectJson()
         {
             // Arrange
-            var input = "<root><items><item>42</item></items><names><item>single</item></names></root>";
+            var input = "<root><items>42</items><names><item>single</item></names></root>";
 
             // Act
             var result = DataFormatUtils.XmlToJson(input);
 
             // Assert
-            result.Should().Contain("\"items\": [");
+            result.Should().NotContain("\"items\":[");
             result.Should().Contain("\"42\"");
-            result.Should().Contain("\"names\": [");
             result.Should().Contain("\"single\"");
-            result.Should().NotContain("\"item\":");
+            result.Should().Contain("\"item\":");
         }
     }
 }

@@ -56,28 +56,18 @@ namespace Common.Utils
                 return $"<a href='{config.OrganizationUrl}/{commit.ProjectName}/_git/{commit.RepoName}/pullrequest/{prNumber}' target='_blank'>{match.Value}</a>";
             });
 
-            // Adjust Jira links
-            var pattern = @"((?<!([A-Z]{1,10})-?)[A-Z]+-\d+[:,-])";
+            // Create Jira links https://terminalcp.atlassian.net/ and open in new window
+            var pattern = @"([A-Z, \d]{1,10}-\d+\s?[:])";
             message = Regex.Replace(message, pattern, match =>
             {
-                return $"{match.Value.TrimEnd(':').TrimEnd('-')} -";
+                return $"<a href='https://terminalcp.atlassian.net/browse/{match.Value}' target='_blank'>{match.Value}</a>";
             });
 
             var pipeline = new MarkdownPipelineBuilder()
-              //.UseAdvancedExtensions()
               .UseAutoLinks()
               .UseMediaLinks()
               .UseFigures()
-              //.UsePipeTables()
-              //.UsePreciseSourceLocation()
-              //.UseAutoIdentifiers()
-              //.UseSmartyPants()
               .UseBootstrap()
-              //.UseSoftlineBreakAsHardlineBreak()
-              .UseJiraLinks(new Markdig.Extensions.JiraLinks.JiraLinkOptions("https://terminalcp.atlassian.net/")
-              {
-                  OpenInNewWindow = true,
-              })
               .Build();
 
             return Markdown.ToHtml(message, pipeline);
