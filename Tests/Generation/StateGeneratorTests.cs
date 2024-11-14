@@ -3,7 +3,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Reflection;
-using TUnit;
+using Xunit;
+using FluentAssertions;
 
 namespace Generation
 {
@@ -27,15 +28,16 @@ namespace TestNamespace
             var outputs = GetGeneratedOutput(source);
 
             // Assert
-            Assert.Equal(2, outputs.Length);
+            outputs.Should().HaveCount(2);
             
             var serviceOutput = outputs.First(o => o.HintName == "TestStateService.g.cs");
-            Assert.Contains("public partial class TestStateService", serviceOutput.SourceText.ToString());
-            Assert.Contains("public string Name", serviceOutput.SourceText.ToString());
-            Assert.Contains("public int Count", serviceOutput.SourceText.ToString());
+            var serviceText = serviceOutput.SourceText.ToString();
+            serviceText.Should().Contain("public partial class TestStateService")
+                .And.Contain("public string Name")
+                .And.Contain("public int Count");
             
             var registrationOutput = outputs.First(o => o.HintName == "StateServiceRegistration.g.cs");
-            Assert.Contains("services.AddScoped<TestNamespace.TestStateService>();", registrationOutput.SourceText.ToString());
+            registrationOutput.SourceText.ToString().Should().Contain("services.AddScoped<TestNamespace.TestStateService>();");
         }
 
         [Test]
@@ -58,8 +60,8 @@ namespace TestNamespace
             var serviceOutput = outputs.First(o => o.HintName == "ListStateService.g.cs");
             var sourceText = serviceOutput.SourceText.ToString();
             
-            Assert.Contains("public void AddItem(string item)", sourceText);
-            Assert.Contains("public void RemoveItem(string item)", sourceText);
+            sourceText.Should().Contain("public void AddItem(string item)")
+                .And.Contain("public void RemoveItem(string item)");
         }
 
         [Test]
@@ -82,7 +84,7 @@ namespace TestNamespace
             var serviceOutput = outputs.First(o => o.HintName == "DictionaryStateService.g.cs");
             var sourceText = serviceOutput.SourceText.ToString();
             
-            Assert.Contains("public void SetMappings(Dictionary<string, int> values)", sourceText);
+            sourceText.Should().Contain("public void SetMappings(Dictionary<string, int> values)");
         }
 
         [Test]
@@ -102,7 +104,7 @@ namespace TestNamespace
             var outputs = GetGeneratedOutput(source);
 
             // Assert
-            Assert.Empty(outputs);
+            outputs.Should().BeEmpty();
         }
 
         private static ImmutableArray<(string HintName, SourceText SourceText)> GetGeneratedOutput(string source)
