@@ -98,7 +98,7 @@ namespace Common.Tests.Utils
             result.Should().Contain("<a href=");
         }
 
-    
+        [Test]
         public void ToHtml_WithJiraLink_HasJiraLink2()
         {
             // Arrange
