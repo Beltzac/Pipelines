@@ -136,9 +136,11 @@ namespace Common.Services
                 foreach (var part in parts)
                 {
                     query = query.Where(x =>
-                        EF.Functions.Like(x.Project, $"%{part}%") ||
-                        EF.Functions.Like(x.Name, $"%{part}%") ||
-                        EF.Functions.Like(x.Pipeline.Last.Commit.AuthorName, $"%{part}%"));
+                        x.Project.Contains(part) ||
+                        x.Name.Contains(part) ||
+                        (x.Pipeline != null && x.Pipeline.Last != null && 
+                         x.Pipeline.Last.Commit != null &&
+                         x.Pipeline.Last.Commit.AuthorName.Contains(part)));
                 }
             }
 

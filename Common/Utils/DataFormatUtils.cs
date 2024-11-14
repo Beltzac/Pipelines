@@ -24,7 +24,7 @@ namespace Common.Utils
             try
             {
                 var doc = XDocument.Parse(xml);
-                return doc.ToString();
+                return doc.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
             }
             catch
             {
@@ -69,7 +69,16 @@ namespace Common.Utils
                 var root = new XElement("root");
                 ConvertJsonElementToXml(jsonElement, root);
                 doc.Add(root);
-                return doc.ToString();
+                var settings = new XmlWriterSettings
+                {
+                    OmitXmlDeclaration = true,
+                    Indent = true,
+                    NewLineOnAttributes = false
+                };
+                using var stringWriter = new StringWriter();
+                using var xmlWriter = XmlWriter.Create(stringWriter, settings);
+                doc.Save(xmlWriter);
+                return stringWriter.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
             }
             catch
             {

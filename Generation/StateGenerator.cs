@@ -24,8 +24,9 @@ namespace Generation
                     if (node is not ClassDeclarationSyntax classDeclaration)
                         return false;
 
-                    // Check if class name ends with "State"
-                    return classDeclaration.Identifier.Text.EndsWith("State");
+                    // Check if class name ends with "State" and is public
+                    return classDeclaration.Identifier.Text.EndsWith("State") &&
+                           classDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword));
                 },
                 transform: (generatorSyntaxContext, _) =>
                 {
