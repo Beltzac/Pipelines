@@ -1,4 +1,6 @@
-using System.Text.Json;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -10,9 +12,13 @@ namespace Common.Utils
         {
             try
             {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                var element = JsonSerializer.Deserialize<JsonElement>(json);
-                return JsonSerializer.Serialize(element, options);
+                if (IsJson(json))
+                {
+                    var element = JsonConvert.DeserializeObject<JToken>(json);
+                    return JsonConvert.SerializeObject(element, Newtonsoft.Json.Formatting.Indented);
+                }
+
+                return json;
             }
             catch
             {
@@ -38,7 +44,7 @@ namespace Common.Utils
             if (string.IsNullOrWhiteSpace(text)) return false;
             try
             {
-                JsonSerializer.Deserialize<JsonElement>(text);
+                JsonConvert.DeserializeObject<JToken>(text);
                 return true;
             }
             catch
@@ -65,37 +71,8 @@ namespace Common.Utils
         {
             try
             {
-                var jsonElement = JsonSerializer.Deserialize<JsonElement>(json);
-                var doc = new XDocument();
-                
-                if (jsonElement.ValueKind == JsonValueKind.Array)
-                {
-                    var items = new XElement("items");
-                    foreach (var item in jsonElement.EnumerateArray())
-                    {
-                        var itemElement = new XElement("item");
-                        ConvertJsonElementToXml(item, itemElement);
-                        items.Add(itemElement);
-                    }
-                    doc.Add(items);
-                }
-                else
-                {
-                    var root = new XElement("root");
-                    ConvertJsonElementToXml(jsonElement, root);
-                    doc.Add(root);
-                }
-
-                var settings = new XmlWriterSettings
-                {
-                    OmitXmlDeclaration = true,
-                    Indent = true,
-                    NewLineOnAttributes = false
-                };
-                using var stringWriter = new StringWriter();
-                using var xmlWriter = XmlWriter.Create(stringWriter, settings);
-                doc.Save(xmlWriter);
-                return stringWriter.ToString().Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
+                XmlDocument doc = JsonConvert.DeserializeXmlNode(json, "jsonObject");
+                return doc.OuterXml;
             }
             catch
             {
@@ -107,59 +84,14 @@ namespace Common.Utils
         {
             try
             {
-                var doc = XDocument.Parse(xml);
-                var jsonObject = ConvertXElementToJson(doc.Root);
-                return JsonSerializer.Serialize(jsonObject, new JsonSerializerOptions { WriteIndented = true });
+                XmlDocument doc = new XmlDocument();
+                doc.LoadXml(xml);
+                return JsonConvert.SerializeXmlNode(doc);
             }
             catch
             {
                 return xml;
             }
-        }
-
-        private static void ConvertJsonElementToXml(JsonElement element, XElement parent)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    foreach (var property in element.EnumerateObject())
-                    {
-                        var child = new XElement(property.Name);
-                        ConvertJsonElementToXml(property.Value, child);
-                        parent.Add(child);
-                    }
-                    break;
-
-                case JsonValueKind.Array:
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        var child = new XElement("item");
-                        ConvertJsonElementToXml(item, child);
-                        parent.Add(child);
-                    }
-                    break;
-
-                default:
-                    parent.Value = element.ToString();
-                    break;
-            }
-        }
-
-        private static object ConvertXElementToJson(XElement element)
-        {
-            if (!element.HasElements)
-            {
-                return element.Value;
-            }
-
-            if (element.Elements().All(e => e.Name == "item"))
-            {
-                return element.Elements().Select(e => ConvertXElementToJson(e)).ToList();
-            }
-
-            return element.Elements().ToDictionary(
-                e => e.Name.LocalName,
-                e => ConvertXElementToJson(e));
         }
     }
 }
