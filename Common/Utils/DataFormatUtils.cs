@@ -67,9 +67,25 @@ namespace Common.Utils
             {
                 var jsonElement = JsonSerializer.Deserialize<JsonElement>(json);
                 var doc = new XDocument();
-                var root = new XElement("root");
-                ConvertJsonElementToXml(jsonElement, root);
-                doc.Add(root);
+                
+                if (jsonElement.ValueKind == JsonValueKind.Array)
+                {
+                    var items = new XElement("items");
+                    foreach (var item in jsonElement.EnumerateArray())
+                    {
+                        var itemElement = new XElement("item");
+                        ConvertJsonElementToXml(item, itemElement);
+                        items.Add(itemElement);
+                    }
+                    doc.Add(items);
+                }
+                else
+                {
+                    var root = new XElement("root");
+                    ConvertJsonElementToXml(jsonElement, root);
+                    doc.Add(root);
+                }
+
                 var settings = new XmlWriterSettings
                 {
                     OmitXmlDeclaration = true,

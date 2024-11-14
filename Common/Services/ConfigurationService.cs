@@ -40,9 +40,7 @@ public class ConfigurationService : IConfigurationService
             _config = new ConfigModel
             {
                 OrganizationUrl = "https://dev.azure.com/terminal-cp",
-                LocalCloneFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Source", "Repos"),
+                LocalCloneFolder = @"C:\repos",
                 IgnoreRepositoriesRegex = new List<string>()
             };
             await SaveConfigAsync();
