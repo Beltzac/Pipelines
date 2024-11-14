@@ -2,7 +2,7 @@ using Common.Utils;
 using FluentAssertions;
 using Microsoft.VisualStudio.Services.Common;
 
-namespace Tests
+namespace Tests.Common.Services
 {
     public class OracleDiffServiceTests
     {

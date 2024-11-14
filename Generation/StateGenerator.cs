@@ -206,7 +206,7 @@ namespace {namespaceName}
     /// <summary>
     /// Auto-generated state management service for {className}.
     /// </summary>
-    public partial class {serviceName}
+    public class {serviceName}
     {{
         private {className} _state = new();
 

@@ -3,7 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Common.Tests.Utils
+namespace Tests.Common.Utils
 {
     public class OpenFolderUtilsTests
     {
