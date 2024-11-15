@@ -209,6 +209,7 @@ namespace {namespaceName}
     public class {serviceName}
     {{
         private {className} _state = new();
+        private bool _isInitialized = false;
 
         /// <summary>
         /// Event that is raised when the state changes.
@@ -218,7 +219,11 @@ namespace {namespaceName}
         /// <summary>
         /// Notifies listeners that the state has changed.
         /// </summary>
-        protected virtual void NotifyStateChanged() => OnChange?.Invoke();
+        protected void NotifyStateChanged()
+        {{
+            _isInitialized = true;
+            OnChange?.Invoke();
+        }}
 
         /// <summary>
         /// Gets the current state.
@@ -227,10 +232,22 @@ namespace {namespaceName}
         public {className} GetState() => _state;
 
         /// <summary>
+        /// Initializes the state if it hasn't been initialized yet with the provided state.
+        /// </summary>
+        /// <param name=""initializeAction"">Action that initializes the state.</param>
+        public void InitializeState(Action<{className}> initializeAction)
+        {{
+            if (!_isInitialized)
+            {{
+                UpdateState(initializeAction);
+            }}
+        }}
+
+        /// <summary>
         /// Updates the state using the provided action and notifies listeners.
         /// </summary>
         /// <param name=""updateAction"">Action that modifies the state.</param>
-        protected void UpdateState(Action<{className}> updateAction)
+        public void UpdateState(Action<{className}> updateAction)
         {{
             if (updateAction == null)
                 throw new ArgumentNullException(nameof(updateAction));

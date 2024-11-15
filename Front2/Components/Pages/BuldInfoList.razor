@@ -26,11 +26,11 @@
 
 <style>
     .sticky-filter {
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        background-color: white; /* To avoid overlap with the table content */
-        padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: white; /* To avoid overlap with the table content */
+    padding: 10px 0;
     }
 </style>
 
@@ -151,6 +151,11 @@ else
         {
             await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Path} Atualizada"); });
         });
+
+        BuildInfoStateService.InitializeState(x =>
+        {
+            _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
+        });
     }
 
     public static double CountMatchingWindows(IEnumerable<string> titles, string project, string name)
@@ -195,7 +200,6 @@ else
         if (firstRender)
         {
             await filterInputElement.FocusAsync();
-            _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
         }
     }
 
