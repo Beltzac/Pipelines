@@ -1,5 +1,6 @@
 using Common.Utils;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 
 namespace Tests.Common.Utils
 {
@@ -160,6 +161,65 @@ namespace Tests.Common.Utils
             result.Should().Contain("\"42\"");
             result.Should().Contain("\"single\"");
             result.Should().Contain("\"item\":");
+        }
+
+        [Test]
+        public void JsonToXmlAndBack_DoesNotChangeOriginalJson()
+        {
+            // Arrange
+            var originalJson = "{\"name\":\"test\",\"value\":123}";
+
+            // Act
+            var xml = DataFormatUtils.JsonToXml(originalJson);
+            var resultJson = DataFormatUtils.XmlToJson(xml);
+
+            // Parse JSON to compare data content
+            var originalData = JObject.Parse(originalJson);
+            var resultData = JObject.Parse(resultJson);
+
+            // Assert
+            resultData.Should().BeEquivalentTo(originalData);
+        }
+
+        [Test]
+        public void XmlToJsonAndBack_DoesNotChangeOriginalXml()
+        {
+            // Arrange
+            var originalXml = "<root><name>test</name><value>123</value></root>";
+
+            // Act
+            var json = DataFormatUtils.XmlToJson(originalXml);
+            var resultXml = DataFormatUtils.JsonToXml(json);
+
+            // Assert
+            resultXml.Should().Contain("<name>test</name>");
+            resultXml.Should().Contain("<value>123</value>");
+        }
+
+        [Test]
+        public void XmlToJsonAndBack_WithNamespaces_DoesNotChangeOriginalXml()
+        {
+            // Arrange
+            var originalXml = @"
+                <soapenv:Body xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'>
+                    <RetornoDtoOfArrayOfstringuHEDJ7Dj xmlns='http://schemas.datacontract.org/2004/07/TcpCore.Infraestrutura.Api' xmlns:i='http://www.w3.org/2001/XMLSchema-instance'>
+                        <Mensagens xmlns:d2p1='http://schemas.datacontract.org/2004/07/TcpCore.Infraestrutura.Api.Dto' />
+                        <Objeto xmlns:d2p1='http://schemas.microsoft.com/2003/10/Serialization/Arrays' />
+                        <Status>Sucesso</Status>
+                    </RetornoDtoOfArrayOfstringuHEDJ7Dj>
+                </soapenv:Body>";
+
+            // Act
+            var json = DataFormatUtils.XmlToJson(originalXml);
+            var resultXml = DataFormatUtils.JsonToXml(json);
+
+            // Assert
+            resultXml.Should().NotContain("jsonObject");
+            resultXml.Should().Contain("<soapenv:Body");
+            resultXml.Should().Contain("<RetornoDtoOfArrayOfstringuHEDJ7Dj");
+            resultXml.Should().Contain("<Mensagens");
+            resultXml.Should().Contain("<Objeto");
+            resultXml.Should().Contain("<Status>Sucesso</Status>");
         }
     }
 }

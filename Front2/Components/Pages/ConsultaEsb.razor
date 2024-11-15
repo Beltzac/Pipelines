@@ -410,19 +410,20 @@
                 : null;
 
             var (queryResults, total) = await RequisicaoService.ExecuteQueryAsync(
-            ConsultaEsbStateService.SelectedEnvironment,
-            ConsultaEsbStateService.StartDate,
-            ConsultaEsbStateService.EndDate,
-            ConsultaEsbStateService.UrlFilter,
-            ConsultaEsbStateService.HttpMethod,
-            containerNumbersArray,
-            ConsultaEsbStateService.User?.Key,
-            ConsultaEsbStateService.ExecucaoId,
-            ConsultaEsbStateService.PageSize,
-            ConsultaEsbStateService.CurrentPage,
-            ConsultaEsbStateService.HttpStatusRange,
-            ConsultaEsbStateService.ResponseStatus,
-            cts.Token);
+                ConsultaEsbStateService.SelectedEnvironment,
+                ConsultaEsbStateService.StartDate,
+                ConsultaEsbStateService.EndDate,
+                ConsultaEsbStateService.UrlFilter,
+                ConsultaEsbStateService.HttpMethod,
+                containerNumbersArray,
+                ConsultaEsbStateService.User?.Key,
+                ConsultaEsbStateService.ExecucaoId,
+                ConsultaEsbStateService.PageSize,
+                ConsultaEsbStateService.CurrentPage,
+                ConsultaEsbStateService.HttpStatusRange,
+                ConsultaEsbStateService.ResponseStatus,
+                cts.Token);
+
             ConsultaEsbStateService.Results = queryResults;
             ConsultaEsbStateService.TotalCount = total;
         }

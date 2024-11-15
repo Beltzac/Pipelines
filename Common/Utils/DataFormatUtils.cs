@@ -1,4 +1,3 @@
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Xml;
@@ -71,6 +70,19 @@ namespace Common.Utils
         {
             try
             {
+                var jsonObject = JsonConvert.DeserializeObject<JObject>(json);
+
+                // Do not add a root element if it is not needed
+                if (jsonObject.Count == 1)
+                {
+                    var root = jsonObject.Properties().First();
+                    if (root.Value is JArray)
+                    {
+                        return JsonConvert.DeserializeXmlNode(json, "jsonObject").OuterXml;
+                    }
+                    return JsonConvert.DeserializeXmlNode(root.Value.ToString(), root.Name).OuterXml;
+                }
+
                 XmlDocument doc = JsonConvert.DeserializeXmlNode(json, "jsonObject");
                 return doc.OuterXml;
             }
@@ -86,7 +98,14 @@ namespace Common.Utils
             {
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml(xml);
-                return JsonConvert.SerializeXmlNode(doc);
+                var json = JsonConvert.SerializeXmlNode(doc);
+                var jsonObject = JsonConvert.DeserializeObject<JObject>(json);
+                // Remove the jsonObject root if it exists
+                if (jsonObject.ContainsKey("jsonObject"))
+                {
+                    return jsonObject["jsonObject"].ToString();
+                }
+                return json;
             }
             catch
             {
