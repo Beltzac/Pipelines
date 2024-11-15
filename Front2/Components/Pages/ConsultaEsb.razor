@@ -112,7 +112,7 @@
                 }
                 else
                 {
-                    <button class="btn btn-primary" @onclick="ExecuteQuery">Search</button>
+                    <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
                 }
             </div>
         </div>
@@ -325,11 +325,13 @@
     protected override async Task OnInitializedAsync()
     {
         config = ConfigService.GetConfig();
-        ConsultaEsbStateService.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
 
-        // Set default date range to last 24 hours
-        ConsultaEsbStateService.EndDate = DateTime.Now;
-        ConsultaEsbStateService.StartDate = ConsultaEsbStateService.EndDate?.AddHours(-24);
+        ConsultaEsbStateService.InitializeState(x =>
+        {
+            x.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
+            x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+            x.StartDate = x.EndDate?.AddHours(-24);
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -457,11 +459,11 @@
         if (ConsultaEsbStateService.SelectedItem?.Requisicao == null) return;
         if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest))
         {
-            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedRequest);
+            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.FormatXml(DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedRequest));
         }
         else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedRequest))
         {
-            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedRequest);
+            ConsultaEsbStateService.FormattedRequest = DataFormatUtils.FormatJson(DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedRequest));
         }
         StateHasChanged();
     }
@@ -471,11 +473,11 @@
         if (ConsultaEsbStateService.SelectedItem?.Resposta == null) return;
         if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse))
         {
-            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedResponse);
+            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.FormatXml(DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedResponse));
         }
         else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedResponse))
         {
-            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedResponse);
+            ConsultaEsbStateService.FormattedResponse = DataFormatUtils.FormatJson(DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedResponse));
         }
         StateHasChanged();
     }
@@ -485,11 +487,11 @@
         if (ConsultaEsbStateService.SelectedItem?.Erro == null) return;
         if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedError))
         {
-            ConsultaEsbStateService.FormattedError = DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedError);
+            ConsultaEsbStateService.FormattedError = DataFormatUtils.FormatXml(DataFormatUtils.JsonToXml(ConsultaEsbStateService.FormattedError));
         }
         else if (DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedError))
         {
-            ConsultaEsbStateService.FormattedError = DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedError);
+            ConsultaEsbStateService.FormattedError = DataFormatUtils.FormatJson(DataFormatUtils.XmlToJson(ConsultaEsbStateService.FormattedError));
         }
         StateHasChanged();
     }
