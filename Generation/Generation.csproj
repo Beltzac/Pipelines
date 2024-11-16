@@ -8,7 +8,6 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	<CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/generated</CompilerGeneratedFilesOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
-    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
