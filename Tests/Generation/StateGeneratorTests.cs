@@ -33,7 +33,9 @@ namespace TestNamespace
             var serviceText = serviceOutput.SourceText.ToString();
             serviceText.Should().Contain("public class TestStateService")
                 .And.Contain("public string Name")
-                .And.Contain("public int Count");
+                .And.Contain("public int Count")
+                .And.Contain("public void Save()")
+                .And.Contain("public bool Load()");
 
             var registrationOutput = outputs.First(o => o.HintName.Contains("StateServiceRegistration.g.cs"));
             registrationOutput.SourceText.ToString().Should().Contain("services.AddScoped<TestNamespace.TestStateService>();");
