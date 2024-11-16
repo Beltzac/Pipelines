@@ -196,6 +196,7 @@
     protected override void OnInitialized()
     {
         ConsulStateService.OnChange += StateHasChanged;
+        ConsulStateService.Load();
 
         config = ConfigService.GetConfig();
 
@@ -293,5 +294,6 @@
     public void Dispose()
     {
         ConsulStateService.OnChange -= StateHasChanged;
+        ConsulStateService.Save();
     }
 }

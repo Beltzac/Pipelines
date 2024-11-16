@@ -237,9 +237,9 @@ namespace {namespaceName}
         /// Initializes the state if it hasn't been initialized yet with the provided state.
         /// </summary>
         /// <param name=""initializeAction"">Action that initializes the state.</param>
-        public void InitializeState(Action<{className}> initializeAction)
+        public void InitializeState(Action<{className}> initializeAction, bool force = false)
         {{
-            if (!_isInitialized)
+            if (!_isInitialized || force)
             {{
                 UpdateState(initializeAction);
             }}
@@ -263,16 +263,23 @@ namespace {namespaceName}
         /// </summary>
         public void Save()
         {{
-            var folder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "BuildInfoBlazorApp"
-            );
+            try
+            {{ 
+                var folder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    ""BuildInfoBlazorApp""
+                );
             
-            Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(folder);
             
-            var path = Path.Combine(folder, $"{{className}}.json");
-            var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ WriteIndented = true }});
-            File.WriteAllText(path, json);
+                var path = Path.Combine(folder, $""{className}.json"");
+                var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ WriteIndented = true }});
+                File.WriteAllText(path, json);
+            }}
+            catch (Exception ex)
+            {{
+                Console.WriteLine($""Failed to save state: {className} - {{ex.Message}}"");
+            }}
         }}
 
         /// <summary>
@@ -281,18 +288,26 @@ namespace {namespaceName}
         /// <returns>True if state was loaded, false if no saved state exists.</returns>
         public bool Load()
         {{
-            var path = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "BuildInfoBlazorApp",
-                $"{{className}}.json"
-            );
+            try
+            {{ 
+                var path = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    ""BuildInfoBlazorApp"",
+                    $""{className}.json""
+                );
 
-            if (!File.Exists(path))
+                if (!File.Exists(path))
+                    return false;
+
+                var json = File.ReadAllText(path);
+                _state = JsonSerializer.Deserialize<{className}>(json);
+                NotifyStateChanged();
+            }}
+            catch (Exception ex)
+            {{
+                Console.WriteLine($""Failed to load state: {className} - {{ex.Message}}"");
                 return false;
-
-            var json = File.ReadAllText(path);
-            _state = JsonSerializer.Deserialize<{className}>(json) ?? new();
-            NotifyStateChanged();
+            }}
             return true;
         }}{propertyAccessors}{collectionMethods}
     }}
