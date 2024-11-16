@@ -305,11 +305,13 @@
     protected override void OnInitialized()
     {
         ConsultaEsbStateService.OnChange += StateHasChanged;
+        ConsultaEsbStateService.Load();
     }
 
     public void Dispose()
     {
         ConsultaEsbStateService.OnChange -= StateHasChanged;
+        ConsultaEsbStateService.Save();
     }
 
     private async Task<List<KeyValuePair<int, string>>> SearchUsers(string searchText)

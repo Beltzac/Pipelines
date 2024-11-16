@@ -15,6 +15,7 @@ using Generation;
 
 // electronize start
 // electronize build /target win
+// python.exe -m pip install --upgrade --upgrade-strategy only-if-needed git+https://github.com/Aider-AI/aider.git
 
 var builder = WebApplication.CreateBuilder();
 

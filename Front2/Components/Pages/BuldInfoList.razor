@@ -82,41 +82,33 @@
     <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
 </div>
 
+<table class="table">
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Project</th>
+            <th>Pessoa</th>
+            <th>Commit</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var buildInfo in BuildInfoStateService.BuildInfos.ToList())
+        {
+            <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
+                <td>
+                    <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
+                </td>
 
-@if (BuildInfoStateService.BuildInfos == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Status</th>
-                <th>Project</th>
-                <th>Pessoa</th>
-                <th>Commit</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var buildInfo in BuildInfoStateService.BuildInfos.ToList())
-            {
-                <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
-                    <td>
-                        <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
-                    </td>
-
-                    <td class="truncate">@(buildInfo.Path)</td>
+                <td class="truncate">@(buildInfo.Path)</td>
 
 
-                    <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
-                    <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
+                <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
+                <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
 
-                </ContextMenuTrigger>
-            }
-        </tbody>
-    </table>
-}
+            </ContextMenuTrigger>
+        }
+    </tbody>
+</table>
 
 @code {
     private Subject<string> _searchEvents;
@@ -127,6 +119,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         BuildInfoStateService.OnChange += () => InvokeAsync(StateHasChanged);
+        BuildInfoStateService.Load();
 
         _searchEvents = new Subject<string>();
 
@@ -134,17 +127,26 @@ else
             .Throttle(TimeSpan.FromMilliseconds(500))
             .Subscribe(async x =>
             {
-                var janelas = WindowUtils.EnumerarJanelas().Distinct();
+                try
+                {
+                    BuildInfoStateService.IsLoading = true;
 
-                var infos = await BuildInfoService.GetBuildInfoAsync(x);
+                    var janelas = WindowUtils.EnumerarJanelas().Distinct();
 
-                //Put the builds that there is a window open in first place
-                infos = infos
-                    .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
-                    .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
-                    .ToList();
+                    var infos = await BuildInfoService.GetBuildInfoAsync(x);
 
-                BuildInfoStateService.BuildInfos = infos;
+                    //Put the builds that there is a window open in first place
+                    infos = infos
+                        .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
+                        .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
+                        .ToList();
+
+                    BuildInfoStateService.BuildInfos = infos;
+                }
+                finally
+                {
+                    BuildInfoStateService.IsLoading = false;
+                }
             });
 
         await SignalRClientService.StartAsync(async id =>
@@ -155,7 +157,7 @@ else
         BuildInfoStateService.InitializeState(x =>
         {
             _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
-        });
+        }, !BuildInfoStateService.BuildInfos.Any());
     }
 
     public static double CountMatchingWindows(IEnumerable<string> titles, string project, string name)
@@ -344,5 +346,6 @@ else
     public void Dispose()
     {
         BuildInfoStateService.OnChange -= () => InvokeAsync(StateHasChanged);
+        BuildInfoStateService.Save();
     }
 }
