@@ -109,7 +109,7 @@ namespace Tests.Common.Utils
             // Act
             var result = commit.ToHtml(_config);
             // Assert
-            result.Should().Contain("<a href=");
+            result.Should().Be("<p><a href='https://terminalcp.atlassian.net/browse/RSPN2023-385' target='_blank'>RSPN2023-385</a>: Não precisamos da chave mais</p>\n");
         }
     }
 }
