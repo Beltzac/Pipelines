@@ -57,10 +57,10 @@ namespace Common.Utils
             });
 
             // Create Jira links https://terminalcp.atlassian.net/ and open in new window
-            var pattern = @"([A-Z, \d]{1,10}-\d+\s?[:])";
+            var pattern = @"([A-Z, \d]{1,10}-\d+)(\s?:)";
             message = Regex.Replace(message, pattern, match =>
             {
-                return $"<a href='https://terminalcp.atlassian.net/browse/{match.Value}' target='_blank'>{match.Value}</a>";
+                return $"<a href='https://terminalcp.atlassian.net/browse/{match.Groups[0].Value}' target='_blank'>{match.Groups[0].Value}</a>{match.Groups[1].Value.Trim()}";
             });
 
             var pipeline = new MarkdownPipelineBuilder()
