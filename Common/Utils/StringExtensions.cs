@@ -60,7 +60,7 @@ namespace Common.Utils
             var pattern = @"([A-Z, \d]{1,10}-\d+)(\s?:)";
             message = Regex.Replace(message, pattern, match =>
             {
-                return $"<a href='https://terminalcp.atlassian.net/browse/{match.Groups[0].Value}' target='_blank'>{match.Groups[0].Value}</a>{match.Groups[1].Value.Trim()}";
+                return $"<a href='https://terminalcp.atlassian.net/browse/{match.Groups[1].Value}' target='_blank'>{match.Groups[1].Value.Trim()}</a>:";
             });
 
             var pipeline = new MarkdownPipelineBuilder()
