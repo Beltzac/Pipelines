@@ -136,11 +136,11 @@ namespace Common.Services
                 foreach (var part in parts)
                 {
                     query = query.Where(x =>
-                        x.Project.Contains(part) ||
-                        x.Name.Contains(part) ||
+                        x.Project.ToLower().Contains(part.ToLower()) ||
+                        x.Name.ToLower().Contains(part.ToLower()) ||
                         (x.Pipeline != null && x.Pipeline.Last != null && 
                          x.Pipeline.Last.Commit != null &&
-                         x.Pipeline.Last.Commit.AuthorName.Contains(part)));
+                         x.Pipeline.Last.Commit.AuthorName.ToLower().Contains(part.ToLower())));
                 }
             }
 
