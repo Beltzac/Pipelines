@@ -131,7 +131,7 @@ namespace Common.Services
 
             if (!string.IsNullOrEmpty(filter))
             {
-                var parts = filter.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var parts = filter.Split([' ', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
                 foreach (var part in parts)
                 {
