@@ -56,12 +56,12 @@
 
         if (repo.Pipeline?.Last != null)
         {
-            <Item OnClick="@OpenExternalRunClickAsync">Open Build</Item>
+            <Item OnClick="@OpenExternalRunClickAsync">Open Last Build</Item>
         }
 
         if (repo.Pipeline?.Last?.Commit != null)
         {
-            <Item OnClick="@OpenExternalCommitClickAsync">Open Commit</Item>
+            <Item OnClick="@OpenExternalCommitClickAsync">Open Last Commit</Item>
         }
         else
         {
@@ -251,6 +251,13 @@
         await filterInputElement.FocusAsync();
     }
 
+    async Task CloneRepoAsync(Repository e)
+    {
+        this.toastService.ShowInfo("Clonando repositorio");
+        await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(e.Id);
+        this.toastService.ShowSuccess("Clonado");
+    }
+
     //Itens
     async Task DeleteClickAsync (ItemClickEventArgs e)
     {
@@ -261,23 +268,20 @@
     async Task CloneClickAsync (ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(repo.Id);
-        this.toastService.ShowSuccess("CLONADO");
+        await CloneRepoAsync(repo);
     }
 
     async Task OpenClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        await BuildInfoService.OpenProjectByBuildInfoIdAsync(repo.Id);
+        await OpenClickAsync(repo);
     }
 
     async Task OpenClickAsync(Repository e)
     {
         if(!e.MasterClonned)
         {
-            this.toastService.ShowSuccess("Clonando Repo");
-            await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(e.Id);
-            this.toastService.ShowSuccess("Clonado");
+            await CloneRepoAsync(e);
         }
 
         await BuildInfoService.OpenProjectByBuildInfoIdAsync(e.Id);
@@ -291,7 +295,10 @@
 
     async Task OpenExternalCommitClickAsync(ItemClickEventArgs e)
     {
+        this.toastService.ShowInfo("Atualizando informações da pipeline");
         var repo = e.Data as Repository;
+        repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+
         var url = repo.Pipeline.Last.Commit.Url;
         await OpenFolderUtils.OpenUrlAsync(url);
     }
@@ -305,7 +312,10 @@
 
     async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
     {
+        this.toastService.ShowInfo("Atualizando informações da pipeline");
         var repo = e.Data as Repository;
+        repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+
         var url = repo.Pipeline.Last.Url;
         await OpenFolderUtils.OpenUrlAsync(url);
     }

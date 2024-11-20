@@ -69,6 +69,7 @@ namespace Common.Services
                 .AppendPathSegment(repo.Project)
                 .AppendPathSegment("_git")
                 .AppendPathSegment(repo.Name)
+                .AppendPathSegment("pullrequests")
                 .SetQueryParams(new { _a = "mine" });
             await OpenFolderUtils.OpenUrlAsync(url);
         }
