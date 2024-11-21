@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using Common.Models;
-
 namespace Front2.Services
 {
     public class BuildInfoState

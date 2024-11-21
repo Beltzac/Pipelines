@@ -18,7 +18,11 @@ namespace Common.Services
             string? httpStatusRange = null,
             string? responseStatus = null,
             CancellationToken cancellationToken = default);
-            
+
+        string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
+            string[]? containerNumbers, int? userId, int? execucaoId, int pageSize, int pageNumber,
+            string? httpStatusRange, string? responseStatus);
+
         Task<Dictionary<int, string>> GetUsersAsync(string environment, string? searchText = null);
     }
 }

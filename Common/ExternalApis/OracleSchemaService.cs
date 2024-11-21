@@ -1,5 +1,4 @@
 ﻿using Common.Utils;
-using Common.Models;
 using CSharpDiff.Patches.Models;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
@@ -20,10 +19,10 @@ namespace Common.ExternalApis
         public Dictionary<string, string> Compare(string sourceEnvName, string targetEnvName)
         {
             var config = _configService.GetConfig();
-            
+
             var sourceEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvName)
                 ?? throw new ArgumentException($"Source environment '{sourceEnvName}' not found");
-                
+
             var targetEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvName)
                 ?? throw new ArgumentException($"Target environment '{targetEnvName}' not found");
 

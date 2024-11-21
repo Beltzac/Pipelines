@@ -7,6 +7,7 @@
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ConsultaEsbStateService ConsultaEsbStateService
+@inject IToastService toastService
 @implements IDisposable
 
 <h3>Requisição Execução Query</h3>
@@ -54,8 +55,8 @@
             </div>
 
             <div class="col-md-3">
-                <label class="form-label">Container Numbers</label>
-                <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values">
+                <label class="form-label">Request/Response</label>
+                <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values" title="You can enter multiple values separated by commas">
             </div>
 
             <div class="col-md-3">
@@ -114,6 +115,7 @@
                 {
                     <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
                     <button class="btn btn-secondary" @onclick="async () => { await ClearFilters(); }">Clear</button>
+                    <button class="btn btn-info" @onclick="async () => { await ExportSqlQuery(); }">Export SQL</button>
                 }
             </div>
         </div>
@@ -457,6 +459,24 @@
                 : item.Erro ?? "";
     }
 
+    private async Task ExportSqlQuery()
+    {
+        var sqlQuery = RequisicaoService.BuildQuery(
+            ConsultaEsbStateService.StartDate,
+            ConsultaEsbStateService.EndDate,
+            ConsultaEsbStateService.UrlFilter,
+            ConsultaEsbStateService.HttpMethod,
+            !string.IsNullOrEmpty(ConsultaEsbStateService.ContainerNumbers) ? ConsultaEsbStateService.ContainerNumbers.Split(',').Select(x => x.Trim()).ToArray() : null,
+            ConsultaEsbStateService.User?.Key,
+            ConsultaEsbStateService.ExecucaoId,
+            ConsultaEsbStateService.PageSize,
+            ConsultaEsbStateService.CurrentPage,
+            ConsultaEsbStateService.HttpStatusRange,
+            ConsultaEsbStateService.ResponseStatus);
+
+        await CopyToClipboard(sqlQuery);
+        toastService.ShowSuccess("Query SQL copiada para a área de transferência.");
+    }
 
     private void ConvertRequest()
     {
