@@ -1,6 +1,7 @@
 using Common.Models;
-using Common.Services;
 using Oracle.ManagedDataAccess.Client;
+using SQL.Formatter;
+using SQL.Formatter.Language;
 using System.Data;
 
 namespace Common.Services
@@ -68,7 +69,7 @@ namespace Common.Services
             return (Results: result, TotalCount: totalCount);
         }
 
-        private string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
+        public string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
             string[]? containerNumbers, int? userId, int? execucaoId, int pageSize, int pageNumber,
             string? httpStatusRange, string? responseStatus)
         {
@@ -88,7 +89,7 @@ namespace Common.Services
 
             if (containerNumbers?.Any() == true)
             {
-                var containerConditions = containerNumbers.Select(c => $"RE.REQUISICAO LIKE '%{c}%'");
+                var containerConditions = containerNumbers.Select(c => $"RE.REQUISICAO LIKE '%{c}%' OR RE.RESPOSTA LIKE '%{c}%' OR RE.ERRO LIKE '%{c}%'");
                 conditions.Add($"({string.Join(" OR ", containerConditions)})");
             }
 
@@ -118,7 +119,7 @@ namespace Common.Services
                 ? $"WHERE {string.Join(" AND ", conditions)}"
                 : "WHERE 1=1";
 
-            return @$"
+            var sql = @$"
 WITH RequisicaoExecucao AS (
     SELECT 'Requisição' AS SOURCE, E.ID_EXECUCAO, e.HTTP_METHOD, e.HTTP_STATUS_CODE,
            REQ.CONTEUDO AS REQUISICAO, RESP.CONTEUDO AS RESPOSTA, NULL as ERRO,
@@ -148,7 +149,7 @@ CountQuery AS (
     {whereClause}
 ),
 PagedQuery AS (
-    SELECT RE.* 
+    SELECT RE.*
     FROM RequisicaoExecucao RE
     {whereClause}
     ORDER BY RE.DATA_INICIO DESC
@@ -157,6 +158,8 @@ PagedQuery AS (
 SELECT q.*, c.TotalCount
 FROM PagedQuery q
 CROSS JOIN CountQuery c";
+
+            return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
         public async Task<Dictionary<int, string>> GetUsersAsync(string environment, string? searchText = null)
@@ -170,11 +173,11 @@ CROSS JOIN CountQuery c";
 
             using var cmd = connection.CreateCommand();
             cmd.CommandText = @"
-                SELECT id_usuario, login 
-                FROM TCPCAD.login 
+                SELECT id_usuario, login
+                FROM TCPCAD.login
                 WHERE UPPER(login) LIKE '%' || UPPER(:searchText) || '%'
                 FETCH FIRST 10 ROWS ONLY";
-            
+
             cmd.Parameters.Add(new OracleParameter("searchText", searchText ?? string.Empty));
 
             var users = new Dictionary<int, string>();

@@ -3,6 +3,7 @@ using Common.Repositories;
 using Common.Utils;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
+using Flurl;
 using LibGit2Sharp;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +15,6 @@ using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
-using Flurl;
-using System.IO;
 
 namespace Common.Services
 {
@@ -139,7 +138,7 @@ namespace Common.Services
                     query = query.Where(x =>
                         x.Project.ToLower().Contains(part.ToLower()) ||
                         x.Name.ToLower().Contains(part.ToLower()) ||
-                        (x.Pipeline != null && x.Pipeline.Last != null && 
+                        (x.Pipeline != null && x.Pipeline.Last != null &&
                          x.Pipeline.Last.Commit != null &&
                          x.Pipeline.Last.Commit.AuthorName.ToLower().Contains(part.ToLower())));
                 }

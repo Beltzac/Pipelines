@@ -1,12 +1,12 @@
 using Common.Models;
 using Common.Utils;
-using Microsoft.Extensions.Logging;
+using Flurl;
 using Flurl.Http;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Flurl;
 
 namespace Common.Services
 {

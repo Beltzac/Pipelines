@@ -4,14 +4,13 @@ using Common.Services;
 using Common.Utils;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
-using Front2.Services;
+using Generation;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
 using ShellLink;
 using System.Runtime.InteropServices;
-using Generation;
 
 // electronize start
 // electronize build /target win
@@ -105,7 +104,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.MapStaticAssets();
+
 app.UseAntiforgery();
 
 app.MapRazorComponents<Front2.Components.App>()

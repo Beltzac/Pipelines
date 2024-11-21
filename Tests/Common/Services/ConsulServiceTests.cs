@@ -1,11 +1,7 @@
-using Common.Models;
 using Common.Services;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using FluentAssertions;
-using Moq.Protected;
 
 namespace Tests.Common.Services
 {

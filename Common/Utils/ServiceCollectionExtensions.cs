@@ -72,7 +72,7 @@ namespace Common.Utils
             services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
-            
+
             services.AddScoped<IThemeService, ThemeService>();
 
             return services;
