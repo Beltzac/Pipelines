@@ -91,9 +91,9 @@
       },
       "FlexLabs.EntityFrameworkCore.Upsert": {
         "type": "Direct",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "Z7KFJhVEuhLQMK763gXTaqfYFd3MknU0Du9IngXEtFXaEP4rKMxRlaWYntv58z3DEj1/UqBjLxojKMrUEDwNcw==",
+        "requested": "[8.1.0, )",
+        "resolved": "8.1.0",
+        "contentHash": "xY+NwcPGW7hS39esX3edJetRP34VTio+ziASEPQLXU5pfumkE80WGd8n6MSHQcQd5BRQ1iDFrp2AINttJhGQCA==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "8.0.0"
         }
