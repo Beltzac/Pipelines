@@ -316,13 +316,13 @@ namespace Common.Services
             {
                 // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
 
-                string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
+                string filePath = JoinPathKey(folderPath, key);
                 string directory = Path.GetDirectoryName(filePath);
 
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
-                }   
+                }
 
                 // If the path ends with a slash, treat it as a directory
                 if (value == null)
@@ -338,6 +338,11 @@ namespace Common.Services
             {
                 _logger.LogError(ex, "Error to save: {FilePath} {Key} {Value}", folderPath, key, value);
             }
+        }
+
+        public static string JoinPathKey(string folderPath, string key)
+        {
+            return Path.Combine(folderPath, key.Replace("/", "\\"));
         }
 
         public async Task OpenInVsCode(ConsulEnvironment env)
