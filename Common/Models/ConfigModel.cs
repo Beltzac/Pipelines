@@ -14,6 +14,7 @@
         public string UserAgent { get; set; } = "TcpDash";
         public string AccessToken { get; set; }
         public List<string> IgnoreRepositoriesRegex { get; set; } = new List<string>();
+        public string OracleViewsBackupRepo { get; set; } = "C:\\OracleViewsBackup";
     }
 
     public class OracleEnvironment
