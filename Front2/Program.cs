@@ -55,6 +55,12 @@ builder.Services.AddQuartz(q =>
         job => job.WithIdentity("BuildInfoJob")
     );
 
+    q.ScheduleJob<OracleViewsBackupJob>(trigger => trigger
+        .WithIdentity("OracleViewsBackupJob-trigger")
+        .WithCronSchedule("0 0 * * * ?"), // Run every hour
+        job => job.WithIdentity("OracleViewsBackupJob")
+    );
+
     var provider = builder.Services.BuildServiceProvider();
     var configService = provider.GetRequiredService<IConfigurationService>();
     var config = configService.GetConfig();
