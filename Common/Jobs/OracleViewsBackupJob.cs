@@ -32,12 +32,12 @@ namespace Common.Jobs
             Directory.CreateDirectory(backupPath);
 
             // Initialize or open Git repository
-            if (!Repository.IsValid(backupPath))
+            if (!LibGit2Sharp.Repository.IsValid(backupPath))
             {
-                Repository.Init(backupPath);
+                LibGit2Sharp.Repository.Init(backupPath);
             }
 
-            using (var repo = new Repository(backupPath))
+            using (var repo = new LibGit2Sharp.Repository(backupPath))
             {
                 foreach (var env in config.OracleEnvironments)
                 {
@@ -55,12 +55,13 @@ namespace Common.Jobs
                         }
 
                         // Stage all changes
-                        Commands.Stage(repo, "*");
+                        LibGit2Sharp.Commands.Stage(repo, "*");
 
+                        var status = repo.RetrieveStatus();
                         // Create commit if there are changes
-                        if (repo.RetrieveStatus().IsDirty)
+                        if (status.IsDirty)
                         {
-                            var signature = new Signature("OracleBackup", "backup@local", DateTimeOffset.Now);
+                            var signature = new LibGit2Sharp.Signature("OracleBackup", "backup@local", DateTimeOffset.Now);
                             repo.Commit($"Backup views from {env.Name} at {DateTime.Now}", signature, signature);
                             _logger.LogInformation($"Created backup commit for environment {env.Name}");
                         }
