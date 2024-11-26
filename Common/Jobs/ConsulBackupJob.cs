@@ -46,26 +46,10 @@ namespace Common.Jobs
                     try
                     {
                         var consulData = await _consulService.GetConsulKeyValues(env);
-                        
+
                         foreach (var kv in consulData)
                         {
-                            var filePath = Path.Combine(envPath, kv.Key);
-                            var directory = Path.GetDirectoryName(filePath);
-                            
-                            if (!Directory.Exists(directory))
-                            {
-                                Directory.CreateDirectory(directory);
-                            }
-
-                            // Save both original and recursive values
-                            var originalPath = Path.Combine(envPath, "original", kv.Key);
-                            var recursivePath = Path.Combine(envPath, "recursive", kv.Key);
-                            
-                            Directory.CreateDirectory(Path.GetDirectoryName(originalPath));
-                            Directory.CreateDirectory(Path.GetDirectoryName(recursivePath));
-                            
-                            await File.WriteAllTextAsync(originalPath, kv.Value.Value);
-                            await File.WriteAllTextAsync(recursivePath, kv.Value.ValueRecursive);
+                            _consulService.SaveKvToFile(envPath, kv.Key, kv.Value.Value);
                         }
 
                         // Stage all changes
