@@ -48,13 +48,29 @@ namespace Common.Jobs
                     {
                         var views = _oracleSchemaService.GetViewDefinitions(env.ConnectionString, env.Schema);
                         
+                        // Track existing files to detect deletions
+                        var existingFiles = new HashSet<string>();
                         foreach (var view in views)
                         {
                             var filePath = Path.Combine(envPath, $"{view.Key}.sql");
+                            existingFiles.Add(filePath);
                             await File.WriteAllTextAsync(filePath, view.Value);
                         }
 
-                        // Stage all changes
+                        // Remove files that no longer exist in Oracle
+                        if (Directory.Exists(envPath))
+                        {
+                            foreach (var file in Directory.GetFiles(envPath, "*.sql", SearchOption.TopDirectoryOnly))
+                            {
+                                if (!existingFiles.Contains(file))
+                                {
+                                    File.Delete(file);
+                                    _logger.LogInformation($"Deleted file that no longer exists in Oracle: {file}");
+                                }
+                            }
+                        }
+
+                        // Stage all changes including deletions
                         LibGit2Sharp.Commands.Stage(repo, "*");
 
                         var status = repo.RetrieveStatus();
