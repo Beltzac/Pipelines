@@ -47,12 +47,29 @@ namespace Common.Jobs
                     {
                         var consulData = await _consulService.GetConsulKeyValues(env);
 
+                        // Track existing files to detect deletions
+                        var existingFiles = new HashSet<string>();
                         foreach (var kv in consulData)
                         {
+                            var filePath = Path.Combine(envPath, kv.Key);
+                            existingFiles.Add(filePath);
                             _consulService.SaveKvToFile(envPath, kv.Key, kv.Value.Value);
                         }
 
-                        // Stage all changes
+                        // Remove files that no longer exist in Consul
+                        if (Directory.Exists(envPath))
+                        {
+                            foreach (var file in Directory.GetFiles(envPath, "*", SearchOption.AllDirectories))
+                            {
+                                if (!existingFiles.Contains(file))
+                                {
+                                    File.Delete(file);
+                                    _logger.LogInformation($"Deleted file that no longer exists in Consul: {file}");
+                                }
+                            }
+                        }
+
+                        // Stage all changes including deletions
                         LibGit2Sharp.Commands.Stage(repo, "*");
 
                         var status = repo.RetrieveStatus();
