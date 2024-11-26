@@ -7,6 +7,7 @@ namespace Common.Services
         Task DownloadConsulAsync(ConsulEnvironment consulEnv);
         Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv);
         Task OpenInVsCode(ConsulEnvironment env);
+        void SaveKvToFile(string folderPath, string key, string value);
         Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value);
     }
 }

@@ -312,25 +312,32 @@ namespace Common.Services
 
         public void SaveKvToFile(string folderPath, string key, string value)
         {
-            // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
-
-            string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
-            string directory = Path.GetDirectoryName(filePath);
-
-            if (!Directory.Exists(directory))
+            try
             {
-                Directory.CreateDirectory(directory);
-            }
+                // Replace "/" with "\" for Windows paths and ensure it does not end with a backslash
 
-            // If the path ends with a slash, treat it as a directory
-            if (value == null)
+                string filePath = Path.Combine(folderPath, key.Replace("/", "\\"));
+                string directory = Path.GetDirectoryName(filePath);
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }   
+
+                // If the path ends with a slash, treat it as a directory
+                if (value == null)
+                {
+                    return;
+                }
+
+                File.WriteAllText(filePath, value);
+
+                _logger.LogInformation("Saved: {FilePath}", filePath);
+            }
+            catch (Exception ex)
             {
-                return;
+                _logger.LogError(ex, "Error to save: {FilePath} {Key} {Value}", folderPath, key, value);
             }
-
-            File.WriteAllText(filePath, value);
-
-            _logger.LogInformation("Saved: {FilePath}", filePath);
         }
 
         public async Task OpenInVsCode(ConsulEnvironment env)
