@@ -51,8 +51,9 @@ namespace Common.Jobs
                         var existingFiles = new HashSet<string>();
                         foreach (var kv in consulData)
                         {
-                            var filePath = Path.Combine(envPath, kv.Key);
+                            var filePath = ConsulService.JoinPathKey(envPath, kv.Key);
                             existingFiles.Add(filePath);
+
                             _consulService.SaveKvToFile(envPath, kv.Key, kv.Value.Value);
                         }
 
