@@ -29,5 +29,17 @@ namespace Common.Services
             string? status,
             int pageSize,
             int pageNumber);
+
+        Task<List<(DateTime Timestamp, double DelaySeconds)>> GetDelayMetricsAsync(
+            string environment,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            string? containerNumber = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null,
+            CancellationToken cancellationToken = default);
     }
 }
