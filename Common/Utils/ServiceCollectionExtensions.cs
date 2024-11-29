@@ -70,6 +70,7 @@ namespace Common.Utils
             services.AddBlazoredToast();
             services.AddBlazorContextMenu();
             services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
+            services.AddScoped<ILtdbLtvcService, LtdbLtvcService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
