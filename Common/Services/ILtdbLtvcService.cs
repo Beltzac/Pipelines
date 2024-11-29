@@ -25,7 +25,7 @@ namespace Common.Services
             string? placa,
             string? motorista,
             string? moveType,
-            int? idAgendamento,
+            long? idAgendamento,
             string? status,
             int pageSize,
             int pageNumber);
