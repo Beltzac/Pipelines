@@ -59,8 +59,8 @@
                 <label class="form-label">Move Type</label>
                 <select class="form-select" @bind="moveType">
                     <option value="">All</option>
-                    <option value="GATE_IN">GATE_IN</option>
-                    <option value="GATE_OUT">GATE_OUT</option>
+                    <option value="ENTRY">ENTRY</option>
+                    <option value="EXIT">EXIT</option>
                 </select>
             </div>
 
@@ -240,7 +240,7 @@ private DateTime? endDate;
 private string placa;
 private string requestId;
 private string containerNumbers;
-private int? idAgendamento;
+private long? idAgendamento;
 private string moveType;
 private string status;
 private bool isLoading;
