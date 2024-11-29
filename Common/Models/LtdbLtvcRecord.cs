@@ -5,7 +5,7 @@ namespace Common.Models
         public DateTime? DataLtdb { get; set; }
         public DateTime? DataLtvc { get; set; }
         public string RequestId { get; set; }
-        public int? IdAgendamento { get; set; }
+        public long? IdAgendamento { get; set; }
         public string MoveType { get; set; }
         public string Placa { get; set; }
         public string Motorista { get; set; }

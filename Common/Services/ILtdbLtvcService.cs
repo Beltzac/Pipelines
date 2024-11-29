@@ -12,7 +12,7 @@ namespace Common.Services
             string? placa = null,
             string? motorista = null,
             string? moveType = null,
-            int? idAgendamento = null,
+            long? idAgendamento = null,
             string? status = null,
             int pageSize = 10,
             int pageNumber = 1,
