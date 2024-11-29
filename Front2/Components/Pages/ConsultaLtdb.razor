@@ -379,17 +379,20 @@
 
         if (!chartInitialized)
         {
+            var chartConfig = System.Text.Json.JsonSerializer.Serialize(chartData);
             await JSRuntime.InvokeVoidAsync("eval", $@"
                 var ctx = document.getElementById('delayChart').getContext('2d');
-                window.delayChart = new Chart(ctx, {chartData});
+                window.delayChart = new Chart(ctx, {chartConfig});
             ");
             chartInitialized = true;
         }
         else
         {
+            var newLabels = System.Text.Json.JsonSerializer.Serialize(labels);
+            var newData = System.Text.Json.JsonSerializer.Serialize(data);
             await JSRuntime.InvokeVoidAsync("eval", $@"
-                window.delayChart.data.labels = {System.Text.Json.JsonSerializer.Serialize(labels)};
-                window.delayChart.data.datasets[0].data = {System.Text.Json.JsonSerializer.Serialize(data)};
+                window.delayChart.data.labels = {newLabels};
+                window.delayChart.data.datasets[0].data = {newData};
                 window.delayChart.update();
             ");
         }
