@@ -46,21 +46,21 @@ namespace Common.Services
             {
                 result.Add(new LtdbLtvcRecord
                 {
-                    DataLtdb = reader.IsDBNull("DATA_LTDB") ? null : reader.GetDateTime("DATA_LTDB"),
-                    DataLtvc = reader.IsDBNull("DATA_LTVC") ? null : reader.GetDateTime("DATA_LTVC"),
-                    RequestId = reader.IsDBNull("REQUEST_ID") ? null : reader.GetString("REQUEST_ID"),
-                    IdAgendamento = reader.IsDBNull("ID_AGENDAMENTO") ? null : reader.GetInt32("ID_AGENDAMENTO"),
-                    MoveType = reader.IsDBNull("MOVETYPE") ? null : reader.GetString("MOVETYPE"),
-                    Placa = reader.IsDBNull("PLACA") ? null : reader.GetString("PLACA"),
-                    Motorista = reader.IsDBNull("MOTORISTA") ? null : reader.GetString("MOTORISTA"),
-                    LtdbXml = reader.IsDBNull("LTDB_XML") ? null : reader.GetString("LTDB_XML"),
-                    LtvcXml = reader.IsDBNull("LTVC_XML") ? null : reader.GetString("LTVC_XML"),
-                    Delay = reader.IsDBNull("DELAY") ? null : reader.GetTimeSpan("DELAY"),
-                    Status = reader.IsDBNull("STATUS") ? null : reader.GetString("STATUS"),
-                    MessageText = reader.IsDBNull("MESSAGE_TEXT") ? null : reader.GetString("MESSAGE_TEXT"),
-                    ContainerNumbers = reader.IsDBNull("CONTAINER_NUMBERS") ? null : reader.GetString("CONTAINER_NUMBERS")
+                    DataLtdb = reader.IsDBNull(reader.GetOrdinal("DATA_LTDB")) ? null : reader.GetDateTime(reader.GetOrdinal("DATA_LTDB")),
+                    DataLtvc = reader.IsDBNull(reader.GetOrdinal("DATA_LTVC")) ? null : reader.GetDateTime(reader.GetOrdinal("DATA_LTVC")),
+                    RequestId = reader.IsDBNull(reader.GetOrdinal("REQUEST_ID")) ? null : reader.GetString(reader.GetOrdinal("REQUEST_ID")),
+                    IdAgendamento = reader.IsDBNull(reader.GetOrdinal("ID_AGENDAMENTO")) ? null : reader.GetInt32(reader.GetOrdinal("ID_AGENDAMENTO")),
+                    MoveType = reader.IsDBNull(reader.GetOrdinal("MOVETYPE")) ? null : reader.GetString(reader.GetOrdinal("MOVETYPE")),
+                    Placa = reader.IsDBNull(reader.GetOrdinal("PLACA")) ? null : reader.GetString(reader.GetOrdinal("PLACA")),
+                    Motorista = reader.IsDBNull(reader.GetOrdinal("MOTORISTA")) ? null : reader.GetString(reader.GetOrdinal("MOTORISTA")),
+                    LtdbXml = reader.IsDBNull(reader.GetOrdinal("LTDB_XML")) ? null : reader.GetString(reader.GetOrdinal("LTDB_XML")),
+                    LtvcXml = reader.IsDBNull(reader.GetOrdinal("LTVC_XML")) ? null : reader.GetString(reader.GetOrdinal("LTVC_XML")),
+                    Delay = reader.IsDBNull(reader.GetOrdinal("DELAY")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DELAY")),
+                    Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS")),
+                    MessageText = reader.IsDBNull(reader.GetOrdinal("MESSAGE_TEXT")) ? null : reader.GetString(reader.GetOrdinal("MESSAGE_TEXT")),
+                    ContainerNumbers = reader.IsDBNull(reader.GetOrdinal("CONTAINER_NUMBERS")) ? null : reader.GetString(reader.GetOrdinal("CONTAINER_NUMBERS"))
                 });
-                totalCount = reader.GetInt32("TotalCount");
+                totalCount = reader.GetInt32(reader.GetOrdinal("TotalCount"));
             }
 
             return (Results: result, TotalCount: totalCount);
