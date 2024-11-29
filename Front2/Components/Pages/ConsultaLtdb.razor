@@ -285,26 +285,121 @@
 
             StateHasChanged();
 
-            var (queryResults, total) = await LtdbService.ExecuteQueryAsync(
-            selectedEnvironment,
-            startDate,
-            endDate,
-            placa,
-            requestId,
-            containerNumbers,
-            moveType,
-            idAgendamento,
-            status,
-            pageSize,
-            currentPage,
-            cts.Token);
+            var queryTask = LtdbService.ExecuteQueryAsync(
+                selectedEnvironment,
+                startDate,
+                endDate,
+                placa,
+                requestId,
+                containerNumbers,
+                moveType,
+                idAgendamento,
+                status,
+                pageSize,
+                currentPage,
+                cts.Token);
+
+            var delayTask = LtdbService.GetDelayMetricsAsync(
+                selectedEnvironment,
+                startDate,
+                endDate,
+                containerNumbers,
+                placa,
+                motorista,
+                moveType,
+                idAgendamento,
+                status,
+                cts.Token);
+
+            await Task.WhenAll(queryTask, delayTask);
+
+            var (queryResults, total) = await queryTask;
+            delayData = await delayTask;
 
             results = queryResults;
             totalCount = total;
+
+            await UpdateChart();
         }
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task UpdateChart()
+    {
+        if (delayData == null || !delayData.Any()) return;
+
+        var labels = delayData.Select(d => d.Timestamp.ToString("HH:mm:ss")).ToArray();
+        var data = delayData.Select(d => d.DelaySeconds).ToArray();
+
+        var chartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = new[]
+                {
+                    new
+                    {
+                        label = "Response Time (seconds)",
+                        data = data,
+                        borderColor = "rgb(75, 192, 192)",
+                        tension = 0.1
+                    }
+                }
+            },
+            options = new
+            {
+                responsive = true,
+                scales = new
+                {
+                    y = new
+                    {
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Seconds"
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Time"
+                        }
+                    }
+                }
+            }
+        };
+
+        if (!chartInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                var ctx = document.getElementById('delayChart').getContext('2d');
+                window.delayChart = new Chart(ctx, {chartData});
+            ");
+            chartInitialized = true;
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("eval", $@"
+                window.delayChart.data.labels = {System.Text.Json.JsonSerializer.Serialize(labels)};
+                window.delayChart.data.datasets[0].data = {System.Text.Json.JsonSerializer.Serialize(data)};
+                window.delayChart.update();
+            ");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (chartInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "if(window.delayChart) window.delayChart.destroy();");
         }
     }
 
