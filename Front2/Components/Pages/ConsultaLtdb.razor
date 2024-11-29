@@ -211,26 +211,26 @@
                             </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                            <div class="card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">LTVC XML</h6>
-                            <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedLtvcXml)
-                            <i class="bi bi-clipboard"></i> Copy
-                            </button>
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">LTVC XML</h6>
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedLtvcXml)">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtvcXml</pre>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="card-body p-0">
-                            <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtvcXml</pre>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            </div>
-                            <div class="modal-backdrop fade show"></div>
-                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
 
                                         @code {
 private ConfigModel config;
