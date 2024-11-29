@@ -98,6 +98,18 @@
     </div>
 }
 
+@if (delayData != null)
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Response Time Analysis</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="delayChart" width="400" height="100"></canvas>
+        </div>
+    </div>
+}
+
 @if (results != null)
 {
     <div class="mt-4">
@@ -252,6 +264,8 @@
     private string formattedLtdbXml;
     private string formattedLtvcXml;
     private CancellationTokenSource cts;
+    private List<(DateTime Timestamp, double DelaySeconds)> delayData;
+    private bool chartInitialized;
 
     protected override async Task OnInitializedAsync()
     {

@@ -205,5 +205,96 @@ CROSS JOIN CountQuery c";
 
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
+
+        public async Task<List<(DateTime Timestamp, double DelaySeconds)>> GetDelayMetricsAsync(
+            string environment,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            string? containerNumber = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null,
+            CancellationToken cancellationToken = default)
+        {
+            var config = _configService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
+                ?? throw new ArgumentException($"Environment {environment} not found");
+
+            using var connection = new OracleConnection(oracleEnv.ConnectionString);
+            await connection.OpenAsync();
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
+
+            var result = new List<(DateTime Timestamp, double DelaySeconds)>();
+            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                result.Add((
+                    reader.GetDateTime(0),
+                    reader.GetDouble(1)
+                ));
+            }
+
+            return result;
+        }
+
+        private string BuildDelayMetricsQuery(
+            DateTime? startDate,
+            DateTime? endDate,
+            string? containerNumber,
+            string? placa,
+            string? motorista,
+            string? moveType,
+            long? idAgendamento,
+            string? status)
+        {
+            var conditions = new List<string>();
+
+            if (startDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+
+            if (endDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+
+            if (!string.IsNullOrEmpty(containerNumber))
+                conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
+
+            if (!string.IsNullOrEmpty(placa))
+                conditions.Add($"PLACA LIKE '%{placa}%'");
+
+            if (!string.IsNullOrEmpty(motorista))
+                conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
+
+            if (!string.IsNullOrEmpty(moveType))
+                conditions.Add($"MOVETYPE = '{moveType}'");
+
+            if (idAgendamento.HasValue)
+                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
+
+            if (!string.IsNullOrEmpty(status))
+                conditions.Add($"LTVC_STATUS = '{status}'");
+
+            var whereClause = conditions.Any()
+                ? $"AND {string.Join(" AND ", conditions)}"
+                : "";
+
+            return $@"
+SELECT 
+    LTDB.CREATED_AT as TIMESTAMP,
+    EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT)) as DELAY_SECONDS
+FROM 
+    TCPSGATE.TRACKING LTDB
+LEFT JOIN TCPSGATE.TRACKING LTVC 
+    ON LTDB.REQUEST_ID = LTVC.REQUEST_ID 
+    AND LTVC.TYPE = 'LTVC'
+WHERE 1 = 1
+    AND LTDB.TYPE = 'LTDB'
+    {whereClause}
+ORDER BY LTDB.CREATED_AT ASC";
+        }
     }
 }
