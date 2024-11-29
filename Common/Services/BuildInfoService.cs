@@ -125,6 +125,8 @@ namespace Common.Services
 
         public async Task<List<Repository>> GetBuildInfoAsync(string filter = null)
         {
+            //https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md
+
             var query = _repositoryDatabase.Query()
                 .Where(repo => !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern))
                                && !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Project, pattern)));
