@@ -73,7 +73,7 @@ namespace Common.Services
             string? placa,
             string? motorista,
             string? moveType,
-            int? idAgendamento,
+            long? idAgendamento,
             string? status,
             int pageSize,
             int pageNumber)
@@ -99,7 +99,7 @@ namespace Common.Services
                 conditions.Add($"MOVETYPE = '{moveType}'");
 
             if (idAgendamento.HasValue)
-                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento}");
+                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
 
             if (!string.IsNullOrEmpty(status))
                 conditions.Add($"LTVC_STATUS = '{status}'");
