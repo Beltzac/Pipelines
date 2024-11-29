@@ -206,9 +206,9 @@
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
-                            <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtdbXml</pre>
-                            </div>
-                            </div>
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtdbXml</pre>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
@@ -232,122 +232,122 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-                                        @code {
-private ConfigModel config;
-private string selectedEnvironment;
-private DateTime? startDate;
-private DateTime? endDate;
-private string placa;
-private string requestId;
-private string containerNumbers;
-private long? idAgendamento;
-private string moveType;
-private string status;
-private bool isLoading;
-private List<LtdbLtvcRecord> results;
-private int totalCount;
-private int currentPage = 1;
-private int pageSize = 10;
-private LtdbLtvcRecord selectedItem;
-private string formattedLtdbXml;
-private string formattedLtvcXml;
-private CancellationTokenSource cts;
+@code {
+    private ConfigModel config;
+    private string selectedEnvironment;
+    private DateTime? startDate;
+    private DateTime? endDate;
+    private string placa;
+    private string requestId;
+    private string containerNumbers;
+    private long? idAgendamento;
+    private string moveType;
+    private string status;
+    private bool isLoading;
+    private List<LtdbLtvcRecord> results;
+    private int totalCount;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private LtdbLtvcRecord selectedItem;
+    private string formattedLtdbXml;
+    private string formattedLtvcXml;
+    private CancellationTokenSource cts;
 
-protected override async Task OnInitializedAsync()
-{
-    config = ConfigService.GetConfig();
-    selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-    endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-    startDate = endDate?.AddHours(-24);
-}
-
-private async Task ExecuteQuery()
-{
-    try
+    protected override async Task OnInitializedAsync()
     {
-    cts?.Cancel();
-    cts = new CancellationTokenSource();
-    isLoading = true;
-
-    StateHasChanged();
-
-    var (queryResults, total) = await LtdbService.ExecuteQueryAsync(
-    selectedEnvironment,
-    startDate,
-    endDate,
-    placa,
-    requestId,
-    containerNumbers,
-    idAgendamento,
-    moveType,
-    status,
-    pageSize,
-    currentPage,
-    cts.Token);
-
-    results = queryResults;
-    totalCount = total;
+        config = ConfigService.GetConfig();
+        selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
+        endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+        startDate = endDate?.AddHours(-24);
     }
-    finally
+
+    private async Task ExecuteQuery()
     {
-    isLoading = false;
+        try
+        {
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+            isLoading = true;
+
+            StateHasChanged();
+
+            var (queryResults, total) = await LtdbService.ExecuteQueryAsync(
+            selectedEnvironment,
+            startDate,
+            endDate,
+            placa,
+            requestId,
+            containerNumbers,
+            moveType,
+            idAgendamento,
+            status,
+            pageSize,
+            currentPage,
+            cts.Token);
+
+            results = queryResults;
+            totalCount = total;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
-}
 
-private void ShowDetails(LtdbLtvcRecord item)
-{
-    selectedItem = item;
-    formattedLtdbXml = DataFormatUtils.FormatXml(item.LtdbXml);
-    formattedLtvcXml = DataFormatUtils.FormatXml(item.LtvcXml);
-}
-
-private async Task ExportSqlQuery()
-{
-    var sqlQuery = LtdbService.BuildQuery(
-    startDate,
-    endDate,
-    placa,
-    requestId,
-    containerNumbers,
-    idAgendamento,
-    moveType,
-    status,
-    pageSize,
-    currentPage);
-
-    await CopyToClipboard(sqlQuery);
-    toastService.ShowSuccess("SQL Query copied to clipboard");
-}
-
-private void ClearFilters()
-{
-    placa = null;
-    requestId = null;
-    containerNumbers = null;
-    idAgendamento = null;
-    moveType = null;
-    status = null;
-    endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-    startDate = endDate?.AddHours(-24);
-    currentPage = 1;
-}
-
-private void CloseModal()
-{
-    selectedItem = null;
-}
-
-private void CancelSearch()
-{
-    cts?.Cancel();
-    isLoading = false;
-}
-
-private async Task CopyToClipboard(string text)
-{
-    if (!string.IsNullOrEmpty(text))
+    private void ShowDetails(LtdbLtvcRecord item)
     {
-    await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        selectedItem = item;
+        formattedLtdbXml = DataFormatUtils.FormatXml(item.LtdbXml);
+        formattedLtvcXml = DataFormatUtils.FormatXml(item.LtvcXml);
     }
-}
+
+    private async Task ExportSqlQuery()
+    {
+        var sqlQuery = LtdbService.BuildQuery(
+        startDate,
+        endDate,
+        placa,
+        requestId,
+        containerNumbers,
+        moveType,
+        idAgendamento,
+        status,
+        pageSize,
+        currentPage);
+
+        await CopyToClipboard(sqlQuery);
+        toastService.ShowSuccess("SQL Query copied to clipboard");
+    }
+
+    private void ClearFilters()
+    {
+        placa = null;
+        requestId = null;
+        containerNumbers = null;
+        idAgendamento = null;
+        moveType = null;
+        status = null;
+        endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+        startDate = endDate?.AddHours(-24);
+        currentPage = 1;
+    }
+
+    private void CloseModal()
+    {
+        selectedItem = null;
+    }
+
+    private void CancelSearch()
+    {
+        cts?.Cancel();
+        isLoading = false;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+    }
 }
