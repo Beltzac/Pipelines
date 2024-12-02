@@ -69,14 +69,14 @@ namespace Common.Services
         public string BuildQuery(
             DateTime? startDate,
             DateTime? endDate,
-            string? containerNumber,
-            string? placa,
-            string? motorista,
-            string? moveType,
-            long? idAgendamento,
-            string? status,
-            int pageSize,
-            int pageNumber)
+            string? containerNumber = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null,
+            int pageSize = 10,
+            int pageNumber = 1)
         {
             var conditions = new List<string>();
 
@@ -156,8 +156,6 @@ MainQuery AS (
     LEFT JOIN TCPSGATE.TRACKING LTVC 
         ON LTDB.REQUEST_ID = LTVC.REQUEST_ID 
         AND LTVC.TYPE = 'LTVC'
-    LEFT JOIN TCPAPI.AGE_GUIA_AGENDAMENTO GUI 
-        ON GUI.ID_AGENDAMENTO = LTVC.ID_AGENDAMENTO
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
         '/ns:LTDB'
@@ -206,7 +204,7 @@ CROSS JOIN CountQuery c";
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
-        public async Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)>> GetDelayMetricsAsync(
+        public async Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>> GetDelayMetricsAsync(
             string environment,
             DateTime? startDate = null,
             DateTime? endDate = null,
@@ -228,7 +226,7 @@ CROSS JOIN CountQuery c";
             using var cmd = connection.CreateCommand();
             cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
 
-            var result = new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)>();
+            var result = new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>();
             using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
             while (await reader.ReadAsync(cancellationToken))
@@ -236,7 +234,8 @@ CROSS JOIN CountQuery c";
                 result.Add((
                     reader.GetDateTime(0),
                     reader.GetDouble(1),
-                    reader.GetDouble(2)
+                    reader.GetDouble(2),
+                    reader.GetInt32(3)
                 ));
             }
 
@@ -246,12 +245,12 @@ CROSS JOIN CountQuery c";
         private string BuildDelayMetricsQuery(
             DateTime? startDate,
             DateTime? endDate,
-            string? containerNumber,
-            string? placa,
-            string? motorista,
-            string? moveType,
-            long? idAgendamento,
-            string? status)
+            string? containerNumber = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null)
         {
             var conditions = new List<string>();
 

@@ -69,9 +69,18 @@ namespace Common.Services
             return (Results: result, TotalCount: totalCount);
         }
 
-        public string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
-            string[]? containerNumbers, int? userId, int? execucaoId, int pageSize, int pageNumber,
-            string? httpStatusRange, string? responseStatus)
+        public string BuildQuery(
+            DateTime? startDate,
+            DateTime? endDate,
+            string? urlFilter,
+            string? httpMethod,
+            string[]? containerNumbers,
+            int? userId,
+            int? execucaoId,
+            int pageSize,
+            int pageNumber,
+            string? httpStatusRange,
+            string? responseStatus)
         {
             var conditions = new List<string>();
 

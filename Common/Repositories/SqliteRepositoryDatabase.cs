@@ -17,6 +17,12 @@ namespace Common.Repositories
             return await context.Repositories.FindAsync(id);
         }
 
+        public async Task<bool> ExistsByIdAsync(Guid id)
+        {
+            await using var context = _contextFactory.CreateDbContext();
+            return await context.Repositories.AnyAsync(r => r.Id == id);
+        }
+
         public async Task<List<Repository>> FindAllAsync()
         {
             await using var context = _contextFactory.CreateDbContext();

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using System.Linq.Expressions;
 using System.Text;
@@ -100,12 +101,6 @@ namespace Common.Services
             }
             else
             {
-                if (existingRepo != null)
-                {
-                    _logger.LogInformation($"Repo {existingRepo.Name} has no pipeline/build. Skipping.");
-                    return existingRepo;
-                }
-
                 _logger.LogInformation($"Repo {existingRepo.Name} has no pipeline/build. Creating build info.");
             }
 
@@ -180,18 +175,39 @@ namespace Common.Services
             await Task.WhenAll(fetchTasks);
         }
 
-        public async Task<List<Guid>> FetchReposGuids()
+        public async Task<List<Guid>> FetchProjectsRepos()
         {
             var projects = await _projectClient.GetProjects();
-            var repos = new List<GitRepository>();
+
+            var projectsRepos = new List<Guid>();
 
             foreach (var project in projects)
             {
+                if (_repoRegexFilters.Any(pattern => Regex.IsMatch(project.Name, pattern)))
+                {
+                    continue;
+                }
+
                 var projectRepos = await _gitClient.GetRepositoriesAsync(project.Id);
-                repos.AddRange(projectRepos);
+                projectsRepos.AddRange(projectRepos.Select(repo => repo.Id));
+
+                // Cadastrar o basico se ele nao existir
+                foreach (var repo in projectRepos)
+                {
+                    if (_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern)))
+                    {
+                        continue;
+                    }
+
+                    if (!await _repositoryDatabase.ExistsByIdAsync(repo.Id))
+                    {
+                        var buildInfo = await CreateBuildInfoAsync(repo, null);
+                        await UpsertAndPublish(buildInfo);
+                    }
+                }
             }
 
-            return repos.Select(repo => repo.Id).ToList();
+            return projectsRepos;
         }
 
         public async Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition)
