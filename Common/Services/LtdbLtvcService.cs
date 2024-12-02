@@ -206,7 +206,7 @@ CROSS JOIN CountQuery c";
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
-        public async Task<List<(DateTime Timestamp, double DelaySeconds)>> GetDelayMetricsAsync(
+        public async Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)>> GetDelayMetricsAsync(
             string environment,
             DateTime? startDate = null,
             DateTime? endDate = null,
@@ -228,14 +228,15 @@ CROSS JOIN CountQuery c";
             using var cmd = connection.CreateCommand();
             cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
 
-            var result = new List<(DateTime Timestamp, double DelaySeconds)>();
+            var result = new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)>();
             using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
             while (await reader.ReadAsync(cancellationToken))
             {
                 result.Add((
                     reader.GetDateTime(0),
-                    reader.GetDouble(1)
+                    reader.GetDouble(1),
+                    reader.GetDouble(2)
                 ));
             }
 
@@ -285,7 +286,8 @@ CROSS JOIN CountQuery c";
             return $@"
 SELECT 
     TRUNC(LTDB.CREATED_AT, 'HH') as TIMESTAMP,
-    AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as DELAY_SECONDS
+    AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as AVG_DELAY_SECONDS,
+    MAX(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as MAX_DELAY_SECONDS
 FROM 
     TCPSGATE.TRACKING LTDB
 LEFT JOIN TCPSGATE.TRACKING LTVC 
