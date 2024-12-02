@@ -91,9 +91,9 @@
       },
       "FlexLabs.EntityFrameworkCore.Upsert": {
         "type": "Direct",
-        "requested": "[8.1.0, )",
-        "resolved": "8.1.0",
-        "contentHash": "xY+NwcPGW7hS39esX3edJetRP34VTio+ziASEPQLXU5pfumkE80WGd8n6MSHQcQd5BRQ1iDFrp2AINttJhGQCA==",
+        "requested": "[8.1.2, )",
+        "resolved": "8.1.2",
+        "contentHash": "4bA/XRsIuY8Uf8qusSxQi0+2bxC2tvqRgy1wRxf/U2fUvMSCCKMmfHfjXmzBeu+0Ezz2VHrwGuKGw3QbxQ+/dg==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "8.0.0"
         }
@@ -347,9 +347,9 @@
       },
       "Z.EntityFramework.Extensions.EFCore": {
         "type": "Direct",
-        "requested": "[9.103.6.2, )",
-        "resolved": "9.103.6.2",
-        "contentHash": "ZBPz/LrOKJyXZAs6evl6z5F68V1sVYxxfl+39t+vpIa/Fa2c9F6nX5T6D1/PgCoFlu9eDW9tSZaxdau+6QQ8bw==",
+        "requested": "[9.103.6.3, )",
+        "resolved": "9.103.6.3",
+        "contentHash": "XU9Z9JAGqlI3f+4Dz+qQ3wvEpBj60M9mUOvYqsLEBc7IFN4Hx5hXeKTClCE+Sw/+aPKNplhPcOcMNBOQk6GX4A==",
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "9.0.0",
           "System.Configuration.ConfigurationManager": "[9.0.0, 10.0.0)"
