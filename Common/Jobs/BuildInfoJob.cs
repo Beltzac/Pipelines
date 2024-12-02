@@ -22,21 +22,19 @@ public class BuildInfoJob : IJob
     {
         using (_telemetryClient.StartOperation<RequestTelemetry>("criar-jobs-update"))
         {
-            var repos = await _buildInfoService.GetBuildInfoAsync();
+            var repos = await _buildInfoService.FetchProjectsRepos();
 
             // For each repository, schedule a job to update the repository with a random start time
-            foreach (var repo in repos)
+            foreach (var repoId in repos)
             {
-                var secondsToNextUpdate = repo.SecondsToNextUpdate();
-
                 var trigger = TriggerBuilder.Create()
-                    .WithIdentity($"RepositoryUpdateTrigger-{repo.Id}")
-                    .StartAt(DateTime.UtcNow.AddSeconds(secondsToNextUpdate))
+                    .WithIdentity($"RepositoryUpdateTrigger-{repoId}")
+                    .StartNow()
                     .Build();
 
                 var job = JobBuilder.Create<RepositoryUpdateJob>()
-                    .WithIdentity($"RepositoryUpdateJob-{repo.Id}")
-                    .UsingJobData("RepositoryId", repo.Id.ToString())
+                    .WithIdentity($"RepositoryUpdateJob-{repoId}")
+                    .UsingJobData("RepositoryId", repoId.ToString())
                     .Build();
 
                 // Check if the trigger already exists
@@ -48,7 +46,7 @@ public class BuildInfoJob : IJob
 
                 await context.Scheduler.ScheduleJob(job, trigger);
 
-                _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repo.Name} in {secondsToNextUpdate} seconds");
+                _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repoId} now");
             }
 
             _telemetryClient.TrackEvent("Job Creation Completed");

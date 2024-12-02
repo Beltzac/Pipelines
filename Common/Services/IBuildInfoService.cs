@@ -12,7 +12,6 @@ namespace Common.Services
         Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition);
         Task Delete(Guid id);
         Task<Repository> FetchRepoBuildInfoAsync(Guid repoId);
-        Task<List<Guid>> FetchReposGuids();
         Task<string> GenerateCloneCommands();
         Task<string> GetBuildErrorLogsAsync(Guid id);
         Task<List<Repository>> GetBuildInfoAsync(string filter = null);
@@ -21,5 +20,6 @@ namespace Common.Services
         Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId);
         Task OpenCloneFolderInVsCode();
         Task NavigateToPRCreationAsync(Repository repo);
+        Task<List<Guid>> FetchProjectsRepos();
     }
 }

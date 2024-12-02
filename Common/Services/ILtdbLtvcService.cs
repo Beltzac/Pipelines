@@ -21,16 +21,16 @@ namespace Common.Services
         string BuildQuery(
             DateTime? startDate,
             DateTime? endDate,
-            string? containerNumber,
-            string? placa,
-            string? motorista,
-            string? moveType,
-            long? idAgendamento,
-            string? status,
-            int pageSize,
-            int pageNumber);
+            string? containerNumber = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null,
+            int pageSize = 10,
+            int pageNumber = 1);
 
-        Task<List<(DateTime Timestamp, double DelaySeconds)>> GetDelayMetricsAsync(
+        Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>> GetDelayMetricsAsync(
             string environment,
             DateTime? startDate = null,
             DateTime? endDate = null,

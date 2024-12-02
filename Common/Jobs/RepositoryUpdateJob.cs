@@ -57,7 +57,7 @@ namespace Common.Jobs
 
                 await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
 
-                _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo.Name} in {nextRun} seconds");
+                _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo?.Name ?? "MISSING"} in {nextRun} seconds");
 
                 _telemetryClient.TrackEvent("Update Completed");
             }
