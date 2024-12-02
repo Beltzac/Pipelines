@@ -6,6 +6,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SmartComponents.LocalEmbeddings;
 
 namespace Tests.Common.Services
 {
@@ -18,6 +19,7 @@ namespace Tests.Common.Services
         private readonly Mock<IBuildHttpClient> _buildClientMock;
         private readonly Mock<IProjectHttpClient> _projectClientMock;
         private readonly Mock<IGitHttpClient> _gitClientMock;
+        private readonly Mock<LocalEmbedder> _embedderMock;
         private readonly BuildInfoService _buildInfoService;
 
         public BuildInfoServiceTests()
@@ -29,6 +31,7 @@ namespace Tests.Common.Services
             _buildClientMock = new Mock<IBuildHttpClient>();
             _projectClientMock = new Mock<IProjectHttpClient>();
             _gitClientMock = new Mock<IGitHttpClient>();
+            _embedderMock = new Mock<LocalEmbedder>();
 
             var configModel = new ConfigModel
             {
@@ -44,7 +47,8 @@ namespace Tests.Common.Services
                 _repositoryDatabaseMock.Object,
                 _buildClientMock.Object,
                 _projectClientMock.Object,
-                _gitClientMock.Object);
+                _gitClientMock.Object,
+                _embedderMock.Object);
         }
 
         // ...

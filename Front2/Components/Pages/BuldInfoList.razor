@@ -135,12 +135,6 @@
 
                     var infos = await BuildInfoService.GetBuildInfoAsync(x);
 
-                    //Put the builds that there is a window open in first place
-                    infos = infos
-                        .OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
-                        .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
-                        .ToList();
-
                     BuildInfoStateService.BuildInfos = infos;
                 }
                 finally
@@ -174,26 +168,8 @@
     {
         if (BuildInfoStateService.BuildInfos != null && BuildInfoStateService.BuildInfos.Any(b => b.Id == id))
         {
-            var infos = BuildInfoStateService.BuildInfos;
-
-            // Remove the existing build info with the specified id
-            infos.RemoveAll(b => b.Id == id);
-
             var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
-            if (newBuildInfo != null)
-            {
-                var janelas = WindowUtils.EnumerarJanelas().Distinct();
-
-                infos.Add(newBuildInfo);
-
-                infos = infos.OrderByDescending(b => CountMatchingWindows(janelas, b.Project, b.Name))
-                    .ThenByDescending(BuildInfoService.GetLatestBuildDetailsExpression().Compile())
-                    .ToList();
-
-                action(newBuildInfo);
-            }
-
-            BuildInfoStateService.BuildInfos = infos;
+            BuildInfoStateService.BuildInfos = await BuildInfoService.GetBuildInfoAsync(BuildInfoStateService.Filter);
         }
     }
 
