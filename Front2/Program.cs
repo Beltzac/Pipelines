@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Serilog;
 using ShellLink;
+using SmartComponents.LocalEmbeddings;
 using System.Runtime.InteropServices;
 
 // electronize start
@@ -124,6 +125,8 @@ builder.Services.AddApplicationInsightsTelemetryWorkerService(opt =>
 });
 
 builder.Services.AddStateServices();
+
+builder.Services.AddSingleton<LocalEmbedder>();
 
 var app = builder.Build();
 

@@ -5,6 +5,7 @@ using ElectronNET.API;
 using ElectronNET.API.Entities;
 using Flurl;
 using LibGit2Sharp;
+using Microsoft.AspNetCore.Routing.Matching;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,9 +14,11 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using SmartComponents.LocalEmbeddings;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
+using static Vanara.PInvoke.LCID;
 
 namespace Common.Services
 {
@@ -32,6 +35,7 @@ namespace Common.Services
         private readonly string _name;
         private readonly List<string> _repoRegexFilters;
         private readonly string _organizationUrl;
+        private readonly LocalEmbedder _embedder;
 
         public BuildInfoService(
             IHubContext<BuildInfoHub> hubContext,
@@ -40,7 +44,8 @@ namespace Common.Services
             IRepositoryDatabase repositoryDatabase,
             IBuildHttpClient buildClient,
             IProjectHttpClient projectClient,
-            IGitHttpClient gitClient)
+            IGitHttpClient gitClient,
+            LocalEmbedder embeder)
         {
             var config = configService.GetConfig();
 
@@ -55,6 +60,7 @@ namespace Common.Services
             _privateToken = config.PAT;
             _repoRegexFilters = config.IgnoreRepositoriesRegex;
             _organizationUrl = config.OrganizationUrl;
+            _embedder = embeder;
         }
 
         public async Task NavigateToPRCreationAsync(Repository repo)
@@ -122,27 +128,46 @@ namespace Common.Services
         {
             //https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md
 
+            
+
             var query = _repositoryDatabase.Query()
                 .Where(repo => !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern))
                                && !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Project, pattern)));
 
-            if (!string.IsNullOrEmpty(filter))
-            {
-                var parts = filter.Split([' ', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var repos = query.ToList();
 
-                foreach (var part in parts)
-                {
-                    query = query.Where(x =>
-                        x.Project.ToLower().Contains(part.ToLower()) ||
-                        x.Name.ToLower().Contains(part.ToLower()) ||
-                        (x.Pipeline != null && x.Pipeline.Last != null &&
-                         x.Pipeline.Last.Commit != null &&
-                         x.Pipeline.Last.Commit.AuthorName.ToLower().Contains(part.ToLower())));
-                }
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                //var janelas = string.Join(" ", WindowUtils.EnumerarJanelas().Distinct());
+
+                var filtroEmbedding = _embedder.Embed(filter);
+
+                var results = _embedder.EmbedRange(repos, x => x.Path);
+
+                var results2 = LocalEmbedder.FindClosest(filtroEmbedding, results, maxResults: 999, minSimilarity: 0.5f);
+
+                return results2.ToList();
             }
 
-            var results = query.ToList();
-            var ordered = results.AsQueryable()
+
+
+            //if (!string.IsNullOrEmpty(filter))
+            //{
+            //    var parts = filter.Split([' ', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            //    foreach (var part in parts)
+            //    {
+            //        query = query.Where(x =>
+            //            x.Project.ToLower().Contains(part.ToLower()) ||
+            //            x.Name.ToLower().Contains(part.ToLower()) ||
+            //            (x.Pipeline != null && x.Pipeline.Last != null &&
+            //             x.Pipeline.Last.Commit != null &&
+            //             x.Pipeline.Last.Commit.AuthorName.ToLower().Contains(part.ToLower())));
+            //    }
+            //}
+
+            //var results = query.ToList();
+            var ordered = repos.AsQueryable()
                                  .OrderByDescending(GetLatestBuildDetailsExpression())
                                  .ToList();
 
