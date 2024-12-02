@@ -261,7 +261,7 @@
     private string formattedLtdbXml;
     private string formattedLtvcXml;
     private CancellationTokenSource cts;
-    private List<(DateTime Timestamp, double DelaySeconds)> delayData;
+    private List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)> delayData;
     private bool chartInitialized;
 
     protected override async Task OnInitializedAsync()
@@ -328,8 +328,9 @@
     {
         if (delayData == null || !delayData.Any()) return;
 
-        var labels = delayData.Select(d => d.Timestamp.ToString("HH:mm:ss")).ToArray();
-        var data = delayData.Select(d => d.DelaySeconds).ToArray();
+        var labels = delayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
+        var dataAvg = delayData.Select(d => d.AvgDelaySeconds).ToArray();
+        var dataMax = delayData.Select(d => d.MaxDelaySeconds).ToArray();
 
         var chartData = new
         {
@@ -341,9 +342,17 @@
                 {
                     new
                     {
-                        label = "Response Time (seconds)",
-                        data = data,
+                        label = "Avg Response Time (seconds)",
+                        data = dataAvg,
                         borderColor = "rgb(75, 192, 192)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                    },
+                    new
+                    {
+                        label = "Max Response Time (seconds)",
+                        data = dataMax,
+                        borderColor = "rgb(235, 64, 52)",
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
                     }
@@ -387,10 +396,12 @@
         else
         {
             var newLabels = System.Text.Json.JsonSerializer.Serialize(labels);
-            var newData = System.Text.Json.JsonSerializer.Serialize(data);
+            var newDataAvg = System.Text.Json.JsonSerializer.Serialize(dataAvg);
+            var newDataMax = System.Text.Json.JsonSerializer.Serialize(dataMax);
             await JSRuntime.InvokeVoidAsync("eval", $@"
                 window.delayChart.data.labels = {newLabels};
-                window.delayChart.data.datasets[0].data = {newData};
+                window.delayChart.data.datasets[0].data = {newDataAvg};
+                window.delayChart.data.datasets[1].data = {newDataMax};
                 window.delayChart.update();
             ");
         }
