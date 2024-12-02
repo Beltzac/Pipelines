@@ -261,7 +261,7 @@
     private string formattedLtdbXml;
     private string formattedLtvcXml;
     private CancellationTokenSource cts;
-    private List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds)> delayData;
+    private List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)> delayData;
     private bool chartInitialized;
 
     protected override async Task OnInitializedAsync()
@@ -331,6 +331,7 @@
         var labels = delayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
         var dataAvg = delayData.Select(d => d.AvgDelaySeconds).ToArray();
         var dataMax = delayData.Select(d => d.MaxDelaySeconds).ToArray();
+        var dataCount = delayData.Select(d => d.RequestCount).ToArray();
 
         var chartData = new
         {
@@ -355,6 +356,15 @@
                         borderColor = "rgb(235, 64, 52)",
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
+                    },
+                    new
+                    {
+                        label = "Request Count",
+                        data = dataCount,
+                        borderColor = "rgb(153, 102, 255)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
                     }
                 }
             },
@@ -370,6 +380,22 @@
                         {
                             display = true,
                             text = "Seconds"
+                        }
+                    },
+                    y1 = new
+                    {
+                        type = "linear",
+                        display = true,
+                        position = "right",
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Count"
+                        },
+                        grid = new
+                        {
+                            drawOnChartArea = false
                         }
                     },
                     x = new
@@ -402,6 +428,7 @@
                 window.delayChart.data.labels = {newLabels};
                 window.delayChart.data.datasets[0].data = {newDataAvg};
                 window.delayChart.data.datasets[1].data = {newDataMax};
+                window.delayChart.data.datasets[2].data = {newDataCount};
                 window.delayChart.update();
             ");
         }
