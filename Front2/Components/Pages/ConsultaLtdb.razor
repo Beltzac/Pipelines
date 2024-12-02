@@ -341,7 +341,7 @@
                 labels = labels,
                 datasets = new[]
                 {
-                    new
+                    new()
                     {
                         label = "Avg Response Time (seconds)",
                         data = dataAvg,
@@ -349,7 +349,7 @@
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
                     },
-                    new
+                    new()
                     {
                         label = "Max Response Time (seconds)",
                         data = dataMax,
@@ -357,7 +357,7 @@
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
                     },
-                    new
+                    new()
                     {
                         label = "Request Count",
                         data = dataCount,
@@ -424,6 +424,7 @@
             var newLabels = System.Text.Json.JsonSerializer.Serialize(labels);
             var newDataAvg = System.Text.Json.JsonSerializer.Serialize(dataAvg);
             var newDataMax = System.Text.Json.JsonSerializer.Serialize(dataMax);
+            var newDataCount = System.Text.Json.JsonSerializer.Serialize(dataCount);
             await JSRuntime.InvokeVoidAsync("eval", $@"
                 window.delayChart.data.labels = {newLabels};
                 window.delayChart.data.datasets[0].data = {newDataAvg};
