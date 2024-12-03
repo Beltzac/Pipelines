@@ -54,10 +54,8 @@
         <button class="btn btn-secondary" @onclick="async () => await OpenFolderInVsCode()">Open Folder in VS Code</button>
     </div>
 
-    <div class="search-container mb-3">
+    <div class="search-container">
         <input type="text" class="form-control" placeholder="Search keys" @bind="ConsulStateService.SearchKey" />
-    </div>
-    <div class="search-container mb-3">
         <input type="text" class="form-control" placeholder="Search values" @bind="ConsulStateService.SearchValue" />
     </div>
 </div>
@@ -95,92 +93,92 @@
 
 <style>
     .floating-controls {
-    position: sticky;
-    top: 0;
-    background-color: #fff;
-    z-index: 1000;
-    padding: 1rem 2rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1.5rem;
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.5rem;
     }
 
     .form-group {
-    flex: 1 1 200px;
-    min-width: 150px;
+        flex: 1 1 200px;
+        min-width: 150px;
     }
 
     .form-check {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .buttons {
-    display: flex;
-    gap: 0.75rem;
+        display: flex;
+        gap: 0.75rem;
     }
 
     .search-container {
-    max-width: 300px;
-    flex: 1 1 200px;
+        display: flex;
+        gap: 0.75rem;
     }
 
     .options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
     }
 
     .floating-controls {
-    position: sticky;
-    top: 0;
-    background-color: #fff;
-    z-index: 1000;
-    padding: 1rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 1000;
+        padding: 1rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .key-list {
-    list-style-type: none;
-    padding-left: 0;
+        list-style-type: none;
+        padding-left: 0;
     }
 
     .key-item {
-    border: 1px solid #ddd;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 5px;
+        border: 1px solid #ddd;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
     }
 
     .key-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
 
     .key-name {
-    font-weight: bold;
-    text-align: left;
+        font-weight: bold;
+        text-align: left;
     }
 
     .key-value-container {
-    margin-top: 1rem;
+        margin-top: 1rem;
     }
 
     textarea {
-    width: 100%;
-    height: 150px;
-    white-space: pre;
-    overflow-x: auto;
-    margin-bottom: 0.5rem;
+        width: 100%;
+        height: 150px;
+        white-space: pre;
+        overflow-x: auto;
+        margin-bottom: 0.5rem;
     }
 
     .open-consul {
-    margin-left: auto;
+        margin-left: auto;
     }
 </style>
 
@@ -190,9 +188,10 @@
     private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
         ConsulStateService.ConsulKeyValues.Where(kvp =>
             (
-                kvp.Key.Contains(ConsulStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                (!ConsulStateService.IsRecursive && kvp.Value.Value.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase)) ||
-                (ConsulStateService.IsRecursive && kvp.Value.ValueRecursive.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase))
+                (string.IsNullOrWhiteSpace(ConsulStateService.SearchKey) && string.IsNullOrWhiteSpace(ConsulStateService.SearchValue)) ||
+                (!string.IsNullOrWhiteSpace(ConsulStateService.SearchKey) && kvp.Key.Contains(ConsulStateService.SearchKey, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(ConsulStateService.SearchValue) && !ConsulStateService.IsRecursive && kvp.Value.Value.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(ConsulStateService.SearchValue) && ConsulStateService.IsRecursive && kvp.Value.ValueRecursive.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase))
             )
             && (!ConsulStateService.ShowInvalidOnly || !kvp.Value.IsValidJson));
 
