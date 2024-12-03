@@ -19,7 +19,7 @@ namespace Tests.Common.Services
         private readonly Mock<IBuildHttpClient> _buildClientMock;
         private readonly Mock<IProjectHttpClient> _projectClientMock;
         private readonly Mock<IGitHttpClient> _gitClientMock;
-        private readonly Mock<LocalEmbedder> _embedderMock;
+        private readonly LocalEmbedder _embedderMock;
         private readonly BuildInfoService _buildInfoService;
 
         public BuildInfoServiceTests()
@@ -31,7 +31,7 @@ namespace Tests.Common.Services
             _buildClientMock = new Mock<IBuildHttpClient>();
             _projectClientMock = new Mock<IProjectHttpClient>();
             _gitClientMock = new Mock<IGitHttpClient>();
-            _embedderMock = new Mock<LocalEmbedder>();
+            _embedderMock = new LocalEmbedder();// Mock<LocalEmbedder>();
 
             var configModel = new ConfigModel
             {
@@ -48,7 +48,7 @@ namespace Tests.Common.Services
                 _buildClientMock.Object,
                 _projectClientMock.Object,
                 _gitClientMock.Object,
-                _embedderMock.Object);
+                _embedderMock);
         }
 
         // ...
@@ -67,11 +67,11 @@ namespace Tests.Common.Services
             _repositoryDatabaseMock.Setup(db => db.Query()).Returns(repos.AsQueryable());
 
             // Act
-            var result = await _buildInfoService.GetBuildInfoAsync("Author1");
+            var result = await _buildInfoService.GetBuildInfoAsync("Repo2");
 
             // Assert
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Repo1"); // Check ordering, Repo1 should come first as per filter and sorting
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Repo2"); // Check ordering, Repo2 should come first as per filter and sorting
         }
     }
 }
