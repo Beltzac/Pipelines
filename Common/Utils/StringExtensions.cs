@@ -8,7 +8,7 @@ namespace Common.Utils
     {
         public static string ToHtml(this Commit commit, ConfigModel config)
         {
-            if (string.IsNullOrEmpty(commit.CommitMessage))
+            if (string.IsNullOrEmpty(commit?.CommitMessage))
             {
                 return null;
             };
