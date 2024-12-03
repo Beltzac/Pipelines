@@ -92,17 +92,17 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var buildInfo in BuildInfoStateService.BuildInfos.ToList())
+        @foreach (var buildInfo in BuildInfoStateService.BuildInfos?.ToList() ?? new())
         {
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
-                </td>
+                </td> 
 
-                <td class="truncate">@(buildInfo.Path)</td>
+                 <td class="truncate">@(buildInfo.Path)</td>
 
 
-                <td>@buildInfo.Pipeline?.Last?.Commit.AuthorName</td>
+                <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
 
             </ContextMenuTrigger>
@@ -152,16 +152,6 @@
         {
             _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
         }, !BuildInfoStateService.BuildInfos.Any());
-    }
-
-    public static double CountMatchingWindows(IEnumerable<string> titles, string project, string name)
-    {
-        if (!titles.Any())
-        {
-            return 0;
-        }
-
-        return titles.Max(x => Math.Max(Fuzz.PartialRatio(project, x, FuzzySharp.PreProcess.PreprocessMode.Full), Fuzz.PartialRatio(name, x, FuzzySharp.PreProcess.PreprocessMode.Full)));
     }
 
     private async Task ReloadById(Guid id, Action<Repository> action)

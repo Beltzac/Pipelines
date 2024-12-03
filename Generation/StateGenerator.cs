@@ -306,6 +306,9 @@ namespace {namespaceName}
             catch (Exception ex)
             {{
                 Console.WriteLine($""Failed to load state: {className} - {{ex.Message}}"");
+                // Create a new default state
+                _state = new {className}();
+                NotifyStateChanged();
                 return false;
             }}
             return true;
