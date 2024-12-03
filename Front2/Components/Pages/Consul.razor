@@ -55,7 +55,10 @@
     </div>
 
     <div class="search-container mb-3">
-        <input type="text" class="form-control" placeholder="Search keys/values" @bind="ConsulStateService.SearchTerm" />
+        <input type="text" class="form-control" placeholder="Search keys" @bind="ConsulStateService.SearchKey" />
+    </div>
+    <div class="search-container mb-3">
+        <input type="text" class="form-control" placeholder="Search values" @bind="ConsulStateService.SearchValue" />
     </div>
 </div>
 
@@ -187,9 +190,9 @@
     private IEnumerable<KeyValuePair<string, ConsulKeyValue>> filteredConsulKeyValues =>
         ConsulStateService.ConsulKeyValues.Where(kvp =>
             (
-                kvp.Key.Contains(ConsulStateService.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                (!ConsulStateService.IsRecursive && kvp.Value.Value.Contains(ConsulStateService.SearchTerm, StringComparison.OrdinalIgnoreCase)) ||
-                (ConsulStateService.IsRecursive && kvp.Value.ValueRecursive.Contains(ConsulStateService.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                kvp.Key.Contains(ConsulStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                (!ConsulStateService.IsRecursive && kvp.Value.Value.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase)) ||
+                (ConsulStateService.IsRecursive && kvp.Value.ValueRecursive.Contains(ConsulStateService.SearchValue, StringComparison.OrdinalIgnoreCase))
             )
             && (!ConsulStateService.ShowInvalidOnly || !kvp.Value.IsValidJson));
 
