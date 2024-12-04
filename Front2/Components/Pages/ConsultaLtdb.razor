@@ -1,11 +1,13 @@
 ﻿@page "/consulta-ltdb"
- @using Common.Models
- @using Common.Services
- @using Common.Utils
- @inject ILtdbLtvcService LtdbService
- @inject IConfigurationService ConfigService
- @inject IJSRuntime JSRuntime
- @inject IToastService toastService
+@using Common.Models
+@using Common.Services
+@using Common.Utils
+@inject ILtdbLtvcService LtdbService
+@inject IConfigurationService ConfigService
+@inject IJSRuntime JSRuntime
+@inject IToastService toastService
+@inject ConsultaSggStateService ConsultaSggStateService
+@implements IDisposable
 
 <h3>LTDB/LTVC Query</h3>
 
@@ -17,7 +19,7 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Environment</label>
-                <select class="form-select" @bind="selectedEnvironment">
+                <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
                     @foreach (var env in config.OracleEnvironments)
                     {
                         <option value="@env.Name">@env.Name</option>
@@ -27,37 +29,37 @@
 
             <div class="col-md-3">
                 <label class="form-label">Start Date</label>
-                <input type="datetime-local" class="form-control" @bind="startDate">
+                <input type="datetime-local" class="form-control" @bind="ConsultaSggStateService.StartDate">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">End Date</label>
-                <input type="datetime-local" class="form-control" @bind="endDate">
+                <input type="datetime-local" class="form-control" @bind="ConsultaSggStateService.EndDate">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">Placa</label>
-                <input type="text" class="form-control" @bind="placa" placeholder="Search by plate number">
+                <input type="text" class="form-control" @bind="ConsultaSggStateService.Placa" placeholder="Search by plate number">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">Request ID</label>
-                <input type="text" class="form-control" @bind="requestId">
+                <input type="text" class="form-control" @bind="ConsultaSggStateService.RequestId">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">Container Numbers</label>
-                <input type="text" class="form-control" @bind="containerNumbers" placeholder="Search container numbers">
+                <input type="text" class="form-control" @bind="ConsultaSggStateService.ContainerNumbers" placeholder="Search container numbers">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">Agendamento ID</label>
-                <input type="number" class="form-control" @bind="idAgendamento">
+                <input type="number" class="form-control" @bind="ConsultaSggStateService.IdAgendamento">
             </div>
 
             <div class="col-md-3">
                 <label class="form-label">Move Type</label>
-                <select class="form-select" @bind="moveType">
+                <select class="form-select" @bind="ConsultaSggStateService.MoveType">
                     <option value="">All</option>
                     <option value="ENTRY">ENTRY</option>
                     <option value="EXIT">EXIT</option>
@@ -66,7 +68,7 @@
 
             <div class="col-md-3">
                 <label class="form-label">Status</label>
-                <select class="form-select" @bind="status">
+                <select class="form-select" @bind="ConsultaSggStateService.Status">
                     <option value="">All</option>
                     <option value="OK">OK</option>
                     <option value="ERROR">ERROR</option>
@@ -74,13 +76,13 @@
             </div>
 
             <div class="col-12">
-                @if (isLoading)
+                @if (ConsultaSggStateService.IsLoading)
                 {
                     <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
                 }
                 else
                 {
-                    <button class="btn btn-primary" @onclick="async () => { currentPage = 1; await ExecuteQuery(); }">Search</button>
+                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
                     <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
                     <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
                 }
@@ -89,7 +91,7 @@
     </div>
 </div>
 
-@if (isLoading)
+@if (ConsultaSggStateService.IsLoading)
 {
     <div class="d-flex justify-content-center mt-4">
         <div class="spinner-border text-primary" role="status">
@@ -107,7 +109,7 @@
     </div>
 </div>
 
-@if (results != null)
+@if (ConsultaSggStateService.Results != null)
 {
     <div class="mt-4">
         <table class="table table-striped">
@@ -126,7 +128,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in results)
+                @foreach (var item in ConsultaSggStateService.Results)
                 {
                     <tr>
                         <td>@(item.DataLtdb?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
@@ -154,34 +156,34 @@
     </div>
 }
 
-@if (results != null && totalCount > 0)
+@if (ConsultaSggStateService.Results != null && ConsultaSggStateService.TotalCount > 0)
 {
     <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
             <nav aria-label="Page navigation">
                 <ul class="pagination">
-                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                        <button class="page-link" @onclick="async () => { if(currentPage > 1) { currentPage--; await ExecuteQuery();
+                    <li class="page-item @(ConsultaSggStateService.CurrentPage == 1 ? "disabled" : "")">
+                        <button class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage > 1) { ConsultaSggStateService.CurrentPage--; await ExecuteQuery();
  }}">
                             Previous
                         </button>
                     </li>
                     @{
-                        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-                        for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        var totalPages = (int)Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize);
+                        for (int i = Math.Max(1, ConsultaSggStateService.CurrentPage - 2); i <= Math.Min(totalPages, ConsultaSggStateService.CurrentPage + 2); i++)
                         {
                             var pageNumber = i;
-                            <li class="page-item @(currentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => { currentPage = pageNumber; await ExecuteQuery();
+                            <li class="page-item @(ConsultaSggStateService.CurrentPage == pageNumber ? "active" : "")">
+                                <button class="page-link" @onclick="async () => { ConsultaSggStateService.CurrentPage = pageNumber; await ExecuteQuery();
  }">
                                     @pageNumber
                                 </button>
                             </li>
                         }
                     }
-                    <li class="page-item @(currentPage == Math.Ceiling(totalCount / (double)pageSize) ? "disabled" : "")">
-                        <button class="page-link" @onclick="async () => { if(currentPage < Math.Ceiling(totalCount / (double)pageSize)) {
- currentPage++; await ExecuteQuery(); }}">
+                    <li class="page-item @(ConsultaSggStateService.CurrentPage == Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize) ? "disabled" : "")">
+                        <button class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage < Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize)) {
+ ConsultaSggStateService.CurrentPage++; await ExecuteQuery(); }}">
                             Next
                         </button>
                     </li>
@@ -189,12 +191,12 @@
             </nav>
         </div>
         <div>
-            Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount entries
+            Showing @((ConsultaSggStateService.CurrentPage - 1) * ConsultaSggStateService.PageSize + 1) to @Math.Min(ConsultaSggStateService.CurrentPage * ConsultaSggStateService.PageSize, ConsultaSggStateService.TotalCount) of @ConsultaSggStateService.TotalCount entries
         </div>
     </div>
 }
 
-@if (selectedItem != null)
+@if (ConsultaSggStateService.SelectedItem != null)
 {
     <div class="modal fade show" style="display: block" tabindex="-1" @onclick="CloseModal">
         <div class="modal-dialog modal-xl">
@@ -210,12 +212,12 @@
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">LTDB XML</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedLtdbXml)">
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(ConsultaSggStateService.FormattedLtdbXml)">
                                             <i class="bi bi-clipboard"></i> Copy
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
-                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtdbXml</pre>
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@ConsultaSggStateService.FormattedLtdbXml</pre>
                                     </div>
                                 </div>
                             </div>
@@ -223,12 +225,12 @@
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">LTVC XML</h6>
-                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(formattedLtvcXml)">
+                                        <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(ConsultaSggStateService.FormattedLtvcXml)">
                                             <i class="bi bi-clipboard"></i> Copy
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
-                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@formattedLtvcXml</pre>
+                                        <pre class="m-0 p-3" style="max-height: 400px; overflow-y: auto;">@ConsultaSggStateService.FormattedLtvcXml</pre>
                                     </div>
                                 </div>
                             </div>
@@ -243,33 +245,85 @@
 
 @code {
     private ConfigModel config;
-    private string selectedEnvironment;
-    private DateTime? startDate;
-    private DateTime? endDate;
-    private string placa;
-    private string requestId;
-    private string containerNumbers;
-    private long? idAgendamento;
-    private string moveType;
-    private string status;
-    private bool isLoading;
-    private List<LtdbLtvcRecord> results;
-    private int totalCount;
-    private int currentPage = 1;
-    private int pageSize = 10;
-    private LtdbLtvcRecord selectedItem;
-    private string formattedLtdbXml;
-    private string formattedLtvcXml;
     private CancellationTokenSource cts;
-    private List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)> delayData;
     private bool chartInitialized;
+
+    protected override void OnInitialized()
+    {
+        ConsultaSggStateService.OnChange += StateHasChanged;
+        ConsultaSggStateService.Load();
+    }
+
+    public void Dispose()
+    {
+        ConsultaSggStateService.OnChange -= StateHasChanged;
+        ConsultaSggStateService.Save();
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
         config = ConfigService.GetConfig();
-        selectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-        endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-        startDate = endDate?.AddHours(-24);
+
+        ConsultaSggStateService.InitializeState(x =>
+        {
+            x.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
+            x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+            x.StartDate = x.EndDate?.AddHours(-24);
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateChart();
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("addKeyboardShortcuts", objRef);
+        }
+    }
+
+    private DotNetObjectReference<ConsultaLtdb>? objRef;
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            objRef.Dispose();
+        }
+
+        if (chartInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", "if(window.delayChart) window.delayChart.destroy();");
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleKeyPress(string key)
+    {
+        if (key == "Enter")
+        {
+            await ExecuteQuery();
+        }
+        else if (key == "Escape")
+        {
+            await ClearFilters();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ClearFilters()
+    {
+        ConsultaSggStateService.ContainerNumbers = null;
+        ConsultaSggStateService.Placa = null;
+        ConsultaSggStateService.MoveType = null;
+        ConsultaSggStateService.IdAgendamento = null;
+        ConsultaSggStateService.Status = null;
+        ConsultaSggStateService.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+        ConsultaSggStateService.StartDate = ConsultaSggStateService.EndDate?.AddHours(-24);
+        ConsultaSggStateService.CurrentPage = 1;
+
+        await ExecuteQuery();
     }
 
     private async Task ExecuteQuery()
@@ -278,60 +332,60 @@
         {
             cts?.Cancel();
             cts = new CancellationTokenSource();
-            isLoading = true;
+            ConsultaSggStateService.IsLoading = true;
 
             StateHasChanged();
 
             var queryTask = LtdbService.ExecuteQueryAsync(
-                selectedEnvironment,
-                startDate,
-                endDate,
-                containerNumbers,
-                placa,
+                ConsultaSggStateService.SelectedEnvironment,
+                ConsultaSggStateService.StartDate,
+                ConsultaSggStateService.EndDate,
+                ConsultaSggStateService.ContainerNumbers,
+                ConsultaSggStateService.Placa,
                 null,
-                moveType,
-                idAgendamento,
-                status,
-                pageSize,
-                currentPage,
+                ConsultaSggStateService.MoveType,
+                ConsultaSggStateService.IdAgendamento,
+                ConsultaSggStateService.Status,
+                ConsultaSggStateService.PageSize,
+                ConsultaSggStateService.CurrentPage,
                 cts.Token);
 
             var delayTask = LtdbService.GetDelayMetricsAsync(
-                selectedEnvironment,
-                startDate,
-                endDate,
-                containerNumbers,
-                placa,
+                ConsultaSggStateService.SelectedEnvironment,
+                ConsultaSggStateService.StartDate,
+                ConsultaSggStateService.EndDate,
+                ConsultaSggStateService.ContainerNumbers,
+                ConsultaSggStateService.Placa,
                 null,
-                moveType,
-                idAgendamento,
-                status,
+                ConsultaSggStateService.MoveType,
+                ConsultaSggStateService.IdAgendamento,
+                ConsultaSggStateService.Status,
                 cts.Token);
 
             await Task.WhenAll(queryTask, delayTask);
 
             var (queryResults, total) = await queryTask;
-            delayData = await delayTask;
+            ConsultaSggStateService.DelayData = await delayTask;
 
-            results = queryResults;
-            totalCount = total;
+            ConsultaSggStateService.Results = queryResults;
+            ConsultaSggStateService.TotalCount = total;
 
             await UpdateChart();
         }
         finally
         {
-            isLoading = false;
+            ConsultaSggStateService.IsLoading = false;
         }
     }
 
     private async Task UpdateChart()
     {
-        if (delayData == null || !delayData.Any()) return;
+        if (ConsultaSggStateService.DelayData == null || !ConsultaSggStateService.DelayData.Any()) return;
 
-        var labels = delayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
-        var dataAvg = delayData.Select(d => d.AvgDelaySeconds).ToArray();
-        var dataMax = delayData.Select(d => d.MaxDelaySeconds).ToArray();
-        var dataCount = delayData.Select(d => d.RequestCount).ToArray();
+        var labels = ConsultaSggStateService.DelayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
+        var dataAvg = ConsultaSggStateService.DelayData.Select(d => d.AvgDelaySeconds).ToArray();
+        var dataMax = ConsultaSggStateService.DelayData.Select(d => d.MaxDelaySeconds).ToArray();
+        var dataCount = ConsultaSggStateService.DelayData.Select(d => d.RequestCount).ToArray();
 
         var chartData = new
         {
@@ -435,61 +489,40 @@
         }
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        if (chartInitialized)
-        {
-            await JSRuntime.InvokeVoidAsync("eval", "if(window.delayChart) window.delayChart.destroy();");
-        }
-    }
-
     private void ShowDetails(LtdbLtvcRecord item)
     {
-        selectedItem = item;
-        formattedLtdbXml = DataFormatUtils.FormatXml(item.LtdbXml);
-        formattedLtvcXml = DataFormatUtils.FormatXml(item.LtvcXml);
+        ConsultaSggStateService.SelectedItem = item;
+        ConsultaSggStateService.FormattedLtdbXml = DataFormatUtils.FormatXml(item.LtdbXml);
+        ConsultaSggStateService.FormattedLtvcXml = DataFormatUtils.FormatXml(item.LtvcXml);
     }
 
     private async Task ExportSqlQuery()
     {
         var sqlQuery = LtdbService.BuildQuery(
-        startDate,
-        endDate,
-        placa,
-        requestId,
-        containerNumbers,
-        moveType,
-        idAgendamento,
-        status,
-        pageSize,
-        currentPage);
+        ConsultaSggStateService.StartDate,
+        ConsultaSggStateService.EndDate,
+        ConsultaSggStateService.Placa,
+        ConsultaSggStateService.RequestId,
+        ConsultaSggStateService.ContainerNumbers,
+        ConsultaSggStateService.MoveType,
+        ConsultaSggStateService.IdAgendamento,
+        ConsultaSggStateService.Status,
+        ConsultaSggStateService.PageSize,
+        ConsultaSggStateService.CurrentPage);
 
         await CopyToClipboard(sqlQuery);
         toastService.ShowSuccess("SQL Query copied to clipboard");
     }
 
-    private void ClearFilters()
-    {
-        placa = null;
-        requestId = null;
-        containerNumbers = null;
-        idAgendamento = null;
-        moveType = null;
-        status = null;
-        endDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-        startDate = endDate?.AddHours(-24);
-        currentPage = 1;
-    }
-
     private void CloseModal()
     {
-        selectedItem = null;
+        ConsultaSggStateService.SelectedItem = null;
     }
 
     private void CancelSearch()
     {
         cts?.Cancel();
-        isLoading = false;
+        ConsultaSggStateService.IsLoading = false;
     }
 
     private async Task CopyToClipboard(string text)

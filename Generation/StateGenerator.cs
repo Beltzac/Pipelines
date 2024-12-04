@@ -273,7 +273,7 @@ namespace {namespaceName}
                 Directory.CreateDirectory(folder);
             
                 var path = Path.Combine(folder, $""{className}.json"");
-                var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ WriteIndented = true }});
+                var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
                 File.WriteAllText(path, json);
             }}
             catch (Exception ex)
@@ -300,7 +300,7 @@ namespace {namespaceName}
                     return false;
 
                 var json = File.ReadAllText(path);
-                _state = JsonSerializer.Deserialize<{className}>(json);
+                _state = JsonSerializer.Deserialize<{className}>(json, new JsonSerializerOptions {{ WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
                 NotifyStateChanged();
             }}
             catch (Exception ex)
