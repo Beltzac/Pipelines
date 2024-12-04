@@ -22,6 +22,7 @@
     <PackageReference Include="Blazored.Typeahead" Version="4.7.0" />
     <PackageReference Include="ElectronNET.API" Version="23.6.2" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
+    <PackageReference Include="Json.More.Net" Version="2.1.0" />
     <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="Markdig" Version="0.38.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
