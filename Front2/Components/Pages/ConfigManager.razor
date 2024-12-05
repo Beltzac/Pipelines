@@ -1,6 +1,8 @@
 @page "/config-manager"
 @using Common.Models
 @using Common.ExternalApis
+@using ElectronNET.API
+@using ElectronNET.API.Entities
 @using Quartz
 @inject IConfigurationService ConfigService
 @inject IToastService ToastService
@@ -28,10 +30,13 @@
                             <button type="button" class="btn btn-outline-primary" @onclick="ExportConfiguration">
                                 <i class="fas fa-download"></i> Export Configuration
                             </button>
-                            <InputFile OnChange="ImportConfiguration" class="d-none" id="importFile" accept=".json" />
-                            <button type="button" class="btn btn-outline-secondary" @onclick="@(() => JSRuntime.InvokeVoidAsync("document.getElementById('importFile').click()))">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="ImportConfiguration">
                                 <i class="fas fa-upload"></i> Import Configuration
                             </button>
+
+                            <InputFile OnChange="LoadFiles"/>
+
+
                         </div>
                     </div>
                 </div>
@@ -303,7 +308,7 @@
         {
             var configJson = ConfigService.ExportConfig();
             var fileName = $"config-export-{DateTime.Now:yyyy-MM-dd}.json";
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, configJson);
+            await DownloadFile(fileName, configJson);
             ToastService.ShowSuccess("Configuration exported successfully");
         }
         catch (Exception ex)
@@ -312,15 +317,20 @@
         }
     }
 
-    private async Task ImportConfiguration(InputFileChangeEventArgs e)
+    private async Task DownloadFile(string fileName, string fileContent)
+    {
+        var byteArray = System.Text.Encoding.UTF8.GetBytes(fileContent);
+        var base64Content = Convert.ToBase64String(byteArray);
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64Content);
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
     {
         try
         {
-            var file = e.File;
-            if (file == null)
-                return;
+            using var stream = e.File.OpenReadStream();
 
-            using var reader = new StreamReader(file.OpenReadStream());
+            StreamReader reader = new StreamReader(stream, System.Text.Encoding.UTF8);
             var jsonConfig = await reader.ReadToEndAsync();
 
             await ConfigService.ImportConfigAsync(jsonConfig);
@@ -335,6 +345,11 @@
         {
             ToastService.ShowError($"Failed to import configuration: {ex.Message}");
         }
+    }
+
+    private async Task ImportConfiguration()
+    {
+
     }
 
     private async Task HandleValidSubmit()
