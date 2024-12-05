@@ -53,7 +53,7 @@ builder.Services.AddQuartz(q =>
 {
     q.ScheduleJob<BuildInfoJob>(trigger => trigger
         .WithIdentity("BuildInfoJob-trigger")
-        .StartNow(),
+        .WithCronSchedule("0 0 0/4 * * ?"), // Every 4 hours
         job => job.WithIdentity("BuildInfoJob")
     );
 
