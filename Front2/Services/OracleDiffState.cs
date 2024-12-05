@@ -4,6 +4,6 @@ namespace Front2.Services
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
-        public Dictionary<string, string> Differences { get; set; }
+        public Dictionary<string, string> Differences { get; set; } = new();
     }
 }
