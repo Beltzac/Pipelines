@@ -26,7 +26,9 @@ namespace Common.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var config = _configService.GetConfig();
-            if (!config.EnableOracleBackupJob)
+            var isManualRun = context.MergedJobDataMap.GetBooleanValue("IsManualRun");
+    
+            if (!isManualRun && !config.EnableOracleBackupJob)
             {
                 _logger.LogInformation("Oracle backup job is disabled, skipping execution");
                 return;

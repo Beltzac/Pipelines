@@ -323,7 +323,10 @@
             var scheduler = await SchedulerFactory.GetScheduler();
             var jobKey = new JobKey("OracleViewsBackupJob");
             
-            await scheduler.TriggerJob(jobKey);
+            var jobData = new JobDataMap();
+            jobData.Put("IsManualRun", true);
+            
+            await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Oracle backup job started");
         }
         catch (Exception ex)
@@ -339,7 +342,10 @@
             var scheduler = await SchedulerFactory.GetScheduler();
             var jobKey = new JobKey("ConsulBackupJob");
             
-            await scheduler.TriggerJob(jobKey);
+            var jobData = new JobDataMap();
+            jobData.Put("IsManualRun", true);
+            
+            await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Consul backup job started");
         }
         catch (Exception ex)
