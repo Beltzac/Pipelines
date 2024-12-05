@@ -33,9 +33,7 @@
                             <button type="button" class="btn btn-outline-secondary" @onclick="ImportConfiguration">
                                 <i class="fas fa-upload"></i> Import Configuration
                             </button>
-                            <InputFile OnChange="LoadFiles" class="d-none" id="importFile" accept=".json"/>
-
-
+                            <InputFile hidden OnChange="LoadFiles" id="importFile" accept=".json" />
                         </div>
                     </div>
                 </div>
@@ -348,29 +346,7 @@
 
     private async Task ImportConfiguration()
     {
-        await JSRuntime.InvokeVoidAsync("document.getElementById('importFile').click()");
-    }
-
-    private async Task LoadFiles(InputFileChangeEventArgs e)
-    {
-        try
-        {
-            using var stream = e.File.OpenReadStream();
-            StreamReader reader = new StreamReader(stream, System.Text.Encoding.UTF8);
-            var jsonConfig = await reader.ReadToEndAsync();
-
-            await ConfigService.ImportConfigAsync(jsonConfig);
-            config = ConfigService.GetConfig();
-            ToastService.ShowSuccess("Configuration imported successfully");
-        }
-        catch (ArgumentException ex)
-        {
-            ToastService.ShowError($"Invalid configuration file: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowError($"Failed to import configuration: {ex.Message}");
-        }
+        await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('importFile').click()");
     }
 
     private async Task HandleValidSubmit()
