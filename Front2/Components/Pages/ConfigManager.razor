@@ -18,6 +18,24 @@
         <div class="row">
             <!-- Left Column -->
             <div class="col-md-6">
+                <!-- Configuration Import/Export -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Configuration Import/Export</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary" @onclick="ExportConfiguration">
+                                <i class="fas fa-download"></i> Export Configuration
+                            </button>
+                            <InputFile OnChange="ImportConfiguration" class="d-none" id="importFile" accept=".json" />
+                            <button type="button" class="btn btn-outline-secondary" @onclick="@(() => JSRuntime.InvokeVoidAsync("document.getElementById('importFile').click()))">
+                                <i class="fas fa-upload"></i> Import Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- User and Organization Settings -->
                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
@@ -276,6 +294,46 @@
         catch (Exception ex)
         {
             ToastService.ShowError($"Connection test failed: {ex.Message}");
+        }
+    }
+
+    private async Task ExportConfiguration()
+    {
+        try
+        {
+            var configJson = ConfigService.ExportConfig();
+            var fileName = $"config-export-{DateTime.Now:yyyy-MM-dd}.json";
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, configJson);
+            ToastService.ShowSuccess("Configuration exported successfully");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to export configuration: {ex.Message}");
+        }
+    }
+
+    private async Task ImportConfiguration(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null)
+                return;
+
+            using var reader = new StreamReader(file.OpenReadStream());
+            var jsonConfig = await reader.ReadToEndAsync();
+
+            await ConfigService.ImportConfigAsync(jsonConfig);
+            config = ConfigService.GetConfig();
+            ToastService.ShowSuccess("Configuration imported successfully");
+        }
+        catch (ArgumentException ex)
+        {
+            ToastService.ShowError($"Invalid configuration file: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to import configuration: {ex.Message}");
         }
     }
 
