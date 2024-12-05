@@ -1,10 +1,12 @@
 @page "/config-manager"
 @using Common.Models
 @using Common.ExternalApis
+@using Quartz
 @inject IConfigurationService ConfigService
 @inject IToastService ToastService
 @inject IOracleSchemaService OracleService
 @inject IJSRuntime JSRuntime
+@inject ISchedulerFactory SchedulerFactory
 
 <div class="container-fluid pb-5">
     <h3 class="mb-4">Configuration Manager</h3>
@@ -169,6 +171,40 @@
                         }
                     </div>
                 </div>
+
+                <!-- Backup Jobs Configuration -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Backup Jobs Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Oracle Backup Job -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableOracleBackupJob" id="oracleBackupToggle" />
+                                <label class="form-check-label" for="oracleBackupToggle">
+                                    Enable Oracle Views Backup Job
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" @onclick="RunOracleBackupNow">
+                                <i class="fas fa-play"></i> Run Now
+                            </button>
+                        </div>
+
+                        <!-- Consul Backup Job -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableConsulBackupJob" id="consulBackupToggle" />
+                                <label class="form-check-label" for="consulBackupToggle">
+                                    Enable Consul Backup Job
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" @onclick="RunConsulBackupNow">
+                                <i class="fas fa-play"></i> Run Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -278,5 +314,37 @@
     private void OnConsulEnvironmentSelected(ChangeEventArgs e)
     {
         selectedConsulEnv = e.Value?.ToString();
+    }
+
+    private async Task RunOracleBackupNow()
+    {
+        try
+        {
+            var scheduler = await SchedulerFactory.GetScheduler();
+            var jobKey = new JobKey("OracleViewsBackupJob");
+            
+            await scheduler.TriggerJob(jobKey);
+            ToastService.ShowSuccess("Oracle backup job started");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to start Oracle backup job: {ex.Message}");
+        }
+    }
+
+    private async Task RunConsulBackupNow()
+    {
+        try
+        {
+            var scheduler = await SchedulerFactory.GetScheduler();
+            var jobKey = new JobKey("ConsulBackupJob");
+            
+            await scheduler.TriggerJob(jobKey);
+            ToastService.ShowSuccess("Consul backup job started");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to start Consul backup job: {ex.Message}");
+        }
     }
 }

@@ -25,6 +25,12 @@ namespace Common.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var config = _configService.GetConfig();
+            if (!config.EnableConsulBackupJob)
+            {
+                _logger.LogInformation("Consul backup job is disabled, skipping execution");
+                return;
+            }
+
             var backupPath = config.ConsulBackupRepo;
 
             // Ensure backup directory exists

@@ -26,6 +26,12 @@ namespace Common.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var config = _configService.GetConfig();
+            if (!config.EnableOracleBackupJob)
+            {
+                _logger.LogInformation("Oracle backup job is disabled, skipping execution");
+                return;
+            }
+
             var backupPath = config.OracleViewsBackupRepo;
 
             // Ensure backup directory exists
