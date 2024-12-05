@@ -25,8 +25,9 @@ namespace Common.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var config = _configService.GetConfig();
-            var isManualRun = context.MergedJobDataMap.GetBooleanValue("IsManualRun");
-    
+
+            context.MergedJobDataMap.TryGetBooleanValue("IsManualRun", out bool isManualRun);
+
             if (!isManualRun && !config.EnableConsulBackupJob)
             {
                 _logger.LogInformation("Consul backup job is disabled, skipping execution");
