@@ -12,6 +12,7 @@ namespace Common.Services
 {
     public class ConsulService : IConsulService
     {
+        private const string RegexPatternKey = @"{{\s*key\s*'([^']+)'\s*}}";
         private readonly ILogger<ConsulService> _logger;
 
         private readonly IConfigurationService _configService;
@@ -100,6 +101,13 @@ namespace Common.Services
             if (isLock)
             {
                 return true;
+            }
+
+            
+            var regex = new Regex(RegexPatternKey);
+            if (regex.IsMatch(strInput))
+            {
+                return false; // Existem chaves que não foram processadas
             }
 
             var isJson = key.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
@@ -243,7 +251,7 @@ namespace Common.Services
 
         private string ResolveRecursiveValues(string value, Dictionary<string, string> keyValues)
         {
-            var regex = new Regex(@"{{\s*key\s*'([^']+)'\s*}}");
+            var regex = new Regex(RegexPatternKey);
             return regex.Replace(value, match =>
             {
                 var referencedKey = match.Groups[1].Value.Trim('/');

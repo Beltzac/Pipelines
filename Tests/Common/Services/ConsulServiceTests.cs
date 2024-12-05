@@ -101,5 +101,17 @@ namespace Tests.Common.Services
             // Assert
             result.Should().Be(expected);
         }
+
+        [Test]
+        [Arguments("key", "{ \"teste\": \"{{ key '_infra/common/logging/default-config' }}\"}", false)]
+        [Arguments("key", "{ \"teste\": \"BlaBlaBla\"}", true)]
+        public void IsValidFormated_ShouldValidateCorrectly(string key, string value, bool expected)
+        {
+            // Act
+            var result = _consulService.IsValidFormated(key, value);
+
+            // Assert
+            result.Should().Be(expected);
+        }
     }
 }
