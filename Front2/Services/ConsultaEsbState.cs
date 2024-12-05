@@ -15,7 +15,7 @@ namespace Front2.Services
         public int? ExecucaoId { get; set; }
         public string HttpStatusRange { get; set; }
         public string ResponseStatus { get; set; }
-        public List<RequisicaoExecucao> Results { get; set; } = new List<RequisicaoExecucao>();
+        public List<RequisicaoExecucao> Results { get; set; } = new();
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalCount { get; set; }
