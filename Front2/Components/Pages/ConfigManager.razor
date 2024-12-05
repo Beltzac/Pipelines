@@ -87,6 +87,40 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Backup Jobs Configuration -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Backup Jobs Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Oracle Backup Job -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableOracleBackupJob" id="oracleBackupToggle" />
+                                <label class="form-check-label" for="oracleBackupToggle">
+                                    Enable Oracle Views Backup Job
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" @onclick="RunOracleBackupNow">
+                                <i class="fas fa-play"></i> Run Now
+                            </button>
+                        </div>
+
+                        <!-- Consul Backup Job -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check form-switch">
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableConsulBackupJob" id="consulBackupToggle" />
+                                <label class="form-check-label" for="consulBackupToggle">
+                                    Enable Consul Backup Job
+                                </label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" @onclick="RunConsulBackupNow">
+                                <i class="fas fa-play"></i> Run Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column -->
@@ -169,40 +203,6 @@
                                 </div>
                             </div>
                         }
-                    </div>
-                </div>
-
-                <!-- Backup Jobs Configuration -->
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Backup Jobs Configuration</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- Oracle Backup Job -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="form-check form-switch">
-                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableOracleBackupJob" id="oracleBackupToggle" />
-                                <label class="form-check-label" for="oracleBackupToggle">
-                                    Enable Oracle Views Backup Job
-                                </label>
-                            </div>
-                            <button type="button" class="btn btn-outline-primary" @onclick="RunOracleBackupNow">
-                                <i class="fas fa-play"></i> Run Now
-                            </button>
-                        </div>
-
-                        <!-- Consul Backup Job -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="form-check form-switch">
-                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableConsulBackupJob" id="consulBackupToggle" />
-                                <label class="form-check-label" for="consulBackupToggle">
-                                    Enable Consul Backup Job
-                                </label>
-                            </div>
-                            <button type="button" class="btn btn-outline-primary" @onclick="RunConsulBackupNow">
-                                <i class="fas fa-play"></i> Run Now
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -321,10 +321,10 @@
         try
         {
             var scheduler = await SchedulerFactory.GetScheduler();
-            var jobKey = new JobKey("OracleViewsBackupJob");
+            var jobKey = new JobKey("OracleViewsBackupJob-hourly");
             
             var jobData = new JobDataMap();
-            jobData.Put("IsManualRun", true);
+            jobData.PutAsString("IsManualRun", true);
             
             await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Oracle backup job started");
@@ -340,10 +340,10 @@
         try
         {
             var scheduler = await SchedulerFactory.GetScheduler();
-            var jobKey = new JobKey("ConsulBackupJob");
+            var jobKey = new JobKey("ConsulBackupJob-hourly");
             
             var jobData = new JobDataMap();
-            jobData.Put("IsManualRun", true);
+            jobData.PutAsString("IsManualRun", true);
             
             await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Consul backup job started");
