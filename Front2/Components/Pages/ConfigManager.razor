@@ -304,7 +304,7 @@
         try
         {
             var configJson = ConfigService.ExportConfig();
-            var fileName = $"config-export-{DateTime.Now:yyyy-MM-dd}.json";
+            var fileName = $"config-export-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.json";
             await DownloadFile(fileName, configJson);
             ToastService.ShowSuccess("Configuration exported successfully");
         }
