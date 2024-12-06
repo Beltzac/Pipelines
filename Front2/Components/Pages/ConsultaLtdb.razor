@@ -71,7 +71,7 @@
                 <select class="form-select" @bind="ConsultaSggStateService.Status">
                     <option value="">All</option>
                     <option value="OK">OK</option>
-                    <option value="ERROR">ERROR</option>
+                    <option value="Error">Error</option>
                 </select>
             </div>
 
@@ -119,6 +119,7 @@
                     <th>LTVC Date</th>
                     <th>Request ID</th>
                     <th>Agendamento</th>
+                    <th>Código Barras</th>
                     <th>Move Type</th>
                     <th>Placa</th>
                     <th>Status</th>
@@ -135,6 +136,7 @@
                         <td>@(item.DataLtvc?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
                         <td>@item.RequestId</td>
                         <td>@item.IdAgendamento</td>
+                        <td>@item.CodigoBarras</td>
                         <td>@item.MoveType</td>
                         <td>@item.Placa</td>
                         <td>
