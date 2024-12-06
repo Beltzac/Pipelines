@@ -264,19 +264,19 @@ CROSS JOIN CountQuery c";
                 conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
 
             if (!string.IsNullOrEmpty(placa))
-                conditions.Add($"PLACA LIKE '%{placa}%'");
+                conditions.Add($"LTDB.XML LIKE '%{placa}%'");
 
             if (!string.IsNullOrEmpty(motorista))
-                conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
+                conditions.Add($"LTDB.XML LIKE '%{motorista}%'");
 
             if (!string.IsNullOrEmpty(moveType))
-                conditions.Add($"MOVETYPE = '{moveType}'");
+                conditions.Add($"LTDB.XML LIKE '%{moveType}%'");
 
             if (idAgendamento.HasValue)
                 conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
 
             if (!string.IsNullOrEmpty(status))
-                conditions.Add($"LTVC_STATUS = '{status}'");
+                conditions.Add($"LTDB.XML LIKE '%{status}%");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
