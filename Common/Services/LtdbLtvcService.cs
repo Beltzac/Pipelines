@@ -58,7 +58,8 @@ namespace Common.Services
                     Delay = reader.IsDBNull(reader.GetOrdinal("DELAY")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DELAY")),
                     Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS")),
                     MessageText = reader.IsDBNull(reader.GetOrdinal("MESSAGE_TEXT")) ? null : reader.GetString(reader.GetOrdinal("MESSAGE_TEXT")),
-                    ContainerNumbers = reader.IsDBNull(reader.GetOrdinal("CONTAINER_NUMBERS")) ? null : reader.GetString(reader.GetOrdinal("CONTAINER_NUMBERS"))
+                    ContainerNumbers = reader.IsDBNull(reader.GetOrdinal("CONTAINER_NUMBERS")) ? null : reader.GetString(reader.GetOrdinal("CONTAINER_NUMBERS")),
+                    CodigoBarras = reader.IsDBNull(reader.GetOrdinal("CODIGO_BARRAS")) ? null : reader.GetString(reader.GetOrdinal("CODIGO_BARRAS"))
                 });
                 totalCount = reader.GetInt32(reader.GetOrdinal("TotalCount"));
             }
@@ -150,12 +151,15 @@ MainQuery AS (
         LTVC.CREATED_AT - LTDB.CREATED_AT AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
         NVL(LTVC_MESSAGE, 'NO_MESSAGE') AS MESSAGE_TEXT,
-        CONTAINERS_AGG.CONTAINER_NUMBERS
+        CONTAINERS_AGG.CONTAINER_NUMBERS,
+        AGE.CODIGO_BARRAS
     FROM 
         TCPSGATE.TRACKING LTDB
     LEFT JOIN TCPSGATE.TRACKING LTVC 
         ON LTDB.REQUEST_ID = LTVC.REQUEST_ID 
         AND LTVC.TYPE = 'LTVC'
+    LEFT JOIN TCPAGEND.AGENDAMENTO AGE
+        ON LTVC.ID_AGENDAMENTO = AGE.ID_AGENDAMENTO
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
         '/ns:LTDB'
@@ -276,7 +280,7 @@ CROSS JOIN CountQuery c";
                 conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
 
             if (!string.IsNullOrEmpty(status))
-                conditions.Add($"LTDB.XML LIKE '%{status}%");
+                conditions.Add($"LTVC.XML LIKE '%{status}%'");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
