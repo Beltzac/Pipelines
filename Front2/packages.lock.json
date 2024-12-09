@@ -214,14 +214,14 @@
       },
       "Serilog.AspNetCore": {
         "type": "Direct",
-        "requested": "[9.0.0-dev-02301, )",
-        "resolved": "9.0.0-dev-02301",
-        "contentHash": "AnvMc3dA1++q2wzzpNfI4HNFtbqyQBYrjI//IqiEikUUm0V+hc0rTlPrY/HKoL2fCB72bjVWzzrIUmkXGwv5lQ==",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "JslDajPlBsn3Pww1554flJFTqROvK9zz9jONNQgn0D8Lx2Trw8L0A8/n6zEQK1DAZWXrJwiVLw8cnTR3YFuYsg==",
         "dependencies": {
-          "Serilog": "4.2.0-dev-02328",
-          "Serilog.Extensions.Hosting": "9.0.0-dev-02303",
+          "Serilog": "4.2.0",
+          "Serilog.Extensions.Hosting": "9.0.0",
           "Serilog.Formatting.Compact": "3.0.0",
-          "Serilog.Settings.Configuration": "9.0.0-dev-02304",
+          "Serilog.Settings.Configuration": "9.0.0",
           "Serilog.Sinks.Console": "6.0.0",
           "Serilog.Sinks.Debug": "3.0.0",
           "Serilog.Sinks.File": "6.0.0"
@@ -1583,28 +1583,28 @@
       },
       "Serilog": {
         "type": "Transitive",
-        "resolved": "4.2.0-dev-02328",
-        "contentHash": "Mur7I61Dt82hRdTPR4ykaU9rVuG5wCIKCfCi+UtVTaubUb69fFp1q4iA3bUOFk6RI2ae+72yt+6HHarh6XZ2Pw=="
+        "resolved": "4.2.0",
+        "contentHash": "gmoWVOvKgbME8TYR+gwMf7osROiWAURterc6Rt2dQyX7wtjZYpqFiA/pY6ztjGQKKV62GGCyOcmtP1UKMHgSmA=="
       },
       "Serilog.Extensions.Hosting": {
         "type": "Transitive",
-        "resolved": "9.0.0-dev-02303",
-        "contentHash": "EQNRpM+eLRP0H7306wDQxHt8iU3qBoJYFZ0VG0YkdzSwJiDJQQAY/8JaZs/V+UXKMs8DODcblaMc2ZIbOFeLmw==",
+        "resolved": "9.0.0",
+        "contentHash": "u2TRxuxbjvTAldQn7uaAwePkWxTHIqlgjelekBtilAGL5sYyF3+65NWctN4UrwwGLsDC7c3Vz3HnOlu+PcoxXg==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0",
           "Microsoft.Extensions.Hosting.Abstractions": "9.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "9.0.0",
-          "Serilog": "4.2.0-dev-02328",
-          "Serilog.Extensions.Logging": "9.0.0-dev-02302"
+          "Serilog": "4.2.0",
+          "Serilog.Extensions.Logging": "9.0.0"
         }
       },
       "Serilog.Extensions.Logging": {
         "type": "Transitive",
-        "resolved": "9.0.0-dev-02302",
-        "contentHash": "R0URSdwldih0FK4tvUIG/k+3X85nMOfDRznxXeFrv49xzaH19HqYv09WqTBG7x9odoTEnaqQ3bEOVx7uSJGTPQ==",
+        "resolved": "9.0.0",
+        "contentHash": "NwSSYqPJeKNzl5AuXVHpGbr6PkZJFlNa14CdIebVjK3k/76kYj/mz5kiTRNVSsSaxM8kAIa1kpy/qyT9E4npRQ==",
         "dependencies": {
           "Microsoft.Extensions.Logging": "9.0.0",
-          "Serilog": "4.2.0-dev-02328"
+          "Serilog": "4.2.0"
         }
       },
       "Serilog.Formatting.Compact": {
@@ -1617,12 +1617,12 @@
       },
       "Serilog.Settings.Configuration": {
         "type": "Transitive",
-        "resolved": "9.0.0-dev-02304",
-        "contentHash": "qhJVz0Sg9a6qojW/tJ2JnmVZL8x3d9jdB2T3RyWyTs71jbgw+v6BgOMFGx1TGHMX4MisYb4D8CTysBTDFLPK2g==",
+        "resolved": "9.0.0",
+        "contentHash": "4/Et4Cqwa+F88l5SeFeNZ4c4Z6dEAIKbu3MaQb2Zz9F/g27T5a3wvfMcmCOaAiACjfUb4A6wrlTVfyYUZk3RRQ==",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Binder": "9.0.0",
           "Microsoft.Extensions.DependencyModel": "9.0.0",
-          "Serilog": "4.2.0-dev-02328"
+          "Serilog": "4.2.0"
         }
       },
       "Serilog.Sinks.Debug": {
