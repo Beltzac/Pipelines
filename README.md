@@ -15,3 +15,7 @@ Este projeto inclui vários componentes para gerenciar informações de build, g
 5. **Consulta de Requisições (ESB)**: Execute consultas relacionadas a requisições de execução com vários filtros e visualize os resultados em uma tabela.
 
 6. **Consulta LTDB/LTVC (SGG)**: Consulte registros LTDB/LTVC com filtros para ambiente, intervalo de datas e outros parâmetros, exibindo os resultados em uma tabela e visualizando os tempos de resposta.
+
+7. **Gerenciamento de Inicialização no Windows**: Permite que a aplicação seja configurada para iniciar com o Windows.
+
+8. **Minimização para a Bandeja do Sistema**: A aplicação pode ser minimizada para a bandeja do sistema, permitindo que os usuários continuem a usar o computador sem fechar completamente a aplicação. Os usuários podem interagir com o ícone da bandeja para restaurar a aplicação ou acessar opções adicionais.
