@@ -1,8 +1,10 @@
 ﻿@page "/consulta-esb"
+@using BlazorDateRangePicker
 @using Common.Models
 @using Common.Services
 @using Common.Utils
 @using Blazored.Typeahead
+@using System.Globalization
 @inject IRequisicaoExecucaoService RequisicaoService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
@@ -29,13 +31,15 @@
             </div>
 
             <div class="col-md-3">
-                <label class="form-label">Start Date</label>
-                <input type="datetime-local" class="form-control" @bind="ConsultaEsbStateService.StartDate">
-            </div>
+                <label class="form-label">Range</label>
 
-            <div class="col-md-3">
-                <label class="form-label">End Date</label>
-                <input type="datetime-local" class="form-control" @bind="ConsultaEsbStateService.EndDate">
+                <DateRangePicker 
+                    Culture="@CultureInfo.GetCultureInfo("pt-BR")" 
+                    TimePicker="true" TimePicker24Hour="true" 
+                    DateFormat="@($"dd/MM/yyyy HH:mm")"
+                    @bind-StartDate="ConsultaEsbStateService.StartDate" 
+                    @bind-EndDate="ConsultaEsbStateService.EndDate"
+                    class="form-control" />
             </div>
 
             <div class="col-md-3">

@@ -17,8 +17,8 @@ namespace Common.Services
 
         public async Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,
-            DateTime? startDate = null,
-            DateTime? endDate = null,
+            DateTimeOffset? startDate = null,
+            DateTimeOffset? endDate = null,
             string? urlFilter = null,
             string? httpMethod = null,
             string[]? containerNumbers = null,
@@ -70,8 +70,8 @@ namespace Common.Services
         }
 
         public string BuildQuery(
-            DateTime? startDate,
-            DateTime? endDate,
+            DateTimeOffset? startDate,
+            DateTimeOffset? endDate,
             string? urlFilter,
             string? httpMethod,
             string[]? containerNumbers,

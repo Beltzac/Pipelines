@@ -1,7 +1,9 @@
 ﻿@page "/consulta-ltdb"
+@using BlazorDateRangePicker
 @using Common.Models
 @using Common.Services
 @using Common.Utils
+@using System.Globalization
 @inject ILtdbLtvcService LtdbService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
@@ -28,13 +30,15 @@
             </div>
 
             <div class="col-md-3">
-                <label class="form-label">Start Date</label>
-                <input type="datetime-local" class="form-control" @bind="ConsultaSggStateService.StartDate">
-            </div>
+                <label class="form-label">Range</label>
 
-            <div class="col-md-3">
-                <label class="form-label">End Date</label>
-                <input type="datetime-local" class="form-control" @bind="ConsultaSggStateService.EndDate">
+                <DateRangePicker 
+                    Culture="@CultureInfo.GetCultureInfo("pt-BR")" 
+                    TimePicker="true" TimePicker24Hour="true" 
+                    DateFormat="@($"dd/MM/yyyy HH:mm")"
+                    @bind-StartDate="ConsultaSggStateService.StartDate" 
+                    @bind-EndDate="ConsultaSggStateService.EndDate"
+                    class="form-control" />
             </div>
 
             <div class="col-md-3">
