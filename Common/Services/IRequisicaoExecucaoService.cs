@@ -6,8 +6,8 @@ namespace Common.Services
     {
         Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,
-            DateTime? startDate = null,
-            DateTime? endDate = null,
+            DateTimeOffset? startDate = null,
+            DateTimeOffset? endDate = null,
             string? urlFilter = null,
             string? httpMethod = null,
             string[]? containerNumbers = null,
@@ -19,7 +19,7 @@ namespace Common.Services
             string? responseStatus = null,
             CancellationToken cancellationToken = default);
 
-        string BuildQuery(DateTime? startDate, DateTime? endDate, string? urlFilter, string? httpMethod,
+        string BuildQuery(DateTimeOffset? startDate, DateTimeOffset? endDate, string? urlFilter, string? httpMethod,
             string[]? containerNumbers, int? userId, int? execucaoId, int pageSize, int pageNumber,
             string? httpStatusRange, string? responseStatus);
 

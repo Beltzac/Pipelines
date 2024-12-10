@@ -5,8 +5,8 @@ namespace Front2.Services
     public class ConsultaSggState
     {
         public string SelectedEnvironment { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
+        public DateTimeOffset? EndDate { get; set; }
         public string Placa { get; set; }
         public string RequestId { get; set; }
         public string ContainerNumbers { get; set; }

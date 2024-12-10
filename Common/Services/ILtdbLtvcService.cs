@@ -6,8 +6,8 @@ namespace Common.Services
     {
         Task<(List<LtdbLtvcRecord> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,
-            DateTime? startDate = null,
-            DateTime? endDate = null,
+            DateTimeOffset? startDate = null,
+            DateTimeOffset? endDate = null,
             string? containerNumber = null,
             string? placa = null,
             string? motorista = null,
@@ -19,8 +19,8 @@ namespace Common.Services
             CancellationToken cancellationToken = default);
 
         string BuildQuery(
-            DateTime? startDate,
-            DateTime? endDate,
+            DateTimeOffset? startDate,
+            DateTimeOffset? endDate,
             string? containerNumber = null,
             string? placa = null,
             string? motorista = null,
@@ -32,8 +32,8 @@ namespace Common.Services
 
         Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>> GetDelayMetricsAsync(
             string environment,
-            DateTime? startDate = null,
-            DateTime? endDate = null,
+            DateTimeOffset? startDate = null,
+            DateTimeOffset? endDate = null,
             string? containerNumber = null,
             string? placa = null,
             string? motorista = null,

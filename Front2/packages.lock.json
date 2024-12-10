@@ -23,6 +23,16 @@
           "Microsoft.Extensions.Logging": "8.0.0"
         }
       },
+      "BlazorDateRangePicker": {
+        "type": "Direct",
+        "requested": "[5.3.0, )",
+        "resolved": "5.3.0",
+        "contentHash": "ERo1Jb9CptmNcYIL4Rn2tLzydz7yK1BKZPHCEL6JAFUQ5f56Z6Z6VtqHlf+MY8gDZr9LKXRVzl2Du/L1rKXIkQ==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "8.0.0",
+          "Microsoft.AspNetCore.Components.Web": "8.0.0"
+        }
+      },
       "Blazored.Toast": {
         "type": "Direct",
         "requested": "[4.2.1, )",

@@ -36,7 +36,7 @@ namespace Common.Utils
             }
         }
 
-        public static void OpenWithVSCode(ILogger logger, string folderPath, bool disableExtensions)
+        public static void OpenWithVSCode(ILogger logger, string folderPath, bool disableExtensions = false)
         {
             try
             {

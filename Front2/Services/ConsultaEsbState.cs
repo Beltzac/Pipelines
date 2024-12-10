@@ -5,8 +5,8 @@ namespace Front2.Services
     public class ConsultaEsbState
     {
         public string SelectedEnvironment { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
+        public DateTimeOffset? EndDate { get; set; }
         public KeyValuePair<int, string>? User { get; set; }
         public RequisicaoExecucao SelectedItem { get; set; }
         public string UrlFilter { get; set; }
