@@ -58,7 +58,7 @@ namespace Common.Services
                 string key = kv["Key"].ToString();
                 string value = kv["Value"]?.ToString() ?? string.Empty;
                 byte[] valueBytes = Convert.FromBase64String(value);
-                string decodedValue = System.Text.Encoding.UTF8.GetString(valueBytes);
+                string decodedValue = Encoding.UTF8.GetString(valueBytes);
                 keyValues[key] = decodedValue;
             }
 

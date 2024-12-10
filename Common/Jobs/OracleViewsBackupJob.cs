@@ -79,7 +79,7 @@ namespace Common.Jobs
                         }
 
                         // Stage all changes including deletions
-                        LibGit2Sharp.Commands.Stage(repo, "*");
+                        Commands.Stage(repo, "*");
 
                         var status = repo.RetrieveStatus();
                         // Create commit if there are changes

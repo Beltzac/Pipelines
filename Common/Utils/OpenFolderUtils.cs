@@ -27,7 +27,7 @@ namespace Common.Utils
         {
             if (Directory.Exists(localPath))
             {
-                System.Diagnostics.Process.Start(new ProcessStartInfo
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = localPath,
                     UseShellExecute = true,
@@ -36,14 +36,20 @@ namespace Common.Utils
             }
         }
 
-        public static void OpenWithVSCode(ILogger logger, string folderPath)
+        public static void OpenWithVSCode(ILogger logger, string folderPath, bool disableExtensions)
         {
             try
             {
-                System.Diagnostics.Process.Start(new ProcessStartInfo
+                var args = $"\"{folderPath}\"";
+                if (disableExtensions)
+                {
+                    args += " --disable-extensions";
+                }
+
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = "code-insiders.cmd",
-                    Arguments = $"\"{folderPath}\"",
+                    Arguments = args,
                     UseShellExecute = true,
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
@@ -131,7 +137,7 @@ namespace Common.Utils
                     Verb = requiresAdmin ? "runas" : ""
                 };
 
-                System.Diagnostics.Process.Start(processStartInfo);
+                Process.Start(processStartInfo);
                 logger.LogInformation($"Opening {slnFile} with Visual Studio{(requiresAdmin ? " as Administrator" : "")}.");
             }
             catch (Exception ex)
