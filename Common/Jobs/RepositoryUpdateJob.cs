@@ -2,6 +2,8 @@
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
 using Quartz;
 
 namespace Common.Jobs
@@ -11,12 +13,21 @@ namespace Common.Jobs
         private readonly IBuildInfoService _buildInfoService;
         private readonly ILogger<BuildInfoJob> _logger;
         private TelemetryClient _telemetryClient;
+        private readonly AsyncRetryPolicy _retryPolicy;
 
         public RepositoryUpdateJob(IBuildInfoService buildInfoService, ILogger<BuildInfoJob> logger, TelemetryClient telemetryClient)
         {
             _buildInfoService = buildInfoService;
             _logger = logger;
             _telemetryClient = telemetryClient;
+
+            _retryPolicy = Policy
+                .Handle<Exception>()
+                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        _logger.LogWarning($"Retry {retryCount} encountered an error: {exception.Message}. Waiting {timeSpan} before next retry.");
+                    });
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -24,7 +35,6 @@ namespace Common.Jobs
             using (_telemetryClient.StartOperation<RequestTelemetry>("repository-update-job"))
             {
                 var repositoryId = Guid.Parse(context.MergedJobDataMap.GetString("RepositoryId"));
-
 
                 var nextRun = 0;
                 Repository? repo = null;
@@ -55,7 +65,10 @@ namespace Common.Jobs
                     .StartAt(DateTime.UtcNow.AddSeconds(nextRun))
                     .Build();
 
-                await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
+                await _retryPolicy.ExecuteAsync(async () =>
+                {
+                    await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
+                });
 
                 _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo?.Name ?? "MISSING"} in {nextRun} seconds");
 

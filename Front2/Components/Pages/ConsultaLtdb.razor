@@ -19,7 +19,7 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Environment</label>
                 <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
                     @foreach (var env in config.OracleEnvironments)
@@ -29,19 +29,21 @@
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Range</label>
 
                 <DateRangePicker 
-                    Culture="@CultureInfo.GetCultureInfo("pt-BR")" 
-                    TimePicker="true" TimePicker24Hour="true" 
-                    DateFormat="@($"dd/MM/yyyy HH:mm")"
-                    @bind-StartDate="ConsultaSggStateService.StartDate" 
+                    Culture="@CultureInfo.GetCultureInfo("pt-BR")"
+                    TimePicker="true"
+                    TimePicker24Hour="true"
+                    TimePickerSeconds="true"
+                    DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
+                    @bind-StartDate="ConsultaSggStateService.StartDate"
                     @bind-EndDate="ConsultaSggStateService.EndDate"
                     class="form-control" />
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Placa</label>
                 <input type="text" class="form-control" @bind="ConsultaSggStateService.Placa" placeholder="Search by plate number">
             </div>
