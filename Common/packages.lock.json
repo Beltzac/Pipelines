@@ -290,6 +290,15 @@
           "System.Security.Cryptography.Pkcs": "8.0.0"
         }
       },
+      "Polly": {
+        "type": "Direct",
+        "requested": "[8.5.0, )",
+        "resolved": "8.5.0",
+        "contentHash": "GBNZPy7i7OpkaIruWPRJ0+AWzdGDQDnKY91b7Ic2aAch4lKhPjUc5KSffpH9krIWe0MoyghqaRxwRC0Uwz2PkA==",
+        "dependencies": {
+          "Polly.Core": "8.5.0"
+        }
+      },
       "Quartz": {
         "type": "Direct",
         "requested": "[3.13.1, )",
@@ -1038,6 +1047,11 @@
           "NETStandard.Library": "1.6.1",
           "Newtonsoft.Json": "10.0.1"
         }
+      },
+      "Polly.Core": {
+        "type": "Transitive",
+        "resolved": "8.5.0",
+        "contentHash": "VYYMZNitZ85UEhwOKkTQI63WEMvzUqwQc74I2mm8h/DBVAMcBBxqYPni4DmuRtbCwngmuONuK2yBJfWNRKzI+A=="
       },
       "Quartz.Extensions.DependencyInjection": {
         "type": "Transitive",
