@@ -54,18 +54,6 @@
           "Microsoft.AspNetCore.Components.Web": "6.0.3"
         }
       },
-      "ElectronNET.API": {
-        "type": "Direct",
-        "requested": "[23.6.2, )",
-        "resolved": "23.6.2",
-        "contentHash": "P9tJEAxdjLEsbgBXaeJO/90pq/AO9p0yXf+6dWw0OzKXFq+byp0URtm/Gr7U6rtslgKiOf13VAY2ohR1wSGQVg==",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.3",
-          "SocketIOClient": "3.0.8",
-          "SocketIOClient.Newtonsoft.Json": "3.0.7",
-          "System.Drawing.Common": "7.0.0"
-        }
-      },
       "FuzzySharp": {
         "type": "Direct",
         "requested": "[2.0.2, )",
@@ -1679,25 +1667,6 @@
           "System.Text.Json": "8.0.1"
         }
       },
-      "SocketIOClient": {
-        "type": "Transitive",
-        "resolved": "3.0.8",
-        "contentHash": "uFpKuga3GEoWjJWGIkN00jeQu8XqQlWBVrigw0yKk9kkmPRWF2JlrrcT5/y4EK0cfKXu2yCdnECx+Y/zAXjRGA==",
-        "dependencies": {
-          "System.Collections": "4.3.0",
-          "System.Text.Json": "7.0.2"
-        }
-      },
-      "SocketIOClient.Newtonsoft.Json": {
-        "type": "Transitive",
-        "resolved": "3.0.7",
-        "contentHash": "n2RMPeHyph8lNgLN376evkk3Qf0ws+MRxBQ4393IiEoxiF8BJC4w+fU/pqfBcB3dYvhbliVu4ICtlEar9bvJVw==",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.2",
-          "SocketIOClient": "3.0.8",
-          "System.Text.Json": "7.0.2"
-        }
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.10",
@@ -2840,7 +2809,6 @@
           "ClosedXML": "[0.104.2, )",
           "CompareNETObjects": "[4.83.0, )",
           "DiffPlex": "[1.7.2, )",
-          "ElectronNET.API": "[23.6.2, )",
           "FlexLabs.EntityFrameworkCore.Upsert": "[8.1.2, )",
           "Flurl": "[4.0.0, )",
           "Flurl.Http": "[4.0.2, )",

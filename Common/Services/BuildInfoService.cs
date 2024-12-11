@@ -1,31 +1,26 @@
 ﻿using Common.ExternalApis;
 using Common.Repositories;
 using Common.Utils;
-using ElectronNET.API;
-using ElectronNET.API.Entities;
+
+
 using Flurl;
 using LibGit2Sharp;
-using Microsoft.AspNetCore.Routing.Matching;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
-using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using SmartComponents.LocalEmbeddings;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
-using static Vanara.PInvoke.LCID;
 
 namespace Common.Services
 {
     public class BuildInfoService : IBuildInfoService
     {
         private readonly IRepositoryDatabase _repositoryDatabase;
-        private readonly IHubContext<BuildInfoHub> _hubContext;
         private readonly IBuildHttpClient _buildClient;
         private readonly IProjectHttpClient _projectClient;
         private readonly IGitHttpClient _gitClient;
@@ -38,7 +33,6 @@ namespace Common.Services
         private readonly LocalEmbedder _embedder;
 
         public BuildInfoService(
-            IHubContext<BuildInfoHub> hubContext,
             ILogger<BuildInfoService> logger,
             IConfigurationService configService,
             IRepositoryDatabase repositoryDatabase,
@@ -52,7 +46,6 @@ namespace Common.Services
             _name = config.Username;
             _localCloneFolder = config.LocalCloneFolder;
             _repositoryDatabase = repositoryDatabase;
-            _hubContext = hubContext;
             _buildClient = buildClient;
             _projectClient = projectClient;
             _gitClient = gitClient;
@@ -128,7 +121,7 @@ namespace Common.Services
         {
             //https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md
 
-            
+
 
             var query = _repositoryDatabase.Query()
                 .Where(repo => !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern))
@@ -415,7 +408,7 @@ namespace Common.Services
         private async Task UpsertAndPublish(Repository buildInfo, bool notify = true)
         {
             await _repositoryDatabase.UpsertAsync(buildInfo);
-            await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
+            //await _hubContext.Clients.All.SendAsync("Update", buildInfo.Id);
 
             if (!notify)
             {
@@ -426,21 +419,21 @@ namespace Common.Services
 
             if (isMine)
             {
-                if (HybridSupport.IsElectronActive)
-                {
-                    Electron.Notification.Show(
-                       new NotificationOptions(
-                           buildInfo.Path,
-                           buildInfo.Pipeline?.Last?.Status
-                       ));
-                }
+                //if (HybridSupport.IsElectronActive)
+                //{
+                //    Electron.Notification.Show(
+                //       new NotificationOptions(
+                //           buildInfo.Path,
+                //           buildInfo.Pipeline?.Last?.Status
+                //       ));
+                //}
             }
         }
 
         public async Task Delete(Guid id)
         {
             await _repositoryDatabase.DeleteAsync(id);
-            await _hubContext.Clients.All.SendAsync("Update", id);
+            //await _hubContext.Clients.All.SendAsync("Update", id);
         }
 
         public async Task<string> GenerateCloneCommands()
