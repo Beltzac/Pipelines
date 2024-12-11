@@ -12,7 +12,6 @@ namespace Tests.Common.Services
 {
     public class BuildInfoServiceTests
     {
-        private readonly Mock<IHubContext<BuildInfoHub>> _hubContextMock;
         private readonly Mock<ILogger<BuildInfoService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
         private readonly Mock<IRepositoryDatabase> _repositoryDatabaseMock;
@@ -24,7 +23,6 @@ namespace Tests.Common.Services
 
         public BuildInfoServiceTests()
         {
-            _hubContextMock = new Mock<IHubContext<BuildInfoHub>>();
             _loggerMock = new Mock<ILogger<BuildInfoService>>();
             _configServiceMock = new Mock<IConfigurationService>();
             _repositoryDatabaseMock = new Mock<IRepositoryDatabase>();
@@ -41,7 +39,6 @@ namespace Tests.Common.Services
             _configServiceMock.Setup(cs => cs.GetConfig()).Returns(configModel);
 
             _buildInfoService = new BuildInfoService(
-                _hubContextMock.Object,
                 _loggerMock.Object,
                 _configServiceMock.Object,
                 _repositoryDatabaseMock.Object,

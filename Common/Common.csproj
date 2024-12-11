@@ -17,7 +17,6 @@
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
-    <PackageReference Include="ElectronNET.API" Version="23.6.2" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.1.2" />
     <PackageReference Include="Flurl" Version="4.0.0" />
     <PackageReference Include="Flurl.Http" Version="4.0.2" />

@@ -3,8 +3,8 @@ using Common.Jobs;
 using Common.Repositories;
 using Common.Services;
 using Common.Utils;
-using ElectronNET.API;
-using ElectronNET.API.Entities;
+
+
 using Generation;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
@@ -20,13 +20,13 @@ using System.Runtime.InteropServices;
 
 var builder = WebApplication.CreateBuilder();
 
-// Integrate Electron.NET with the Host
-builder.WebHost.UseElectron(args);
+var port = false ? 8001 : 8002;
+
+
 
 // Configure the WebHost to set the URLs
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
-    var port = HybridSupport.IsElectronActive ? 8001 : 8002;
     options.ListenLocalhost(port);
 });
 
@@ -44,8 +44,6 @@ builder.Services.AddRazorComponents()
     {
         o.DetailedErrors = true;
     });
-
-builder.Services.AddElectron();
 
 builder.Services.AddCustomServices();
 
@@ -130,43 +128,41 @@ app.UseAntiforgery();
 app.MapRazorComponents<Front2.Components.App>()
     .AddInteractiveServerRenderMode();
 
-app.MapHub<BuildInfoHub>("/buildInfoHub");
-
 var startupEnabled = IsStartupEnabled();
 
-var menus = new List<MenuItem>()
-{
-    new MenuItem
-    {
-        Label = "Open",
-        Click = async () => await OpenWeb()
-    },
-    new MenuItem
-    {
-        Label = "Exit",
-        Click = () => Electron.App.Exit()
-    },
-    new MenuItem
-    {
-        Type = MenuType.separator
-    }
-};
+//var menus = new List<MenuItem>()
+//{
+//    new MenuItem
+//    {
+//        Label = "Open",
+//        Click = async () => await OpenWeb()
+//    },
+//    new MenuItem
+//    {
+//        Label = "Exit",
+//        Click = () => Electron.App.Exit()
+//    },
+//    new MenuItem
+//    {
+//        Type = MenuType.separator
+//    }
+//};
 
-menus.Add(
-     new MenuItem
-     {
-         Label = "Enable Startup with Windows",
-         Click = () => SetStartupAsync(true),
-         Visible = !startupEnabled
-     });
+//menus.Add(
+//     new MenuItem
+//     {
+//         Label = "Enable Startup with Windows",
+//         Click = () => SetStartupAsync(true),
+//         Visible = !startupEnabled
+//     });
 
-menus.Add(
-    new MenuItem
-    {
-        Label = "Disable Startup with Windows",
-        Click = () => SetStartupAsync(false),
-        Visible = startupEnabled
-    });
+//menus.Add(
+//    new MenuItem
+//    {
+//        Label = "Disable Startup with Windows",
+//        Click = () => SetStartupAsync(false),
+//        Visible = startupEnabled
+//    });
 
 bool IsStartupEnabled()
 {
@@ -184,38 +180,38 @@ bool IsStartupEnabled()
 
 async Task SetStartupAsync(bool enable)
 {
-    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-    {
-        string appName = "MyBlazorApp"; // Define your application name
-        string executablePath = await Electron.App.GetAppPathAsync();
-        string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
+    //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    //{
+    //    string appName = "MyBlazorApp"; // Define your application name
+    //    string executablePath = await Electron.App.GetAppPathAsync();
+    //    string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+    //    string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
 
-        if (enable)
-        {
-            CreateStartupShortcut(shortcutPath, executablePath);
-        }
-        else
-        {
-            if (File.Exists(shortcutPath))
-            {
-                File.Delete(shortcutPath);
-            }
-        }
+    //    if (enable)
+    //    {
+    //        CreateStartupShortcut(shortcutPath, executablePath);
+    //    }
+    //    else
+    //    {
+    //        if (File.Exists(shortcutPath))
+    //        {
+    //            File.Delete(shortcutPath);
+    //        }
+    //    }
 
-        menus.First(m => m.Label == "Enable Startup with Windows").Visible = !enable;
-        menus.First(m => m.Label == "Disable Startup with Windows").Visible = enable;
+    //    menus.First(m => m.Label == "Enable Startup with Windows").Visible = !enable;
+    //    menus.First(m => m.Label == "Disable Startup with Windows").Visible = enable;
 
-        Electron.Tray.OnClick -= OnTrayClick;
-        Electron.Tray.Destroy();
-        Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
-        Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
-        Electron.Tray.OnClick += OnTrayClick;
-    }
-    else
-    {
-        Electron.Dialog.ShowMessageBoxAsync(new MessageBoxOptions("Startup setting is only supported on Windows."));
-    }
+    //    Electron.Tray.OnClick -= OnTrayClick;
+    //    Electron.Tray.Destroy();
+    //    Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
+    //    Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
+    //    Electron.Tray.OnClick += OnTrayClick;
+    //}
+    //else
+    //{
+    //    Electron.Dialog.ShowMessageBoxAsync(new MessageBoxOptions("Startup setting is only supported on Windows."));
+    //}
 }
 
 void CreateStartupShortcut(string shortcutPath, string executablePath)
@@ -228,17 +224,17 @@ void CreateStartupShortcut(string shortcutPath, string executablePath)
     shortcut.WriteToFile(shortcutPath);
 }
 
-async void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
-{
-    await OpenWeb();
-}
+//async void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
+//{
+//    await OpenWeb();
+//}
 
-if (HybridSupport.IsElectronActive)
-{
-    await Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
-    await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
-    Electron.Tray.OnClick += OnTrayClick;
-}
+//if (HybridSupport.IsElectronActive)
+//{
+//    await Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
+//    await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
+//    Electron.Tray.OnClick += OnTrayClick;
+//}
 
 // Apply migrations at startup
 using (var scope = app.Services.CreateScope())
@@ -257,49 +253,49 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (HybridSupport.IsElectronActive)
-{
-    Electron.App.WillQuit += async (args) =>
-    {
-        args.PreventDefault();
-    };
-}
+//if (HybridSupport.IsElectronActive)
+//{
+//    Electron.App.WillQuit += async (args) =>
+//    {
+//        args.PreventDefault();
+//    };
+//}
 
 app.Run();
 
 async Task OpenWeb(bool warmUp = false)
 {
-    WebPreferences wp = new WebPreferences();
-    wp.NodeIntegration = false;
+    //WebPreferences wp = new WebPreferences();
+    //wp.NodeIntegration = false;
 
-    var options = new BrowserWindowOptions
-    {
-        SkipTaskbar = true,
-        AutoHideMenuBar = true,
-        WebPreferences = wp,
-        Show = false
-    };
+    //var options = new BrowserWindowOptions
+    //{
+    //    SkipTaskbar = true,
+    //    AutoHideMenuBar = true,
+    //    WebPreferences = wp,
+    //    Show = false
+    //};
 
-    var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
+    //var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
 
-    var window = existing ?? await Electron.WindowManager.CreateWindowAsync(options);
+    //var window = existing ?? await Electron.WindowManager.CreateWindowAsync(options);
 
-    window.SetTitle("¯\\_(ツ)_/¯");
+    //window.SetTitle("¯\\_(ツ)_/¯");
 
-    if (warmUp)
-    {
-        return;
-    }
+    //if (warmUp)
+    //{
+    //    return;
+    //}
 
-    var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
+    //var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
 
-    if (topWindow == null || topWindow.ToString() != (await window.GetTitleAsync()))
-    {
-        window.Maximize();
-        window.Focus();
-    }
-    else
-    {
-        window.Minimize();
-    }
+    //if (topWindow == null || topWindow.ToString() != (await window.GetTitleAsync()))
+    //{
+    //    window.Maximize();
+    //    window.Focus();
+    //}
+    //else
+    //{
+    //    window.Minimize();
+    //}
 }

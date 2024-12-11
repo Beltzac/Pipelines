@@ -1,8 +1,7 @@
 ﻿@page "/"
-@inject ISignalRClientService SignalRClientService
 @using Common
 @using Common.Services
-@using ElectronNET.API
+
 @using FuzzySharp
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
@@ -143,10 +142,10 @@
                 }
             });
 
-        await SignalRClientService.StartAsync(async id =>
-        {
-            await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Path} Atualizada"); });
-        });
+        // await SignalRClientService.StartAsync(async id =>
+        // {
+        //     await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Path} Atualizada"); });
+        // });
 
         BuildInfoStateService.InitializeState(x =>
         {
@@ -174,7 +173,7 @@
     //Disconnect SignalR connection on component disposal
     public async ValueTask DisposeAsync()
     {
-        await SignalRClientService.Disconect();
+        //await SignalRClientService.Disconect();
         _subscription.Dispose();
     }
 

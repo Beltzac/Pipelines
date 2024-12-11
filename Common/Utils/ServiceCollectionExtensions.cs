@@ -15,7 +15,6 @@ namespace Common.Utils
     {
         public static IServiceCollection AddCustomServices(this IServiceCollection services)
         {
-            services.AddSignalR();
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddEntityFrameworkSqlite();
             services.AddDbContextFactory<RepositoryDbContext>();
@@ -62,7 +61,6 @@ namespace Common.Utils
             services.AddScoped<IAutoUpdateService, AutoUpdateService>();
 
             services.AddScoped<ICommitDataExportService, CommitDataExportService>();
-            services.AddScoped<ISignalRClientService, SignalRClientService>();
             services.AddLogging();
             services.AddScoped<IOracleSchemaService, OracleSchemaService>();
             services.AddScoped<IBuildInfoService, BuildInfoService>();

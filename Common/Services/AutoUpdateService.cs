@@ -157,7 +157,7 @@ namespace Common.Services
                         });
 
                         // Exit the Electron app
-                        ElectronNET.API.Electron.App.Exit();
+                        //ElectronNET.API.Electron.App.Exit();
 
                         break;
                     }
