@@ -160,6 +160,15 @@
           "System.ComponentModel.Annotations": "5.0.0"
         }
       },
+      "Photino.NET": {
+        "type": "Direct",
+        "requested": "[3.2.3, )",
+        "resolved": "3.2.3",
+        "contentHash": "RclLYqWaiL4C1COsZPXa+iw4mN5IQO2Re7qspWB0R9HXWzMD1tOPsdHm192A2OHD7bgWgGKRUm2iTxO1qrZMwQ==",
+        "dependencies": {
+          "Photino.Native": "3.2.3"
+        }
+      },
       "Quartz": {
         "type": "Direct",
         "requested": "[3.13.1, )",
@@ -1427,6 +1436,11 @@
           "System.Formats.Asn1": "8.0.1",
           "System.Security.Cryptography.Pkcs": "8.0.0"
         }
+      },
+      "Photino.Native": {
+        "type": "Transitive",
+        "resolved": "3.2.3",
+        "contentHash": "TsaTqpXOYB/xutQJGyFb3R93rEXBHMh5YHlfZgd4TqG20jCH7w/Nk91MnzFHCyTWKHywpGfjvfOYvaEbpDXZGQ=="
       },
       "Polly": {
         "type": "Transitive",
