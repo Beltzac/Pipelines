@@ -29,73 +29,10 @@ internal class Program
     {
 
         var mainWindow = new PhotinoWindow()
-               //.Load(new Uri("https://google.com"))
-               //.Load("https://duckduckgo.com/?t=ffab&q=user+agent+&ia=answer")
                .Load("http://localhost:8002/")
-               //.Load("https://localhost:8080/")
-               //.Load("wwwroot/main.html")
-               //.Load("wwwroot/index.html")
-               //.LoadRawString("<h1>Hello Photino!</h1>")
-
-               //Window settings
-               //.SetIconFile(iconFile)
-               //.SetTitle($"My Photino Window {_windowNumber++}")
-               //.SetChromeless(true)
-               //.SetTransparent(true)
-               //.SetFullScreen(true)
-               //.SetMaximized(true)
-               //.SetMaxSize(640, 480)
-               //.SetMinimized(true)
-               //.SetMinHeight(240)
-               //.SetMinWidth(320)
-               //.SetMinSize(320, 240)
-               //.SetResizable(false)
-               //.SetTopMost(true)
-               //.SetUseOsDefaultLocation(false)
-               //.SetUseOsDefaultSize(false)
-               .Center()
-               //.SetSize(new Size(800, 600))
-               //.SetHeight(600)
-               //.SetWidth(800)
-               //.SetLocation(new Point(50, 50))
-               //.SetTop(50)
-               //.SetLeft(50)
-               //.MoveTo(new Point(10, 10))
-               //.MoveTo(20, 20)
-               //.Offset(new Point(150, 150))
-               //.Offset(250, 250)
-               //.SetNotificationRegistrationId("8FDF1B15-3408-47A6-8EF5-2B0676B76277")  //Replaces the window title when registering toast notifications
-               //.SetNotificationsEnabled(false)
-
-               //Browser settings
-               //.SetContextMenuEnabled(false)
-               .SetDevToolsEnabled(true)
-               //.SetGrantBrowserPermissions(false)
-               //.SetZoom(150)
-
-               //Browser startup flags
-               //.SetBrowserControlInitParameters("--ignore-certificate-errors ")
-               .SetUserAgent("Custom Photino User Agent")
-               //.SetMediaAutoplayEnabled(true)
-               //.SetFileSystemAccessEnabled(true)
-               //.SetWebSecurityEnabled(true)
-               //.SetJavascriptClipboardAccessEnabled(true)
-               //.SetMediaStreamEnabled(true)
-               //.SetSmoothScrollingEnabled(true)
-               //.SetTemporaryFilesPath(@"C:\Temp")
-               //.SetIgnoreCertificateErrorsEnabled(false)
-
-               //.RegisterCustomSchemeHandler("app", AppCustomSchemeUsed)
-
-               //.RegisterWindowCreatingHandler(WindowCreating)
-               //.RegisterWindowCreatedHandler(WindowCreated)
-               //.RegisterLocationChangedHandler(WindowLocationChanged)
-               //.RegisterSizeChangedHandler(WindowSizeChanged)
-               //.RegisterWebMessageReceivedHandler(MessageReceivedFromWindow)
-               //.RegisterWindowClosingHandler(WindowIsClosing)
-               //.RegisterFocusInHandler(WindowFocusIn)
-               //.RegisterFocusOutHandler(WindowFocusOut)
-
+               .SetTitle("¯\\_(ツ)_/¯")
+               .SetMaximized(true)
+               .RegisterWindowClosingHandler(WindowIsClosing)
                .SetLogVerbosity(5);
 
 
@@ -359,9 +296,14 @@ internal class Program
         //await task;
         task.GetAwaiter().GetResult();
 
+    static bool WindowIsClosing(object sender, EventArgs e)
+    {
+        var window = (PhotinoWindow)sender;
+        window.Minimized = true;
+        return true;   //return true to block closing of the window
+    }
 
-
-        async Task OpenWeb(bool warmUp = false)
+    async Task OpenWeb(bool warmUp = false)
         {
             //WebPreferences wp = new WebPreferences();
             //wp.NodeIntegration = false;
