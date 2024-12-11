@@ -60,6 +60,15 @@
         "resolved": "2.0.2",
         "contentHash": "sBKqWxw3g//peYxDZ8JipRlyPbIyBtgzqBVA5GqwHVeqtIrw75maGXAllztf+1aJhchD+drcQIgf2mFho8ZV8A=="
       },
+      "H.NotifyIcon": {
+        "type": "Direct",
+        "requested": "[2.2.0, )",
+        "resolved": "2.2.0",
+        "contentHash": "x3rk9dLAXpMrfngnC7oHmYF4sULEpEdD9hLMIt0W41MZ8WYeCY63SeyJX1TKcvJ7BI24JciLxhXOuWrSRCEiQA==",
+        "dependencies": {
+          "H.GeneratedIcons.System.Drawing": "2.2.0"
+        }
+      },
       "Json.More.Net": {
         "type": "Direct",
         "requested": "[2.1.0, )",
@@ -475,14 +484,6 @@
         "contentHash": "KJ/hQZTtW3w8Rw8ktogAwY9AcVzpUldVprTD3eyQ1XyZINLHBQqgtu0ZArmuYlp+lUR0lsqAmaARXZIOFBWmQg==",
         "dependencies": {
           "System.Drawing.Common": "9.0.0"
-        }
-      },
-      "H.NotifyIcon": {
-        "type": "Transitive",
-        "resolved": "2.2.0",
-        "contentHash": "x3rk9dLAXpMrfngnC7oHmYF4sULEpEdD9hLMIt0W41MZ8WYeCY63SeyJX1TKcvJ7BI24JciLxhXOuWrSRCEiQA==",
-        "dependencies": {
-          "H.GeneratedIcons.System.Drawing": "2.2.0"
         }
       },
       "Hogimn.Sql.Formatter": {
