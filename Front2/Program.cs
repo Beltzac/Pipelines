@@ -6,6 +6,7 @@ using Common.Utils;
 
 
 using Generation;
+using H.NotifyIcon.Core;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +16,7 @@ using Serilog;
 using Serilog.Events;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
 // electronize start
@@ -27,10 +29,14 @@ internal class Program
     [STAThread]
     static void Main(string[] args)
     {
+        CancellationTokenSource source = new CancellationTokenSource();
+        CancellationToken token = source.Token;
+
+        var title = "¯\\_(ツ)_/¯";
 
         var mainWindow = new PhotinoWindow()
                .Load("http://localhost:8002/")
-               .SetTitle("¯\\_(ツ)_/¯")
+               .SetTitle(title)
                .SetMaximized(true)
                .RegisterWindowClosingHandler(WindowIsClosing)
                .SetLogVerbosity(5);
@@ -198,8 +204,10 @@ internal class Program
             return false;
         }
 
-        async Task SetStartupAsync(bool enable)
+        void SetStartup(TrayIcon trayIcon, bool enable)
         {
+
+            ShowMessage(trayIcon, $"{enable}");
             //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             //{
             //    string appName = "MyBlazorApp"; // Define your application name
@@ -281,26 +289,176 @@ internal class Program
         //    };
         //}
 
-        CancellationTokenSource source = new CancellationTokenSource();
-        CancellationToken token = source.Token;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //using var iconStream = Front2.Resource.marshall_paw_patrol_canine_patrol_icon_263825.AsStream();
+        using var iconStream = new MemoryStream();
+        Front2.Resource.halloween53_109170.Save(iconStream);
+        iconStream.Position = 0;
+        
+        using var icon = new Icon(iconStream);
+        using var trayIcon = new TrayIconWithContextMenu
+        {
+            Icon = icon.Handle,
+            ToolTip = title
+        };
+
+        trayIcon.MessageWindow.SubscribeToMouseEventReceived((s, e) => {
+
+            if (e.MouseEvent == MouseEvent.IconLeftMouseUp)
+            {
+                var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
+
+                if (topWindow == null || topWindow.ToString() != mainWindow.Title)
+                {
+                    mainWindow.Maximized = true;
+                    mainWindow.Topmost = true;
+                    mainWindow.Topmost = false;
+                }
+                else
+                {
+                    mainWindow.Minimized = true;
+                }
+            }
+        });
+
+        trayIcon.ContextMenu = new PopupMenu();
+    //    {
+    //        Items =
+    //{
+    //    new PopupMenuItem("Create Second", (_, _) => CreateSecond()),
+    //    new PopupMenuSeparator(),
+    //    new PopupMenuItem("Show Message", (_, _) => ShowMessage(trayIcon, "message")),
+    //    new PopupMenuItem("Show Info", (_, _) => ShowInfo(trayIcon, "info")),
+    //    new PopupMenuItem("Show Warning", (_, _) => ShowWarning(trayIcon, "warning")),
+    //    new PopupMenuItem("Show Error", (_, _) => ShowError(trayIcon, "error")),
+    //    new PopupMenuItem("Show Custom", (_, _) => ShowCustom(trayIcon, "custom", icon)),
+    //    new PopupMenuSeparator(),
+    //    new PopupSubMenu("SubMenu")
+    //    {
+    //        Items =
+    //        {
+    //            new PopupMenuItem("Item 1", (_, _) => ShowMessage(trayIcon, "Item 1")),
+    //            new PopupSubMenu("SubMenu 2")
+    //            {
+    //                Items =
+    //               {
+    //                    new PopupMenuItem("Item 2", (_, _) => ShowMessage(trayIcon, "Item 2")),
+    //                }
+    //            }
+    //        }
+    //    },
+    //    new PopupMenuSeparator(),
+    //    new PopupMenuItem("Remove", (_, _) => Remove(trayIcon)),
+    //    new PopupMenuItem("Hide", (_, _) => Hide(trayIcon)),
+    //    new PopupMenuSeparator(),
+    //    new PopupMenuItem("Exit", (_, _) =>
+    //    {
+    //        trayIcon.Dispose();
+    //        Environment.Exit(0);
+    //    }),
+    //},
+    //    };
+
+
+
+
+
+        //var trayIcon = new TaskbarIcon
+        //{
+        //    Icon = new System.Drawing.Icon("path_to_your_icon.ico"),
+        //    ContextMenu = new System.Windows.Forms.ContextMenu()
+        //};
+
+        // Add the "Open" menu item
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Open", async (s, e) => await OpenWeb()));
+
+        // Add the "Exit" menu item
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => source.Cancel() /*Environment.Exit(0)*/));
+
+        // Add a separator
+        trayIcon.ContextMenu.Items.Add(new PopupMenuSeparator());
+
+        // Add "Enable Startup with Windows" menu item
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem(
+            "Enable Startup with Windows",
+            (s, e) => SetStartup(trayIcon, true))
+        {
+            Visible = !startupEnabled
+        });
+
+        // Add "Disable Startup with Windows" menu item
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem(
+            "Disable Startup with Windows",
+            (s, e) => SetStartup(trayIcon, false))
+        {
+            Visible = startupEnabled
+        });
+
+
+
+        trayIcon.Create();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         var task = app.RunAsync(token);
 
-  
+
+
+        //var mainWindowTask = Task.Run(() => mainWindow.WaitForClose(), token);
 
         mainWindow.WaitForClose();
-
 
         source.Cancel();
 
         //await task;
         task.GetAwaiter().GetResult();
 
-    static bool WindowIsClosing(object sender, EventArgs e)
+
+        static void ShowMessage(TrayIcon trayIcon, string message)
+        {
+            trayIcon.ShowNotification(
+                title: nameof(NotificationIcon.None),
+                message: message,
+                icon: NotificationIcon.None);
+            Console.WriteLine(nameof(trayIcon.ShowNotification));
+        }
+
+        static bool WindowIsClosing(object sender, EventArgs e)
     {
-        var window = (PhotinoWindow)sender;
-        window.Minimized = true;
-        return true;   //return true to block closing of the window
+        //var window = (PhotinoWindow)sender;
+        //window.Minimized = true;
+        //return true;   //return true to block closing of the window
+
+            return false;
     }
 
     async Task OpenWeb(bool warmUp = false)
