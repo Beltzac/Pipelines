@@ -3,17 +3,13 @@ using Common.Jobs;
 using Common.Repositories;
 using Common.Services;
 using Common.Utils;
-
-
 using Generation;
 using H.NotifyIcon.Core;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 using Photino.NET;
 using Quartz;
 using Serilog;
-using Serilog.Events;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
@@ -33,6 +29,7 @@ internal class Program
         CancellationToken token = source.Token;
 
         var title = "¯\\_(ツ)_/¯";
+        bool forceClose = false;
 
         var mainWindow = new PhotinoWindow()
                .Load("http://localhost:8002/")
@@ -47,8 +44,6 @@ internal class Program
         var builder = WebApplication.CreateBuilder();
 
         var port = false ? 8001 : 8002;
-
-
 
         // Configure the WebHost to set the URLs
         builder.WebHost.ConfigureKestrel((context, options) =>
@@ -146,7 +141,6 @@ internal class Program
             app.UseHsts();
         }
 
-        //app.UseStaticFiles();
         app.MapStaticAssets();
 
         app.UseAntiforgery();
@@ -155,40 +149,6 @@ internal class Program
             .AddInteractiveServerRenderMode();
 
         var startupEnabled = IsStartupEnabled();
-
-        //var menus = new List<MenuItem>()
-        //{
-        //    new MenuItem
-        //    {
-        //        Label = "Open",
-        //        Click = async () => await OpenWeb()
-        //    },
-        //    new MenuItem
-        //    {
-        //        Label = "Exit",
-        //        Click = () => Electron.App.Exit()
-        //    },
-        //    new MenuItem
-        //    {
-        //        Type = MenuType.separator
-        //    }
-        //};
-
-        //menus.Add(
-        //     new MenuItem
-        //     {
-        //         Label = "Enable Startup with Windows",
-        //         Click = () => SetStartupAsync(true),
-        //         Visible = !startupEnabled
-        //     });
-
-        //menus.Add(
-        //    new MenuItem
-        //    {
-        //        Label = "Disable Startup with Windows",
-        //        Click = () => SetStartupAsync(false),
-        //        Visible = startupEnabled
-        //    });
 
         bool IsStartupEnabled()
         {
@@ -281,34 +241,10 @@ internal class Program
             }
         }
 
-        //if (HybridSupport.IsElectronActive)
-        //{
-        //    Electron.App.WillQuit += async (args) =>
-        //    {
-        //        args.PreventDefault();
-        //    };
-        //}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //using var iconStream = Front2.Resource.marshall_paw_patrol_canine_patrol_icon_263825.AsStream();
         using var iconStream = new MemoryStream();
         Front2.Resource.halloween53_109170.Save(iconStream);
         iconStream.Position = 0;
-        
+
         using var icon = new Icon(iconStream);
         using var trayIcon = new TrayIconWithContextMenu
         {
@@ -316,78 +252,22 @@ internal class Program
             ToolTip = title
         };
 
-        trayIcon.MessageWindow.SubscribeToMouseEventReceived((s, e) => {
+        trayIcon.MessageWindow.SubscribeToMouseEventReceived((s, e) =>
+        {
 
             if (e.MouseEvent == MouseEvent.IconLeftMouseUp)
             {
-                var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
-
-                if (topWindow == null || topWindow.ToString() != mainWindow.Title)
-                {
-                    mainWindow.Maximized = true;
-                    mainWindow.Topmost = true;
-                    mainWindow.Topmost = false;
-                }
-                else
-                {
-                    mainWindow.Minimized = true;
-                }
+                ToggleWindow(mainWindow);
             }
         });
 
         trayIcon.ContextMenu = new PopupMenu();
-    //    {
-    //        Items =
-    //{
-    //    new PopupMenuItem("Create Second", (_, _) => CreateSecond()),
-    //    new PopupMenuSeparator(),
-    //    new PopupMenuItem("Show Message", (_, _) => ShowMessage(trayIcon, "message")),
-    //    new PopupMenuItem("Show Info", (_, _) => ShowInfo(trayIcon, "info")),
-    //    new PopupMenuItem("Show Warning", (_, _) => ShowWarning(trayIcon, "warning")),
-    //    new PopupMenuItem("Show Error", (_, _) => ShowError(trayIcon, "error")),
-    //    new PopupMenuItem("Show Custom", (_, _) => ShowCustom(trayIcon, "custom", icon)),
-    //    new PopupMenuSeparator(),
-    //    new PopupSubMenu("SubMenu")
-    //    {
-    //        Items =
-    //        {
-    //            new PopupMenuItem("Item 1", (_, _) => ShowMessage(trayIcon, "Item 1")),
-    //            new PopupSubMenu("SubMenu 2")
-    //            {
-    //                Items =
-    //               {
-    //                    new PopupMenuItem("Item 2", (_, _) => ShowMessage(trayIcon, "Item 2")),
-    //                }
-    //            }
-    //        }
-    //    },
-    //    new PopupMenuSeparator(),
-    //    new PopupMenuItem("Remove", (_, _) => Remove(trayIcon)),
-    //    new PopupMenuItem("Hide", (_, _) => Hide(trayIcon)),
-    //    new PopupMenuSeparator(),
-    //    new PopupMenuItem("Exit", (_, _) =>
-    //    {
-    //        trayIcon.Dispose();
-    //        Environment.Exit(0);
-    //    }),
-    //},
-    //    };
-
-
-
-
-
-        //var trayIcon = new TaskbarIcon
-        //{
-        //    Icon = new System.Drawing.Icon("path_to_your_icon.ico"),
-        //    ContextMenu = new System.Windows.Forms.ContextMenu()
-        //};
 
         // Add the "Open" menu item
-        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Open", async (s, e) => await OpenWeb()));
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle", (s, e) => ToggleWindow(mainWindow)));
 
         // Add the "Exit" menu item
-        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => source.Cancel() /*Environment.Exit(0)*/));
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => { forceClose = true; mainWindow.Close(); }/*source.Cancel()*/ /*Environment.Exit(0)*/));
 
         // Add a separator
         trayIcon.ContextMenu.Items.Add(new PopupMenuSeparator());
@@ -408,30 +288,9 @@ internal class Program
             Visible = startupEnabled
         });
 
-
-
         trayIcon.Create();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         var task = app.RunAsync(token);
-
-
 
         //var mainWindowTask = Task.Run(() => mainWindow.WaitForClose(), token);
 
@@ -452,50 +311,31 @@ internal class Program
             Console.WriteLine(nameof(trayIcon.ShowNotification));
         }
 
-        static bool WindowIsClosing(object sender, EventArgs e)
-    {
-        //var window = (PhotinoWindow)sender;
-        //window.Minimized = true;
-        //return true;   //return true to block closing of the window
+        bool WindowIsClosing(object sender, EventArgs e)
+        {
+            if (!forceClose)
+            {
+                var window = (PhotinoWindow)sender;
+                window.Minimized = true;
+            }
 
-            return false;
+            return !forceClose;
+        }
     }
 
-    async Task OpenWeb(bool warmUp = false)
+    private static void ToggleWindow(PhotinoWindow mainWindow)
+    {
+        var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
+
+        if (topWindow == null || topWindow.ToString() != mainWindow.Title)
         {
-            //WebPreferences wp = new WebPreferences();
-            //wp.NodeIntegration = false;
-
-            //var options = new BrowserWindowOptions
-            //{
-            //    SkipTaskbar = true,
-            //    AutoHideMenuBar = true,
-            //    WebPreferences = wp,
-            //    Show = false
-            //};
-
-            //var existing = Electron.WindowManager.BrowserWindows.FirstOrDefault();
-
-            //var window = existing ?? await Electron.WindowManager.CreateWindowAsync(options);
-
-            //window.SetTitle("¯\\_(ツ)_/¯");
-
-            //if (warmUp)
-            //{
-            //    return;
-            //}
-
-            //var topWindow = WindowUtils.EnumerarJanelas().FirstOrDefault();
-
-            //if (topWindow == null || topWindow.ToString() != (await window.GetTitleAsync()))
-            //{
-            //    window.Maximize();
-            //    window.Focus();
-            //}
-            //else
-            //{
-            //    window.Minimize();
-            //}
+            mainWindow.Maximized = true;
+            mainWindow.Topmost = true;
+            mainWindow.Topmost = false;
+        }
+        else
+        {
+            mainWindow.Minimized = true;
         }
     }
 }
