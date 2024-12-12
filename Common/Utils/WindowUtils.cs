@@ -20,7 +20,6 @@ namespace Common.Utils
                     if (!string.IsNullOrWhiteSpace(title.ToString()))
                     {
                         windowList.Add(title.ToString());
-                        Console.WriteLine("Window: " + title.ToString());
                     }
                 }
                 return true;
