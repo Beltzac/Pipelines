@@ -50,17 +50,7 @@ namespace Common.Services
 
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
         {
-            var kvData = await FetchConsulKV(consulEnv);
-
-            Dictionary<string, string> keyValues = new Dictionary<string, string>();
-            foreach (var kv in kvData)
-            {
-                string key = kv["Key"].ToString();
-                string value = kv["Value"]?.ToString() ?? string.Empty;
-                byte[] valueBytes = Convert.FromBase64String(value);
-                string decodedValue = Encoding.UTF8.GetString(valueBytes);
-                keyValues[key] = decodedValue;
-            }
+            var keyValues = await FetchConsulKV(consulEnv);
 
             Dictionary<string, ConsulKeyValue> keyValuesWithJson = new Dictionary<string, ConsulKeyValue>();
             string datacenter = await GetDatacenterAsync(consulEnv);
@@ -280,8 +270,22 @@ namespace Common.Services
             }
         }
 
-        async Task<JArray> FetchConsulKV(ConsulEnvironment consulEnv)
+        async Task<Dictionary<string, string>> FetchConsulKV(ConsulEnvironment consulEnv)
         {
+            try
+            {
+                return await FetchConsulKVBatch(consulEnv);
+            }
+            catch (Exception)
+            {
+                return await FetchConsulKVSequential(consulEnv);
+            }
+        }
+
+        async Task<Dictionary<string, string>> FetchConsulKVBatch(ConsulEnvironment consulEnv)
+        {
+            Dictionary<string, string> keyValues = new Dictionary<string, string>();
+
             var responseBody = await consulEnv.ConsulUrl
                 .AppendPathSegment("v1")
                 .AppendPathSegment("kv")
@@ -289,8 +293,72 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
 
-            return JArray.Parse(responseBody);
+            foreach(var keyDetail in JArray.Parse(responseBody))
+            {
+                string keyy = keyDetail["Key"].ToString();
+                string value = keyDetail["Value"]?.ToString() ?? string.Empty;
+                byte[] valueBytes = Convert.FromBase64String(value);
+                string decodedValue = Encoding.UTF8.GetString(valueBytes);
+                keyValues[keyy] = decodedValue;
+            }
+
+            return keyValues;
         }
+
+        async Task<Dictionary<string, string>> FetchConsulKVSequential(ConsulEnvironment consulEnv)
+        {
+
+            Dictionary<string, string> keyValues = new Dictionary<string, string>();
+
+
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
+
+            var url = $"{consulEnv.ConsulUrl}/v1/kv/?keys";
+
+            try
+            {
+                // Fetch all keys at the root level
+                var response = await httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"Failed to fetch keys. Status Code: {response.StatusCode}");
+                }
+
+                var keys = JArray.Parse(await response.Content.ReadAsStringAsync());
+
+                foreach (var key in keys)
+                {
+                    var keyUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
+                    var keyResponse = await httpClient.GetAsync(keyUrl);
+
+                    if (keyResponse.IsSuccessStatusCode)
+                    {
+                        var json = await keyResponse.Content.ReadAsStringAsync();
+                        var keyDetail = JArray.Parse(json);
+
+                        string keyy = keyDetail[0]["Key"].ToString();
+                        string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
+                        byte[] valueBytes = Convert.FromBase64String(value);
+                        string decodedValue = Encoding.UTF8.GetString(valueBytes);
+                        keyValues[keyy] = decodedValue;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to fetch key details for {key}. Status Code: {keyResponse.StatusCode}");
+                    }
+                }
+
+                return keyValues;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching Consul KV: {ex.Message}");
+                throw;
+            }
+        }
+
 
         async Task SaveKVToFiles(ConsulEnvironment consulEnv, Dictionary<string, ConsulKeyValue> consulData)
         {
