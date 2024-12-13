@@ -113,6 +113,7 @@ namespace Common.Services
             }
 
             var buildInfo = await CreateBuildInfoAsync(repo, buildDefinition);
+            await GenerateEmbeddingsForReposAsync(buildInfo);
             await UpsertAndPublish(buildInfo);
             return buildInfo;
         }
@@ -134,10 +135,9 @@ namespace Common.Services
                 //var janelas = string.Join(" ", WindowUtils.EnumerarJanelas().Distinct());
 
                 var filtroEmbedding = _embedder.Embed(filter);
+                var results = await GenerateEmbeddingsForReposAsync(repos);
 
-                var results = _embedder.EmbedRange(repos, x => x.Path);
-
-                var results2 = LocalEmbedder.FindClosest(filtroEmbedding, results, maxResults: 999, minSimilarity: 0.5f);
+                var results2 = LocalEmbedder.FindClosest(filtroEmbedding, results, maxResults: 999, minSimilarity: 0.6f);
 
                 return results2.ToList();
             }
@@ -165,6 +165,23 @@ namespace Common.Services
                                  .ToList();
 
             return ordered;
+        }
+
+        private async Task<IEnumerable<(Repository Item, EmbeddingF32 Embedding)>> GenerateEmbeddingsForReposAsync(params List<Repository> repos)
+        {
+            // Embbed only what doesnt have one yet
+
+            foreach (var repo in repos)
+            {
+                if(repo.Embedding == null)
+                {
+                    repo.Embedding = _embedder.Embed(repo.Path);
+                    // TODO: melhorar eficiencia
+                    await _repositoryDatabase.UpsertAsync(repo);
+                }
+            }
+
+            return repos.Select(x => (x, x.Embedding.Value));
         }
 
         public async Task<Repository> GetBuildInfoByIdAsync(Guid id)
@@ -220,6 +237,7 @@ namespace Common.Services
                     if (!await _repositoryDatabase.ExistsByIdAsync(repo.Id))
                     {
                         var buildInfo = await CreateBuildInfoAsync(repo, null);
+                        await GenerateEmbeddingsForReposAsync(buildInfo);
                         await UpsertAndPublish(buildInfo);
                     }
                 }
