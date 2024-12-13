@@ -11,7 +11,34 @@
     <Platforms>AnyCPU;x64</Platforms>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/generated</CompilerGeneratedFilesOutputPath>
+
+
+	  <!-- Bundle .NET runtime -->
+	  <SelfContained>true</SelfContained>
+
+	  <!-- Bundle all dependencies into a single executable -->
+	  <PublishSingleFile>true</PublishSingleFile>
+	  <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+
+	  <!-- Enable compression for the single executable -->
+	  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+	  <!--
+    Disable default content for better control of which files are bundled.
+    See https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#default-content-in-single-file-bundles
+    -->
+	  <!--<EnableDefaultContent>false</EnableDefaultContent>
+	  <EnableDefaultContentItems>false</EnableDefaultContentItems>-->
+
+	  <!-- Include debug symbols into the executable -->
+	  <DebugType>embedded</DebugType>
+	  
   </PropertyGroup>
+
+<PropertyGroup>
+	<LocalEmbeddingsModelUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx</LocalEmbeddingsModelUrl>
+	<LocalEmbeddingsVocabUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/vocab.txt</LocalEmbeddingsVocabUrl>
+</PropertyGroup>
   <ItemGroup>
     <Content Include="Assets\app.ico" />
   </ItemGroup>
@@ -62,17 +89,24 @@
       <AutoGen>True</AutoGen>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
-    <Content Update="wwwroot\css\app.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\bootstrap\bootstrap.min.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\favicon.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+
+
+	<!--<ItemGroup>
+		<Content Include="wwwroot/**" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>-->
+	<ItemGroup>
+		<Content Update="wwwroot\css\app.css">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\bootstrap\bootstrap.min.css">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Update="wwwroot\favicon.ico">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+
+
+	</ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resource.resx">
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>

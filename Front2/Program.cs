@@ -141,7 +141,8 @@ internal class Program
             app.UseHsts();
         }
 
-        app.MapStaticAssets();
+        //app.MapStaticAssets();
+        app.UseStaticFiles();
 
         app.UseAntiforgery();
 

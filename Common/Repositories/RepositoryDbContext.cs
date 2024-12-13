@@ -4,10 +4,12 @@ using Common.Models;
 using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SmartComponents.LocalEmbeddings;
 
 namespace Common.Repositories
 {
     //dotnet ef migrations add MapearCampos --project Common
+    //Add-Migration MapearEmbbeding 
     public class RepositoryDbContext : DbContext
     {
 
@@ -225,6 +227,9 @@ namespace Common.Repositories
                    .HasForeignKey("PipelineId")
                    .IsRequired(false)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Property(r => r.Embedding)
+                .HasConversion(x => x.HasValue ? x.Value.Buffer.ToArray() : null, x => x != null ? new EmbeddingF32(x) : null);
         }
     }
 

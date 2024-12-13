@@ -1,5 +1,6 @@
 
 using Common.Models;
+using SmartComponents.LocalEmbeddings;
 
 public class Build
 {
@@ -35,4 +36,6 @@ public class Repository
     public Pipeline Pipeline { get; set; }
 
     public string Path => $"{Project}/{Name}";
+
+    public EmbeddingF32? Embedding { get; set; }
 }
