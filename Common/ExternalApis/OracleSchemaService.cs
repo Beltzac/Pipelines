@@ -1,7 +1,11 @@
-﻿using Common.Utils;
+﻿using CSharpDiff.Diffs.Models;
+using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using SQL.Formatter;
+using SQL.Formatter.Language;
+
 
 namespace Common.ExternalApis
 {
@@ -111,11 +115,11 @@ namespace Common.ExternalApis
             {
                 if (qaViews.ContainsKey(viewName))
                 {
-                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, devViews[viewName], qaViews[viewName]));
+                    difs.Add(viewName, GetDiff(viewName, devViews[viewName], qaViews[viewName]));
                 }
                 else
                 {
-                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, devViews[viewName], string.Empty));
+                    difs.Add(viewName, GetDiff(viewName, devViews[viewName], string.Empty));
 
                     _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
                 }
@@ -125,7 +129,7 @@ namespace Common.ExternalApis
             {
                 if (!devViews.ContainsKey(viewName))
                 {
-                    difs.Add(viewName, OracleDiffUtils.GetDiff(viewName, string.Empty, qaViews[viewName]));
+                    difs.Add(viewName, GetDiff(viewName, string.Empty, qaViews[viewName]));
 
                     _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
                 }
@@ -138,11 +142,48 @@ namespace Common.ExternalApis
                 if (kv.Value.Hunks.Any())
                 {
                     _logger.LogInformation($"Difference in view: {kv.Key}");
-                    difsString.Add(kv.Key, OracleDiffUtils.Format(kv.Value));
+                    difsString.Add(kv.Key, Format(kv.Value));
                 }
             }
 
             return difsString;
+        }
+
+        public static PatchResult GetDiff(string view, string old, string newString)
+        {
+            var viewNameFormated = $"{view}.SQL";
+
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
+
+            var patch = ps.createPatchResult(viewNameFormated, viewNameFormated, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
+
+            return patch;
+        }
+
+        public static string Format(PatchResult patchResult)
+        {
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
+            return ps.formatPatch(patchResult);
+        }
+
+        private static string NormalizeLineBreaks(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return text;
+            }
+
+            // Replace Windows line breaks (\r\n) with Unix line breaks (\n)
+            text = text.Replace("\r\n", "\n");
+
+            // Replace old Mac line breaks (\r) with Unix line breaks (\n)
+            text = text.Replace("\r", "\n");
+
+
+            text = SqlFormatter.Of(Dialect.PlSql).Format(text);
+
+
+            return text;
         }
     }
 }
