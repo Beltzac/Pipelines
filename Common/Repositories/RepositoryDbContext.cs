@@ -25,14 +25,6 @@ namespace Common.Repositories
             _config = _configService.GetConfig();
         }
 
-        //public RepositoryDbContext()
-        //{
-        //    _config = new ConfigModel()
-        //    {
-        //        LocalCloneFolder = "C:\\repos\\"
-        //    };
-        //}
-
         public DbSet<Commit> Commits { get; set; }
         public DbSet<Build> Builds { get; set; }
         public DbSet<Pipeline> Pipelines { get; set; }

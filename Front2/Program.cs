@@ -155,7 +155,13 @@ internal class Program
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                string appName = "MyBlazorApp"; // Define your application name
+                //string appName = "MyBlazorApp"; // Define your application name
+                // Get running exe
+                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+
+                // Get name from path
+                var appName = Path.GetFileNameWithoutExtension(exePath);
+
 
                 string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
                 string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
@@ -165,65 +171,47 @@ internal class Program
             return false;
         }
 
-        void SetStartup(TrayIcon trayIcon, bool enable)
+        void SetStartup(TrayIconWithContextMenu trayIcon, bool enable)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Get running exe
+                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
 
-            ShowMessage(trayIcon, $"{enable}");
-            //if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            //{
-            //    string appName = "MyBlazorApp"; // Define your application name
-            //    string executablePath = await Electron.App.GetAppPathAsync();
-            //    string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            //    string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
+                // Get name from path
+                var appName = Path.GetFileNameWithoutExtension(exePath);
 
-            //    if (enable)
-            //    {
-            //        CreateStartupShortcut(shortcutPath, executablePath);
-            //    }
-            //    else
-            //    {
-            //        if (File.Exists(shortcutPath))
-            //        {
-            //            File.Delete(shortcutPath);
-            //        }
-            //    }
+                string startupFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                string shortcutPath = Path.Combine(startupFolderPath, $"{appName}.lnk");
 
-            //    menus.First(m => m.Label == "Enable Startup with Windows").Visible = !enable;
-            //    menus.First(m => m.Label == "Disable Startup with Windows").Visible = enable;
+                if (enable)
+                {
+                    CreateStartupShortcut(shortcutPath, exePath);
+                    ShowMessage(trayIcon, $"Habilitado");
+                }
+                else
+                {
+                    if (File.Exists(shortcutPath))
+                    {
+                        File.Delete(shortcutPath);
+                    }
+                    ShowMessage(trayIcon, $"Desabilitado");
+                }
 
-            //    Electron.Tray.OnClick -= OnTrayClick;
-            //    Electron.Tray.Destroy();
-            //    Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
-            //    Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
-            //    Electron.Tray.OnClick += OnTrayClick;
-            //}
-            //else
-            //{
-            //    Electron.Dialog.ShowMessageBoxAsync(new MessageBoxOptions("Startup setting is only supported on Windows."));
-            //}
+                trayIcon.ContextMenu.Items.OfType<PopupMenuItem>().First(m => m.Text == "Enable Startup with Windows").Visible = !enable;
+                trayIcon.ContextMenu.Items.OfType<PopupMenuItem>().First(m => m.Text == "Disable Startup with Windows").Visible = enable;
+            }
+            else
+            {
+                ShowMessage(trayIcon, $"Startup setting is only supported on Windows.");
+            }
         }
 
         void CreateStartupShortcut(string shortcutPath, string executablePath)
         {
-            var upperFolder = Path.GetDirectoryName(Path.GetDirectoryName(executablePath));
-            var exePath = Path.Combine(upperFolder, "TcpDash.exe");
-
-            var shortcut = Shortcut.CreateShortcut(exePath);
-
+            var shortcut = Shortcut.CreateShortcut(executablePath);
             shortcut.WriteToFile(shortcutPath);
         }
-
-        //async void OnTrayClick(TrayClickEventArgs args, Rectangle bounds)
-        //{
-        //    await OpenWeb();
-        //}
-
-        //if (HybridSupport.IsElectronActive)
-        //{
-        //    await Electron.Tray.Show(Directory.GetCurrentDirectory() + "\\Assets\\app.ico", menus.ToArray());
-        //    await Electron.Tray.SetToolTip("¯\\_(ツ)_/¯");
-        //    Electron.Tray.OnClick += OnTrayClick;
-        //}
 
         // Apply migrations at startup
         using (var scope = app.Services.CreateScope())
