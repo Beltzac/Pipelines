@@ -210,7 +210,7 @@
         try 
         {
             OracleDiffStateService.Differences = OracleSchemaService.Compare(OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
-            
+            await RunCompare();
         }
         catch (Exception ex)
         {
@@ -222,6 +222,7 @@
     {
         var diff = String.Join("\r\n", OracleDiffStateService.Differences.Values);
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
+        toastService.ShowSuccess($"Comparison completed successfully");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

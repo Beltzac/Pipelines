@@ -4,6 +4,8 @@ using CSharpDiff.Patches.Models;
 using DiffPlex;
 using DiffPlex.DiffBuilder;
 using DiffPlex.DiffBuilder.Model;
+using SQL.Formatter.Language;
+using SQL.Formatter;
 using System.Text;
 
 namespace Common.Utils
@@ -59,7 +61,7 @@ namespace Common.Utils
 
             var ps = new Patch(new PatchOptions(), new DiffOptions()
             {
-                IgnoreWhiteSpace = true
+                //IgnoreWhiteSpace = true
                 //NewlineIsToken = true
             });
             var patch = ps.createPatchResult(viewNameFormated, viewNameFormated, NormalizeLineBreaks(old), NormalizeLineBreaks(newString), null, null);
@@ -76,7 +78,7 @@ namespace Common.Utils
         {
             var ps = new Patch(new PatchOptions(), new DiffOptions()
             {
-                IgnoreWhiteSpace = true
+                //IgnoreWhiteSpace = true
                 //NewlineIsToken = true
             });
             return ps.formatPatch(patchResult);
@@ -94,6 +96,10 @@ namespace Common.Utils
 
             // Replace old Mac line breaks (\r) with Unix line breaks (\n)
             text = text.Replace("\r", "\n");
+
+
+            text = SqlFormatter.Of(Dialect.PlSql).Format(text);
+
 
             return text;
         }
