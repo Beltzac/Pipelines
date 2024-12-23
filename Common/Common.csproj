@@ -45,7 +45,7 @@
     <PackageReference Include="SmartComponents.LocalEmbeddings" Version="0.1.0-preview10148" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.4" />
-    <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="9.103.6.3" />
+    <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="9.103.6.4" />
   </ItemGroup>
 
   <ItemGroup>
