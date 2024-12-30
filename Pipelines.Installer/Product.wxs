@@ -11,14 +11,53 @@
 
         <StandardDirectory Id="ProgramFilesFolder">
             <Directory Id="INSTALLFOLDER" Name="Pipelines">
+                <!-- Main Application Files -->
                 <Component Id="ApplicationFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0003">
-                    <File Id="Front2.exe" Name="Front2.exe" Source="$(var.Front2.TargetPath)" KeyPath="yes" />
+                    <File Id="Front2.exe" Name="Front2.exe" Source="$(var.Front2.ProjectDir)bin\Release\net9.0-windows7.0\win-x64\publish\Front2.exe" KeyPath="yes" />
+                    <File Id="appsettings.json" Name="appsettings.json" Source="$(var.Front2.ProjectDir)appsettings.json" />
+                    <File Id="appsettings.Development.json" Name="appsettings.Development.json" Source="$(var.Front2.ProjectDir)appsettings.Development.json" />
+                    <File Id="electron.manifest.json" Name="electron.manifest.json" Source="$(var.Front2.ProjectDir)electron.manifest.json" />
                 </Component>
+
+                <!-- WWWRoot Files -->
+                <Directory Id="wwwroot" Name="wwwroot">
+                    <Component Id="WwwRootFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0004">
+                        <File Id="favicon.ico" Name="favicon.ico" Source="$(var.Front2.ProjectDir)wwwroot\favicon.ico" />
+                    </Component>
+
+                    <!-- CSS Files -->
+                    <Directory Id="css" Name="css">
+                        <Component Id="CssFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0005">
+                            <File Id="app.css" Name="app.css" Source="$(var.Front2.ProjectDir)wwwroot\css\app.css" />
+                        </Component>
+                    </Directory>
+
+                    <!-- JavaScript Files -->
+                    <Directory Id="js" Name="js">
+                        <Component Id="JsFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0006">
+                            <File Id="downloadHelper.js" Name="downloadHelper.js" Source="$(var.Front2.ProjectDir)wwwroot\js\downloadHelper.js" />
+                            <File Id="keyboardShortcuts.js" Name="keyboardShortcuts.js" Source="$(var.Front2.ProjectDir)wwwroot\js\keyboardShortcuts.js" />
+                            <File Id="themeManager.js" Name="themeManager.js" Source="$(var.Front2.ProjectDir)wwwroot\js\themeManager.js" />
+                        </Component>
+                    </Directory>
+
+                    <!-- Bootstrap Files -->
+                    <Directory Id="bootstrap" Name="bootstrap">
+                        <Component Id="BootstrapFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0007">
+                            <File Id="bootstrap.min.css" Name="bootstrap.min.css" Source="$(var.Front2.ProjectDir)wwwroot\bootstrap\bootstrap.min.css" />
+                            <File Id="bootstrap.min.css.map" Name="bootstrap.min.css.map" Source="$(var.Front2.ProjectDir)wwwroot\bootstrap\bootstrap.min.css.map" />
+                        </Component>
+                    </Directory>
+                </Directory>
             </Directory>
         </StandardDirectory>
 
         <Feature Id="MainFeature" Title="Main Feature" Level="1">
             <ComponentRef Id="ApplicationFiles" />
+            <ComponentRef Id="WwwRootFiles" />
+            <ComponentRef Id="CssFiles" />
+            <ComponentRef Id="JsFiles" />
+            <ComponentRef Id="BootstrapFiles" />
         </Feature>
     </Package>
 </Wix>
