@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
+using static SQL.Formatter.SqlFormatter;
 
 
 namespace Common.ExternalApis
@@ -13,11 +14,13 @@ namespace Common.ExternalApis
     {
         private readonly ILogger<OracleSchemaService> _logger;
         private readonly IConfigurationService _configService;
+        private readonly Formatter _formatter;
 
         public OracleSchemaService(ILogger<OracleSchemaService> logger, IConfigurationService configService)
         {
             _logger = logger;
             _configService = configService;
+            _formatter = SqlFormatter.Of(Dialect.PlSql);
         }
 
         public Dictionary<string, string> Compare(string sourceEnvName, string targetEnvName)
@@ -149,7 +152,7 @@ namespace Common.ExternalApis
             return difsString;
         }
 
-        public static PatchResult GetDiff(string view, string old, string newString)
+        public PatchResult GetDiff(string view, string old, string newString)
         {
             var viewNameFormated = $"{view}.SQL";
 
@@ -166,7 +169,7 @@ namespace Common.ExternalApis
             return ps.formatPatch(patchResult);
         }
 
-        private static string NormalizeLineBreaks(string text)
+        private string NormalizeLineBreaks(string text)
         {
             if (string.IsNullOrEmpty(text))
             {
@@ -180,7 +183,7 @@ namespace Common.ExternalApis
             text = text.Replace("\r", "\n");
 
 
-            text = SqlFormatter.Of(Dialect.PlSql).Format(text);
+            text = _formatter.Format(text);
 
 
             return text;

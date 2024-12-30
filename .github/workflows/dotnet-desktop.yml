@@ -1,4 +1,4 @@
-name: Electronize Build
+name: Windows Installer Build
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 
-          fetch-tags: true   
+          fetch-depth: 0
+          fetch-tags: true
           persist-credentials: true
 
       - name: Set VERSION variable
@@ -69,30 +69,17 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
-      - name: Cache Electron
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/cache@v4
-        with:
-          path: Front2/obj/*
-          key: ${{ runner.os }}-electron-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-electron-
-
-      - name: Install ElectronNET.CLI
-        if: startsWith(github.ref, 'refs/tags/')
-        run: dotnet tool install ElectronNET.CLI --global
-
       - name: Restore dependencies
         run: dotnet restore Front2
 
       - name: Test
         run: dotnet test --verbosity minimal
 
-      - name: Build with Electronize
+      - name: Build WiX Installer
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd Front2
-          electronize build /target win /Version $env:VERSION
+          dotnet build Pipelines.Installer -c Release
+          dotnet publish Pipelines.Installer -c Release
 
       - name: Generate Release Notes
         id: generate_release_notes
@@ -114,7 +101,7 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.generate_release_notes.outputs.release_notes }}
-          artifacts: Front2/bin/Desktop/*.exe
+          artifacts: Pipelines.Installer/bin/Release/**/*.msi
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           prerelease: false
