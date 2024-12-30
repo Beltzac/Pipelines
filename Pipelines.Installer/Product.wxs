@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Package
+        Name="Pipelines"
+        Manufacturer="YourCompany"
+        Version="1.0.0.0"
+        UpgradeCode="b02dceb6-9389-45a5-bba8-3af0e139bf8f"
+        InstallerVersion="200">
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+        <StandardDirectory Id="ProgramFilesFolder">
+            <Directory Id="INSTALLFOLDER" Name="Pipelines">
+                <Component Id="ApplicationFiles" Guid="DEAFBEEF-DEAD-DEAD-DEAD-DEADBEEF0003">
+                    <File Id="Front2.exe" Name="Front2.exe" Source="$(var.Front2.TargetPath)" KeyPath="yes" />
+                </Component>
+            </Directory>
+        </StandardDirectory>
+
+        <Feature Id="MainFeature" Title="Main Feature" Level="1">
+            <ComponentRef Id="ApplicationFiles" />
+        </Feature>
+    </Package>
+</Wix>
+

@@ -1,3 +1,4 @@
+using Common.ExternalApis;
 using Common.Utils;
 using FluentAssertions;
 using Microsoft.VisualStudio.Services.Common;
@@ -13,7 +14,7 @@ namespace Tests.Common.Services
             string old = "old";
             string newString = "new";
 
-            var result = OracleDiffUtils.GetDiff(view, old, newString);
+            var result = (new OracleSchemaService(null, null)).GetDiff(view, old, newString);
 
             result.Should().NotBeNull();
             result.Hunks.Should().NotBeEmpty();
