@@ -137,9 +137,9 @@
       },
       "Markdig": {
         "type": "Direct",
-        "requested": "[0.38.0, )",
-        "resolved": "0.38.0",
-        "contentHash": "zKy3JFjQvr1wbuMtbfcZVjNNCIqHxSCjGMq/CBcyNsY/MPsxqcS3o8M7CZ2kcMGGIw5LI2ZZd8rFUaFeV6SvrQ=="
+        "requested": "[0.39.1, )",
+        "resolved": "0.39.1",
+        "contentHash": "QrH/Aq9A5P7fIdy4tEBQGqVvrJoEew9+jL0k2WlrmgD0yxXP0UUtdkhJWgpVgwT18R0ubpt9cyF+LQXbTUSOrg=="
       },
       "Microsoft.ApplicationInsights": {
         "type": "Direct",
@@ -277,9 +277,9 @@
       },
       "Oracle.ManagedDataAccess.Core": {
         "type": "Direct",
-        "requested": "[23.6.1, )",
-        "resolved": "23.6.1",
-        "contentHash": "Oc8AX7xme05xrp4/aCxKBH4+bpWgMCFafXI7LbLO/7OBMJLZRXhMtejDgIb8aYvIVyV7vSdAy3LkCYcJorxn1A==",
+        "requested": "[23.7.0, )",
+        "resolved": "23.7.0",
+        "contentHash": "psGvNErUu9CO2xHplyp+4fSwDWv6oPKVUE/BRFTIeP2H2YvlstgBPa+Ze1xfAJuVIp2tT6alNtMNPFzAPmIn6Q==",
         "dependencies": {
           "System.Diagnostics.PerformanceCounter": "8.0.0",
           "System.DirectoryServices.Protocols": "8.0.0",
