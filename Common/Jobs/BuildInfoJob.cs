@@ -20,36 +20,44 @@ public class BuildInfoJob : IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        using (_telemetryClient.StartOperation<RequestTelemetry>("criar-jobs-update"))
+        try
         {
-            var repos = await _buildInfoService.FetchProjectsRepos();
-
-            // For each repository, schedule a job to update the repository with a random start time
-            foreach (var repoId in repos)
+            using (_telemetryClient.StartOperation<RequestTelemetry>("criar-jobs-update"))
             {
-                var trigger = TriggerBuilder.Create()
-                    .WithIdentity($"RepositoryUpdateTrigger-{repoId}")
-                    .StartNow()
-                    .Build();
+                var repos = await _buildInfoService.FetchProjectsRepos();
 
-                var job = JobBuilder.Create<RepositoryUpdateJob>()
-                    .WithIdentity($"RepositoryUpdateJob-{repoId}")
-                    .UsingJobData("RepositoryId", repoId.ToString())
-                    .Build();
-
-                // Check if the trigger already exists
-                if (await context.Scheduler.CheckExists(trigger.Key))
+                // For each repository, schedule a job to update the repository with a random start time
+                foreach (var repoId in repos)
                 {
-                    _logger.LogInformation($"Trigger {trigger.Key} already exists, skipping job creation");
-                    continue;
+                    var trigger = TriggerBuilder.Create()
+                        .WithIdentity($"RepositoryUpdateTrigger-{repoId}")
+                        .StartNow()
+                        .Build();
+
+                    var job = JobBuilder.Create<RepositoryUpdateJob>()
+                        .WithIdentity($"RepositoryUpdateJob-{repoId}")
+                        .UsingJobData("RepositoryId", repoId.ToString())
+                        .Build();
+
+                    // Check if the trigger already exists
+                    if (await context.Scheduler.CheckExists(trigger.Key))
+                    {
+                        _logger.LogInformation($"Trigger {trigger.Key} already exists, skipping job creation");
+                        continue;
+                    }
+
+                    await context.Scheduler.ScheduleJob(job, trigger);
+
+                    _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repoId} now");
                 }
 
-                await context.Scheduler.ScheduleJob(job, trigger);
-
-                _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repoId} now");
+                _telemetryClient.TrackEvent("Job Creation Completed");
             }
-
-            _telemetryClient.TrackEvent("Job Creation Completed");
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while creating jobs");
+            _telemetryClient.TrackException(ex);
+        }     
     }
 }
