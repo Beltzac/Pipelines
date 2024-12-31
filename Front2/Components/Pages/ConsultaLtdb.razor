@@ -94,7 +94,7 @@
                 }
                 else
                 {
-                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(true); }">Search</button>
+                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
                     <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
                     <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
                 }
