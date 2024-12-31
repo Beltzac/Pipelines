@@ -94,7 +94,7 @@
                 }
                 else
                 {
-                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
+                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(true); }">Search</button>
                     <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
                     <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
                 }
@@ -177,7 +177,7 @@
             <nav aria-label="Page navigation">
                 <ul class="pagination">
                     <li class="page-item @(ConsultaSggStateService.CurrentPage == 1 ? "disabled" : "")">
-                        <button class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage > 1) { ConsultaSggStateService.CurrentPage--; await ExecuteQuery();
+                        <button class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage > 1) { ConsultaSggStateService.CurrentPage--; await ExecuteQuery(true);
  }}">
                             Previous
                         </button>
@@ -188,7 +188,7 @@
                         {
                             var pageNumber = i;
                             <li class="page-item @(ConsultaSggStateService.CurrentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => { ConsultaSggStateService.CurrentPage = pageNumber; await ExecuteQuery();
+                                <button class="page-link" @onclick="async () => { ConsultaSggStateService.CurrentPage = pageNumber; await ExecuteQuery(true);
  }">
                                     @pageNumber
                                 </button>
@@ -197,7 +197,7 @@
                     }
                     <li class="page-item @(ConsultaSggStateService.CurrentPage == Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize) ? "disabled" : "")">
                         <button class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage < Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize)) {
- ConsultaSggStateService.CurrentPage++; await ExecuteQuery(); }}">
+ ConsultaSggStateService.CurrentPage++; await ExecuteQuery(true); }}">
                             Next
                         </button>
                     </li>
@@ -315,7 +315,7 @@
     {
         if (key == "Enter")
         {
-            await ExecuteQuery();
+            await ExecuteQuery(false);
         }
         else if (key == "Escape")
         {
@@ -337,10 +337,10 @@
         ConsultaSggStateService.StartDate = ConsultaSggStateService.EndDate?.AddHours(-24);
         ConsultaSggStateService.CurrentPage = 1;
 
-        await ExecuteQuery();
+        await ExecuteQuery(false);
     }
 
-    private async Task ExecuteQuery()
+    private async Task ExecuteQuery(bool paginate)
     {
         try
         {
@@ -365,27 +365,34 @@
                 ConsultaSggStateService.CurrentPage,
                 cts.Token);
 
-            var delayTask = LtdbService.GetDelayMetricsAsync(
-                ConsultaSggStateService.SelectedEnvironment,
-                ConsultaSggStateService.StartDate,
-                ConsultaSggStateService.EndDate,
-                ConsultaSggStateService.ContainerNumbers,
-                ConsultaSggStateService.Placa,
-                null,
-                ConsultaSggStateService.MoveType,
-                ConsultaSggStateService.IdAgendamento,
-                ConsultaSggStateService.Status,
-                cts.Token);
+            var delayTask = Task.FromResult(new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>());
+            if (!paginate)
+            {
+                delayTask = LtdbService.GetDelayMetricsAsync(
+                    ConsultaSggStateService.SelectedEnvironment,
+                    ConsultaSggStateService.StartDate,
+                    ConsultaSggStateService.EndDate,
+                    ConsultaSggStateService.ContainerNumbers,
+                    ConsultaSggStateService.Placa,
+                    null,
+                    ConsultaSggStateService.MoveType,
+                    ConsultaSggStateService.IdAgendamento,
+                    ConsultaSggStateService.Status,
+                    cts.Token);
+            }
 
             await Task.WhenAll(queryTask, delayTask);
 
             var (queryResults, total) = await queryTask;
-            ConsultaSggStateService.DelayData = await delayTask;
+            if (!paginate)
+            {
+                ConsultaSggStateService.DelayData = await delayTask;
+                await UpdateChart();
+            }
 
             ConsultaSggStateService.Results = queryResults;
             ConsultaSggStateService.TotalCount = total;
 
-            await UpdateChart();
         }
         finally
         {
