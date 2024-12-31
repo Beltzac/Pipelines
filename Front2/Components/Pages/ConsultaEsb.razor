@@ -438,6 +438,14 @@
             ConsultaEsbStateService.Results = queryResults;
             ConsultaEsbStateService.TotalCount = total;
         }
+        catch (OperationCanceledException)
+        {
+            // Do nothing
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
         finally
         {
             ConsultaEsbStateService.IsLoading = false;

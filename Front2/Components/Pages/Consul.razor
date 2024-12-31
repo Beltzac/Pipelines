@@ -212,16 +212,27 @@
 
     private async ValueTask LoadConsul()
     {
-        var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
-        if (consulEnv == null)
+        try
         {
-            toastService.ShowError("Please select a Consul environment.");
-            return;
-        }
+            var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
+            if (consulEnv == null)
+            {
+                toastService.ShowError("Please select a Consul environment.");
+                return;
+            }
 
-        var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
-        ConsulStateService.SetConsulKeyValues(keyValues);
-        toastService.ShowSuccess("Consul key-values downloaded successfully!");
+            var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+            ConsulStateService.SetConsulKeyValues(keyValues);
+            toastService.ShowSuccess("Consul key-values downloaded successfully!");
+        }
+        catch (OperationCanceledException)
+        {
+            // Do nothing
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
     }
 
     private void ToggleKeyVisibility(string key)
