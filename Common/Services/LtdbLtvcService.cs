@@ -114,33 +114,7 @@ public string BuildQuery(
                 : "";
 
             var sql = @$"
-WITH /*+ INLINE */ CONTAINERS_AGG AS (
-    SELECT
-        LTDB_ID,
-        LISTAGG(NVL(CONTAINER_NUM, 'INVALID_XML'), ', ') WITHIN GROUP (ORDER BY CONTAINER_SEQ) AS CONTAINER_NUMBERS
-    FROM (
-        SELECT
-            LTDB.ID AS LTDB_ID,
-            CONTAINER_SEQ,
-            CONTAINER_NUM
-        FROM
-            TCPSGATE.TRACKING LTDB
-        CROSS JOIN XMLTABLE(
-            XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
-            '/ns:LTDB/ns:Chassis/ns:Container'
-            PASSING CASE
-                WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
-                ELSE NULL
-            END
-            COLUMNS
-                CONTAINER_SEQ NUMBER PATH '@sequence',
-                CONTAINER_NUM VARCHAR2(100) PATH '@number'
-        ) CONTAINERS
-        WHERE LTDB.TYPE = 'LTDB'
-            AND LTDB.XML LIKE '<%</LTDB>'
-    )
-    GROUP BY LTDB_ID
-),
+WITH 
 MainQuery AS (
     SELECT
         LTDB.CREATED_AT AS DATA_LTDB,
@@ -155,7 +129,19 @@ MainQuery AS (
         LTVC.CREATED_AT - LTDB.CREATED_AT AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
         NVL(LTVC_MESSAGE, 'NO_MESSAGE') AS MESSAGE_TEXT,
-        CONTAINERS_AGG.CONTAINER_NUMBERS,
+		(
+          SELECT
+             LISTAGG(NVL(X.container_num, 'UNKNOWN'), ', ')
+                WITHIN GROUP (ORDER BY X.container_seq)
+          FROM XMLTABLE(
+               XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
+               '/ns:LTDB/ns:Chassis/ns:Container'
+               PASSING XMLTYPE(LTDB.XML)
+               COLUMNS
+                 container_seq NUMBER        PATH '@sequence',
+                 container_num VARCHAR2(100) PATH '@number'
+          ) X
+        ) AS CONTAINER_NUMBERS,
         AGE.CODIGO_BARRAS
     FROM
         TCPSGATE.TRACKING LTDB
@@ -177,6 +163,8 @@ MainQuery AS (
             MOTORISTA VARCHAR2(100) PATH 'ns:Driver/ns:ID'
     ) XML_EXTRACT_LTD
         ON 1=1
+
+
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
         '/ns:LTVC'
@@ -189,8 +177,7 @@ MainQuery AS (
             LTVC_MESSAGE VARCHAR2(200) PATH 'ns:Errors/ns:Error/ns:MessageText'
     ) XML_EXTRACT_LTV
         ON 1=1
-    LEFT JOIN CONTAINERS_AGG
-        ON CONTAINERS_AGG.LTDB_ID = LTDB.ID
+
     WHERE 1 = 1
         AND LTDB.TYPE = 'LTDB'
         {whereClause}
