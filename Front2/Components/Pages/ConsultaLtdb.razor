@@ -394,6 +394,14 @@
             ConsultaSggStateService.TotalCount = total;
 
         }
+        catch (OperationCanceledException)
+        {
+            // Do nothing
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
         finally
         {
             ConsultaSggStateService.IsLoading = false;
