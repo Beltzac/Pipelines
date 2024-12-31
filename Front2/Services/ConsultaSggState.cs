@@ -13,6 +13,7 @@ namespace Front2.Services
         public long? IdAgendamento { get; set; }
         public string MoveType { get; set; }
         public string Status { get; set; }
+        public double? MinDelay { get; set; }
         public bool IsLoading { get; set; }
         public List<LtdbLtvcRecord> Results { get; set; } = new();
         public int TotalCount { get; set; }

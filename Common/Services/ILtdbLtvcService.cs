@@ -14,6 +14,7 @@ namespace Common.Services
             string? moveType = null,
             long? idAgendamento = null,
             string? status = null,
+            double? minDelay = null,
             int pageSize = 10,
             int pageNumber = 1,
             CancellationToken cancellationToken = default);
@@ -27,6 +28,7 @@ namespace Common.Services
             string? moveType = null,
             long? idAgendamento = null,
             string? status = null,
+            double? minDelay = null,
             int pageSize = 10,
             int pageNumber = 1);
 

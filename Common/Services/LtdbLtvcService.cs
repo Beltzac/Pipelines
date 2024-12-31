@@ -24,6 +24,7 @@ namespace Common.Services
             string? moveType = null,
             long? idAgendamento = null,
             string? status = null,
+            double? minDelay = null,
             int pageSize = 10,
             int pageNumber = 1,
             CancellationToken cancellationToken = default)
@@ -36,7 +37,7 @@ namespace Common.Services
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status, pageSize, pageNumber);
+            cmd.CommandText = BuildQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
 
             var result = new List<LtdbLtvcRecord>();
             int totalCount = 0;
@@ -66,44 +67,47 @@ namespace Common.Services
 
             return (Results: result, TotalCount: totalCount);
         }
+public string BuildQuery(
+    DateTimeOffset? startDate,
+    DateTimeOffset? endDate,
+    string? containerNumber = null,
+    string? placa = null,
+    string? motorista = null,
+    string? moveType = null,
+    long? idAgendamento = null,
+    string? status = null,
+    double? minDelay = null,
+    int pageSize = 10,
+    int pageNumber = 1)
+{
+    var conditions = new List<string>();
 
-        public string BuildQuery(
-            DateTimeOffset? startDate,
-            DateTimeOffset? endDate,
-            string? containerNumber = null,
-            string? placa = null,
-            string? motorista = null,
-            string? moveType = null,
-            long? idAgendamento = null,
-            string? status = null,
-            int pageSize = 10,
-            int pageNumber = 1)
-        {
-            var conditions = new List<string>();
+    if (startDate.HasValue)
+        conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (startDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+    if (endDate.HasValue)
+        conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (endDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+    if (!string.IsNullOrEmpty(containerNumber))
+        conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
 
-            if (!string.IsNullOrEmpty(containerNumber))
-                conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
+    if (!string.IsNullOrEmpty(placa))
+        conditions.Add($"PLACA LIKE '%{placa}%'");
 
-            if (!string.IsNullOrEmpty(placa))
-                conditions.Add($"PLACA LIKE '%{placa}%'");
+    if (!string.IsNullOrEmpty(motorista))
+        conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
 
-            if (!string.IsNullOrEmpty(motorista))
-                conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
+    if (!string.IsNullOrEmpty(moveType))
+        conditions.Add($"MOVETYPE = '{moveType}'");
 
-            if (!string.IsNullOrEmpty(moveType))
-                conditions.Add($"MOVETYPE = '{moveType}'");
+    if (idAgendamento.HasValue)
+        conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
 
-            if (idAgendamento.HasValue)
-                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
+    if (!string.IsNullOrEmpty(status))
+        conditions.Add($"LTVC_STATUS = '{status}'");
 
-            if (!string.IsNullOrEmpty(status))
-                conditions.Add($"LTVC_STATUS = '{status}'");
+    if (minDelay.HasValue)
+        conditions.Add($"EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT)) >= {minDelay.Value}");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
@@ -115,20 +119,20 @@ WITH /*+ INLINE */ CONTAINERS_AGG AS (
         LTDB_ID,
         LISTAGG(NVL(CONTAINER_NUM, 'INVALID_XML'), ', ') WITHIN GROUP (ORDER BY CONTAINER_SEQ) AS CONTAINER_NUMBERS
     FROM (
-        SELECT 
+        SELECT
             LTDB.ID AS LTDB_ID,
             CONTAINER_SEQ,
             CONTAINER_NUM
-        FROM 
+        FROM
             TCPSGATE.TRACKING LTDB
         CROSS JOIN XMLTABLE(
             XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
             '/ns:LTDB/ns:Chassis/ns:Container'
-            PASSING CASE 
+            PASSING CASE
                 WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
                 ELSE NULL
             END
-            COLUMNS 
+            COLUMNS
                 CONTAINER_SEQ NUMBER PATH '@sequence',
                 CONTAINER_NUM VARCHAR2(100) PATH '@number'
         ) CONTAINERS
@@ -138,7 +142,7 @@ WITH /*+ INLINE */ CONTAINERS_AGG AS (
     GROUP BY LTDB_ID
 ),
 MainQuery AS (
-    SELECT 
+    SELECT
         LTDB.CREATED_AT AS DATA_LTDB,
         LTVC.CREATED_AT AS DATA_LTVC,
         LTDB.REQUEST_ID,
@@ -153,21 +157,21 @@ MainQuery AS (
         NVL(LTVC_MESSAGE, 'NO_MESSAGE') AS MESSAGE_TEXT,
         CONTAINERS_AGG.CONTAINER_NUMBERS,
         AGE.CODIGO_BARRAS
-    FROM 
+    FROM
         TCPSGATE.TRACKING LTDB
-    LEFT JOIN TCPSGATE.TRACKING LTVC 
-        ON LTDB.REQUEST_ID = LTVC.REQUEST_ID 
+    LEFT JOIN TCPSGATE.TRACKING LTVC
+        ON LTDB.REQUEST_ID = LTVC.REQUEST_ID
         AND LTVC.TYPE = 'LTVC'
     LEFT JOIN TCPAGEND.AGENDAMENTO AGE
         ON LTVC.ID_AGENDAMENTO = AGE.ID_AGENDAMENTO
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
         '/ns:LTDB'
-        PASSING CASE 
+        PASSING CASE
             WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
             ELSE NULL
         END
-        COLUMNS 
+        COLUMNS
             MOVETYPE  VARCHAR2(100) PATH 'ns:Move/@movetype',
             PLACA     VARCHAR2(100) PATH 'ns:LPR/@number',
             MOTORISTA VARCHAR2(100) PATH 'ns:Driver/ns:ID'
@@ -176,11 +180,11 @@ MainQuery AS (
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
         '/ns:LTVC'
-        PASSING CASE 
+        PASSING CASE
             WHEN LTVC.XML LIKE '<%</LTVC>' THEN XMLTYPE(LTVC.XML)
             ELSE NULL
         END
-        COLUMNS 
+        COLUMNS
             LTVC_STATUS  VARCHAR2(10)  PATH 'ns:RequestResult/@status',
             LTVC_MESSAGE VARCHAR2(200) PATH 'ns:Errors/ns:Error/ns:MessageText'
     ) XML_EXTRACT_LTV
@@ -287,15 +291,15 @@ CROSS JOIN CountQuery c";
                 : "";
 
             return $@"
-SELECT 
+SELECT
     TRUNC(LTDB.CREATED_AT, 'HH') as TIMESTAMP,
     AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as AVG_DELAY_SECONDS,
     MAX(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as MAX_DELAY_SECONDS,
     COUNT(*) as REQUEST_COUNT
-FROM 
+FROM
     TCPSGATE.TRACKING LTDB
-LEFT JOIN TCPSGATE.TRACKING LTVC 
-    ON LTDB.REQUEST_ID = LTVC.REQUEST_ID 
+LEFT JOIN TCPSGATE.TRACKING LTVC
+    ON LTDB.REQUEST_ID = LTVC.REQUEST_ID
     AND LTVC.TYPE = 'LTVC'
 WHERE 1 = 1
     AND LTDB.TYPE = 'LTDB'

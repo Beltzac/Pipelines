@@ -32,7 +32,7 @@
             <div class="col-md-4">
                 <label class="form-label">Range</label>
 
-                <DateRangePicker 
+                <DateRangePicker
                     Culture="@CultureInfo.GetCultureInfo("pt-BR")"
                     TimePicker="true"
                     TimePicker24Hour="true"
@@ -80,6 +80,11 @@
                     <option value="OK">OK</option>
                     <option value="Error">Error</option>
                 </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Min Delay (seconds)</label>
+                <input type="number" class="form-control" @bind="ConsultaSggStateService.MinDelay" step="0.1" min="0">
             </div>
 
             <div class="col-12">
@@ -269,7 +274,6 @@
         ConsultaSggStateService.Save();
     }
 
-
     protected override async Task OnInitializedAsync()
     {
         config = ConfigService.GetConfig();
@@ -328,6 +332,7 @@
         ConsultaSggStateService.MoveType = null;
         ConsultaSggStateService.IdAgendamento = null;
         ConsultaSggStateService.Status = null;
+        ConsultaSggStateService.MinDelay = null;
         ConsultaSggStateService.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
         ConsultaSggStateService.StartDate = ConsultaSggStateService.EndDate?.AddHours(-24);
         ConsultaSggStateService.CurrentPage = 1;
@@ -355,6 +360,7 @@
                 ConsultaSggStateService.MoveType,
                 ConsultaSggStateService.IdAgendamento,
                 ConsultaSggStateService.Status,
+                ConsultaSggStateService.MinDelay,
                 ConsultaSggStateService.PageSize,
                 ConsultaSggStateService.CurrentPage,
                 cts.Token);
@@ -508,16 +514,17 @@
     private async Task ExportSqlQuery()
     {
         var sqlQuery = LtdbService.BuildQuery(
-        ConsultaSggStateService.StartDate,
-        ConsultaSggStateService.EndDate,
-        ConsultaSggStateService.Placa,
-        ConsultaSggStateService.RequestId,
-        ConsultaSggStateService.ContainerNumbers,
-        ConsultaSggStateService.MoveType,
-        ConsultaSggStateService.IdAgendamento,
-        ConsultaSggStateService.Status,
-        ConsultaSggStateService.PageSize,
-        ConsultaSggStateService.CurrentPage);
+            ConsultaSggStateService.StartDate,
+            ConsultaSggStateService.EndDate,
+            ConsultaSggStateService.Placa,
+            ConsultaSggStateService.RequestId,
+            ConsultaSggStateService.ContainerNumbers,
+            ConsultaSggStateService.MoveType,
+            ConsultaSggStateService.IdAgendamento,
+            ConsultaSggStateService.Status,
+            ConsultaSggStateService.MinDelay,
+            ConsultaSggStateService.PageSize,
+            ConsultaSggStateService.CurrentPage);
 
         await CopyToClipboard(sqlQuery);
         toastService.ShowSuccess("SQL Query copied to clipboard");
