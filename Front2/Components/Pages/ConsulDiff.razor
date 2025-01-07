@@ -97,7 +97,7 @@
     }
 
     .diff-container {
-        max-width: 95vw;
+        max-width: 80vw;
         margin: 0 auto;
         overflow-x: auto;
     }
@@ -115,7 +115,7 @@
 </style>
 
 <script>
-    window.initializeDiff2Html = function(diffString, sourceEnv, targetEnv) {
+    window.initializeDiff2Html2 = function(diffString, sourceEnv, targetEnv) {
         var targetElement = document.getElementById('myDiffElement');
         var configuration = {
             drawFileList: false,
@@ -264,7 +264,7 @@
         var filteredDiffs = GetFilteredAndPaginatedDifferences();
         if (filteredDiffs.Count == 0)
         {
-            await JS.InvokeVoidAsync("initializeDiff2Html", "", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
+            await JS.InvokeVoidAsync("initializeDiff2Html2", "", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
             if (ConsulDiffStateService.Differences.Count > 0)
             {
                 toastService.ShowInfo("No differences found matching the search criteria");
@@ -273,7 +273,7 @@
         }
 
         var diff = String.Join("\r\n", filteredDiffs.Values);
-        await JS.InvokeVoidAsync("initializeDiff2Html", diff, ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
+        await JS.InvokeVoidAsync("initializeDiff2Html2", diff, ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
     }
 
     private async Task HandleSearch()
