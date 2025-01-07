@@ -274,16 +274,6 @@
 
         var diff = String.Join("\r\n", filteredDiffs.Values);
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
-
-        var totalItems = GetFilteredCount();
-        var currentPage = ConsulDiffStateService.CurrentPage;
-        var pageSize = ConsulDiffStateService.PageSize;
-        var message = $"Showing {Math.Min(pageSize, filteredDiffs.Count)} of {totalItems} differences (Page {currentPage} of {TotalPages})";
-        if (!string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey))
-        {
-            message += $" (filtered by '{ConsulDiffStateService.SearchKey}')";
-        }
-        toastService.ShowSuccess(message);
     }
 
     private async Task HandleSearch()

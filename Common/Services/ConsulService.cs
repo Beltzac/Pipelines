@@ -484,36 +484,39 @@ namespace Common.Services
             var targetEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == targetEnv)
                 ?? throw new ArgumentException($"Target environment '{targetEnv}' not found");
 
-            var sourceKVs = await GetConsulKeyValues(sourceEnvironment);
-            var targetKVs = await GetConsulKeyValues(targetEnvironment);
+            // Fetch both environments' data in parallel
+            var (sourceKVs, targetKVs) = await Task.WhenAll(
+                GetConsulKeyValues(sourceEnvironment),
+                GetConsulKeyValues(targetEnvironment)
+            ).ContinueWith(t => (t.Result[0], t.Result[1]));
 
-            Dictionary<string, PatchResult> diffs = new();
-            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k);
+            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k).ToList();
 
-            foreach (var key in allKeys)
+            // Process diffs in parallel
+            var diffTasks = allKeys.Select(async key =>
             {
                 var sourceExists = sourceKVs.TryGetValue(key, out var sourceKV);
                 var targetExists = targetKVs.TryGetValue(key, out var targetKV);
-
-                diffs.Add(key, GetDiff(key, sourceKV, targetKV, useRecursive));
 
                 if (!sourceExists)
                     _logger.LogInformation($"Key {key} is present in {targetEnv} but not in {sourceEnv}");
                 else if (!targetExists)
                     _logger.LogInformation($"Key {key} is present in {sourceEnv} but not in {targetEnv}");
-            }
 
-            Dictionary<string, string> diffsString = new();
-            foreach (var kv in diffs)
-            {
-                if (kv.Value.Hunks.Any())
-                {
-                    _logger.LogInformation($"Difference in key: {kv.Key}");
-                    diffsString.Add(kv.Key, Format(kv.Value));
-                }
-            }
+                var diff = GetDiff(key, sourceKV, targetKV, useRecursive);
 
-            return diffsString;
+                if (!diff.Hunks.Any())
+                    return (Key: key, DiffString: (string)null);
+
+                _logger.LogInformation($"Difference in key: {key}");
+                return (Key: key, DiffString: Format(diff));
+            });
+
+            var results = await Task.WhenAll(diffTasks);
+
+            return results
+                .Where(r => r.DiffString != null)
+                .ToDictionary(r => r.Key, r => r.DiffString);
         }
     }
 }
