@@ -1,5 +1,8 @@
 using Common.Models;
 using Common.Utils;
+using CSharpDiff.Diffs.Models;
+using CSharpDiff.Patches;
+using CSharpDiff.Patches.Models;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Logging;
@@ -93,7 +96,7 @@ namespace Common.Services
                 return true;
             }
 
-            
+
             var regex = new Regex(RegexPatternKey);
             if (regex.IsMatch(strInput))
             {
@@ -424,6 +427,93 @@ namespace Common.Services
         public async Task OpenInVsCode(ConsulEnvironment env)
         {
             OpenFolderUtils.OpenWithVSCode(_logger, env.ConsulFolder);
+        }
+
+        private string Normalize(ConsulKeyValue json, bool recursive)
+        {
+            if (json == null)
+                return string.Empty;
+
+            var value = recursive ? json.ValueRecursive : json.Value;
+
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            if (!json.IsValidJson)
+                return value.Trim();
+
+            try
+            {
+                // Parse and format JSON to ensure consistent formatting
+                var obj = JToken.Parse(value);
+                return obj.ToString(Formatting.Indented);
+            }
+            catch
+            {
+                // If not valid JSON, return original string
+                return value.Trim();
+            }
+        }
+
+        private PatchResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
+        {
+            var keyFormatted = key;
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
+
+            return ps.createPatchResult(
+                keyFormatted,
+                keyFormatted,
+                Normalize(oldValue, recursive),
+                Normalize(newValue, recursive),
+                null,
+                null
+            );
+        }
+
+        private string Format(PatchResult patchResult)
+        {
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
+            return ps.formatPatch(patchResult);
+        }
+
+        public async Task<Dictionary<string, string>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true)
+        {
+            var config = _configService.GetConfig();
+            var sourceEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == sourceEnv)
+                ?? throw new ArgumentException($"Source environment '{sourceEnv}' not found");
+            var targetEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == targetEnv)
+                ?? throw new ArgumentException($"Target environment '{targetEnv}' not found");
+
+            var sourceKVs = await GetConsulKeyValues(sourceEnvironment);
+            var targetKVs = await GetConsulKeyValues(targetEnvironment);
+
+            Dictionary<string, PatchResult> diffs = new();
+            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k);
+
+            foreach (var key in allKeys)
+            {
+                var sourceExists = sourceKVs.TryGetValue(key, out var sourceKV);
+                var targetExists = targetKVs.TryGetValue(key, out var targetKV);
+
+                diffs.Add(key, GetDiff(key, sourceKV, targetKV, useRecursive));
+
+                if (!sourceExists)
+                    _logger.LogInformation($"Key {key} is present in {targetEnv} but not in {sourceEnv}");
+                else if (!targetExists)
+                    _logger.LogInformation($"Key {key} is present in {sourceEnv} but not in {targetEnv}");
+            }
+
+            Dictionary<string, string> diffsString = new();
+            foreach (var kv in diffs)
+            {
+                if (kv.Value.Hunks.Any())
+                {
+                    _logger.LogInformation($"Difference in key: {kv.Key}");
+                    diffsString.Add(kv.Key, Format(kv.Value));
+                }
+            }
+
+            return diffsString;
         }
     }
 }

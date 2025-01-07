@@ -230,6 +230,8 @@
         if (firstRender)
         {
             await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this));
+            
+            bool initialized = false;
 
             OracleDiffStateService.InitializeState(async x =>
             {
@@ -239,9 +241,13 @@
                     x.SelectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
                     await CompareEnvironments();
                 }
+
+                initialized = true;
             });
 
-            await RunCompare();
+            if (!initialized){
+                await RunCompare();
+            }
         }
     }
 }

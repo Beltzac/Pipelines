@@ -1,4 +1,4 @@
-﻿using Common.Models;
+﻿﻿﻿﻿﻿﻿﻿﻿using Common.Models;
 
 namespace Common.Services
 {
@@ -9,5 +9,6 @@ namespace Common.Services
         Task OpenInVsCode(ConsulEnvironment env);
         void SaveKvToFile(string folderPath, string key, string value);
         Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value);
+        Task<Dictionary<string, string>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true);
     }
 }
