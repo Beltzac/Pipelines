@@ -1,0 +1,86 @@
+@using Microsoft.AspNetCore.Components
+
+<nav aria-label="Pagination">
+    <ul class="pagination">
+        <li class="page-item @(CurrentPage <= 1 ? "disabled" : "")">
+            <button class="page-link" @onclick="async () => await ChangePage(CurrentPage - 1)" disabled="@(CurrentPage <= 1)">Previous</button>
+        </li>
+        @{
+            const int maxVisiblePages = 5;
+            if (TotalPages <= maxVisiblePages)
+            {
+                // Show all pages if total is less than max visible
+                for (int i = 1; i <= TotalPages; i++)
+                {
+                    var pageNumber = i;
+                    <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                        <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
+                    </li>
+                }
+            }
+            else
+            {
+                // Always show first page
+                <li class="page-item @(CurrentPage == 1 ? "active" : "")">
+                    <button class="page-link" @onclick="async () => await ChangePage(1)">1</button>
+                </li>
+
+                // Calculate range around current page
+                var rangeStart = Math.Max(2, CurrentPage - 1);
+                var rangeEnd = Math.Min(TotalPages - 1, CurrentPage + 1);
+
+                // Show ellipsis after first page if needed
+                if (rangeStart > 2)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+
+                // Show pages around current page
+                for (int i = rangeStart; i <= rangeEnd; i++)
+                {
+                    var pageNumber = i;
+                    <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                        <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
+                    </li>
+                }
+
+                // Show ellipsis before last page if needed
+                if (rangeEnd < TotalPages - 1)
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                }
+
+                // Always show last page
+                <li class="page-item @(CurrentPage == TotalPages ? "active" : "")">
+                    <button class="page-link" @onclick="async () => await ChangePage(TotalPages)">@TotalPages</button>
+                </li>
+            }
+        }
+        <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
+            <button class="page-link" @onclick="async () => await ChangePage(CurrentPage + 1)" disabled="@(CurrentPage >= TotalPages)">Next</button>
+        </li>
+    </ul>
+</nav>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; }
+
+    [Parameter]
+    public int TotalPages { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageChange { get; set; }
+
+    private async Task ChangePage(int page)
+    {
+        if (page < 1 || page > TotalPages)
+            return;
+
+        await OnPageChange.InvokeAsync(page);
+    }
+}
