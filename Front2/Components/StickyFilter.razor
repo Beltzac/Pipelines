@@ -1,0 +1,31 @@
+<div class="sticky-filter @Class">
+    @ChildContent
+</div>
+
+<style>
+    .sticky-filter {
+        position: sticky;
+        top: 0;
+        background-color: var(--bs-body-bg);
+        z-index: 1000;
+        padding: 1.5rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .sticky-filter {
+            position: static;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+}

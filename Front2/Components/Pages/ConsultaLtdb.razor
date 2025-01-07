@@ -13,95 +13,89 @@
 
 <h3>LTDB/LTVC Query</h3>
 
-<div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Filters</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Environment</label>
-                <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
-                    @foreach (var env in config.OracleEnvironments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Range</label>
-
-                <DateRangePicker
-                    Culture="@CultureInfo.GetCultureInfo("pt-BR")"
-                    TimePicker="true"
-                    TimePicker24Hour="true"
-                    TimePickerSeconds="true"
-                    AutoApply="true"
-                    DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
-                    @bind-StartDate="ConsultaSggStateService.StartDate"
-                    @bind-EndDate="ConsultaSggStateService.EndDate"
-                    class="form-control" />
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Placa</label>
-                <input type="text" class="form-control" @bind="ConsultaSggStateService.Placa" placeholder="Search by plate number">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Request ID</label>
-                <input type="text" class="form-control" @bind="ConsultaSggStateService.RequestId">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Container Numbers</label>
-                <input type="text" class="form-control" @bind="ConsultaSggStateService.ContainerNumbers" placeholder="Search container numbers">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Agendamento ID</label>
-                <input type="number" class="form-control" @bind="ConsultaSggStateService.IdAgendamento">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Move Type</label>
-                <select class="form-select" @bind="ConsultaSggStateService.MoveType">
-                    <option value="">All</option>
-                    <option value="ENTRY">ENTRY</option>
-                    <option value="EXIT">EXIT</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" @bind="ConsultaSggStateService.Status">
-                    <option value="">All</option>
-                    <option value="OK">OK</option>
-                    <option value="Error">Error</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Min Delay (seconds)</label>
-                <input type="number" class="form-control" @bind="ConsultaSggStateService.MinDelay" step="0.1" min="0">
-            </div>
-
-            <div class="col-12">
-                @if (ConsultaSggStateService.IsLoading)
+<StickyFilter>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Environment</label>
+            <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
+                @foreach (var env in config.OracleEnvironments)
                 {
-                    <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+                    <option value="@env.Name">@env.Name</option>
                 }
-                else
-                {
-                    <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
-                    <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
-                    <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
-                }
-            </div>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Range</label>
+            <DateRangePicker
+                Culture="@CultureInfo.GetCultureInfo("pt-BR")"
+                TimePicker="true"
+                TimePicker24Hour="true"
+                TimePickerSeconds="true"
+                AutoApply="true"
+                DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
+                @bind-StartDate="ConsultaSggStateService.StartDate"
+                @bind-EndDate="ConsultaSggStateService.EndDate"
+                class="form-control" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Placa</label>
+            <input type="text" class="form-control" @bind="ConsultaSggStateService.Placa" placeholder="Search by plate number">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Request ID</label>
+            <input type="text" class="form-control" @bind="ConsultaSggStateService.RequestId">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Container Numbers</label>
+            <input type="text" class="form-control" @bind="ConsultaSggStateService.ContainerNumbers" placeholder="Search container numbers">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Agendamento ID</label>
+            <input type="number" class="form-control" @bind="ConsultaSggStateService.IdAgendamento">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Move Type</label>
+            <select class="form-select" @bind="ConsultaSggStateService.MoveType">
+                <option value="">All</option>
+                <option value="ENTRY">ENTRY</option>
+                <option value="EXIT">EXIT</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" @bind="ConsultaSggStateService.Status">
+                <option value="">All</option>
+                <option value="OK">OK</option>
+                <option value="Error">Error</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Min Delay (seconds)</label>
+            <input type="number" class="form-control" @bind="ConsultaSggStateService.MinDelay" step="0.1" min="0">
+        </div>
+
+        <div class="col-12">
+            @if (ConsultaSggStateService.IsLoading)
+            {
+                <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
+                <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
+                <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
+            }
         </div>
     </div>
-</div>
+</StickyFilter>
 
 @if (ConsultaSggStateService.IsLoading)
 {
@@ -177,10 +171,7 @@
             <nav aria-label="Page navigation">
                 <ul class="pagination">
                     <li class="page-item @(ConsultaSggStateService.CurrentPage == 1 ? "disabled" : "")">
-                        <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage > 1) { ConsultaSggStateService.CurrentPage--; await ExecuteQuery(true);
- }}">
-                            Previous
-                        </button>
+                        <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage > 1) { ConsultaSggStateService.CurrentPage--; await ExecuteQuery(true); }}">Previous</button>
                     </li>
                     @{
                         var totalPages = (int)Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize);
@@ -188,18 +179,12 @@
                         {
                             var pageNumber = i;
                             <li class="page-item @(ConsultaSggStateService.CurrentPage == pageNumber ? "active" : "")">
-                                <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { ConsultaSggStateService.CurrentPage = pageNumber; await ExecuteQuery(true);
- }">
-                                    @pageNumber
-                                </button>
+                                <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { ConsultaSggStateService.CurrentPage = pageNumber; await ExecuteQuery(true); }">@pageNumber</button>
                             </li>
                         }
                     }
                     <li class="page-item @(ConsultaSggStateService.CurrentPage == Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize) ? "disabled" : "")">
-                        <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage < Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize)) {
- ConsultaSggStateService.CurrentPage++; await ExecuteQuery(true); }}">
-                            Next
-                        </button>
+                        <button disabled="@ConsultaSggStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaSggStateService.CurrentPage < Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize)) { ConsultaSggStateService.CurrentPage++; await ExecuteQuery(true); }}">Next</button>
                     </li>
                 </ul>
             </nav>
@@ -392,7 +377,6 @@
 
             ConsultaSggStateService.Results = queryResults;
             ConsultaSggStateService.TotalCount = total;
-
         }
         catch (OperationCanceledException)
         {
