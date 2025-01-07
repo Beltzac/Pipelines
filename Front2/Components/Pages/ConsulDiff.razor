@@ -83,71 +83,10 @@
 
 <div class="row mb-4">
     <div class="col d-flex justify-content-center">
-        <nav aria-label="Pagination">
-            <ul class="pagination">
-                <li class="page-item @(ConsulDiffStateService.CurrentPage <= 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(ConsulDiffStateService.CurrentPage - 1)" disabled="@(ConsulDiffStateService.CurrentPage <= 1)">Previous</button>
-                </li>
-                @{
-                    const int maxVisiblePages = 5;
-                    if (TotalPages <= maxVisiblePages)
-                    {
-                        // Show all pages if total is less than max visible
-                        for (int i = 1; i <= TotalPages; i++)
-                        {
-                            var pageNumber = i;
-                            <li class="page-item @(ConsulDiffStateService.CurrentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
-                            </li>
-                        }
-                    }
-                    else
-                    {
-                        // Always show first page
-                        <li class="page-item @(ConsulDiffStateService.CurrentPage == 1 ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(1)">1</button>
-                        </li>
-
-                        // Calculate range around current page
-                        var rangeStart = Math.Max(2, ConsulDiffStateService.CurrentPage - 1);
-                        var rangeEnd = Math.Min(TotalPages - 1, ConsulDiffStateService.CurrentPage + 1);
-
-                        // Show ellipsis after first page if needed
-                        if (rangeStart > 2)
-                        {
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
-                        }
-
-                        // Show pages around current page
-                        for (int i = rangeStart; i <= rangeEnd; i++)
-                        {
-                            var pageNumber = i;
-                            <li class="page-item @(ConsulDiffStateService.CurrentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
-                            </li>
-                        }
-
-                        // Show ellipsis before last page if needed
-                        if (rangeEnd < TotalPages - 1)
-                        {
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
-                        }
-
-                        // Always show last page
-                        <li class="page-item @(ConsulDiffStateService.CurrentPage == TotalPages ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(TotalPages)">@TotalPages</button>
-                        </li>
-                    }
-                }
-                <li class="page-item @(ConsulDiffStateService.CurrentPage >= TotalPages ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(ConsulDiffStateService.CurrentPage + 1)" disabled="@(ConsulDiffStateService.CurrentPage >= TotalPages)">Next</button>
-                </li>
-            </ul>
-        </nav>
+        <Pagination
+            CurrentPage="@ConsulDiffStateService.CurrentPage"
+            TotalPages="@TotalPages"
+            OnPageChange="@ChangePage" />
     </div>
 </div>
 
@@ -260,8 +199,6 @@
     [JSInvokable]
     public async Task OpenConsulValue(string key, string envName)
     {
-        // Remove the .JSON extension that diff2html adds
-        key = key.Replace(".json", "");
         try
         {
             var config = ConfigService.GetConfig();
@@ -344,9 +281,6 @@
 
     private async Task ChangePage(int page)
     {
-        if (page < 1 || page > TotalPages)
-            return;
-
         ConsulDiffStateService.CurrentPage = page;
         await RunCompare();
     }
