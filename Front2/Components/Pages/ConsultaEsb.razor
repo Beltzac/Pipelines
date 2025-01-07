@@ -14,120 +14,114 @@
 
 <h3>Requisição Execução Query</h3>
 
-<div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Filters</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Environment</label>
-                <select class="form-select" @bind="ConsultaEsbStateService.SelectedEnvironment">
-                    @foreach (var env in config.OracleEnvironments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Range</label>
-
-                <DateRangePicker
-                    Culture="@CultureInfo.GetCultureInfo("pt-BR")"
-                    TimePicker="true"
-                    TimePicker24Hour="true"
-                    TimePickerSeconds="true"
-                    AutoApply="true"
-                    DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
-                    @bind-StartDate="ConsultaEsbStateService.StartDate"
-                    @bind-EndDate="ConsultaEsbStateService.EndDate"
-                    class="form-control" />
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">URL/Nome Fluxo Filter</label>
-                <input type="text" class="form-control" @bind="ConsultaEsbStateService.UrlFilter" placeholder="Search URL or Nome Fluxo">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">HTTP Method</label>
-                <select class="form-select" @bind="ConsultaEsbStateService.HttpMethod">
-                    <option value="">All</option>
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="DELETE">DELETE</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Request/Response</label>
-                <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values" title="You can enter multiple values separated by commas">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">User</label>
-                <BlazoredTypeahead TItem="KeyValuePair<int, string>"
-                TValue="KeyValuePair<int, string>?"
-                ConvertMethod="x => x"
-                SearchMethod="async x => await SearchUsers(x)"
-                @bind-Value="@ConsultaEsbStateService.User"
-                EnableDropDown="true"
-                placeholder="Search user..."
-                class="form-control">
-                    <SelectedTemplate Context="user">
-                        @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
-                    </SelectedTemplate>
-                    <ResultTemplate Context="kvp">
-                        @($"{kvp.Value} ({kvp.Key})")
-                    </ResultTemplate>
-                    <NotFoundTemplate>
-                        No users found
-                    </NotFoundTemplate>
-                </BlazoredTypeahead>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Execução ID</label>
-                <input type="number" class="form-control" @bind="ConsultaEsbStateService.ExecucaoId">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">HTTP Status Range</label>
-                <select class="form-select" @bind="ConsultaEsbStateService.HttpStatusRange">
-                    <option value="">All</option>
-                    <option value="2xx">2xx (Success)</option>
-                    <option value="3xx">3xx (Redirection)</option>
-                    <option value="4xx">4xx (Client Error)</option>
-                    <option value="5xx">5xx (Server Error)</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">Response Status</label>
-                <select class="form-select" @bind="ConsultaEsbStateService.ResponseStatus">
-                    <option value="">All</option>
-                    <option value="1">Success</option>
-                    <option value="2">Error</option>
-                </select>
-            </div>
-
-            <div class="col-12">
-                @if (ConsultaEsbStateService.IsLoading)
+<StickyFilter>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Environment</label>
+            <select class="form-select" @bind="ConsultaEsbStateService.SelectedEnvironment">
+                @foreach (var env in config.OracleEnvironments)
                 {
-                    <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+                    <option value="@env.Name">@env.Name</option>
                 }
-                else
-                {
-                    <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
-                    <button class="btn btn-secondary" @onclick="async () => { await ClearFilters(); }">Clear</button>
-                    <button class="btn btn-info" @onclick="async () => { await ExportSqlQuery(); }">Export SQL</button>
-                }
-            </div>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Range</label>
+            <DateRangePicker
+                Culture="@CultureInfo.GetCultureInfo("pt-BR")"
+                TimePicker="true"
+                TimePicker24Hour="true"
+                TimePickerSeconds="true"
+                AutoApply="true"
+                DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
+                @bind-StartDate="ConsultaEsbStateService.StartDate"
+                @bind-EndDate="ConsultaEsbStateService.EndDate"
+                class="form-control" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">URL/Nome Fluxo Filter</label>
+            <input type="text" class="form-control" @bind="ConsultaEsbStateService.UrlFilter" placeholder="Search URL or Nome Fluxo">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">HTTP Method</label>
+            <select class="form-select" @bind="ConsultaEsbStateService.HttpMethod">
+                <option value="">All</option>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Request/Response</label>
+            <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values" title="You can enter multiple values separated by commas">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">User</label>
+            <BlazoredTypeahead TItem="KeyValuePair<int, string>"
+                              TValue="KeyValuePair<int, string>?"
+                              ConvertMethod="x => x"
+                              SearchMethod="async x => await SearchUsers(x)"
+                              @bind-Value="@ConsultaEsbStateService.User"
+                              EnableDropDown="true"
+                              placeholder="Search user..."
+                              class="form-control">
+                <SelectedTemplate Context="user">
+                    @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
+                </SelectedTemplate>
+                <ResultTemplate Context="kvp">
+                    @($"{kvp.Value} ({kvp.Key})")
+                </ResultTemplate>
+                <NotFoundTemplate>
+                    No users found
+                </NotFoundTemplate>
+            </BlazoredTypeahead>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Execução ID</label>
+            <input type="number" class="form-control" @bind="ConsultaEsbStateService.ExecucaoId">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">HTTP Status Range</label>
+            <select class="form-select" @bind="ConsultaEsbStateService.HttpStatusRange">
+                <option value="">All</option>
+                <option value="2xx">2xx (Success)</option>
+                <option value="3xx">3xx (Redirection)</option>
+                <option value="4xx">4xx (Client Error)</option>
+                <option value="5xx">5xx (Server Error)</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Response Status</label>
+            <select class="form-select" @bind="ConsultaEsbStateService.ResponseStatus">
+                <option value="">All</option>
+                <option value="1">Success</option>
+                <option value="2">Error</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            @if (ConsultaEsbStateService.IsLoading)
+            {
+                <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(); }">Search</button>
+                <button class="btn btn-secondary" @onclick="async () => { await ClearFilters(); }">Clear</button>
+                <button class="btn btn-info" @onclick="async () => { await ExportSqlQuery(); }">Export SQL</button>
+            }
         </div>
     </div>
-</div>
+</StickyFilter>
 
 @if (ConsultaEsbStateService.IsLoading)
 {
@@ -308,7 +302,6 @@
 }
 
 @code {
-
     private ConfigModel config;
 
     protected override void OnInitialized()
@@ -572,7 +565,7 @@
             }
         }
         catch
-    {
+        {
             // If there's any error parsing, return empty string
             return "";
         }

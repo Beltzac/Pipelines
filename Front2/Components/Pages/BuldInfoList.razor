@@ -1,14 +1,13 @@
 ﻿@page "/"
 @using Common
 @using Common.Services
-
 @using FuzzySharp
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Text.RegularExpressions
 @using System.Reactive.Subjects
 @using System.Reactive.Linq
-@using System.Linq.Expressions;
+@using System.Linq.Expressions
 @using Microsoft.AspNetCore.WebUtilities
 @using Common.Utils
 @inject IBuildInfoService BuildInfoService
@@ -17,24 +16,13 @@
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigService
-@inject ILogger<NavigationManager> _logger;
+@inject ILogger<NavigationManager> _logger
 @inject BuildInfoStateService BuildInfoStateService
 @implements IDisposable
 
 <h3>Build Information</h3>
 
-<style>
-    .sticky-filter {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background-color: white; /* To avoid overlap with the table content */
-    padding: 10px 0;
-    }
-</style>
-
 <ContextMenu Id="tableContextMenu">
-
     @{
         var repo = context.Data as Repository;
         if (!repo.MasterClonned)
@@ -73,13 +61,15 @@
     <Item OnClick="@NavigateToPRCreation">Open PR</Item>
 </ContextMenu>
 
-<div class="mb-3 d-flex align-items-center sticky-filter">
-    <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
-    <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
-    <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
-    <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
-    <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
-</div>
+<StickyFilter>
+    <div class="mb-3 d-flex align-items-center">
+        <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
+        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
+        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
+        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
+        <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
+    </div>
+</StickyFilter>
 
 <table class="table">
     <thead>
@@ -96,14 +86,10 @@
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
-                </td> 
-
-                 <td class="truncate">@(buildInfo.Path)</td>
-
-
+                </td>
+                <td class="truncate">@(buildInfo.Path)</td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
-
             </ContextMenuTrigger>
         }
     </tbody>
@@ -112,7 +98,6 @@
 @code {
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
-
     private ElementReference filterInputElement;
 
     protected override async Task OnInitializedAsync()
@@ -129,11 +114,8 @@
                 try
                 {
                     BuildInfoStateService.IsLoading = true;
-
                     var janelas = WindowUtils.EnumerarJanelas().Distinct();
-
                     var infos = await BuildInfoService.GetBuildInfoAsync(x);
-
                     BuildInfoStateService.BuildInfos = infos;
                 }
                 finally
@@ -142,14 +124,9 @@
                 }
             });
 
-        // await SignalRClientService.StartAsync(async id =>
-        // {
-        //     await ReloadById(id, x => { this.toastService.ShowSuccess($"Build {x.Path} Atualizada"); });
-        // });
-
         BuildInfoStateService.InitializeState(x =>
         {
-            _searchEvents.OnNext(BuildInfoStateService.Filter); // Primeiro load
+            _searchEvents.OnNext(BuildInfoStateService.Filter);
         }, !BuildInfoStateService.BuildInfos.Any());
     }
 
@@ -170,10 +147,8 @@
         }
     }
 
-    //Disconnect SignalR connection on component disposal
     public async ValueTask DisposeAsync()
     {
-        //await SignalRClientService.Disconect();
         _subscription.Dispose();
     }
 
@@ -183,7 +158,6 @@
         _searchEvents.OnNext(BuildInfoStateService.Filter);
     }
 
-    //Global
     private async ValueTask CloneAll()
     {
         await BuildInfoService.CloneAllRepositoriesAsync();
@@ -223,14 +197,13 @@
         this.toastService.ShowSuccess("Clonado");
     }
 
-    //Itens
-    async Task DeleteClickAsync (ItemClickEventArgs e)
+    async Task DeleteClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         await BuildInfoService.Delete(repo.Id);
     }
 
-    async Task CloneClickAsync (ItemClickEventArgs e)
+    async Task CloneClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         await CloneRepoAsync(repo);
@@ -244,7 +217,7 @@
 
     async Task OpenClickAsync(Repository e)
     {
-        if(!e.MasterClonned)
+        if (!e.MasterClonned)
         {
             await CloneRepoAsync(e);
         }

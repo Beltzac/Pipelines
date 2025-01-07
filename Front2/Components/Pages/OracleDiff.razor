@@ -16,33 +16,35 @@
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
 
-<div class="row mb-4">
-    <div class="col-md-5">
-        <div class="form-group">
-            <label>Source Environment:</label>
-            <select class="form-control" @bind="OracleDiffStateService.SelectedSourceEnv">
-                @foreach (var env in environments)
-                {
-                    <option value="@env.Name">@env.Name</option>
-                }
-            </select>
+<StickyFilter>
+    <div class="row">
+        <div class="col-md-5">
+            <div class="form-group">
+                <label>Source Environment:</label>
+                <select class="form-control" @bind="OracleDiffStateService.SelectedSourceEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="form-group">
+                <label>Target Environment:</label>
+                <select class="form-control" @bind="OracleDiffStateService.SelectedTargetEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary mt-4" @onclick="CompareEnvironments">Compare</button>
         </div>
     </div>
-    <div class="col-md-5">
-        <div class="form-group">
-            <label>Target Environment:</label>
-            <select class="form-control" @bind="OracleDiffStateService.SelectedTargetEnv">
-                @foreach (var env in environments)
-                {
-                    <option value="@env.Name">@env.Name</option>
-                }
-            </select>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <button class="btn btn-primary mt-4" @onclick="CompareEnvironments">Compare</button>
-    </div>
-</div>
+</StickyFilter>
 
 <div class="mb-3">
     <div class="row">
@@ -53,89 +55,79 @@
 </div>
 
 <script>
-
     window.initializeDiff2Html = function(diffString, sourceEnv, targetEnv) {
+        console.log(diffString);
+        var targetElement = document.getElementById('myDiffElement');
+        var configuration = {
+            drawFileList: false,
+            fileListToggle: false,
+            fileListStartVisible: false,
+            fileContentToggle: false,
+            matching: 'lines',
+            outputFormat: 'side-by-side',
+            synchronisedScroll: true,
+            renderNothingWhenEmpty: true,
+            rawTemplates: {
+                "file-summary-line": `<li class="d2h-file-list-line">
+                    <span class="d2h-file-name-wrapper">
+                    {{>fileIcon}}
+                    <a href="oracle-diff#{{fileHtmlId}}" class="d2h-file-name">{{fileName}}</a>
+                    <span class="d2h-file-stats">
+                    <span class="d2h-lines-added">{{addedLines}}</span>
+                    <span class="d2h-lines-deleted">{{deletedLines}}</span>
+                    </span>
+                    </span>
+                    </li>`,
+                "side-by-side-file-diff": `<div id="{{fileHtmlId}}" class="d2h-file-wrapper" data-lang="{{file.language}}">
+                    <div class="d2h-file-header">
+                    {{{filePath}}}
+                    </div>
+                    <div class="d2h-files-diff">
+                    <div class="d2h-file-side-diff">
+                    <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.oldName}}', '${sourceEnv}')">
+                    <i class="bi bi-download"></i> Source
+                    </button>
+                    </div>
+                    <div class="d2h-code-wrapper">
+                    <table class="d2h-diff-table">
+                    <tbody class="d2h-diff-tbody">
+                    {{{diffs.left}}}
+                    </tbody>
+                    </table>
+                    </div>
+                    </div>
+                    <div class="d2h-file-side-diff">
+                    <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.newName}}', '${targetEnv}')">
+                    <i class="bi bi-download"></i> Target
+                    </button>
+                    </div>
+                    <div class="d2h-code-wrapper">
+                    <table class="d2h-diff-table">
+                    <tbody class="d2h-diff-tbody">
+                    {{{diffs.right}}}
+                    </tbody>
+                    </table>
+                    </div>
+                    </div>
+                    </div>
+                    </div>`
+            }
+        };
 
-    //var hljs = require('highlight.js');
+        var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration, hljs);
+        diff2htmlUi.draw();
 
-    console.log(diffString);
-    var targetElement = document.getElementById('myDiffElement');
-    var configuration = {
-    drawFileList: false,
-    fileListToggle: false,
-    fileListStartVisible: false,
-    fileContentToggle: false,
-    matching: 'lines',
-    outputFormat: 'side-by-side',
-    synchronisedScroll: true,
+        hljs.configure({ ignoreUnescapedHTML: true });
 
-    renderNothingWhenEmpty: true,
-    rawTemplates: {
-    "file-summary-line": `<li class="d2h-file-list-line">
-    <span class="d2h-file-name-wrapper">
-    {{>fileIcon}}
-    <a href="oracle-diff#{{fileHtmlId}}" class="d2h-file-name">{{fileName}}</a>
-    <span class="d2h-file-stats">
-    <span class="d2h-lines-added">{{addedLines}}</span>
-    <span class="d2h-lines-deleted">{{deletedLines}}</span>
-    </span>
-    </span>
-    </li>`,
-    "side-by-side-file-diff": `<div id="{{fileHtmlId}}" class="d2h-file-wrapper" data-lang="{{file.language}}">
-    <div class="d2h-file-header">
-    {{{filePath}}}
-    </div>
-
-    <div class="d2h-files-diff">
-    <div class="d2h-file-side-diff">
-    <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.oldName}}', '${sourceEnv}')">
-    <i class="bi bi-download"></i> Source
-    </button>
-    </div>
-    <div class="d2h-code-wrapper">
-    <table class="d2h-diff-table">
-    <tbody class="d2h-diff-tbody">
-    {{{diffs.left}}}
-    </tbody>
-    </table>
-    </div>
-    </div>
-    <div class="d2h-file-side-diff">
-    <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.newName}}', '${targetEnv}')">
-    <i class="bi bi-download"></i> Target
-    </button>
-    </div>
-    <div class="d2h-code-wrapper">
-    <table class="d2h-diff-table">
-    <tbody class="d2h-diff-tbody">
-    {{{diffs.right}}}
-    </tbody>
-    </table>
-    </div>
-    </div>
-    </div>
-    </div>`
-    }
-    };
-    console.log(hljs);
-    var diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration, hljs);
-    diff2htmlUi.draw();
-
-    hljs.configure({ ignoreUnescapedHTML: true })
-
-    document.querySelectorAll('.hljs').forEach((block) => {
-    block.classList.remove('plaintext'); // Remove the plaintext class
-    block.classList.add('sql'); // Add the SQL language class
-    hljs.highlightElement(block); // Highlight the block
-    });
-
-    //diff2htmlUi.highlightCode();
+        document.querySelectorAll('.hljs').forEach((block) => {
+            block.classList.remove('plaintext');
+            block.classList.add('sql');
+            hljs.highlightElement(block);
+        });
     };
 </script>
-
-
 
 @code {
     private List<OracleEnvironment> environments = new();
@@ -161,7 +153,6 @@
     [JSInvokable]
     public async Task ExportViewDDL(string viewName, string envName)
     {
-        // Remove the .SQL extension that diff2html adds
         viewName = viewName.Replace(".SQL", "");
         try
         {
@@ -207,7 +198,7 @@
             return;
         }
 
-        try 
+        try
         {
             OracleDiffStateService.Differences = OracleSchemaService.Compare(OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
             await RunCompare();
@@ -230,7 +221,7 @@
         if (firstRender)
         {
             await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this));
-            
+
             bool initialized = false;
 
             OracleDiffStateService.InitializeState(async x =>
@@ -245,7 +236,8 @@
                 initialized = true;
             });
 
-            if (!initialized){
+            if (!initialized)
+            {
                 await RunCompare();
             }
         }

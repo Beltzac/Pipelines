@@ -16,7 +16,7 @@
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
 
-<div class="options floating-controls">
+<StickyFilter>
     <div class="row g-3">
         <div class="col-md-5">
             <div class="form-group">
@@ -71,7 +71,7 @@
             </div>
         </div>
     </div>
-</div>
+</StickyFilter>
 
 <div class="diff-container mb-3">
     <div id="myDiffElement"></div>
@@ -85,17 +85,6 @@
 </div>
 
 <style>
-    .floating-controls {
-        position: sticky;
-        top: 0;
-        background-color: var(--bs-body-bg);
-        z-index: 1000;
-        padding: 1.5rem;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        border-radius: 0.375rem;
-        margin-bottom: 1.5rem;
-    }
-
     .diff-container {
         max-width: 80vw;
         margin: 0 auto;
@@ -104,13 +93,6 @@
 
     .form-group {
         margin-bottom: 0;
-    }
-
-    @@media (max-width: 768px) {
-        .floating-controls {
-            position: static;
-            margin-bottom: 1rem;
-        }
     }
 </style>
 

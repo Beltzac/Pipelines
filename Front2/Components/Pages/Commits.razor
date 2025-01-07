@@ -17,8 +17,13 @@
 
 <h3>Commits</h3>
 
-<button class="btn btn-info text-nowrap" @onclick="async () => await SyncCommits()">Sync Commits</button>
-<button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
+<StickyFilter>
+    <div class="d-flex align-items-center">
+        <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sync Commits</button>
+        <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
+    </div>
+</StickyFilter>
+
 <ProgressBar ProgressValue="@progress" TextColor="black" Height="25px" Label="Buscando commits..." />
 
 @if (commitDataList != null && commitDataList.Any())
@@ -115,6 +120,6 @@ else
     }
 
     .clickable-badge {
-        cursor: pointer; /* Change cursor to pointer on hover */
+        cursor: pointer;
     }
 </style>
