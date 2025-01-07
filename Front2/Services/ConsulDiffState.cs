@@ -8,5 +8,8 @@ namespace Front2.Services
         public string SelectedTargetEnv { get; set; }
         public bool UseRecursive { get; set; } = true;
         public Dictionary<string, string> Differences { get; set; } = new();
+        public string SearchKey { get; set; }
+        public int PageSize { get; set; } = 10;
+        public int CurrentPage { get; set; } = 1;
     }
 }
