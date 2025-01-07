@@ -128,19 +128,28 @@ MainQuery AS (
         LTVC.XML AS LTVC_XML,
         LTVC.CREATED_AT - LTDB.CREATED_AT AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
-        NVL(LTVC_MESSAGE, 'NO_MESSAGE') AS MESSAGE_TEXT,
+        COALESCE(
+            TO_CHAR(LTVC_MESSAGE),
+            --TO_CHAR(LTDB.EXCEPTION),
+            --TO_CHAR(LTVC.EXCEPTION),
+            'NO_MESSAGE'
+        ) AS MESSAGE_TEXT,
 		(
           SELECT
              LISTAGG(NVL(X.container_num, 'UNKNOWN'), ', ')
                 WITHIN GROUP (ORDER BY X.container_seq)
-          FROM XMLTABLE(
-               XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
-               '/ns:LTDB/ns:Chassis/ns:Container'
-               PASSING XMLTYPE(LTDB.XML)
-               COLUMNS
-                 container_seq NUMBER        PATH '@sequence',
-                 container_num VARCHAR2(100) PATH '@number'
-          ) X
+          FROM 
+        XMLTABLE(
+          XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
+          '/ns:LTDB/ns:Chassis/ns:Container' 
+					PASSING CASE
+						WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
+						ELSE NULL
+					END
+					COLUMNS 
+					container_seq NUMBER PATH '@sequence',
+          container_num VARCHAR2(100) PATH '@number'
+        ) X
         ) AS CONTAINER_NUMBERS,
         AGE.CODIGO_BARRAS
     FROM
@@ -285,7 +294,7 @@ SELECT
     COUNT(*) as REQUEST_COUNT
 FROM
     TCPSGATE.TRACKING LTDB
-LEFT JOIN TCPSGATE.TRACKING LTVC
+INNER JOIN TCPSGATE.TRACKING LTVC
     ON LTDB.REQUEST_ID = LTVC.REQUEST_ID
     AND LTVC.TYPE = 'LTVC'
 WHERE 1 = 1
