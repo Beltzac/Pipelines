@@ -455,12 +455,12 @@ namespace Common.Services
             }
         }
 
-        private PatchResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
+        public ConsulDiffResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
         {
             var keyFormatted = key;
             var ps = new Patch(new PatchOptions(), new DiffOptions());
 
-            return ps.createPatchResult(
+            var patchResult = ps.createPatchResult(
                 keyFormatted,
                 keyFormatted,
                 Normalize(oldValue, recursive),
@@ -468,15 +468,15 @@ namespace Common.Services
                 null,
                 null
             );
+
+            if (!patchResult.Hunks.Any())
+                return null;
+
+            var diffString = ps.formatPatch(patchResult);
+            return new ConsulDiffResult(key, diffString);
         }
 
-        private string Format(PatchResult patchResult)
-        {
-            var ps = new Patch(new PatchOptions(), new DiffOptions());
-            return ps.formatPatch(patchResult);
-        }
-
-        public async Task<Dictionary<string, string>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true)
+        public async IAsyncEnumerable<ConsulDiffResult> CompareAsyncEnumerable(string sourceEnv, string targetEnv, bool useRecursive = true, int? skip = null, int? take = null)
         {
             var config = _configService.GetConfig();
             var sourceEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == sourceEnv)
@@ -490,10 +490,19 @@ namespace Common.Services
                 GetConsulKeyValues(targetEnvironment)
             ).ContinueWith(t => (t.Result[0], t.Result[1]));
 
-            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k).ToList();
+            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k).AsEnumerable();
 
-            // Process diffs in parallel
-            var diffTasks = allKeys.Select(async key =>
+            if (skip.HasValue)
+            {
+                allKeys = allKeys.Skip(skip.Value);
+            }
+
+            if (take.HasValue)
+            {
+                allKeys = allKeys.Take(take.Value);
+            }
+
+            foreach (var key in allKeys)
             {
                 var sourceExists = sourceKVs.TryGetValue(key, out var sourceKV);
                 var targetExists = targetKVs.TryGetValue(key, out var targetKV);
@@ -505,18 +514,12 @@ namespace Common.Services
 
                 var diff = GetDiff(key, sourceKV, targetKV, useRecursive);
 
-                if (!diff.Hunks.Any())
-                    return (Key: key, DiffString: (string)null);
+                if (diff == null)
+                    continue;
 
                 _logger.LogInformation($"Difference in key: {key}");
-                return (Key: key, DiffString: Format(diff));
-            });
-
-            var results = await Task.WhenAll(diffTasks);
-
-            return results
-                .Where(r => r.DiffString != null)
-                .ToDictionary(r => r.Key, r => r.DiffString);
+                yield return diff;
+            }
         }
     }
 }

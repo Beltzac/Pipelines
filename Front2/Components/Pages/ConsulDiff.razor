@@ -231,14 +231,53 @@
 
         try
         {
-            ConsulDiffStateService.Differences = await ConsulService.CompareAsync(ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv, ConsulDiffStateService.UseRecursive);
             ConsulDiffStateService.CurrentPage = 1;
-            await RunCompare();
+            ConsulDiffStateService.Differences.Clear();
+
+            // Get all key values from both environments (only once)
+            ConsulDiffStateService.SourceKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv));
+            ConsulDiffStateService.TargetKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv));
+
+            ConsulDiffStateService.AllKeys = new HashSet<string>(ConsulDiffStateService.SourceKeyValues.Keys.Union(ConsulDiffStateService.TargetKeyValues.Keys));
+            ConsulDiffStateService.TotalCount = ConsulDiffStateService.AllKeys.Count;
+
+            // Get differences only for the current page
+            await LoadPageDifferences();
         }
         catch (Exception ex)
         {
             toastService.ShowError($"Error comparing environments: {ex.Message}");
         }
+    }
+
+    private async Task LoadPageDifferences()
+    {
+        var filteredKeys = string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey)
+            ? ConsulDiffStateService.AllKeys
+            : ConsulDiffStateService.AllKeys.Where(key =>
+                key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
+
+        var pagedKeys = filteredKeys
+            .Skip((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize)
+            .Take(ConsulDiffStateService.PageSize);
+
+        ConsulDiffStateService.Differences.Clear();
+        foreach (var key in pagedKeys)
+        {
+            var sourceValue = ConsulDiffStateService.SourceKeyValues.GetValueOrDefault(key);
+            var targetValue = ConsulDiffStateService.TargetKeyValues.GetValueOrDefault(key);
+
+            if (sourceValue?.Value != targetValue?.Value)
+            {
+                var diff = ConsulService.GetDiff(key, sourceValue, targetValue, ConsulDiffStateService.UseRecursive);
+                if (diff != null)
+                {
+                    ConsulDiffStateService.Differences[key] = diff.DiffString;
+                }
+            }
+        }
+
+        await RunCompare();
     }
 
     protected async Task RunCompare()
@@ -261,13 +300,13 @@
     private async Task HandleSearch()
     {
         ConsulDiffStateService.CurrentPage = 1;
-        await RunCompare();
+        await LoadPageDifferences();
     }
 
     private async Task ChangePage(int page)
     {
         ConsulDiffStateService.CurrentPage = page;
-        await RunCompare();
+        await LoadPageDifferences();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -299,15 +338,7 @@
 
     public Dictionary<string, string> GetFilteredAndPaginatedDifferences()
     {
-        var filtered = string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey)
-            ? ConsulDiffStateService.Differences
-            : ConsulDiffStateService.Differences.Where(kvp => kvp.Key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))
-                       .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-        return filtered
-            .Skip((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize)
-            .Take(ConsulDiffStateService.PageSize)
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        return ConsulDiffStateService.Differences;
     }
 
     public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)ConsulDiffStateService.PageSize);
@@ -315,9 +346,9 @@
     public int GetFilteredCount()
     {
         if (string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey))
-            return ConsulDiffStateService.Differences.Count;
+            return ConsulDiffStateService.AllKeys.Count;
 
-        return ConsulDiffStateService.Differences.Count(kvp =>
-            kvp.Key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
+        return ConsulDiffStateService.AllKeys.Count(key =>
+            key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
     }
 }
