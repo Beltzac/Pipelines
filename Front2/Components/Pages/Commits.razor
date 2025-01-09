@@ -15,8 +15,6 @@
 @inject ICommitDataExportService CommitDataExportService
 @inject IConfigurationService ConfigService
 
-<h3>Commits</h3>
-
 <StickyFilter>
     <div class="d-flex align-items-center">
         <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sync Commits</button>
