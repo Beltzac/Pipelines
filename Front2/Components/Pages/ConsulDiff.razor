@@ -77,18 +77,17 @@
     <div id="myDiffElement"></div>
 </div>
 
-<div class="d-flex justify-content-center mb-4">
-    <Pagination
-        CurrentPage="@ConsulDiffStateService.CurrentPage"
-        TotalPages="@TotalPages"
-        OnPageChange="@ChangePage" />
-</div>
+<Pagination
+    CurrentPage="@ConsulDiffStateService.CurrentPage"
+    TotalPages="@TotalPages"
+    OnPageChange="@ChangePage" />
 
 <style>
     .diff-container {
         max-width: 80vw;
         margin: 0 auto;
         overflow-x: auto;
+        margin-bottom: 60px;
     }
 
     .form-group {
