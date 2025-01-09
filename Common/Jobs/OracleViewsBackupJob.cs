@@ -54,15 +54,15 @@ namespace Common.Jobs
 
                     try
                     {
-                        var views = _oracleSchemaService.GetViewDefinitions(env.ConnectionString, env.Schema);
-                        
+                        var views = await _oracleSchemaService.GetViewDefinitionsAsync(env.ConnectionString, env.Schema);
+
                         // Track existing files to detect deletions
                         var existingFiles = new HashSet<string>();
                         foreach (var view in views)
                         {
-                            var filePath = Path.Combine(envPath, $"{view.Key}.sql");
+                            var filePath = Path.Combine(envPath, $"{view.Name}.sql");
                             existingFiles.Add(filePath);
-                            await File.WriteAllTextAsync(filePath, view.Value);
+                            await File.WriteAllTextAsync(filePath, view.Definition);
                         }
 
                         // Remove files that no longer exist in Oracle

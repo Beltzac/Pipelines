@@ -1,4 +1,4 @@
-﻿@page "/oracle-diff"
+@page "/oracle-diff"
 @using Common
 @using Common.ExternalApis
 @using Common.Models
@@ -17,11 +17,11 @@
 @inject OracleDiffStateService OracleDiffStateService
 
 <StickyFilter>
-    <div class="row">
+    <div class="row g-3">
         <div class="col-md-5">
             <div class="form-group">
-                <label>Source Environment:</label>
-                <select class="form-control" @bind="OracleDiffStateService.SelectedSourceEnv">
+                <label class="form-label">Source Environment:</label>
+                <select class="form-select" @bind="OracleDiffStateService.SelectedSourceEnv">
                     @foreach (var env in environments)
                     {
                         <option value="@env.Name">@env.Name</option>
@@ -31,8 +31,8 @@
         </div>
         <div class="col-md-5">
             <div class="form-group">
-                <label>Target Environment:</label>
-                <select class="form-control" @bind="OracleDiffStateService.SelectedTargetEnv">
+                <label class="form-label">Target Environment:</label>
+                <select class="form-select" @bind="OracleDiffStateService.SelectedTargetEnv">
                     @foreach (var env in environments)
                     {
                         <option value="@env.Name">@env.Name</option>
@@ -41,18 +41,54 @@
             </div>
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary mt-4" @onclick="CompareEnvironments">Compare</button>
+            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Compare</button>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search by view name..."
+                       @bind="OracleDiffStateService.SearchKey"
+                       @bind:event="oninput"
+                       @onkeyup="async () => await HandleSearch()" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <select class="form-select" @bind="OracleDiffStateService.PageSize">
+                    <option value="5">5 per page</option>
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                </select>
+            </div>
         </div>
     </div>
 </StickyFilter>
 
-<div class="mb-3">
-    <div class="row">
-        <div class="col">
-            <div id="myDiffElement" style="max-width:80VW;"></div>
-        </div>
-    </div>
+<div class="diff-container mb-3">
+    <div id="myDiffElement"></div>
 </div>
+
+<div class="d-flex justify-content-center mb-4">
+    <Pagination
+        CurrentPage="@OracleDiffStateService.CurrentPage"
+        TotalPages="@TotalPages"
+        OnPageChange="@ChangePage" />
+</div>
+
+<style>
+    .diff-container {
+        max-width: 80vw;
+        margin: 0 auto;
+        overflow-x: auto;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+</style>
 
 <script>
     window.initializeDiff2Html = function(diffString, sourceEnv, targetEnv) {
@@ -165,11 +201,11 @@
                 return;
             }
 
-            var ddl = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
-            if (!string.IsNullOrEmpty(ddl))
+            var viewDef = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
+            if (!string.IsNullOrEmpty(viewDef.Definition))
             {
-                var fileName = $"{viewName}_{envName}_{DateTime.Now:yyyyMMdd}.sql".Replace(" ", "_");
-                await DownloadFile(fileName, ddl);
+                var fileName = $"{viewDef.Name}_{envName}_{DateTime.Now:yyyyMMdd}.sql".Replace(" ", "_");
+                await DownloadFile(fileName, viewDef.Definition);
                 toastService.ShowSuccess($"Downloaded {fileName}");
             }
             else
@@ -200,8 +236,28 @@
 
         try
         {
-            OracleDiffStateService.Differences = OracleSchemaService.Compare(OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
-            await RunCompare();
+            OracleDiffStateService.CurrentPage = 1;
+            OracleDiffStateService.Differences.Clear();
+
+            // Get all view definitions from both environments
+            var sourceEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedSourceEnv);
+            var targetEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedTargetEnv);
+
+            var sourceViews = (await OracleSchemaService.GetViewDefinitionsAsync(sourceEnv.ConnectionString, sourceEnv.Schema))
+                .ToDictionary(v => v.Name);
+            OracleDiffStateService.SourceViews = sourceViews;
+
+            var targetViews = (await OracleSchemaService.GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema))
+                .ToDictionary(v => v.Name);
+            OracleDiffStateService.TargetViews = targetViews;
+
+            OracleDiffStateService.AllViewNames = new HashSet<string>(
+                OracleDiffStateService.SourceViews.Keys.Union(OracleDiffStateService.TargetViews.Keys)
+            );
+            OracleDiffStateService.TotalCount = OracleDiffStateService.AllViewNames.Count;
+
+            // Get differences only for the current page
+            await LoadPageDifferences();
         }
         catch (Exception ex)
         {
@@ -209,11 +265,83 @@
         }
     }
 
+    private async Task LoadPageDifferences()
+    {
+        var filteredViews = string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey)
+            ? OracleDiffStateService.AllViewNames
+            : OracleDiffStateService.AllViewNames.Where(view =>
+                view.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
+
+        var pagedViews = filteredViews
+            .Skip((OracleDiffStateService.CurrentPage - 1) * OracleDiffStateService.PageSize)
+            .Take(OracleDiffStateService.PageSize);
+
+        OracleDiffStateService.Differences.Clear();
+        foreach (var viewName in pagedViews)
+        {
+            OracleDiffStateService.SourceViews.TryGetValue(viewName, out var sourceView);
+            OracleDiffStateService.TargetViews.TryGetValue(viewName, out var targetView);
+
+            var sourceDefinition = sourceView?.Definition ?? string.Empty;
+            var targetDefinition = targetView?.Definition ?? string.Empty;
+
+            if (sourceDefinition != targetDefinition)
+            {
+                var diff = OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
+                if (diff.HasDifferences)
+                {
+                    OracleDiffStateService.Differences[viewName] = diff;
+                }
+            }
+        }
+
+        await RunCompare();
+    }
+
     protected async Task RunCompare()
     {
-        var diff = String.Join("\r\n", OracleDiffStateService.Differences.Values);
+        var filteredDiffs = GetFilteredAndPaginatedDifferences();
+        if (filteredDiffs.Count == 0)
+        {
+            await JS.InvokeVoidAsync("initializeDiff2Html", "", OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
+            if (OracleDiffStateService.Differences.Count > 0)
+            {
+                toastService.ShowInfo("No differences found matching the search criteria");
+            }
+            return;
+        }
+
+        var diff = String.Join("\r\n", filteredDiffs.Values.Select(d => d.FormattedDiff));
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
         toastService.ShowSuccess($"Comparison completed successfully");
+    }
+
+    private async Task HandleSearch()
+    {
+        OracleDiffStateService.CurrentPage = 1;
+        await LoadPageDifferences();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        OracleDiffStateService.CurrentPage = page;
+        await LoadPageDifferences();
+    }
+
+    public Dictionary<string, OracleDiffResult> GetFilteredAndPaginatedDifferences()
+    {
+        return OracleDiffStateService.Differences;
+    }
+
+    public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)OracleDiffStateService.PageSize);
+
+    public int GetFilteredCount()
+    {
+        if (string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey))
+            return OracleDiffStateService.AllViewNames.Count;
+
+        return OracleDiffStateService.AllViewNames.Count(view =>
+            view.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

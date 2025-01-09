@@ -12,10 +12,30 @@ def remove_invisible_chars(file_path):
         # Remove other invisible characters at the start
         content = content.lstrip(b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f')
 
-        with open(file_path, 'wb') as file:
-            file.write(content)
+        # Convert to string for line processing
+        content_str = content.decode('utf-8')
+        lines = content_str.splitlines()
 
-        print(f"Invisible characters removed from {file_path}")
+        # Find the @page directive
+        page_line = None
+        for i, line in enumerate(lines):
+            if '@page' in line:
+                page_line = line.strip()
+                lines.pop(i)
+                break
+
+        # If found, ensure it's the first line
+        if page_line:
+            lines.insert(0, page_line)
+
+        # Join lines back together
+        content_str = '\n'.join(lines)
+
+        # Write back to file
+        with open(file_path, 'w', encoding='utf-8', newline='\n') as file:
+            file.write(content_str)
+
+        print(f"File processed successfully: {file_path}")
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
