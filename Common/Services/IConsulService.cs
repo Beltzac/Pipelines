@@ -1,4 +1,4 @@
-﻿﻿using Common.Models;
+﻿﻿﻿﻿using Common.Models;
 
 namespace Common.Services
 {
@@ -12,6 +12,7 @@ namespace Common.Services
         void SaveKvToFile(string folderPath, string key, string value);
         Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value);
         IAsyncEnumerable<ConsulDiffResult> CompareAsyncEnumerable(string sourceEnv, string targetEnv, bool useRecursive = true, int? skip = null, int? take = null);
+        Task<List<ConsulDiffResult>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true);
         ConsulDiffResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive);
     }
 }

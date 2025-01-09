@@ -476,6 +476,16 @@ namespace Common.Services
             return new ConsulDiffResult(key, diffString);
         }
 
+        public async Task<List<ConsulDiffResult>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true)
+        {
+            var results = new List<ConsulDiffResult>();
+            await foreach (var diff in CompareAsyncEnumerable(sourceEnv, targetEnv, useRecursive))
+            {
+                results.Add(diff);
+            }
+            return results;
+        }
+
         public async IAsyncEnumerable<ConsulDiffResult> CompareAsyncEnumerable(string sourceEnv, string targetEnv, bool useRecursive = true, int? skip = null, int? take = null)
         {
             var config = _configService.GetConfig();
