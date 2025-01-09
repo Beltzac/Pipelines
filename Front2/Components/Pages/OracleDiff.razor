@@ -285,13 +285,10 @@
             var sourceDefinition = sourceView?.Definition ?? string.Empty;
             var targetDefinition = targetView?.Definition ?? string.Empty;
 
-            if (sourceDefinition != targetDefinition)
+            var diff = OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
+            if (diff.HasDifferences)
             {
-                var diff = OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
-                if (diff.HasDifferences)
-                {
-                    OracleDiffStateService.Differences[viewName] = diff;
-                }
+                OracleDiffStateService.Differences[viewName] = diff;
             }
         }
 
