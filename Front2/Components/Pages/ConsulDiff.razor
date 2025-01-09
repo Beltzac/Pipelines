@@ -73,21 +73,22 @@
     </div>
 </StickyFilter>
 
-<div class="diff-container mb-3">
+<div class="diff-container">
     <div id="myDiffElement"></div>
 </div>
 
 <Pagination
     CurrentPage="@ConsulDiffStateService.CurrentPage"
     TotalPages="@TotalPages"
-    OnPageChange="@ChangePage" />
+    OnPageChange="@ChangePage">
+    Showing @((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize + 1) to @Math.Min(ConsulDiffStateService.CurrentPage * ConsulDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
+</Pagination>
 
 <style>
     .diff-container {
         max-width: 80vw;
         margin: 0 auto;
         overflow-x: auto;
-        margin-bottom: 60px;
     }
 
     .form-group {

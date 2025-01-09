@@ -12,8 +12,6 @@
 @inject IToastService toastService
 @implements IDisposable
 
-<h3>Requisição Execução Query</h3>
-
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-4">
@@ -183,33 +181,12 @@
 
 @if (ConsultaEsbStateService.Results != null && ConsultaEsbStateService.TotalCount > 0)
 {
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination">
-                    <li class="page-item @(ConsultaEsbStateService.CurrentPage == 1 ? "disabled" : "")">
-                        <button disabled="@ConsultaEsbStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaEsbStateService.CurrentPage > 1) { ConsultaEsbStateService.CurrentPage--; await ExecuteQuery(); }}">Previous</button>
-                    </li>
-                    @{
-                        var totalPages = (int)Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize);
-                        for (int i = Math.Max(1, ConsultaEsbStateService.CurrentPage - 2); i <= Math.Min(totalPages, ConsultaEsbStateService.CurrentPage + 2); i++)
-                        {
-                            var pageNumber = i;
-                            <li class="page-item @(ConsultaEsbStateService.CurrentPage == pageNumber ? "active" : "")">
-                                <button disabled="@ConsultaEsbStateService.IsLoading" class="page-link" @onclick="async () => { ConsultaEsbStateService.CurrentPage = pageNumber; await ExecuteQuery(); }">@pageNumber</button>
-                            </li>
-                        }
-                    }
-                    <li class="page-item @(ConsultaEsbStateService.CurrentPage == Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize) ? "disabled" : "")">
-                        <button disabled="@ConsultaEsbStateService.IsLoading" class="page-link" @onclick="async () => { if(ConsultaEsbStateService.CurrentPage < Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize)) { ConsultaEsbStateService.CurrentPage++; await ExecuteQuery(); }}">Next</button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-        <div>
-            Showing @((ConsultaEsbStateService.CurrentPage - 1) * ConsultaEsbStateService.PageSize + 1) to @Math.Min(ConsultaEsbStateService.CurrentPage * ConsultaEsbStateService.PageSize, ConsultaEsbStateService.TotalCount) of @ConsultaEsbStateService.TotalCount entries
-        </div>
-    </div>
+    <Pagination
+        CurrentPage="@ConsultaEsbStateService.CurrentPage"
+        TotalPages="@((int)Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize))"
+        OnPageChange="@(async (page) => { ConsultaEsbStateService.CurrentPage = page; await ExecuteQuery(); })">
+        Showing @((ConsultaEsbStateService.CurrentPage - 1) * ConsultaEsbStateService.PageSize + 1) to @Math.Min(ConsultaEsbStateService.CurrentPage * ConsultaEsbStateService.PageSize, ConsultaEsbStateService.TotalCount) of @ConsultaEsbStateService.TotalCount entries
+    </Pagination>
 }
 
 @if (ConsultaEsbStateService.SelectedItem != null)
