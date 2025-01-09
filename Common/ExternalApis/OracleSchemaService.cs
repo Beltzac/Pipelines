@@ -1,12 +1,12 @@
-﻿using CSharpDiff.Diffs.Models;
+﻿﻿﻿﻿using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
+using Common.Services;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
-
 
 namespace Common.ExternalApis
 {
@@ -23,6 +23,50 @@ namespace Common.ExternalApis
             _formatter = SqlFormatter.Of(Dialect.PlSql);
         }
 
+        public async Task<IEnumerable<string>> GetAllKeysAsync()
+        {
+            var config = _configService.GetConfig();
+            var sourceEnv = config.OracleEnvironments.FirstOrDefault();
+            if (sourceEnv == null) return Enumerable.Empty<string>();
+
+            var views = GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
+            return views.Keys;
+        }
+
+        public async Task<Dictionary<string, string>> GetSourceKeyValuesAsync()
+        {
+            var config = _configService.GetConfig();
+            var sourceEnv = config.OracleEnvironments.FirstOrDefault();
+            if (sourceEnv == null) return new Dictionary<string, string>();
+
+            return GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
+        }
+
+        public async Task<Dictionary<string, string>> GetTargetKeyValuesAsync()
+        {
+            var config = _configService.GetConfig();
+            var targetEnv = config.OracleEnvironments.ElementAtOrDefault(1);
+            if (targetEnv == null) return new Dictionary<string, string>();
+
+            return GetViewDefinitions(targetEnv.ConnectionString, targetEnv.Schema);
+        }
+
+        public async Task<Dictionary<string, string>> GetDifferencesAsync()
+        {
+            var config = _configService.GetConfig();
+            var sourceEnv = config.OracleEnvironments.FirstOrDefault();
+            var targetEnv = config.OracleEnvironments.ElementAtOrDefault(1);
+
+            if (sourceEnv == null || targetEnv == null)
+                return new Dictionary<string, string>();
+
+            var sourceViews = GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
+            var targetViews = GetViewDefinitions(targetEnv.ConnectionString, targetEnv.Schema);
+
+            return CompareViewDefinitions(sourceViews, targetViews);
+        }
+
+        // Existing methods remain unchanged...
         public Dictionary<string, string> Compare(string sourceEnvName, string targetEnvName)
         {
             var config = _configService.GetConfig();
@@ -110,6 +154,12 @@ namespace Common.ExternalApis
             return viewDefinitions;
         }
 
+        public async Task<IEnumerable<string>> GetViewDefinitionsAsync(string connectionString, string schema)
+        {
+            var definitions = GetViewDefinitions(connectionString, schema);
+            return definitions.Keys;
+        }
+
         public Dictionary<string, string> CompareViewDefinitions(Dictionary<string, string> devViews, Dictionary<string, string> qaViews)
         {
             Dictionary<string, PatchResult> difs = new Dictionary<string, PatchResult>();
@@ -163,7 +213,7 @@ namespace Common.ExternalApis
             return patch;
         }
 
-        public static string Format(PatchResult patchResult)
+        public string Format(PatchResult patchResult)
         {
             var ps = new Patch(new PatchOptions(), new DiffOptions());
             return ps.formatPatch(patchResult);
@@ -182,9 +232,7 @@ namespace Common.ExternalApis
             // Replace old Mac line breaks (\r) with Unix line breaks (\n)
             text = text.Replace("\r", "\n");
 
-
             text = _formatter.Format(text);
-
 
             return text;
         }

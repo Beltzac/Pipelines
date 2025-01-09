@@ -1,6 +1,6 @@
 @page "/config-manager"
 @using Common.Models
-@using Common.ExternalApis
+@using Common.Services
 
 .Entities
 @using Quartz
@@ -354,11 +354,11 @@
         try
         {
             // Validate Oracle environments
-            var invalidOracleEnvs = config.OracleEnvironments.Where(e => 
-                string.IsNullOrWhiteSpace(e.Name) || 
-                string.IsNullOrWhiteSpace(e.ConnectionString) || 
+            var invalidOracleEnvs = config.OracleEnvironments.Where(e =>
+                string.IsNullOrWhiteSpace(e.Name) ||
+                string.IsNullOrWhiteSpace(e.ConnectionString) ||
                 string.IsNullOrWhiteSpace(e.Schema)).ToList();
-                
+
             if (invalidOracleEnvs.Any())
             {
                 ToastService.ShowError("All fields are required for Oracle environments");
@@ -392,10 +392,10 @@
         {
             var scheduler = await SchedulerFactory.GetScheduler();
             var jobKey = new JobKey("OracleViewsBackupJob-hourly");
-            
+
             var jobData = new JobDataMap();
             jobData.PutAsString("IsManualRun", true);
-            
+
             await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Oracle backup job started");
         }
@@ -411,10 +411,10 @@
         {
             var scheduler = await SchedulerFactory.GetScheduler();
             var jobKey = new JobKey("ConsulBackupJob-hourly");
-            
+
             var jobData = new JobDataMap();
             jobData.PutAsString("IsManualRun", true);
-            
+
             await scheduler.TriggerJob(jobKey, jobData);
             ToastService.ShowSuccess("Consul backup job started");
         }
