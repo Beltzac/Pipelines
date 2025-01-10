@@ -2,7 +2,7 @@ using Common.Models;
 
 namespace Front2.Services
 {
-    public class ConsultaSggState
+    public class ConsultaSggState : StateBase
     {
         public string SelectedEnvironment { get; set; }
         public DateTimeOffset? StartDate { get; set; }
@@ -14,7 +14,6 @@ namespace Front2.Services
         public string MoveType { get; set; }
         public string Status { get; set; }
         public double? MinDelay { get; set; }
-        public bool IsLoading { get; set; }
         public List<LtdbLtvcRecord> Results { get; set; } = new();
         public int TotalCount { get; set; }
         public int CurrentPage { get; set; } = 1;

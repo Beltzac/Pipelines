@@ -59,11 +59,18 @@ namespace Generation
                     var className = tuple.symbol.Name;
                     var serviceName = $"{className}Service";
 
-                    // Get all properties from the state class
-                    var properties = tuple.symbol.GetMembers()
-                        .OfType<IPropertySymbol>()
-                        .Where(p => p.DeclaredAccessibility == Accessibility.Public)
-                        .ToList();
+                    // Get all properties from the state class including inherited ones
+                    var properties = new List<IPropertySymbol>();
+                    var currentType = tuple.symbol;
+
+                    while (currentType != null)
+                    {
+                        properties.AddRange(currentType.GetMembers()
+                            .OfType<IPropertySymbol>()
+                            .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic));
+
+                        currentType = currentType.BaseType;
+                    }
 
                     var source = GenerateStateServiceSource(namespaceName, className, serviceName, properties);
                     context.AddSource($"{serviceName}.g.cs", SourceText.From(source, Encoding.UTF8));
@@ -264,14 +271,14 @@ namespace {namespaceName}
         public void Save()
         {{
             try
-            {{ 
+            {{
                 var folder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     ""BuildInfoBlazorApp""
                 );
-            
+
                 Directory.CreateDirectory(folder);
-            
+
                 var path = Path.Combine(folder, $""{className}.json"");
                 var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
                 File.WriteAllText(path, json);
@@ -289,7 +296,7 @@ namespace {namespaceName}
         public bool Load()
         {{
             try
-            {{ 
+            {{
                 var path = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     ""BuildInfoBlazorApp"",

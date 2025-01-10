@@ -1,4 +1,4 @@
-﻿@page "/consulta-esb"
+@page "/consulta-esb"
 @using BlazorDateRangePicker
 @using Common.Models
 @using Common.Services
@@ -121,14 +121,7 @@
     </div>
 </StickyFilter>
 
-@if (ConsultaEsbStateService.IsLoading)
-{
-    <div class="d-flex justify-content-center mt-4">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
+<ProgressBar Indeterminate="@ConsultaEsbStateService.IsLoading" Label="@(ConsultaEsbStateService.IsLoading ? "Loading..." : "")" />
 
 @if (ConsultaEsbStateService.Results != null)
 {

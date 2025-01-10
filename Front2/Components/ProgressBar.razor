@@ -1,16 +1,16 @@
-﻿@using Microsoft.AspNetCore.Components
+﻿﻿@using Microsoft.AspNetCore.Components
 
-<div class="progress-container" style="position: relative; height:@Height; margin-top: 1rem;">
+<div class="progress-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999; height:@Height; display: @((ProgressValue > 0 || Indeterminate) ? "block" : "none");">
     <div class="progress" style="height: 100%;">
-        <div class="progress-bar @GetProgressBarClass()"
+        <div class="progress-bar @GetProgressBarClass() @(Indeterminate ? "progress-bar-animated progress-bar-striped" : "")"
              role="progressbar"
-             style="width: @(ProgressValue)%;"
-             aria-valuenow="@ProgressValue"
+             style="width: @(Indeterminate ? "100" : ProgressValue.ToString())%;"
+             aria-valuenow="@(Indeterminate ? null : ProgressValue)"
              aria-valuemin="0"
              aria-valuemax="100"
              @attributes="AdditionalAttributes">
         </div>
-        @if (ProgressValue > 0 && ProgressValue < 100)
+        @if (!Indeterminate && ProgressValue > 0 && ProgressValue < 100)
         {
             @if (!string.IsNullOrEmpty(Label))
             {
@@ -21,6 +21,10 @@
                 <span class="progress-text" style="color:@TextColor;">@ProgressValue%</span>
             }
         }
+        else if (Indeterminate && !string.IsNullOrEmpty(Label))
+        {
+            <span class="progress-label" style="color:@TextColor;">@Label</span>
+        }
     </div>
 </div>
 
@@ -30,6 +34,12 @@
     /// </summary>
     [Parameter]
     public int ProgressValue { get; set; } = 0;
+
+    /// <summary>
+    /// When true, shows an animated progress bar for operations where progress cannot be determined.
+    /// </summary>
+    [Parameter]
+    public bool Indeterminate { get; set; } = false;
 
     /// <summary>
     /// The color of the progress text.
@@ -57,23 +67,31 @@
 
     protected override void OnParametersSet()
     {
-        // Ensure ProgressValue is within 0-100
-        if (ProgressValue < 0)
+        if (!Indeterminate)
         {
-            ProgressValue = 0;
-        }
-        else if (ProgressValue > 100)
-        {
-            ProgressValue = 100;
+            // Ensure ProgressValue is within 0-100
+            if (ProgressValue < 0)
+            {
+                ProgressValue = 0;
+            }
+            else if (ProgressValue > 100)
+            {
+                ProgressValue = 100;
+            }
         }
     }
 
     /// <summary>
-    /// Determines the CSS class for the progress bar based on the progress value.
+    /// Determines the CSS class for the progress bar based on the progress value or indeterminate state.
     /// </summary>
     /// <returns>A Bootstrap background color class.</returns>
     private string GetProgressBarClass()
     {
+        if (Indeterminate)
+        {
+            return "bg-info";
+        }
+
         if (ProgressValue >= 80)
         {
             return "bg-success";
@@ -101,5 +119,13 @@
         transform: translate(-50%, -50%);
         font-weight: bold;
         font-size: 0.8rem;
+    }
+
+    .progress-bar-animated {
+        animation: progress-bar-stripes 1s linear infinite;
+    }
+
+    @@keyframes progress-bar-stripes {
+        0% { background-position-x: 1rem; }
     }
 </style>

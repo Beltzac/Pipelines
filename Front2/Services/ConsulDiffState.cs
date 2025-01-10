@@ -3,7 +3,7 @@ using Common.Services;
 
 namespace Front2.Services
 {
-    public class ConsulDiffState
+    public class ConsulDiffState : StateBase
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }

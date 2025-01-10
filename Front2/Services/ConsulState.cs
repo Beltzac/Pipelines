@@ -2,7 +2,7 @@ using Common.Models;
 
 namespace Front2.Services
 {
-    public class ConsulState
+    public class ConsulState : StateBase
     {
         public string SelectedConsulEnv { get; set; }
         public Dictionary<string, ConsulKeyValue> ConsulKeyValues { get; set; } = new();

@@ -16,6 +16,8 @@
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
 
+<ProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" Indeterminate="@OracleDiffStateService.IsIndeterminate" />
+
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-5">
@@ -236,6 +238,8 @@
 
         try
         {
+            OracleDiffStateService.ProgressValue = 0;
+            OracleDiffStateService.IsIndeterminate = false;
             OracleDiffStateService.CurrentPage = 1;
             OracleDiffStateService.Differences.Clear();
 
@@ -243,30 +247,48 @@
             var sourceEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedSourceEnv);
             var targetEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedTargetEnv);
 
+            // Get source views
+            OracleDiffStateService.ProgressValue = 25;
+            OracleDiffStateService.ProgressLabel = $"Loading views from {OracleDiffStateService.SelectedSourceEnv}...";
             var sourceViews = (await OracleSchemaService.GetViewDefinitionsAsync(sourceEnv.ConnectionString, sourceEnv.Schema))
                 .ToDictionary(v => v.Name);
             OracleDiffStateService.SourceViews = sourceViews;
 
+            // Get target views
+            OracleDiffStateService.ProgressValue = 50;
+            OracleDiffStateService.ProgressLabel = $"Loading views from {OracleDiffStateService.SelectedTargetEnv}...";
             var targetViews = (await OracleSchemaService.GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema))
                 .ToDictionary(v => v.Name);
             OracleDiffStateService.TargetViews = targetViews;
 
+            // Process views
+            OracleDiffStateService.ProgressValue = 75;
+            OracleDiffStateService.ProgressLabel = "Processing view differences...";
             OracleDiffStateService.AllViewNames = new HashSet<string>(
                 OracleDiffStateService.SourceViews.Keys.Union(OracleDiffStateService.TargetViews.Keys)
             );
             OracleDiffStateService.TotalCount = OracleDiffStateService.AllViewNames.Count;
 
-            // Get differences only for the current page
+            // Get differences for the current page
             await LoadPageDifferences();
+
+            OracleDiffStateService.ProgressValue = 100;
+            OracleDiffStateService.ProgressLabel = "Completed";
+            await Task.Delay(1000); // Show completion for a moment
+            OracleDiffStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (Exception ex)
         {
+            OracleDiffStateService.ProgressValue = 0;
             toastService.ShowError($"Error comparing environments: {ex.Message}");
         }
     }
 
     private async Task LoadPageDifferences()
     {
+        OracleDiffStateService.ProgressValue = 80;
+        OracleDiffStateService.ProgressLabel = "Loading page differences...";
+
         var filteredViews = string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey)
             ? OracleDiffStateService.AllViewNames
             : OracleDiffStateService.AllViewNames.Where(view =>
@@ -274,11 +296,17 @@
 
         var pagedViews = filteredViews
             .Skip((OracleDiffStateService.CurrentPage - 1) * OracleDiffStateService.PageSize)
-            .Take(OracleDiffStateService.PageSize);
+            .Take(OracleDiffStateService.PageSize)
+            .ToList();
 
         OracleDiffStateService.Differences.Clear();
+        var totalViews = pagedViews.Count;
+        var processedViews = 0;
+
         foreach (var viewName in pagedViews)
         {
+            OracleDiffStateService.ProgressLabel = $"Processing view ({processedViews + 1}/{totalViews}): {viewName}";
+
             OracleDiffStateService.SourceViews.TryGetValue(viewName, out var sourceView);
             OracleDiffStateService.TargetViews.TryGetValue(viewName, out var targetView);
 
@@ -290,9 +318,13 @@
             {
                 OracleDiffStateService.Differences[viewName] = diff;
             }
+
+            processedViews++;
+            OracleDiffStateService.ProgressValue = 80 + (int)((processedViews / (double)totalViews) * 20); // Progress from 80 to 100
         }
 
         await RunCompare();
+        OracleDiffStateService.ProgressValue = 0; // Hide progress bar after completion
     }
 
     protected async Task RunCompare()

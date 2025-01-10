@@ -20,6 +20,8 @@
 @inject ConsulStateService ConsulStateService
 @implements IDisposable
 
+<ProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" Indeterminate="@ConsulStateService.IsIndeterminate" />
+
 <div class="options floating-controls">
     <div class="form-group">
         <label for="consulEnvSelect">Select Consul Environment</label>
@@ -219,16 +221,30 @@
                 return;
             }
 
+            ConsulStateService.ProgressValue = 25;
+            ConsulStateService.ProgressLabel = $"Connecting to {ConsulStateService.SelectedConsulEnv} environment...";
+            ConsulStateService.IsIndeterminate = true;
+
             var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+
+            ConsulStateService.ProgressValue = 75;
+            ConsulStateService.ProgressLabel = "Processing key-values...";
             ConsulStateService.SetConsulKeyValues(keyValues);
-            toastService.ShowSuccess("Consul key-values downloaded successfully!");
+
+            ConsulStateService.ProgressValue = 100;
+            ConsulStateService.ProgressLabel = "Completed";
+
+            await Task.Delay(1000); // Show completion for a moment
+            ConsulStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (OperationCanceledException)
         {
+            ConsulStateService.ProgressValue = 0;
             // Do nothing
         }
         catch (Exception ex)
         {
+            ConsulStateService.ProgressValue = 0;
             toastService.ShowError(ex.Message);
         }
     }
@@ -254,8 +270,25 @@
             return;
         }
 
-        await ConsulService.DownloadConsulAsync(consulEnv);
-        toastService.ShowSuccess("Consul content saved successfully!");
+        try
+        {
+            ConsulStateService.ProgressValue = 25;
+            ConsulStateService.ProgressLabel = $"Preparing to save {ConsulStateService.SelectedConsulEnv} environment...";
+            ConsulStateService.IsIndeterminate = true;
+
+            await ConsulService.DownloadConsulAsync(consulEnv);
+
+            ConsulStateService.ProgressValue = 100;
+            ConsulStateService.ProgressLabel = "Completed";
+
+            await Task.Delay(1000); // Show completion for a moment
+            ConsulStateService.ProgressValue = 0; // Hide progress bar
+        }
+        catch (Exception ex)
+        {
+            ConsulStateService.ProgressValue = 0;
+            toastService.ShowError($"Failed to save Consul content: {ex.Message}");
+        }
     }
 
     private async Task SaveKeyValueToConsul(string key, string value)
