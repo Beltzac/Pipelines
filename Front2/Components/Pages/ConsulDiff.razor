@@ -16,6 +16,8 @@
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
 
+<ProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" Indeterminate="@ConsulDiffStateService.IsIndeterminate" />
+
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-5">
@@ -172,6 +174,9 @@
 
 @code {
     private List<ConsulEnvironment> environments = new();
+    private int progressValue = 0;
+    private string progressLabel = "";
+    private bool isIndeterminate = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,27 +236,47 @@
 
         try
         {
+            ConsulDiffStateService.ProgressValue = 0;
+            ConsulDiffStateService.IsIndeterminate = false;
             ConsulDiffStateService.CurrentPage = 1;
             ConsulDiffStateService.Differences.Clear();
 
-            // Get all key values from both environments (only once)
+            // Get source environment values
+            ConsulDiffStateService.ProgressValue = 25;
+            ConsulDiffStateService.ProgressLabel = $"Loading values from {ConsulDiffStateService.SelectedSourceEnv}...";
             ConsulDiffStateService.SourceKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv));
+
+            // Get target environment values
+            ConsulDiffStateService.ProgressValue = 50;
+            ConsulDiffStateService.ProgressLabel = $"Loading values from {ConsulDiffStateService.SelectedTargetEnv}...";
             ConsulDiffStateService.TargetKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv));
 
+            // Process keys
+            ConsulDiffStateService.ProgressValue = 75;
+            ConsulDiffStateService.ProgressLabel = "Processing differences...";
             ConsulDiffStateService.AllKeys = new HashSet<string>(ConsulDiffStateService.SourceKeyValues.Keys.Union(ConsulDiffStateService.TargetKeyValues.Keys));
             ConsulDiffStateService.TotalCount = ConsulDiffStateService.AllKeys.Count;
 
-            // Get differences only for the current page
+            // Get differences for the current page
             await LoadPageDifferences();
+
+            ConsulDiffStateService.ProgressValue = 100;
+            ConsulDiffStateService.ProgressLabel = "Completed";
+            await Task.Delay(1000); // Show completion for a moment
+            ConsulDiffStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (Exception ex)
         {
+            progressValue = 0;
             toastService.ShowError($"Error comparing environments: {ex.Message}");
         }
     }
 
     private async Task LoadPageDifferences()
     {
+        ConsulDiffStateService.ProgressValue = 80;
+        ConsulDiffStateService.ProgressLabel = "Loading page differences...";
+
         var filteredKeys = string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey)
             ? ConsulDiffStateService.AllKeys
             : ConsulDiffStateService.AllKeys.Where(key =>
@@ -259,9 +284,13 @@
 
         var pagedKeys = filteredKeys
             .Skip((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize)
-            .Take(ConsulDiffStateService.PageSize);
+            .Take(ConsulDiffStateService.PageSize)
+            .ToList();
 
         ConsulDiffStateService.Differences.Clear();
+        var totalKeys = pagedKeys.Count;
+        var processedKeys = 0;
+
         foreach (var key in pagedKeys)
         {
             var sourceValue = ConsulDiffStateService.SourceKeyValues.GetValueOrDefault(key);
@@ -269,12 +298,15 @@
 
             if (sourceValue?.Value != targetValue?.Value)
             {
+                ConsulDiffStateService.ProgressLabel = $"Processing differences ({processedKeys + 1}/{totalKeys}): {key}";
                 var diff = ConsulService.GetDiff(key, sourceValue, targetValue, ConsulDiffStateService.UseRecursive);
                 if (diff != null)
                 {
                     ConsulDiffStateService.Differences[key] = diff.DiffString;
                 }
             }
+            processedKeys++;
+            ConsulDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20); // Progress from 80 to 100
         }
 
         await RunCompare();

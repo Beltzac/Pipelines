@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Front2.Services
 {
-    public class OracleDiffState
+    public class OracleDiffState : StateBase
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }

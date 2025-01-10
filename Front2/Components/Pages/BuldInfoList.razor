@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using Common
 @using Common.Services
 @using FuzzySharp
@@ -60,6 +60,9 @@
 </ContextMenu>
 
 <StickyFilter>
+
+<ProgressBar Indeterminate="@BuildInfoStateService.IsLoading" Label="@(BuildInfoStateService.IsLoading ? "Loading..." : "")" />
+
     <div class="mb-3 d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
         <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>

@@ -2,7 +2,7 @@ using Common.Models;
 
 namespace Front2.Services
 {
-    public class ConsultaEsbState
+    public class ConsultaEsbState : StateBase
     {
         public string SelectedEnvironment { get; set; }
         public DateTimeOffset? StartDate { get; set; }
@@ -19,7 +19,6 @@ namespace Front2.Services
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalCount { get; set; }
-        public bool IsLoading { get; set; }
         public string FormattedRequest { get; set; }
         public string FormattedResponse { get; set; }
         public string FormattedError { get; set; }
