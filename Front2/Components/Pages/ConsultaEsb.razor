@@ -121,7 +121,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="@(ConsultaEsbStateService.IsLoading ? "Loading..." : "")" />
+<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="Loading..." />
 
 @if (ConsultaEsbStateService.Results != null)
 {
@@ -375,6 +375,7 @@
         {
             cts?.Cancel();
             cts = new CancellationTokenSource();
+            ConsultaEsbStateService.ProgressValue = 0;
             ConsultaEsbStateService.IsLoading = true;
 
             StateHasChanged();

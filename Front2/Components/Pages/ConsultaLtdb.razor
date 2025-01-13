@@ -95,7 +95,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="@(ConsultaSggStateService.IsLoading ? "Loading..." : "")" />
+<ProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Loading..." />
 
 <div class="card mb-3">
     <div class="card-header">
@@ -301,6 +301,8 @@
         {
             cts?.Cancel();
             cts = new CancellationTokenSource();
+
+            ConsultaSggStateService.ProgressValue = 0;
             ConsultaSggStateService.IsLoading = true;
 
             StateHasChanged();
