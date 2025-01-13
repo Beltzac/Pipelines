@@ -221,6 +221,7 @@
                 return;
             }
 
+            ConsulStateService.ProgressValue = 0;
             ConsulStateService.IsLoading = true;
 
             ConsulStateService.ProgressValue = 25;
@@ -234,8 +235,6 @@
 
             ConsulStateService.ProgressValue = 100;
             ConsulStateService.ProgressLabel = "Completed";
-
-            await Task.Delay(1000); // Show completion for a moment
         }
         catch (OperationCanceledException)
         {
@@ -276,22 +275,26 @@
 
         try
         {
+
+            ConsulStateService.ProgressValue = 0;
+            ConsulStateService.IsLoading = true;
+
             ConsulStateService.ProgressValue = 25;
             ConsulStateService.ProgressLabel = $"Preparing to save {ConsulStateService.SelectedConsulEnv} environment...";
-            ConsulStateService.IsLoading = true;
 
             await ConsulService.DownloadConsulAsync(consulEnv);
 
             ConsulStateService.ProgressValue = 100;
             ConsulStateService.ProgressLabel = "Completed";
-
-            await Task.Delay(1000); // Show completion for a moment
-            ConsulStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (Exception ex)
         {
             ConsulStateService.ProgressValue = 0;
             toastService.ShowError($"Failed to save Consul content: {ex.Message}");
+        }
+        finally
+        {
+            ConsulStateService.IsLoading = false;
         }
     }
 

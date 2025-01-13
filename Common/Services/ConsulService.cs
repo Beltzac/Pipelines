@@ -455,25 +455,28 @@ namespace Common.Services
             }
         }
 
-        public ConsulDiffResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
+        public async Task<ConsulDiffResult> GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
         {
-            var keyFormatted = key;
-            var ps = new Patch(new PatchOptions(), new DiffOptions());
+            return await Task.Run(() =>
+            {
+                var keyFormatted = key;
+                var ps = new Patch(new PatchOptions(), new DiffOptions());
 
-            var patchResult = ps.createPatchResult(
-                keyFormatted,
-                keyFormatted,
-                Normalize(oldValue, recursive),
-                Normalize(newValue, recursive),
-                null,
-                null
-            );
+                var patchResult = ps.createPatchResult(
+                    keyFormatted,
+                    keyFormatted,
+                    Normalize(oldValue, recursive),
+                    Normalize(newValue, recursive),
+                    null,
+                    null
+                );
 
-            if (!patchResult.Hunks.Any())
-                return null;
+                if (!patchResult.Hunks.Any())
+                    return null;
 
-            var diffString = ps.formatPatch(patchResult);
-            return new ConsulDiffResult(key, diffString);
+                var diffString = ps.formatPatch(patchResult);
+                return new ConsulDiffResult(key, diffString);
+            });
         }
 
         public async Task<List<ConsulDiffResult>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true)
@@ -522,7 +525,7 @@ namespace Common.Services
                 else if (!targetExists)
                     _logger.LogInformation($"Key {key} is present in {sourceEnv} but not in {targetEnv}");
 
-                var diff = GetDiff(key, sourceKV, targetKV, useRecursive);
+                var diff = await GetDiff(key, sourceKV, targetKV, useRecursive);
 
                 if (diff == null)
                     continue;

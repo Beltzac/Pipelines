@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CSharpDiff.Diffs.Models;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Common.Models;
@@ -24,7 +24,7 @@ namespace Common.ExternalApis
             _formatter = SqlFormatter.Of(Dialect.PlSql);
         }
 
-        public IEnumerable<OracleDiffResult> Compare(string sourceEnvName, string targetEnvName)
+        public async Task<IEnumerable<OracleDiffResult>> Compare(string sourceEnvName, string targetEnvName)
         {
             var config = _configService.GetConfig();
 
@@ -37,7 +37,7 @@ namespace Common.ExternalApis
             var sourceViews = GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
             var targetViews = GetViewDefinitions(targetEnv.ConnectionString, targetEnv.Schema);
 
-            return CompareViewDefinitions(sourceViews, targetViews);
+            return await CompareViewDefinitions(sourceViews, targetViews);
         }
 
         public async Task<bool> TestConnectionAsync(string connectionString, string schema)
@@ -117,7 +117,7 @@ namespace Common.ExternalApis
             return definitions.Select(kvp => new OracleViewDefinition(kvp.Key, kvp.Value));
         }
 
-        public IEnumerable<OracleDiffResult> CompareViewDefinitions(Dictionary<string, string> devViews, Dictionary<string, string> qaViews)
+        public async Task<IEnumerable<OracleDiffResult>> CompareViewDefinitions(Dictionary<string, string> devViews, Dictionary<string, string> qaViews)
         {
             var differences = new List<OracleDiffResult>();
 
@@ -125,7 +125,7 @@ namespace Common.ExternalApis
             {
                 if (qaViews.ContainsKey(viewName))
                 {
-                    var diff = GetViewDiff(viewName, devViews[viewName], qaViews[viewName]);
+                    var diff = await GetViewDiff(viewName, devViews[viewName], qaViews[viewName]);
                     if (diff.HasDifferences)
                     {
                         _logger.LogInformation($"Difference in view: {viewName}");
@@ -134,7 +134,7 @@ namespace Common.ExternalApis
                 }
                 else
                 {
-                    var diff = GetViewDiff(viewName, devViews[viewName], string.Empty);
+                    var diff = await GetViewDiff(viewName, devViews[viewName], string.Empty);
                     differences.Add(diff);
                     _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
                 }
@@ -144,7 +144,7 @@ namespace Common.ExternalApis
             {
                 if (!devViews.ContainsKey(viewName))
                 {
-                    var diff = GetViewDiff(viewName, string.Empty, qaViews[viewName]);
+                    var diff = await GetViewDiff(viewName, string.Empty, qaViews[viewName]);
                     differences.Add(diff);
                     _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
                 }
@@ -153,24 +153,27 @@ namespace Common.ExternalApis
             return differences;
         }
 
-        public OracleDiffResult GetViewDiff(string viewName, string oldContent, string newContent)
+        public async Task<OracleDiffResult> GetViewDiff(string viewName, string oldContent, string newContent)
         {
-            var viewNameFormatted = $"{viewName}.SQL";
-            var ps = new Patch(new PatchOptions(), new DiffOptions());
+            return await Task.Run(() =>
+            {
+                var viewNameFormatted = $"{viewName}.SQL";
+                var ps = new Patch(new PatchOptions(), new DiffOptions());
 
-            var patch = ps.createPatchResult(
-                viewNameFormatted,
-                viewNameFormatted,
-                NormalizeLineBreaks(oldContent),
-                NormalizeLineBreaks(newContent),
-                null,
-                null
-            );
+                var patch = ps.createPatchResult(
+                    viewNameFormatted,
+                    viewNameFormatted,
+                    NormalizeLineBreaks(oldContent),
+                    NormalizeLineBreaks(newContent),
+                    null,
+                    null
+                );
 
-            var formattedDiff = ps.formatPatch(patch);
-            var hasDifferences = patch.Hunks.Any();
+                var formattedDiff = ps.formatPatch(patch);
+                var hasDifferences = patch.Hunks.Any();
 
-            return new OracleDiffResult(viewName, formattedDiff, hasDifferences);
+                return new OracleDiffResult(viewName, formattedDiff, hasDifferences);
+            });
         }
 
         private string NormalizeLineBreaks(string text)

@@ -1,10 +1,10 @@
 ﻿﻿@using Microsoft.AspNetCore.Components
 
-<div class="progress-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999; height:@Height; display: @((IsLoading) ? "block" : "none");">
+<div class="progress-container @(IsLoading ? "show" : "hide")" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999; height:@Height;">
     <div class="progress" style="height: 100%;">
         <div class="progress-bar @GetProgressBarClass() @(ProgressValue == null ? "progress-bar-animated progress-bar-striped" : "")"
              role="progressbar"
-             style="width: @(ProgressValue == null ? "100" : ProgressValue.ToString())%;"
+             style="width: @(ProgressValue?.ToString() ?? "100")%;"
              aria-valuenow="@(ProgressValue)"
              aria-valuemin="0"
              aria-valuemax="100"
@@ -110,6 +110,26 @@
 <style>
     .progress-container {
         position: relative;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .progress-container.show {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease-in;
+    }
+
+    .progress-container.hide {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-out, visibility 0s linear 1.3s;
+    }
+
+    .progress-container.hide .progress-bar {
+        animation: none !important;
+        transition: width 0s 1.3s;
+        width: 0%;
     }
 
     .progress-text, .progress-label {
