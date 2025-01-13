@@ -61,7 +61,7 @@
 
 <StickyFilter>
 
-<ProgressBar Indeterminate="@BuildInfoStateService.IsLoading" Label="@(BuildInfoStateService.IsLoading ? "Loading..." : "")" />
+<ProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="@(BuildInfoStateService.IsLoading ? "Loading..." : "")" />
 
     <div class="mb-3 d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />

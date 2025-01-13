@@ -121,7 +121,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar Indeterminate="@ConsultaEsbStateService.IsLoading" Label="@(ConsultaEsbStateService.IsLoading ? "Loading..." : "")" />
+<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="@(ConsultaEsbStateService.IsLoading ? "Loading..." : "")" />
 
 @if (ConsultaEsbStateService.Results != null)
 {
