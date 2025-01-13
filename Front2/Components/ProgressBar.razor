@@ -1,16 +1,16 @@
 ﻿﻿@using Microsoft.AspNetCore.Components
 
-<div class="progress-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999; height:@Height; display: @((ProgressValue > 0 || Indeterminate) ? "block" : "none");">
+<div class="progress-container" style="position: fixed; top: 0; left: 0; right: 0; z-index: 9999; height:@Height; display: @((IsLoading) ? "block" : "none");">
     <div class="progress" style="height: 100%;">
-        <div class="progress-bar @GetProgressBarClass() @(Indeterminate ? "progress-bar-animated progress-bar-striped" : "")"
+        <div class="progress-bar @GetProgressBarClass() @(ProgressValue == null ? "progress-bar-animated progress-bar-striped" : "")"
              role="progressbar"
-             style="width: @(Indeterminate ? "100" : ProgressValue.ToString())%;"
-             aria-valuenow="@(Indeterminate ? null : ProgressValue)"
+             style="width: @(ProgressValue == null ? "100" : ProgressValue.ToString())%;"
+             aria-valuenow="@(ProgressValue)"
              aria-valuemin="0"
              aria-valuemax="100"
              @attributes="AdditionalAttributes">
         </div>
-        @if (!Indeterminate && ProgressValue > 0 && ProgressValue < 100)
+        @if (ProgressValue != null && ProgressValue > 0 && ProgressValue < 100)
         {
             @if (!string.IsNullOrEmpty(Label))
             {
@@ -21,7 +21,7 @@
                 <span class="progress-text" style="color:@TextColor;">@ProgressValue%</span>
             }
         }
-        else if (Indeterminate && !string.IsNullOrEmpty(Label))
+        else if (ProgressValue == null && !string.IsNullOrEmpty(Label))
         {
             <span class="progress-label" style="color:@TextColor;">@Label</span>
         }
@@ -33,13 +33,13 @@
     /// The current progress value (0 to 100).
     /// </summary>
     [Parameter]
-    public int ProgressValue { get; set; } = 0;
+    public int? ProgressValue { get; set; }
 
     /// <summary>
     /// When true, shows an animated progress bar for operations where progress cannot be determined.
     /// </summary>
     [Parameter]
-    public bool Indeterminate { get; set; } = false;
+    public bool IsLoading { get; set; } = false;
 
     /// <summary>
     /// The color of the progress text.
@@ -67,7 +67,7 @@
 
     protected override void OnParametersSet()
     {
-        if (!Indeterminate)
+        if (ProgressValue != null)
         {
             // Ensure ProgressValue is within 0-100
             if (ProgressValue < 0)
@@ -87,7 +87,7 @@
     /// <returns>A Bootstrap background color class.</returns>
     private string GetProgressBarClass()
     {
-        if (Indeterminate)
+        if (ProgressValue == null)
         {
             return "bg-info";
         }

@@ -16,7 +16,7 @@
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
 
-<ProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" Indeterminate="@OracleDiffStateService.IsIndeterminate" />
+<ProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" IsLoading="@OracleDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -239,7 +239,7 @@
         try
         {
             OracleDiffStateService.ProgressValue = 0;
-            OracleDiffStateService.IsIndeterminate = false;
+            OracleDiffStateService.IsLoading = true;
             OracleDiffStateService.CurrentPage = 1;
             OracleDiffStateService.Differences.Clear();
 
@@ -275,12 +275,14 @@
             OracleDiffStateService.ProgressValue = 100;
             OracleDiffStateService.ProgressLabel = "Completed";
             await Task.Delay(1000); // Show completion for a moment
-            OracleDiffStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (Exception ex)
         {
-            OracleDiffStateService.ProgressValue = 0;
             toastService.ShowError($"Error comparing environments: {ex.Message}");
+        }
+        finally
+        {
+            OracleDiffStateService.IsLoading = false;
         }
     }
 
@@ -342,7 +344,6 @@
 
         var diff = String.Join("\r\n", filteredDiffs.Values.Select(d => d.FormattedDiff));
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
-        toastService.ShowSuccess($"Comparison completed successfully");
     }
 
     private async Task HandleSearch()

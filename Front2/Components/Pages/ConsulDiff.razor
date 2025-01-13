@@ -16,7 +16,7 @@
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
 
-<ProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" Indeterminate="@ConsulDiffStateService.IsIndeterminate" />
+<ProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" IsLoading="@ConsulDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -174,9 +174,6 @@
 
 @code {
     private List<ConsulEnvironment> environments = new();
-    private int progressValue = 0;
-    private string progressLabel = "";
-    private bool isIndeterminate = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -237,7 +234,7 @@
         try
         {
             ConsulDiffStateService.ProgressValue = 0;
-            ConsulDiffStateService.IsIndeterminate = false;
+            ConsulDiffStateService.IsLoading = true;
             ConsulDiffStateService.CurrentPage = 1;
             ConsulDiffStateService.Differences.Clear();
 
@@ -263,12 +260,14 @@
             ConsulDiffStateService.ProgressValue = 100;
             ConsulDiffStateService.ProgressLabel = "Completed";
             await Task.Delay(1000); // Show completion for a moment
-            ConsulDiffStateService.ProgressValue = 0; // Hide progress bar
         }
         catch (Exception ex)
         {
-            progressValue = 0;
             toastService.ShowError($"Error comparing environments: {ex.Message}");
+        }
+        finally
+        {
+            ConsulDiffStateService.IsLoading = false;
         }
     }
 
