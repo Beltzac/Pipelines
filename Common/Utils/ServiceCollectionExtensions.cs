@@ -69,6 +69,7 @@ namespace Common.Utils
             services.AddBlazorContextMenu();
             services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
             services.AddScoped<ILtdbLtvcService, LtdbLtvcService>();
+            services.AddScoped<IOracleMessageService, OracleMessageService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
