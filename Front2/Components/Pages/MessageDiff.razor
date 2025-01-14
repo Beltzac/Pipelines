@@ -4,6 +4,7 @@
 @using Common.Services
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
 @inject IOracleMessageService OracleMessageService
 @inject IToastService toastService
 @inject IJSRuntime JS
@@ -45,9 +46,9 @@
         <div class="col-md-6">
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Search by module, code or prefix..."
-                       @bind="MessageDiffStateService.SearchKey"
-                       @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()" />
+                @bind="MessageDiffStateService.SearchKey"
+                @bind:event="oninput"
+                @onkeyup="async () => await HandleSearch()" />
             </div>
         </div>
         <div class="col-md-2">
@@ -63,7 +64,7 @@
         <div class="col-md-1">
             <div class="form-check form-switch mt-3">
                 <input class="form-check-input" type="checkbox" role="switch"
-                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
+                id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
                 <label class="form-check-label" for="showOnlyChanged">Changed Only</label>
             </div>
         </div>
@@ -85,8 +86,24 @@
             {
                 <tr>
                     <td>@diff.Key</td>
-                    <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)</td>
-                    <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)</td>
+                    <td>
+                        @(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)
+                        @if (diff.Value.Source != null)
+                        {
+                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(diff.Value.Source)">
+                                Copy Upsert
+                            </button>
+                        }
+                    </td>
+                    <td>
+                        @(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)
+                        @if (diff.Value.Target != null)
+                        {
+                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(diff.Value.Target)">
+                                Copy Upsert
+                            </button>
+                        }
+                    </td>
                     <td>@diff.Value.HasDifferences</td>
                 </tr>
             }
@@ -95,21 +112,21 @@
 </div>
 
 <Pagination
-    CurrentPage="@MessageDiffStateService.CurrentPage"
-    TotalPages="@TotalPages"
-    OnPageChange="@ChangePage">
+CurrentPage="@MessageDiffStateService.CurrentPage"
+TotalPages="@TotalPages"
+OnPageChange="@ChangePage">
     Showing @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) to @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
 </Pagination>
 
 <style>
     .diff-container {
-        max-width: 80vw;
-        margin: 0 auto;
-        overflow-x: auto;
+    max-width: 80vw;
+    margin: 0 auto;
+    overflow-x: auto;
     }
 
     .form-group {
-        margin-bottom: 0;
+    margin-bottom: 0;
     }
 </style>
 
@@ -121,6 +138,28 @@
     {
         var config = ConfigService.GetConfig();
         environments = config.OracleEnvironments;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+    }
+
+    private async Task CopyUpsertStatement(MessageDefinition message)
+    {
+        try
+        {
+            var upsertStatement = OracleMessageService.GenerateUpsertStatement(message);
+            await CopyToClipboard(upsertStatement);
+            toastService.ShowSuccess("Upsert statement copied to clipboard");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error generating upsert statement: {ex.Message}");
+        }
     }
 
     protected override void OnInitialized()
