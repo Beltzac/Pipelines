@@ -153,12 +153,12 @@ WHEN MATCHED THEN
         m.OBSERVACAO = {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
         m.VERIFICADO = {(message.Verificado ? "1" : "0")}
 WHEN NOT MATCHED THEN
-    INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO)
+    INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO, DATA_INCLUSAO)
     VALUES ({message.IdSistemaMensagem}, {message.IdDestinoMensagem},
             '{message.Prefixo}', '{message.Codigo}', '{message.Modulo}',
             {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
             {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
-            {(message.Verificado ? "1" : "0")}, 0)";
+            {(message.Verificado ? "1" : "0")}, 0, SYSDATE)";
 
             var languageUpserts = message.Languages.Values.Select(lang => $@"MERGE INTO TCPCONF.MENSAGEM_IDIOMA mi
 USING (
