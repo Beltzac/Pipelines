@@ -146,6 +146,8 @@ USING DUAL
 ON (m.PREFIXO = '{message.Prefixo}' AND m.CODIGO = '{message.Codigo}')
 WHEN MATCHED THEN
     UPDATE SET
+        m.ID_SISTEMA_MENSAGEM = {message.IdSistemaMensagem},
+        m.ID_DESTINO_MENSAGEM = {message.IdDestinoMensagem},
         m.MODULO = '{message.Modulo}',
         m.ELEMENTO = {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
         m.OBSERVACAO = {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
