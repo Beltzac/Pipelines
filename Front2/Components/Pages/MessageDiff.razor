@@ -1,0 +1,299 @@
+@page "/message-diff"
+@using Common
+@using Common.Models
+@using Common.Services
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@inject IOracleMessageService OracleMessageService
+@inject IToastService toastService
+@inject IJSRuntime JS
+@inject IConfigurationService ConfigService
+@inject MessageDiffStateService MessageDiffStateService
+
+<ProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />
+
+<StickyFilter>
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="form-group">
+                <label class="form-label">Source Environment:</label>
+                <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="form-group">
+                <label class="form-label">Target Environment:</label>
+                <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Compare</button>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search by module, code or prefix..."
+                       @bind="MessageDiffStateService.SearchKey"
+                       @bind:event="oninput"
+                       @onkeyup="async () => await HandleSearch()" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-group">
+                <select class="form-select" @bind="MessageDiffStateService.PageSize">
+                    <option value="5">5 per page</option>
+                    <option value="10">10 per page</option>
+                    <option value="20">20 per page</option>
+                    <option value="50">50 per page</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</StickyFilter>
+
+<div class="diff-container">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Prefixo-Codigo</th>
+                <th>Source Value (@MessageDiffStateService.SelectedSourceEnv)</th>
+                <th>Target Value (@MessageDiffStateService.SelectedTargetEnv)</th>
+                <th>Contem Diferen�as</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var diff in GetFilteredAndPaginatedDifferences())
+            {
+                <tr>
+                    <td>@diff.Key</td>
+                    <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)</td>
+                    <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)</td>
+                    <td>@diff.Value.HasDifferences</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<Pagination
+    CurrentPage="@MessageDiffStateService.CurrentPage"
+    TotalPages="@TotalPages"
+    OnPageChange="@ChangePage">
+    Showing @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) to @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
+</Pagination>
+
+<style>
+    .diff-container {
+        max-width: 80vw;
+        margin: 0 auto;
+        overflow-x: auto;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+</style>
+
+
+@code {
+    private List<OracleEnvironment> environments = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var config = ConfigService.GetConfig();
+        environments = config.OracleEnvironments;
+    }
+
+    protected override void OnInitialized()
+    {
+        MessageDiffStateService.OnChange += StateHasChanged;
+        MessageDiffStateService.Load();
+    }
+
+    public void Dispose()
+    {
+        MessageDiffStateService.OnChange -= StateHasChanged;
+        MessageDiffStateService.Save();
+    }
+
+    private async Task CompareEnvironments()
+    {
+        if (string.IsNullOrEmpty(MessageDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(MessageDiffStateService.SelectedTargetEnv))
+        {
+            toastService.ShowError("Please select both environments");
+            return;
+        }
+
+        try
+        {
+            MessageDiffStateService.ProgressValue = 0;
+            MessageDiffStateService.IsLoading = true;
+
+            MessageDiffStateService.CurrentPage = 1;
+            MessageDiffStateService.Differences.Clear();
+
+            // Get source environment messages
+            MessageDiffStateService.ProgressValue = 25;
+            MessageDiffStateService.ProgressLabel = $"Loading messages from {MessageDiffStateService.SelectedSourceEnv}...";
+            var sourceEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedSourceEnv);
+            MessageDiffStateService.SourceMessages = await OracleMessageService.GetMessagesAsync(sourceEnv.ConnectionString);
+
+            // Get target environment messages
+            MessageDiffStateService.ProgressValue = 50;
+            MessageDiffStateService.ProgressLabel = $"Loading messages from {MessageDiffStateService.SelectedTargetEnv}...";
+            var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
+            MessageDiffStateService.TargetMessages = await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
+
+            // Process messages
+            MessageDiffStateService.ProgressValue = 75;
+            MessageDiffStateService.ProgressLabel = "Processing message differences...";
+            MessageDiffStateService.AllMessageKeys = new HashSet<string>(
+                MessageDiffStateService.SourceMessages.Keys.Union(MessageDiffStateService.TargetMessages.Keys)
+            );
+            MessageDiffStateService.TotalCount = MessageDiffStateService.AllMessageKeys.Count;
+
+            // Get differences for the current page
+            await LoadPageDifferences();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error comparing environments: {ex.Message}");
+        }
+        finally
+        {
+            MessageDiffStateService.IsLoading = false;
+        }
+    }
+
+    private async Task LoadPageDifferences()
+    {
+        MessageDiffStateService.IsLoading = true;
+        try
+        {
+            MessageDiffStateService.ProgressValue = 80;
+            MessageDiffStateService.ProgressLabel = "Loading page differences...";
+
+            var filteredKeys = string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey)
+                ? MessageDiffStateService.AllMessageKeys
+                : MessageDiffStateService.AllMessageKeys.Where(key =>
+                {
+                    var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ?? MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+                    return message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                           message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                           message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase);
+                });
+
+            var pagedKeys = filteredKeys
+                .Skip((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize)
+                .Take(MessageDiffStateService.PageSize)
+                .ToList();
+
+            MessageDiffStateService.Differences.Clear();
+            var totalKeys = pagedKeys.Count;
+            var processedKeys = 0;
+
+            foreach (var key in pagedKeys)
+            {
+                MessageDiffStateService.ProgressLabel = $"Processing differences ({processedKeys + 1}/{totalKeys}): {key}";
+
+                var sourceMessage = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
+                var targetMessage = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+
+                var diff = await OracleMessageService.GetMessageDiff(key, sourceMessage, targetMessage);
+
+                MessageDiffStateService.Differences[key] = diff;
+
+                processedKeys++;
+                MessageDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20);
+            }
+
+            await RunCompare();
+        }
+        finally
+        {
+            MessageDiffStateService.IsLoading = false;
+        }
+    }
+
+    protected async Task RunCompare()
+    {
+        var filteredDiffs = GetFilteredAndPaginatedDifferences();
+        if (filteredDiffs.Count == 0 && MessageDiffStateService.Differences.Count > 0)
+        {
+            toastService.ShowInfo("No differences found matching the search criteria");
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleSearch()
+    {
+        MessageDiffStateService.CurrentPage = 1;
+        await LoadPageDifferences();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        MessageDiffStateService.CurrentPage = page;
+        await LoadPageDifferences();
+    }
+
+    public Dictionary<string, MessageDiffResult> GetFilteredAndPaginatedDifferences()
+    {
+        return MessageDiffStateService.Differences;
+    }
+
+    public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)MessageDiffStateService.PageSize);
+
+    public int GetFilteredCount()
+    {
+        if (string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey))
+            return MessageDiffStateService.AllMessageKeys.Count;
+
+        return MessageDiffStateService.AllMessageKeys.Count(key =>
+        {
+            var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ?? MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+            return message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                   message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                   message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this));
+
+            bool initialized = false;
+
+            MessageDiffStateService.InitializeState(async x =>
+            {
+                if (environments.Count >= 2)
+                {
+                    x.SelectedSourceEnv = environments[0].Name;
+                    x.SelectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
+                    await CompareEnvironments();
+                }
+
+                initialized = true;
+            });
+
+            if (!initialized)
+            {
+                await RunCompare();
+            }
+        }
+    }
+}
