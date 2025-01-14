@@ -50,7 +50,7 @@
                        @onkeyup="async () => await HandleSearch()" />
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <div class="form-group">
                 <select class="form-select" @bind="MessageDiffStateService.PageSize">
                     <option value="5">5 per page</option>
@@ -58,6 +58,13 @@
                     <option value="20">20 per page</option>
                     <option value="50">50 per page</option>
                 </select>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
+                <label class="form-check-label" for="showOnlyChanged">Changed Only</label>
             </div>
         </div>
     </div>
@@ -183,28 +190,13 @@
         try
         {
             MessageDiffStateService.ProgressValue = 80;
-            MessageDiffStateService.ProgressLabel = "Loading page differences...";
-
-            var filteredKeys = string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey)
-                ? MessageDiffStateService.AllMessageKeys
-                : MessageDiffStateService.AllMessageKeys.Where(key =>
-                {
-                    var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ?? MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-                    return message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                           message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                           message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase);
-                });
-
-            var pagedKeys = filteredKeys
-                .Skip((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize)
-                .Take(MessageDiffStateService.PageSize)
-                .ToList();
+            MessageDiffStateService.ProgressLabel = "Loading differences...";
 
             MessageDiffStateService.Differences.Clear();
-            var totalKeys = pagedKeys.Count;
+            var totalKeys = MessageDiffStateService.AllMessageKeys.Count;
             var processedKeys = 0;
 
-            foreach (var key in pagedKeys)
+            foreach (var key in MessageDiffStateService.AllMessageKeys)
             {
                 MessageDiffStateService.ProgressLabel = $"Processing differences ({processedKeys + 1}/{totalKeys}): {key}";
 
@@ -212,7 +204,6 @@
                 var targetMessage = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
 
                 var diff = await OracleMessageService.GetMessageDiff(key, sourceMessage, targetMessage);
-
                 MessageDiffStateService.Differences[key] = diff;
 
                 processedKeys++;
@@ -230,10 +221,10 @@
     protected async Task RunCompare()
     {
         var filteredDiffs = GetFilteredAndPaginatedDifferences();
-        if (filteredDiffs.Count == 0 && MessageDiffStateService.Differences.Count > 0)
+        @* if (filteredDiffs.Count == 0 && MessageDiffStateService.Differences.Count > 0)
         {
             toastService.ShowInfo("No differences found matching the search criteria");
-        }
+        } *@
         StateHasChanged();
     }
 
@@ -249,25 +240,57 @@
         await LoadPageDifferences();
     }
 
+    private HashSet<string> GetFilteredKeys()
+    {
+        var filtered = MessageDiffStateService.AllMessageKeys;
+
+        if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey))
+        {
+            filtered = filtered.Where(key =>
+            {
+                var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ??
+                            MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+                return message != null && (
+                    message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)
+                );
+            }).ToHashSet();
+        }
+
+        if (MessageDiffStateService.ShowOnlyChanged)
+        {
+            filtered = filtered.Where(key =>
+                MessageDiffStateService.Differences.ContainsKey(key) &&
+                MessageDiffStateService.Differences[key].HasDifferences
+            ).ToHashSet();
+        }
+
+        return filtered;
+    }
+
+    private IEnumerable<string> GetCurrentPageKeys()
+    {
+        return GetFilteredKeys()
+            .Skip((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize)
+            .Take(MessageDiffStateService.PageSize);
+    }
+
     public Dictionary<string, MessageDiffResult> GetFilteredAndPaginatedDifferences()
     {
-        return MessageDiffStateService.Differences;
+        return GetCurrentPageKeys()
+            .Where(key => MessageDiffStateService.Differences.ContainsKey(key))
+            .ToDictionary(
+                key => key,
+                key => MessageDiffStateService.Differences[key]
+            );
     }
 
     public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)MessageDiffStateService.PageSize);
 
     public int GetFilteredCount()
     {
-        if (string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey))
-            return MessageDiffStateService.AllMessageKeys.Count;
-
-        return MessageDiffStateService.AllMessageKeys.Count(key =>
-        {
-            var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ?? MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-            return message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                   message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                   message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase);
-        });
+        return GetFilteredKeys().Count;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
