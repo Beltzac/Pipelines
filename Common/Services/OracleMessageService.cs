@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common.Models;
 using Oracle.ManagedDataAccess.Client;
+using SQL.Formatter;
+using SQL.Formatter.Language;
 
 namespace Common.Services
 {
@@ -132,6 +134,52 @@ namespace Common.Services
             {
                 diffs.Add($"{propertyName}:\n- {sourceValue}\n+ {targetValue}");
             }
+        }
+
+        public string GenerateUpsertStatement(MessageDefinition message)
+        {
+            if (message == null)
+                return string.Empty;
+
+            var baseUpsert = $@"MERGE INTO TCPCONF.MENSAGEM m
+USING DUAL
+ON (m.PREFIXO = '{message.Prefixo}' AND m.CODIGO = '{message.Codigo}')
+WHEN MATCHED THEN
+    UPDATE SET
+        m.MODULO = '{message.Modulo}',
+        m.ELEMENTO = {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
+        m.OBSERVACAO = {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
+        m.VERIFICADO = {(message.Verificado ? "1" : "0")}
+WHEN NOT MATCHED THEN
+    INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO)
+    VALUES ({message.IdSistemaMensagem}, {message.IdDestinoMensagem},
+            '{message.Prefixo}', '{message.Codigo}', '{message.Modulo}',
+            {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
+            {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
+            {(message.Verificado ? "1" : "0")}, 0)";
+
+            var languageUpserts = message.Languages.Values.Select(lang => $@"MERGE INTO TCPCONF.MENSAGEM_IDIOMA mi
+USING (
+    SELECT m.ID_MENSAGEM
+    FROM TCPCONF.MENSAGEM m
+    WHERE m.PREFIXO = '{message.Prefixo}' AND m.CODIGO = '{message.Codigo}'
+) m
+ON (mi.ID_MENSAGEM = m.ID_MENSAGEM AND mi.IDIOMA = {lang.Idioma})
+WHEN MATCHED THEN
+    UPDATE SET
+        mi.TITULO = {(lang.Titulo == null ? "NULL" : $"'{lang.Titulo?.Replace("'", "''")}'")},
+        mi.DESCRICAO = '{lang.Descricao?.Replace("'", "''")}',
+        mi.AJUDA = {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")},
+        mi.EXCLUIDO = 0
+WHEN NOT MATCHED THEN
+    INSERT (ID_MENSAGEM, IDIOMA, TITULO, DESCRICAO, AJUDA, EXCLUIDO)
+    VALUES (m.ID_MENSAGEM, {lang.Idioma},
+            {(lang.Titulo == null ? "NULL" : $"'{lang.Titulo?.Replace("'", "''")}'")},
+            '{lang.Descricao?.Replace("'", "''")}',
+            {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")}, 0)");
+
+            var fullSql = string.Join(";\n\n", new[] { baseUpsert }.Concat(languageUpserts));
+            return SqlFormatter.Of(Dialect.PlSql).Format(fullSql);
         }
     }
 }
