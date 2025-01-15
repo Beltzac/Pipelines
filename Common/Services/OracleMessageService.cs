@@ -187,7 +187,7 @@ WHEN NOT MATCHED THEN
             {(lang.Titulo == null ? "NULL" : $"'{lang.Titulo?.Replace("'", "''")}'")},
             '{lang.Descricao?.Replace("'", "''")}',
             {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")}, 0,
-            SYSDATE, SYSDATE, 30120, 30120)");
+            SYSDATE, SYSDATE, 30120, 30120);");
 
             var fullSql = string.Join(";\n\n", new[] { baseUpsert }.Concat(languageUpserts));
             return SqlFormatter.Of(Dialect.PlSql).Format(fullSql);
