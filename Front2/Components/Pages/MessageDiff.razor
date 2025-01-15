@@ -10,6 +10,7 @@
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject MessageDiffStateService MessageDiffStateService
+@implements IDisposable
 
 <ProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />
 

@@ -15,6 +15,7 @@
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
+@implements IDisposable
 
 <ProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" IsLoading="@ConsulDiffStateService.IsLoading" />
 

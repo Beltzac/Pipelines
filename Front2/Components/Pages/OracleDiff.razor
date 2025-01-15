@@ -15,6 +15,7 @@
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
+@implements IDisposable
 
 <ProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" IsLoading="@OracleDiffStateService.IsLoading" />
 
