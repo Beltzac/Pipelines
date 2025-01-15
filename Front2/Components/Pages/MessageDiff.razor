@@ -194,7 +194,7 @@ OnPageChange="@ChangePage">
 
             if (upserts.Any())
             {
-                var allUpserts = string.Join(";\n\n", upserts);
+                var allUpserts = string.Join("\n\n", upserts);
                 await CopyToClipboard(allUpserts);
                 toastService.ShowSuccess($"Copied {upserts.Count} upsert statements to clipboard");
             }
