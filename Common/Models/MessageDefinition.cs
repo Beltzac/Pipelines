@@ -31,5 +31,6 @@ namespace Common.Models
         public string FormattedDiff { get; set; }
         public MessageDefinition Target { get; set; }
         public MessageDefinition Source { get; set; }
+        public List<string> ChangedFields { get; set; } = new();
     }
 }

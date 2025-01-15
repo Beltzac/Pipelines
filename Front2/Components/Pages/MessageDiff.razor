@@ -75,20 +75,22 @@
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Prefixo-Codigo</th>
+                <th>Chave</th>
+                <th>Source Titulo</th>
                 <th>
                     Source Value (@MessageDiffStateService.SelectedSourceEnv)
                     <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts">
                         Copy All Source Upserts
                     </button>
                 </th>
+                <th>Target Titulo</th>
                 <th>
                     Target Value (@MessageDiffStateService.SelectedTargetEnv)
                     <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts">
                         Copy All Target Upserts
                     </button>
                 </th>
-                <th>Contem Diferen�as</th>
+                <th>Campos Alterados</th>
             </tr>
         </thead>
         <tbody>
@@ -96,6 +98,7 @@
             {
                 <tr>
                     <td>@diff.Key</td>
+                    <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                     <td>
                         @(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)
                         @if (diff.Value.Source != null)
@@ -105,6 +108,7 @@
                             </button>
                         }
                     </td>
+                    <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                     <td>
                         @(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)
                         @if (diff.Value.Target != null)
@@ -114,7 +118,7 @@
                             </button>
                         }
                     </td>
-                    <td>@diff.Value.HasDifferences</td>
+                    <td>@string.Join(", ", diff.Value.ChangedFields)</td>
                 </tr>
             }
         </tbody>
@@ -139,7 +143,6 @@ OnPageChange="@ChangePage">
     margin-bottom: 0;
     }
 </style>
-
 
 @code {
     private List<OracleEnvironment> environments = new();
@@ -364,7 +367,7 @@ OnPageChange="@ChangePage">
             filtered = filtered.Where(key =>
             {
                 var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ??
-                            MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+                              MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
                 return message != null && (
                     message.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
