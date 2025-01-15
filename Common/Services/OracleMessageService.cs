@@ -21,7 +21,7 @@ namespace Common.Services
                 await conn.OpenAsync();
 
                 // Fetch base message data
-                var messageQuery = $@"
+                var messageQuery = @"
                     SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM,
                            m.VERIFICADO, m.MODULO, m.CODIGO, m.PREFIXO, m.ELEMENTO, m.OBSERVACAO
                     FROM TCPCONF.MENSAGEM m
@@ -52,7 +52,7 @@ namespace Common.Services
                 }
 
                 // Fetch language-specific data
-                var languageQuery = $@"
+                var languageQuery = @"
                     SELECT mi.ID_MENSAGEM, mi.IDIOMA, mi.TITULO, mi.DESCRICAO, mi.AJUDA
                     FROM TCPCONF.MENSAGEM_IDIOMA mi
                     WHERE mi.EXCLUIDO = 0";
@@ -91,19 +91,17 @@ namespace Common.Services
                 Target = target
             };
 
-
-
             if (source == null && target == null)
                 return diff;
 
             var diffs = new List<string>();
 
             // Compare base message properties
-            CompareProperty("Modulo", source?.Modulo, target?.Modulo, diffs);
-            CompareProperty("Codigo", source?.Codigo, target?.Codigo, diffs);
-            CompareProperty("Prefixo", source?.Prefixo, target?.Prefixo, diffs);
-            CompareProperty("Elemento", source?.Elemento, target?.Elemento, diffs);
-            CompareProperty("Observacao", source?.Observacao, target?.Observacao, diffs);
+            CompareProperty("Modulo", source?.Modulo, target?.Modulo, diffs, diff.ChangedFields);
+            CompareProperty("Codigo", source?.Codigo, target?.Codigo, diffs, diff.ChangedFields);
+            CompareProperty("Prefixo", source?.Prefixo, target?.Prefixo, diffs, diff.ChangedFields);
+            CompareProperty("Elemento", source?.Elemento, target?.Elemento, diffs, diff.ChangedFields);
+            CompareProperty("Observacao", source?.Observacao, target?.Observacao, diffs, diff.ChangedFields);
 
             // Compare language-specific content
             var allLanguages = new HashSet<int>(
@@ -116,9 +114,9 @@ namespace Common.Services
                 var sourceLang = source?.Languages.GetValueOrDefault(language);
                 var targetLang = target?.Languages.GetValueOrDefault(language);
 
-                CompareProperty($"Titulo ({language})", sourceLang?.Titulo, targetLang?.Titulo, diffs);
-                CompareProperty($"Descricao ({language})", sourceLang?.Descricao, targetLang?.Descricao, diffs);
-                CompareProperty($"Ajuda ({language})", sourceLang?.Ajuda, targetLang?.Ajuda, diffs);
+                CompareProperty($"Titulo ({language})", sourceLang?.Titulo, targetLang?.Titulo, diffs, diff.ChangedFields);
+                CompareProperty($"Descricao ({language})", sourceLang?.Descricao, targetLang?.Descricao, diffs, diff.ChangedFields);
+                CompareProperty($"Ajuda ({language})", sourceLang?.Ajuda, targetLang?.Ajuda, diffs, diff.ChangedFields);
             }
 
             if (diffs.Count > 0)
@@ -130,11 +128,12 @@ namespace Common.Services
             return diff;
         }
 
-        private void CompareProperty(string propertyName, string sourceValue, string targetValue, List<string> diffs)
+        private void CompareProperty(string propertyName, string sourceValue, string targetValue, List<string> diffs, List<string> changedFields)
         {
             if (sourceValue?.Trim() != targetValue?.Trim())
             {
                 diffs.Add($"{propertyName}:\n- {sourceValue}\n+ {targetValue}");
+                changedFields.Add(propertyName);
             }
         }
 
