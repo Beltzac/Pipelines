@@ -305,7 +305,7 @@
         {
             x.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
             x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-            x.StartDate = x.EndDate?.AddHours(-24);
+            x.StartDate = x.EndDate?.AddHours(-24).AddTicks(1);
         });
     }
 
