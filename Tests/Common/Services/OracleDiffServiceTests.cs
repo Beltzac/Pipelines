@@ -8,19 +8,19 @@ namespace Tests.Common.Services
 {
     public class OracleDiffServiceTests
     {
-        //[Test]
-        //public void GetViewDiff_ReturnsExpectedDiffResult()
-        //{
-        //    string view = "view";
-        //    string old = "old";
-        //    string newString = "new";
+        [Test]
+        public async Task GetViewDiff_ReturnsExpectedDiffResult()
+        {
+            string view = "view";
+            string old = "old";
+            string newString = "new";
 
-        //    var result = (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
+            var result = await (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
 
-        //    result.Should().NotBeNull();
-        //    result.ViewName.Should().Be(view);
-        //    result.FormattedDiff.Should().NotBeNullOrEmpty();
-        //    result.HasDifferences.Should().BeTrue();
-        //}
+            result.Should().NotBeNull();
+            result.ViewName.Should().Be(view);
+            result.FormattedDiff.Should().NotBeNullOrEmpty();
+            result.HasDifferences.Should().BeTrue();
+        }
     }
 }
