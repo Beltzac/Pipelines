@@ -22,7 +22,7 @@ namespace Common.Services
 
                 // Fetch base message data
                 var messageQuery = @"
-                    SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM,
+                    SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM, m.ID_GRUPO_MENSAGEM,
                            m.VERIFICADO, m.MODULO, m.CODIGO, m.PREFIXO, m.ELEMENTO, m.OBSERVACAO
                     FROM TCPCONF.MENSAGEM m
                     WHERE m.EXCLUIDO = 0";
@@ -37,12 +37,13 @@ namespace Common.Services
                             IdMensagem = reader.GetInt64(0),
                             IdSistemaMensagem = reader.GetInt64(1),
                             IdDestinoMensagem = reader.GetInt64(2),
-                            Verificado = reader.GetInt32(3) == 1,
-                            Modulo = reader.GetString(4),
-                            Codigo = reader.GetString(5),
-                            Prefixo = reader.GetString(6),
-                            Elemento = reader.IsDBNull(7) ? null : reader.GetString(7),
-                            Observacao = reader.IsDBNull(8) ? null : reader.GetString(8)
+                            IdGrupoMensagem = reader.GetInt64(3),
+                            Verificado = reader.GetInt32(4) == 1,
+                            Modulo = reader.GetString(5),
+                            Codigo = reader.GetString(6),
+                            Prefixo = reader.GetString(7),
+                            Elemento = reader.IsDBNull(8) ? null : reader.GetString(8),
+                            Observacao = reader.IsDBNull(9) ? null : reader.GetString(9)
                         };
 
                         message.Key = $"{message.Prefixo}-{message.Codigo}";
@@ -102,6 +103,7 @@ namespace Common.Services
             CompareProperty("Prefixo", source?.Prefixo, target?.Prefixo, diffs, diff.ChangedFields);
             CompareProperty("Elemento", source?.Elemento, target?.Elemento, diffs, diff.ChangedFields);
             CompareProperty("Observacao", source?.Observacao, target?.Observacao, diffs, diff.ChangedFields);
+            CompareProperty("IdGrupoMensagem", source?.IdGrupoMensagem.ToString(), target?.IdGrupoMensagem.ToString(), diffs, diff.ChangedFields);
 
             // Compare language-specific content
             var allLanguages = new HashSet<int>(
@@ -149,6 +151,7 @@ WHEN MATCHED THEN
     UPDATE SET
         m.ID_SISTEMA_MENSAGEM = {message.IdSistemaMensagem},
         m.ID_DESTINO_MENSAGEM = {message.IdDestinoMensagem},
+        m.ID_GRUPO_MENSAGEM = {message.IdGrupoMensagem},
         m.MODULO = '{message.Modulo}',
         m.ELEMENTO = {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
         m.OBSERVACAO = {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
@@ -156,9 +159,9 @@ WHEN MATCHED THEN
         m.DATA_ALTERACAO = SYSDATE,
         m.ID_USUARIO_ALTERACAO = 30120
 WHEN NOT MATCHED THEN
-    INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO,
+    INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, ID_GRUPO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO,
             DATA_INCLUSAO, DATA_ALTERACAO, ID_USUARIO_INCLUSAO, ID_USUARIO_ALTERACAO)
-    VALUES ({message.IdSistemaMensagem}, {message.IdDestinoMensagem},
+    VALUES ({message.IdSistemaMensagem}, {message.IdDestinoMensagem}, {message.IdGrupoMensagem},
             '{message.Prefixo}', '{message.Codigo}', '{message.Modulo}',
             {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
             {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
@@ -187,9 +190,9 @@ WHEN NOT MATCHED THEN
             {(lang.Titulo == null ? "NULL" : $"'{lang.Titulo?.Replace("'", "''")}'")},
             '{lang.Descricao?.Replace("'", "''")}',
             {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")}, 0,
-            SYSDATE, SYSDATE, 30120, 30120);");
+            SYSDATE, SYSDATE, 30120, 30120)");
 
-            var fullSql = string.Join(";\n\n", new[] { baseUpsert }.Concat(languageUpserts));
+            var fullSql = string.Join(";\n\n", new[] { baseUpsert }.Concat(languageUpserts)) + ";";
             return SqlFormatter.Of(Dialect.PlSql).Format(fullSql);
         }
     }

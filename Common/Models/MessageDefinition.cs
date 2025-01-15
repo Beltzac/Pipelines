@@ -7,6 +7,7 @@ namespace Common.Models
         public long IdMensagem { get; set; }
         public long IdSistemaMensagem { get; set; }
         public long IdDestinoMensagem { get; set; }
+        public long IdGrupoMensagem { get; set; }
         public bool Verificado { get; set; }
         public string Modulo { get; set; }
         public string Codigo { get; set; }
