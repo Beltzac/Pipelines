@@ -76,8 +76,18 @@
         <thead>
             <tr>
                 <th>Prefixo-Codigo</th>
-                <th>Source Value (@MessageDiffStateService.SelectedSourceEnv)</th>
-                <th>Target Value (@MessageDiffStateService.SelectedTargetEnv)</th>
+                <th>
+                    Source Value (@MessageDiffStateService.SelectedSourceEnv)
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts">
+                        Copy All Source Upserts
+                    </button>
+                </th>
+                <th>
+                    Target Value (@MessageDiffStateService.SelectedTargetEnv)
+                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts">
+                        Copy All Target Upserts
+                    </button>
+                </th>
                 <th>Contem Diferen�as</th>
             </tr>
         </thead>
@@ -159,6 +169,72 @@ OnPageChange="@ChangePage">
         catch (Exception ex)
         {
             toastService.ShowError($"Error generating upsert statement: {ex.Message}");
+        }
+    }
+
+    private async Task CopyAllSourceUpserts()
+    {
+        try
+        {
+            var filteredKeys = GetFilteredKeys();
+            var upserts = new List<string>();
+
+            foreach (var key in filteredKeys)
+            {
+                var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
+                if (message != null)
+                {
+                    upserts.Add(OracleMessageService.GenerateUpsertStatement(message));
+                }
+            }
+
+            if (upserts.Any())
+            {
+                var allUpserts = string.Join(";\n\n", upserts);
+                await CopyToClipboard(allUpserts);
+                toastService.ShowSuccess($"Copied {upserts.Count} upsert statements to clipboard");
+            }
+            else
+            {
+                toastService.ShowWarning("No source messages found to generate upserts");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error generating upsert statements: {ex.Message}");
+        }
+    }
+
+    private async Task CopyAllTargetUpserts()
+    {
+        try
+        {
+            var filteredKeys = GetFilteredKeys();
+            var upserts = new List<string>();
+
+            foreach (var key in filteredKeys)
+            {
+                var message = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+                if (message != null)
+                {
+                    upserts.Add(OracleMessageService.GenerateUpsertStatement(message));
+                }
+            }
+
+            if (upserts.Any())
+            {
+                var allUpserts = string.Join(";\n\n", upserts);
+                await CopyToClipboard(allUpserts);
+                toastService.ShowSuccess($"Copied {upserts.Count} upsert statements to clipboard");
+            }
+            else
+            {
+                toastService.ShowWarning("No target messages found to generate upserts");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error generating upsert statements: {ex.Message}");
         }
     }
 
@@ -290,6 +366,7 @@ OnPageChange="@ChangePage">
                 var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ??
                             MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
                 return message != null && (
+                    message.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)
