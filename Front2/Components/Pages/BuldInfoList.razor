@@ -88,7 +88,10 @@
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
                 </td>
-                <td class="truncate">@(buildInfo.Path)</td>
+                <td class="truncate">
+                    @(buildInfo.Path)
+                    <span class="badge bg-secondary">@buildInfo.ProjectType</span>
+                </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
             </ContextMenuTrigger>
