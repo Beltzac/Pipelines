@@ -15,7 +15,7 @@ namespace Common.Models
         public string Elemento { get; set; }
         public string Observacao { get; set; }
         public Dictionary<int, MessageLanguageDefinition> Languages { get; set; } = new();
-        public string Key { get; internal set; }
+        public string Key { get; set; }
     }
 
     public class MessageLanguageDefinition

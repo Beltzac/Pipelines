@@ -47,9 +47,17 @@
         <div class="col-md-6">
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Search by module, code or prefix..."
-                @bind="MessageDiffStateService.SearchKey"
-                @bind:event="oninput"
-                @onkeyup="async () => await HandleSearch()" />
+                       @bind="MessageDiffStateService.SearchKey"
+                       @bind:event="oninput"
+                       @onkeyup="async () => await HandleSearch()" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Search by descrição..."
+                       @bind="MessageDiffStateService.SearchDescription"
+                       @bind:event="oninput"
+                       @onkeyup="async () => await HandleSearch()" />
             </div>
         </div>
         <div class="col-md-2">
@@ -65,7 +73,7 @@
         <div class="col-md-1">
             <div class="form-check form-switch mt-3">
                 <input class="form-check-input" type="checkbox" role="switch"
-                id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
+                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
                 <label class="form-check-label" for="showOnlyChanged">Changed Only</label>
             </div>
         </div>
@@ -126,22 +134,21 @@
     </table>
 </div>
 
-<Pagination
-CurrentPage="@MessageDiffStateService.CurrentPage"
-TotalPages="@TotalPages"
-OnPageChange="@ChangePage">
+<Pagination CurrentPage="@MessageDiffStateService.CurrentPage"
+            TotalPages="@TotalPages"
+            OnPageChange="@ChangePage">
     Showing @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) to @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
 </Pagination>
 
 <style>
     .diff-container {
-    max-width: 80vw;
-    margin: 0 auto;
-    overflow-x: auto;
+        max-width: 80vw;
+        margin: 0 auto;
+        overflow-x: auto;
     }
 
     .form-group {
-    margin-bottom: 0;
+        margin-bottom: 0;
     }
 </style>
 
@@ -363,18 +370,25 @@ OnPageChange="@ChangePage">
     {
         var filtered = MessageDiffStateService.AllMessageKeys;
 
-        if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey))
+        if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) || !string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription))
         {
             filtered = filtered.Where(key =>
             {
                 var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ??
                               MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
                 return message != null && (
-                    message.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+
+                   (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) &&
+                   (message.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
                     message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)
-                );
+                    message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
+
+                    ||
+
+                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
+
+                    );
             }).ToHashSet();
         }
 

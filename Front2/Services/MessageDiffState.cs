@@ -14,6 +14,7 @@ namespace Front2.Services
         public Dictionary<string, MessageDiffResult> Differences { get; set; } = new();
 
         public string SearchKey { get; set; }
+        public string SearchDescription { get; set; }
         public bool ShowOnlyChanged { get; set; }
         public int PageSize { get; set; } = 50;
         public int CurrentPage { get; set; } = 1;
