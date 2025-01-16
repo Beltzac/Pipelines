@@ -15,20 +15,20 @@ namespace Common.Utils
 
             var message = commit.CommitMessage;
 
-            // Define the patterns and replacements for different log levels using capture groups
-            var replacements = new Dictionary<string, string>
-            {
-                { "(ERROR)", "<span class='log-error'>$1</span>" },
-                { "(exception)", "<span class='log-error'>$1</span>" },
-                { "(WARNING)", "<span class='log-warning'>$1</span>" },
-                { "(INFO)", "<span class='log-info'>$1</span>" }
-            };
+            // // Define the patterns and replacements for different log levels using capture groups
+            // var replacements = new Dictionary<string, string>
+            // {
+            //     { "(ERROR)", "<span class='log-error'>$1</span>" },
+            //     { "(exception)", "<span class='log-error'>$1</span>" },
+            //     { "(WARNING)", "<span class='log-warning'>$1</span>" },
+            //     { "(INFO)", "<span class='log-info'>$1</span>" }
+            // };
 
-            // Apply replacements using Regex with IgnoreCase option and capture groups
-            foreach (var replacement in replacements)
-            {
-                message = Regex.Replace(message, replacement.Key, replacement.Value, RegexOptions.IgnoreCase);
-            }
+            // // Apply replacements using Regex with IgnoreCase option and capture groups
+            // foreach (var replacement in replacements)
+            // {
+            //     message = Regex.Replace(message, replacement.Key, replacement.Value, RegexOptions.IgnoreCase);
+            // }
 
             // Highlight timestamps
             var timestampPattern = @"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z)";

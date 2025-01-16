@@ -18,6 +18,7 @@
         public string ConsulBackupRepo { get; set; } = "C:\\ConsulBackup";
         public bool EnableOracleBackupJob { get; set; } = true;
         public bool EnableConsulBackupJob { get; set; } = true;
+        public string AndroidStudioPath { get; set; } = "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe";
     }
 
     public class OracleEnvironment

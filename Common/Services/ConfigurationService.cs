@@ -66,8 +66,8 @@ public class ConfigurationService : IConfigurationService
 
     public string ExportConfig()
     {
-        return JsonSerializer.Serialize(_config, new JsonSerializerOptions 
-        { 
+        return JsonSerializer.Serialize(_config, new JsonSerializerOptions
+        {
             WriteIndented = true,
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         });

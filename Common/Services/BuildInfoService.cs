@@ -1,4 +1,4 @@
-﻿using Common.ExternalApis;
+﻿﻿using Common.ExternalApis;
 using Common.Repositories;
 using Common.Utils;
 
@@ -30,6 +30,7 @@ namespace Common.Services
         private readonly string _name;
         private readonly List<string> _repoRegexFilters;
         private readonly string _organizationUrl;
+        private readonly IConfigurationService _configService;
         private readonly LocalEmbedder _embedder;
 
         public BuildInfoService(
@@ -54,6 +55,7 @@ namespace Common.Services
             _repoRegexFilters = config.IgnoreRepositoriesRegex;
             _organizationUrl = config.OrganizationUrl;
             _embedder = embeder;
+            _configService = configService;
         }
 
         public async Task NavigateToPRCreationAsync(Repository repo)
@@ -410,7 +412,7 @@ namespace Common.Services
             if (buildInfo != null)
             {
                 var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
-                OpenFolderUtils.OpenProject(_logger, localPath);
+                OpenFolderUtils.OpenProject(_logger, _configService, localPath);
             }
             else
             {
