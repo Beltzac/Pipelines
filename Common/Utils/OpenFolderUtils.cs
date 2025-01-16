@@ -1,5 +1,4 @@
-﻿
-using Microsoft.Extensions.Logging;
+﻿﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Xml;
 
@@ -96,24 +95,63 @@ namespace Common.Utils
             return slnFile;
         }
 
-        public static void OpenProject(ILogger logger, string folderPath)
+        public static void OpenProject(ILogger logger, IConfigurationService configService, string folderPath)
         {
             if (Directory.Exists(folderPath))
             {
-                var slnFile = FindSolutionFile(folderPath);
+                // Check for Android project indicators
+                var isAndroidProject = Directory.GetFiles(folderPath, "build.gradle", SearchOption.AllDirectories).Any() ||
+                                       Directory.GetFiles(folderPath, "settings.gradle", SearchOption.AllDirectories).Any() ||
+                                       Directory.GetFiles(folderPath, "AndroidManifest.xml", SearchOption.AllDirectories).Any();
 
-                if (slnFile != null)
+                if (isAndroidProject)
                 {
-                    OpenWithVisualStudio(logger, slnFile);
+                    OpenWithAndroidStudio(logger, configService, folderPath);
                 }
                 else
                 {
-                    OpenWithVSCode(logger, folderPath);
+                    var slnFile = FindSolutionFile(folderPath);
+
+                    if (slnFile != null)
+                    {
+                        OpenWithVisualStudio(logger, slnFile);
+                    }
+                    else
+                    {
+                        OpenWithVSCode(logger, folderPath);
+                    }
                 }
             }
             else
             {
                 logger.LogInformation($"Directory {folderPath} does not exist.");
+            }
+        }
+
+        public static void OpenWithAndroidStudio(ILogger logger, IConfigurationService configService, string folderPath)
+        {
+            try
+            {
+                var config = configService.GetConfig();
+                var androidStudioPath = config.AndroidStudioPath;
+
+                if (string.IsNullOrWhiteSpace(androidStudioPath))
+                {
+                    throw new InvalidOperationException("Android Studio path is not configured.");
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = androidStudioPath,
+                    Arguments = $"\"{folderPath}\"",
+                    UseShellExecute = true
+                });
+
+                logger.LogInformation($"Opening {folderPath} with Android Studio.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Error opening {folderPath} with Android Studio");
             }
         }
 
