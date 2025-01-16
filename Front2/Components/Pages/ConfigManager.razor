@@ -67,11 +67,11 @@
                             <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
                             <ValidationMessage For="@(() => config.LocalCloneFolder)" />
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="androidStudioPath" class="form-label">Android Studio Path</label>
-                        <InputText id="androidStudioPath" @bind-Value="config.AndroidStudioPath" class="form-control"/>
-                        <ValidationMessage For="@(() => config.AndroidStudioPath)" />
+                        <div class="mb-3">
+                            <label for="androidStudioPath" class="form-label">Android Studio Path</label>
+                            <InputText id="androidStudioPath" @bind-Value="config.AndroidStudioPath" class="form-control"/>
+                            <ValidationMessage For="@(() => config.AndroidStudioPath)" />
+                        </div>
                     </div>
                 </div>
 
