@@ -374,21 +374,38 @@
         {
             filtered = filtered.Where(key =>
             {
-                var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key) ??
-                              MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-                return message != null && (
+                var message1 = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
+                var message2 = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
+
+                var msg1 = message1 != null && (
 
                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) &&
-                   (message.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
+                   (message1.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message1.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message1.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message1.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
 
                     ||
 
-                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
+                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message1.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
 
                     );
+
+                var msg2 = message2 != null && (
+
+                   (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) &&
+                   (message2.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message2.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message2.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
+                    message2.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
+
+                    ||
+
+                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message2.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
+
+                    );
+
+                return msg1 || msg2;
             }).ToHashSet();
         }
 
