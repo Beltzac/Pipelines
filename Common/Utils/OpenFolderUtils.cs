@@ -100,26 +100,20 @@ namespace Common.Utils
             if (Directory.Exists(folderPath))
             {
                 // Check for Android project indicators
-                var isAndroidProject = Directory.GetFiles(folderPath, "build.gradle", SearchOption.AllDirectories).Any() ||
-                                       Directory.GetFiles(folderPath, "settings.gradle", SearchOption.AllDirectories).Any() ||
-                                       Directory.GetFiles(folderPath, "AndroidManifest.xml", SearchOption.AllDirectories).Any();
+                var projectType = DetermineProjectType(folderPath);
 
-                if (isAndroidProject)
+                if (projectType == Repository.PROJECT_TYPE_ANDROID)
                 {
                     OpenWithAndroidStudio(logger, configService, folderPath);
                 }
-                else
+                else if (projectType == Repository.PROJECT_TYPE_VISUAL_STUDIO)
                 {
                     var slnFile = FindSolutionFile(folderPath);
-
-                    if (slnFile != null)
-                    {
-                        OpenWithVisualStudio(logger, slnFile);
-                    }
-                    else
-                    {
-                        OpenWithVSCode(logger, folderPath);
-                    }
+                    OpenWithVisualStudio(logger, slnFile);
+                }
+                else
+                {
+                    OpenWithVSCode(logger, folderPath);
                 }
             }
             else
@@ -176,6 +170,28 @@ namespace Common.Utils
             {
                 logger.LogError(ex, $"Error opening {slnFile} with Visual Studio");
             }
+        }
+
+        public static string DetermineProjectType(string folderPath)
+        {
+            if (Directory.GetFiles(folderPath, "build.gradle", SearchOption.AllDirectories).Any() ||
+                Directory.GetFiles(folderPath, "settings.gradle", SearchOption.AllDirectories).Any() ||
+                Directory.GetFiles(folderPath, "AndroidManifest.xml", SearchOption.AllDirectories).Any())
+            {
+                return Repository.PROJECT_TYPE_ANDROID;
+            }
+
+            if (FindSolutionFile(folderPath) != null)
+            {
+                return Repository.PROJECT_TYPE_VISUAL_STUDIO;
+            }
+
+            if (Directory.Exists(folderPath))
+            {
+                return Repository.PROJECT_TYPE_VISUAL_STUDIO_CODE;
+            }
+
+            return Repository.PROJECT_TYPE_FOLDER;
         }
     }
 }

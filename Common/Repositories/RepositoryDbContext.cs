@@ -9,7 +9,8 @@ using SmartComponents.LocalEmbeddings;
 namespace Common.Repositories
 {
     //dotnet ef migrations add MapearCampos --project Common
-    //Add-Migration MapearEmbbeding 
+    //Add-Migration MapearEmbbeding
+    //EntityFrameworkCore\Add-Migration AddProjectTypeToRepository
     public class RepositoryDbContext : DbContext
     {
 

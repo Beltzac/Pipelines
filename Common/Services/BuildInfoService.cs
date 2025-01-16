@@ -252,6 +252,9 @@ namespace Common.Services
         {
             var projectName = repo.ProjectReference.Name;
 
+            var localPath = Path.Combine(_localCloneFolder, projectName, repo.Name);
+            var projectType = OpenFolderUtils.DetermineProjectType(localPath);
+
             var buildInfo = new Repository
             {
                 Id = repo.Id,
@@ -260,7 +263,8 @@ namespace Common.Services
                 MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, projectName, repo.Name)),
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
-                Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null
+                Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null,
+                ProjectType = projectType
             };
 
             if (buildDefinition?.LatestBuild != null)

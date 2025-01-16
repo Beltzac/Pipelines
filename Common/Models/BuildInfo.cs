@@ -1,4 +1,3 @@
-
 using Common.Models;
 using SmartComponents.LocalEmbeddings;
 
@@ -26,6 +25,11 @@ public class Pipeline
 
 public class Repository
 {
+    public const string PROJECT_TYPE_ANDROID = "ANDROID";
+    public const string PROJECT_TYPE_VISUAL_STUDIO = "VISUAL_STUDIO";
+    public const string PROJECT_TYPE_VISUAL_STUDIO_CODE = "VISUAL_STUDIO_CODE";
+    public const string PROJECT_TYPE_FOLDER = "FOLDER";
+
     public Guid Id { get; set; }
     public string Project { get; set; }
     public string Name { get; set; }
@@ -38,4 +42,6 @@ public class Repository
     public string Path => $"{Project}/{Name}";
 
     public EmbeddingF32? Embedding { get; set; }
+
+    public string ProjectType { get; set; }
 }
