@@ -87,10 +87,10 @@
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
+                    <span class="badge bg-secondary badge-small">@buildInfo.ProjectType</span>
                 </td>
                 <td class="truncate">
                     @(buildInfo.Path)
-                    <span class="badge bg-secondary">@buildInfo.ProjectType</span>
                 </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>

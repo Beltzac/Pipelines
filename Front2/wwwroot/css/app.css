@@ -201,3 +201,9 @@ span.deleted {
 span.unchanged {
     color: var(--text-color);
 }
+
+.badge-small {
+    font-size: 0.8em;
+    padding: 0.2em 0.4em;
+    line-height: 1;
+}
