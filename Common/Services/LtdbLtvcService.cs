@@ -1,4 +1,5 @@
 using Common.Models;
+using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
@@ -42,29 +43,15 @@ namespace Common.Services
             var result = new List<LtdbLtvcRecord>();
             int totalCount = 0;
 
-            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                // Replace to use dapper ai!
-                result.Add(new LtdbLtvcRecord
-                {
-                    DataLtdb = reader.IsDBNull(reader.GetOrdinal("DATA_LTDB")) ? null : reader.GetDateTime(reader.GetOrdinal("DATA_LTDB")),
-                    DataLtvc = reader.IsDBNull(reader.GetOrdinal("DATA_LTVC")) ? null : reader.GetDateTime(reader.GetOrdinal("DATA_LTVC")),
-                    RequestId = reader.IsDBNull(reader.GetOrdinal("REQUEST_ID")) ? null : reader.GetString(reader.GetOrdinal("REQUEST_ID")),
-                    IdAgendamento = reader.IsDBNull(reader.GetOrdinal("ID_AGENDAMENTO")) ? null : reader.GetInt32(reader.GetOrdinal("ID_AGENDAMENTO")),
-                    MoveType = reader.IsDBNull(reader.GetOrdinal("MOVETYPE")) ? null : reader.GetString(reader.GetOrdinal("MOVETYPE")),
-                    Placa = reader.IsDBNull(reader.GetOrdinal("PLACA")) ? null : reader.GetString(reader.GetOrdinal("PLACA")),
-                    Motorista = reader.IsDBNull(reader.GetOrdinal("MOTORISTA")) ? null : reader.GetString(reader.GetOrdinal("MOTORISTA")),
-                    LtdbXml = reader.IsDBNull(reader.GetOrdinal("LTDB_XML")) ? null : reader.GetString(reader.GetOrdinal("LTDB_XML")),
-                    LtvcXml = reader.IsDBNull(reader.GetOrdinal("LTVC_XML")) ? null : reader.GetString(reader.GetOrdinal("LTVC_XML")),
-                    Delay = reader.IsDBNull(reader.GetOrdinal("DELAY")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DELAY")),
-                    Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS")),
-                    MessageText = reader.IsDBNull(reader.GetOrdinal("MESSAGE_TEXT")) ? null : reader.GetString(reader.GetOrdinal("MESSAGE_TEXT")),
-                    ContainerNumbers = reader.IsDBNull(reader.GetOrdinal("CONTAINER_NUMBERS")) ? null : reader.GetString(reader.GetOrdinal("CONTAINER_NUMBERS")),
-                    CodigoBarras = reader.IsDBNull(reader.GetOrdinal("CODIGO_BARRAS")) ? null : reader.GetString(reader.GetOrdinal("CODIGO_BARRAS"))
-                });
-                totalCount = reader.GetInt32(reader.GetOrdinal("TotalCount"));
-            }
+            var queryResult = await connection.QueryAsync<LtdbLtvcRecord, int, (LtdbLtvcRecord Record, int TotalCount)>(
+                cmd.CommandText,
+                (record, total) => (record, total),
+                splitOn: "TotalCount"
+            );
+
+            var firstResult = queryResult.FirstOrDefault();
+            result = queryResult.Select(x => x.Record).ToList();
+            totalCount = firstResult.TotalCount;
 
             return (Results: result, TotalCount: totalCount);
         }
