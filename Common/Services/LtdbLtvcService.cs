@@ -45,6 +45,7 @@ namespace Common.Services
             using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken))
             {
+                // Replace to use dapper ai!
                 result.Add(new LtdbLtvcRecord
                 {
                     DataLtdb = reader.IsDBNull(reader.GetOrdinal("DATA_LTDB")) ? null : reader.GetDateTime(reader.GetOrdinal("DATA_LTDB")),
