@@ -218,20 +218,11 @@ CROSS JOIN CountQuery c";
             using var cmd = connection.CreateCommand();
             cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
 
-            var result = new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>();
-            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+            var result = await connection.QueryAsync<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>(
+                cmd.CommandText,
+                commandTimeout: cmd.CommandTimeout);
 
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                result.Add((
-                    reader.GetDateTime(0),
-                    reader.GetDouble(1),
-                    reader.GetDouble(2),
-                    reader.GetInt32(3)
-                ));
-            }
-
-            return result;
+            return result.ToList();
         }
 
         private string BuildDelayMetricsQuery(
