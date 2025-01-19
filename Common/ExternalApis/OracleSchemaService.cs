@@ -8,6 +8,7 @@ using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
+using Dapper;
 
 namespace Common.ExternalApis
 {
@@ -44,16 +45,15 @@ namespace Common.ExternalApis
         {
             try
             {
-                using (var connection = new OracleConnection(connectionString))
-                {
-                    await connection.OpenAsync();
-                    using (var command = new OracleCommand($"SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = :schema", connection))
-                    {
-                        command.Parameters.Add(new OracleParameter("schema", schema));
-                        await command.ExecuteScalarAsync();
-                        return true;
-                    }
-                }
+                using var connection = new OracleConnection(connectionString);
+                var sql = "SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = :schema";
+                
+                await connection.QueryFirstAsync<int>(
+                    sql,
+                    new { schema },
+                    commandTimeout: 120
+                );
+                return true;
             }
             catch (Exception ex)
             {
@@ -64,51 +64,33 @@ namespace Common.ExternalApis
 
         public async Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName)
         {
-            using (var connection = new OracleConnection(connectionString))
-            {
-                await connection.OpenAsync();
-                using (var command = new OracleCommand($"SELECT TEXT FROM ALL_VIEWS WHERE OWNER = :schema AND VIEW_NAME = :viewName", connection))
-                {
-                    command.InitialLONGFetchSize = -1;
-                    command.Parameters.Add(new OracleParameter("schema", schema));
-                    command.Parameters.Add(new OracleParameter("viewName", viewName));
+            using var connection = new OracleConnection(connectionString);
+            var sql = "SELECT TEXT FROM ALL_VIEWS WHERE OWNER = :schema AND VIEW_NAME = :viewName";
+            
+            var text = await connection.QueryFirstOrDefaultAsync<string>(
+                sql,
+                new { schema, viewName },
+                commandTimeout: 120
+            );
 
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            return new OracleViewDefinition(viewName, reader.GetOracleString(0).Value);
-                        }
-                        return new OracleViewDefinition(viewName, string.Empty);
-                    }
-                }
-            }
+            return new OracleViewDefinition(viewName, text ?? string.Empty);
         }
 
         public Dictionary<string, string> GetViewDefinitions(string connectionString, string schema)
         {
-            var viewDefinitions = new Dictionary<string, string>();
+            using var connection = new OracleConnection(connectionString);
+            var sql = "SELECT VIEW_NAME, TEXT FROM ALL_VIEWS WHERE OWNER = :schema";
+            
+            var results = connection.Query<(string ViewName, string Text)>(
+                sql,
+                new { schema },
+                commandTimeout: 120
+            );
 
-            using (var connection = new OracleConnection(connectionString))
-            {
-                connection.Open();
-                using (var command = new OracleCommand($"SELECT VIEW_NAME, TEXT FROM ALL_VIEWS WHERE OWNER = '{schema}'", connection))
-                {
-                    command.InitialLONGFetchSize = -1;
-
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string viewName = reader.GetString(0);
-                            string viewText = reader.GetOracleString(1).Value;
-                            viewDefinitions[viewName] = viewText;
-                        }
-                    }
-                }
-            }
-
-            return viewDefinitions;
+            return results.ToDictionary(
+                x => x.ViewName,
+                x => x.Text
+            );
         }
 
         public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)

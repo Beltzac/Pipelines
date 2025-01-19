@@ -3,9 +3,11 @@ using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
+using System.Data;
 
 namespace Common.Services
 {
+
     public class LtdbLtvcService : ILtdbLtvcService
     {
         private readonly IConfigurationService _configService;
@@ -37,23 +39,20 @@ namespace Common.Services
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
 
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
+            var sql = BuildQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
 
-            var result = new List<LtdbLtvcRecord>();
-            int totalCount = 0;
-
-            var queryResult = await connection.QueryAsync<LtdbLtvcRecord, int, (LtdbLtvcRecord Record, int TotalCount)>(
-                cmd.CommandText,
-                (record, total) => (record, total),
-                splitOn: "TotalCount"
+            var queryResult = await connection.QueryAsync<LtdbLtvcRecord, decimal, (LtdbLtvcRecord Result, int TotalCount)>(
+                sql,
+                (record, total) => (record, Convert.ToInt32(total)),
+                splitOn: "TotalCount",
+                commandTimeout: 120
             );
 
-            var firstResult = queryResult.FirstOrDefault();
-            result = queryResult.Select(x => x.Record).ToList();
-            totalCount = firstResult.TotalCount;
-
-            return (Results: result, TotalCount: totalCount);
+            var processed = queryResult.ToList();
+            return (
+                Results: processed.Select(x => x.Result).ToList(),
+                TotalCount: processed.FirstOrDefault().TotalCount
+            );
         }
 public string BuildQuery(
     DateTimeOffset? startDate,
@@ -196,7 +195,7 @@ CROSS JOIN CountQuery c";
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
-        public async Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>> GetDelayMetricsAsync(
+        public async Task<List<DelayMetric>> GetDelayMetricsAsync(
             string environment,
             DateTimeOffset? startDate = null,
             DateTimeOffset? endDate = null,
@@ -218,9 +217,10 @@ CROSS JOIN CountQuery c";
             using var cmd = connection.CreateCommand();
             cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
 
-            var result = await connection.QueryAsync<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>(
+            var result = await connection.QueryAsync<DelayMetric>(
                 cmd.CommandText,
-                commandTimeout: cmd.CommandTimeout);
+                commandTimeout: cmd.CommandTimeout,
+                commandType: CommandType.Text);
 
             return result.ToList();
         }
@@ -267,9 +267,9 @@ CROSS JOIN CountQuery c";
 
             return $@"
 SELECT
-    TRUNC(LTDB.CREATED_AT, 'HH') as TIMESTAMP,
-    AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as AVG_DELAY_SECONDS,
-    MAX(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) as MAX_DELAY_SECONDS,
+    TO_CHAR(TRUNC(LTDB.CREATED_AT, 'HH'), 'YYYY-MM-DD HH24:MI:SS') as TIMESTAMP,
+    CAST(AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
+    CAST(MAX(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
     COUNT(*) as REQUEST_COUNT
 FROM
     TCPSGATE.TRACKING LTDB

@@ -32,7 +32,7 @@ namespace Common.Services
             int pageSize = 10,
             int pageNumber = 1);
 
-        Task<List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>> GetDelayMetricsAsync(
+        Task<List<DelayMetric>> GetDelayMetricsAsync(
             string environment,
             DateTimeOffset? startDate = null,
             DateTimeOffset? endDate = null,

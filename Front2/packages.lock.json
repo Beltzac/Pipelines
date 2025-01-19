@@ -420,6 +420,11 @@
         "resolved": "0.0.7",
         "contentHash": "JQik5zuBENxzRG0u96QMPpdi9vI47pKMD6fq35hV6T5HrmatmM8m0j5w5XT+wIv8w63IaMsk+DnHt0BOyrfh9g=="
       },
+      "Dapper": {
+        "type": "Transitive",
+        "resolved": "2.1.35",
+        "contentHash": "YKRwjVfrG7GYOovlGyQoMvr1/IJdn+7QzNXJxyMh0YfFF5yvDmTYaJOVYWsckreNjGsGSEtrMTpnzxTUq/tZQw=="
+      },
       "DiffPlex": {
         "type": "Transitive",
         "resolved": "1.7.2",
@@ -2829,6 +2834,7 @@
           "CSharpDiff": "[0.0.7, )",
           "ClosedXML": "[0.104.2, )",
           "CompareNETObjects": "[4.83.0, )",
+          "Dapper": "[2.1.35, )",
           "DiffPlex": "[1.7.2, )",
           "FlexLabs.EntityFrameworkCore.Upsert": "[8.1.2, )",
           "Flurl": "[4.0.0, )",

@@ -25,6 +25,8 @@ internal class Program
     [STAThread]
     static void Main(string[] args)
     {
+        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
         CancellationTokenSource source = new CancellationTokenSource();
         CancellationToken token = source.Token;
 
