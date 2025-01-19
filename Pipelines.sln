@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Front2", "Front2\Front2.csproj", "{708C843D-BE42-4136-92B7-5F7C950AA1D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TugboatCaptainsPlayground", "TugboatCaptainsPlayground\TugboatCaptainsPlayground.csproj", "{708C843D-BE42-4136-92B7-5F7C950AA1D4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{EB220A3D-0CC0-4338-B0E2-96A951F346DE}"
 EndProject

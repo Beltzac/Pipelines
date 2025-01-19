@@ -1,7 +1,7 @@
 using Common.Models;
 using System.Collections.Generic;
 
-namespace Front2.Services
+namespace TugboatCaptainsPlayground.Services
 {
     public class OracleDiffState : StateBase
     {

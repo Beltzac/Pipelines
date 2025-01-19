@@ -18,14 +18,14 @@
 @*     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"/> *@
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" /> 
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
-    
-    <link rel="stylesheet" href="Front2.styles.css" />
+
+    <link rel="stylesheet" href="TugboatCaptainsPlayground.styles.css" />
     <link href="_content/Blazor.ContextMenu/blazorContextMenu.min.css" rel="stylesheet" />
     <link href="_content/Blazored.Typeahead/blazored-typeahead.css" rel="stylesheet" />
-    
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="css/app.css" />
@@ -51,7 +51,7 @@
         document.body.addEventListener('click', event => {
             if (event.target.tagName.toLowerCase() === 'a' && event.target.target === '_blank') {
                 event.preventDefault();
-                DotNet.invokeMethodAsync('Front2', 'OpenExternal', event.target.href);
+                DotNet.invokeMethodAsync('TugboatCaptainsPlayground', 'OpenExternal', event.target.href);
             }
         });
     </script>

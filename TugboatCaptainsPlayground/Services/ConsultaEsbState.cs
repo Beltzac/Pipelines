@@ -1,6 +1,6 @@
 using Common.Models;
 
-namespace Front2.Services
+namespace TugboatCaptainsPlayground.Services
 {
     public class ConsultaEsbState : StateBase
     {

@@ -73,7 +73,7 @@ jobs:
         run: dotnet tool install --global wix
 
       - name: Restore dependencies
-        run: dotnet restore Front2
+        run: dotnet restore TugboatCaptainsPlayground
 
       - name: Test
         run: dotnet test --verbosity minimal

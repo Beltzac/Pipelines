@@ -1,4 +1,4 @@
-﻿namespace Front2.Services
+﻿namespace TugboatCaptainsPlayground.Services
 {
     public interface ITracksLoading
     {
