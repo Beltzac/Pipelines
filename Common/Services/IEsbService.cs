@@ -2,7 +2,7 @@
 
 namespace Common.Services
 {
-    public interface IRequisicaoExecucaoService
+    public interface IEsbService
     {
         Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,

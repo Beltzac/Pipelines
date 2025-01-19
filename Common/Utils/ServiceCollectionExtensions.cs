@@ -60,15 +60,15 @@ namespace Common.Utils
 
             services.AddScoped<IAutoUpdateService, AutoUpdateService>();
 
-            services.AddScoped<ICommitDataExportService, CommitDataExportService>();
+            services.AddScoped<ICommitExportService, CommitExportService>();
             services.AddLogging();
             services.AddScoped<IOracleSchemaService, OracleSchemaService>();
-            services.AddScoped<IBuildInfoService, BuildInfoService>();
+            services.AddScoped<IRepositoryService, RepositoryService>();
             services.AddScoped<IConsulService, ConsulService>();
             services.AddBlazoredToast();
             services.AddBlazorContextMenu();
-            services.AddScoped<IRequisicaoExecucaoService, RequisicaoExecucaoService>();
-            services.AddScoped<ILtdbLtvcService, LtdbLtvcService>();
+            services.AddScoped<IEsbService, EsbService>();
+            services.AddScoped<ISggService, SggService>();
             services.AddScoped<IOracleMessageService, OracleMessageService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));

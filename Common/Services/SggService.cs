@@ -8,11 +8,11 @@ using System.Data;
 namespace Common.Services
 {
 
-    public class LtdbLtvcService : ILtdbLtvcService
+    public class SggService : ISggService
     {
         private readonly IConfigurationService _configService;
 
-        public LtdbLtvcService(IConfigurationService configService)
+        public SggService(IConfigurationService configService)
         {
             _configService = configService;
         }

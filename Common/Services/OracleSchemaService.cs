@@ -1,8 +1,7 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using CSharpDiff.Diffs.Models;
+﻿using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Common.Models;
-using Common.Services;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
@@ -10,7 +9,7 @@ using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
 using Dapper;
 
-namespace Common.ExternalApis
+namespace Common.Services
 {
     public class OracleSchemaService : IOracleSchemaService
     {
@@ -22,7 +21,7 @@ namespace Common.ExternalApis
         {
             _logger = logger;
             _configService = configService;
-            _formatter = SqlFormatter.Of(Dialect.PlSql);
+            _formatter = Of(Dialect.PlSql);
         }
 
         public async Task<IEnumerable<OracleDiffResult>> Compare(string sourceEnvName, string targetEnvName)
@@ -47,7 +46,7 @@ namespace Common.ExternalApis
             {
                 using var connection = new OracleConnection(connectionString);
                 var sql = "SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = :schema";
-                
+
                 await connection.QueryFirstAsync<int>(
                     sql,
                     new { schema },
@@ -66,7 +65,7 @@ namespace Common.ExternalApis
         {
             using var connection = new OracleConnection(connectionString);
             var sql = "SELECT TEXT FROM ALL_VIEWS WHERE OWNER = :schema AND VIEW_NAME = :viewName";
-            
+
             var text = await connection.QueryFirstOrDefaultAsync<string>(
                 sql,
                 new { schema, viewName },
@@ -80,7 +79,7 @@ namespace Common.ExternalApis
         {
             using var connection = new OracleConnection(connectionString);
             var sql = "SELECT VIEW_NAME, TEXT FROM ALL_VIEWS WHERE OWNER = :schema";
-            
+
             var results = connection.Query<(string ViewName, string Text)>(
                 sql,
                 new { schema },

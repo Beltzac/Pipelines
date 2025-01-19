@@ -1,6 +1,6 @@
-﻿namespace Common.Services
+﻿namespace Common.Utils
 {
-    public static class RepoExtensions
+    public static class RepositoryExtensions
     {
         private const int MIN_UPDATE_TIME = 60 * 3; // 3 minute in seconds
         private const int MAX_UPDATE_TIME = 60 * 60 * 4; // 4 hours in seconds

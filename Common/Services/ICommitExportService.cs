@@ -2,7 +2,7 @@
 
 namespace Common.Services
 {
-    public interface ICommitDataExportService
+    public interface ICommitExportService
     {
         Task<List<Commit>> GetRecentCommitsAsync(string username);
         Task ExportCommitDataAsync();

@@ -7,11 +7,11 @@ using System.Data;
 
 namespace Common.Services
 {
-    public class RequisicaoExecucaoService : IRequisicaoExecucaoService
+    public class EsbService : IEsbService
     {
         private readonly IConfigurationService _configService;
 
-        public RequisicaoExecucaoService(IConfigurationService configService)
+        public EsbService(IConfigurationService configService)
         {
             _configService = configService;
         }

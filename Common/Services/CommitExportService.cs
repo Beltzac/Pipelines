@@ -10,19 +10,19 @@ using System.Text.RegularExpressions;
 
 namespace Common.Services
 {
-    public class CommitDataExportService : ICommitDataExportService
+    public class CommitExportService : ICommitExportService
     {
         private readonly IProjectHttpClient _projectClient;
         private readonly IGitHttpClient _gitClient;
         private readonly IConfigurationService _configService;
-        private readonly ILogger<CommitDataExportService> _logger;
+        private readonly ILogger<CommitExportService> _logger;
         private readonly RepositoryDbContext _dbContext;
 
-        public CommitDataExportService(
+        public CommitExportService(
             IProjectHttpClient projectClient,
             IGitHttpClient gitClient,
             IConfigurationService configService,
-            ILogger<CommitDataExportService> logger,
+            ILogger<CommitExportService> logger,
             RepositoryDbContext dbContext)
         {
             _projectClient = projectClient;

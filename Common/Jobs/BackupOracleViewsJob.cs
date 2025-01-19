@@ -7,16 +7,16 @@ using LibGit2Sharp;
 
 namespace Common.Jobs
 {
-    public class OracleViewsBackupJob : IJob
+    public class BackupOracleViewsJob : IJob
     {
         private readonly IOracleSchemaService _oracleSchemaService;
         private readonly IConfigurationService _configService;
-        private readonly ILogger<OracleViewsBackupJob> _logger;
+        private readonly ILogger<BackupOracleViewsJob> _logger;
 
-        public OracleViewsBackupJob(
+        public BackupOracleViewsJob(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configService,
-            ILogger<OracleViewsBackupJob> logger)
+            ILogger<BackupOracleViewsJob> logger)
         {
             _oracleSchemaService = oracleSchemaService;
             _configService = configService;

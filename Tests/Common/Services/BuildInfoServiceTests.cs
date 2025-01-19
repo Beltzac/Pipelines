@@ -12,18 +12,18 @@ namespace Tests.Common.Services
 {
     public class BuildInfoServiceTests
     {
-        private readonly Mock<ILogger<BuildInfoService>> _loggerMock;
+        private readonly Mock<ILogger<RepositoryService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
         private readonly Mock<IRepositoryDatabase> _repositoryDatabaseMock;
         private readonly Mock<IBuildHttpClient> _buildClientMock;
         private readonly Mock<IProjectHttpClient> _projectClientMock;
         private readonly Mock<IGitHttpClient> _gitClientMock;
         private readonly LocalEmbedder _embedderMock;
-        private readonly BuildInfoService _buildInfoService;
+        private readonly RepositoryService _buildInfoService;
 
         public BuildInfoServiceTests()
         {
-            _loggerMock = new Mock<ILogger<BuildInfoService>>();
+            _loggerMock = new Mock<ILogger<RepositoryService>>();
             _configServiceMock = new Mock<IConfigurationService>();
             _repositoryDatabaseMock = new Mock<IRepositoryDatabase>();
             _buildClientMock = new Mock<IBuildHttpClient>();
@@ -38,7 +38,7 @@ namespace Tests.Common.Services
             };
             _configServiceMock.Setup(cs => cs.GetConfig()).Returns(configModel);
 
-            _buildInfoService = new BuildInfoService(
+            _buildInfoService = new RepositoryService(
                 _loggerMock.Object,
                 _configServiceMock.Object,
                 _repositoryDatabaseMock.Object,

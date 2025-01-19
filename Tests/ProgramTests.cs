@@ -54,7 +54,7 @@ namespace Tests
             serviceProvider.GetService<IBuildHttpClient>().Should().NotBeNull();
             serviceProvider.GetService<IProjectHttpClient>().Should().NotBeNull();
             serviceProvider.GetService<IGitHttpClient>().Should().NotBeNull();
-            serviceProvider.GetService<IBuildInfoService>().Should().NotBeNull();
+            serviceProvider.GetService<IRepositoryService>().Should().NotBeNull();
             serviceProvider.GetService<IConsulService>().Should().NotBeNull();
             serviceProvider.GetService<IRepositoryDatabase>().Should().NotBeNull();
             serviceProvider.GetService<IConfigurationService>().Should().NotBeNull();

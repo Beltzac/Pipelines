@@ -6,16 +6,16 @@ using LibGit2Sharp;
 
 namespace Common.Jobs
 {
-    public class ConsulBackupJob : IJob
+    public class BackupConsulJob : IJob
     {
         private readonly IConsulService _consulService;
         private readonly IConfigurationService _configService;
-        private readonly ILogger<ConsulBackupJob> _logger;
+        private readonly ILogger<BackupConsulJob> _logger;
 
-        public ConsulBackupJob(
+        public BackupConsulJob(
             IConsulService consulService,
             IConfigurationService configService,
-            ILogger<ConsulBackupJob> logger)
+            ILogger<BackupConsulJob> logger)
         {
             _consulService = consulService;
             _configService = configService;

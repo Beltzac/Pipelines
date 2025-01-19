@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 namespace Common.Services
 {
-    public interface IBuildInfoService
+    public interface IRepositoryService
     {
         Task CloneAllRepositoriesAsync();
         Task CloneRepositoryByBuildInfoAsync(Repository buildInfo);
