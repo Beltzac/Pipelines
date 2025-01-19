@@ -1,7 +1,7 @@
 using Common.Models;
 using Common.Services;
 
-namespace Front2.Services
+namespace TugboatCaptainsPlayground.Services
 {
     public class ConsulDiffState : StateBase
     {

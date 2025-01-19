@@ -143,7 +143,7 @@ internal class Program
 
         app.UseAntiforgery();
 
-        app.MapRazorComponents<Front2.Components.App>()
+        app.MapRazorComponents<TugboatCaptainsPlayground.Components.App>()
             .AddInteractiveServerRenderMode();
 
         var startupEnabled = IsStartupEnabled();
@@ -228,7 +228,7 @@ internal class Program
         }
 
         using var iconStream = new MemoryStream();
-        Front2.Resource.halloween53_109170.Save(iconStream);
+        TugboatCaptainsPlayground.Resource.halloween53_109170.Save(iconStream);
         iconStream.Position = 0;
 
         using var icon = new Icon(iconStream);

@@ -232,7 +232,7 @@ namespace Generation
 using System.Collections.Generic;
 using System.Text.Json;
 using System.IO;
-using Front2.Services;" : @"using System;
+using TugboatCaptainsPlayground.Services;" : @"using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.IO;";
