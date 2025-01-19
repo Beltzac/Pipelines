@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Generation", "Generation\Ge
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 EndProject
-Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Installer", "Installer\Installer.wixproj", "{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -73,18 +71,6 @@ Global
 		{DE65E465-65AE-4F55-9330-0AA9E4EC2DC1}.Release|x64.Build.0 = Release|x64
 		{DE65E465-65AE-4F55-9330-0AA9E4EC2DC1}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE65E465-65AE-4F55-9330-0AA9E4EC2DC1}.Release|x86.Build.0 = Release|Any CPU
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|ARM64.Build.0 = Debug|ARM64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|x64.ActiveCfg = Debug|x64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|x64.Build.0 = Debug|x64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|x86.ActiveCfg = Debug|x86
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Debug|x86.Build.0 = Debug|x86
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|ARM64.ActiveCfg = Release|ARM64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|ARM64.Build.0 = Release|ARM64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|x64.ActiveCfg = Release|x64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|x64.Build.0 = Release|x64
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|x86.ActiveCfg = Release|x86
-		{F142A973-49CA-4CF5-A59C-DA3AF11F7BE1}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

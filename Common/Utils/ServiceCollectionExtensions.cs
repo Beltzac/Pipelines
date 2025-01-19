@@ -73,8 +73,6 @@ namespace Common.Utils
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
-            services.AddScoped<IThemeService, ThemeService>();
-
             return services;
         }
     }
