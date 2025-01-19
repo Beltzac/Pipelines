@@ -21,6 +21,6 @@ namespace Front2.Services
         public LtdbLtvcRecord SelectedItem { get; set; }
         public string FormattedLtdbXml { get; set; }
         public string FormattedLtvcXml { get; set; }
-        public List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)> DelayData { get; set; } = new();
+        public List<DelayMetric> DelayData { get; set; } = new();
     }
 }

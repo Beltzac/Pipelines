@@ -1,4 +1,5 @@
 using Common.Models;
+using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
@@ -37,36 +38,19 @@ namespace Common.Services
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
 
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
+            var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
+            
+            var results = await connection.QueryAsync<RequisicaoExecucao, decimal, (RequisicaoExecucao Result, int TotalCount)>(
+                sql,
+                (requisicao, totalCount) => (requisicao, Convert.ToInt32(totalCount)),
+                splitOn: "TotalCount",
+                commandTimeout: 120);
 
-            var result = new List<RequisicaoExecucao>();
-            int totalCount = 0;
-            using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
-
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                result.Add(new RequisicaoExecucao
-                {
-                    Source = reader.IsDBNull("SOURCE") ? null : reader.GetString("SOURCE"),
-                    IdExecucao = reader.GetInt32("ID_EXECUCAO"),
-                    HttpMethod = reader.IsDBNull("HTTP_METHOD") ? null : reader.GetString("HTTP_METHOD"),
-                    HttpStatusCode = reader.IsDBNull("HTTP_STATUS_CODE") ? null : reader.GetString("HTTP_STATUS_CODE"),
-                    Requisicao = reader.IsDBNull("REQUISICAO") ? null : reader.GetString("REQUISICAO"),
-                    Resposta = reader.IsDBNull("RESPOSTA") ? null : reader.GetString("RESPOSTA"),
-                    Erro = reader.IsDBNull("ERRO") ? null : reader.GetString("ERRO"),
-                    NomeFluxo = reader.IsDBNull("NOME_FLUXO") ? null : reader.GetString("NOME_FLUXO"),
-                    EndPoint = reader.IsDBNull("END_POINT") ? null : reader.GetString("END_POINT"),
-                    Url = reader.IsDBNull("URL") ? null : reader.GetString("URL"),
-                    Duration = reader.IsDBNull(reader.GetOrdinal("DELAY")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DELAY")),
-                    DataInicio = reader.IsDBNull("DATA_INICIO") ? DateTime.MinValue : reader.GetDateTime("DATA_INICIO"),
-                    IdUsuarioInclusao = reader.IsDBNull("ID_USUARIO_INCLUSAO") ? 0 : reader.GetInt32("ID_USUARIO_INCLUSAO"),
-                    UserLogin = reader.IsDBNull("USER_LOGIN") ? null : reader.GetString("USER_LOGIN")
-                });
-                totalCount = reader.GetInt32("TotalCount");
-            }
-
-            return (Results: result, TotalCount: totalCount);
+            var processed = results.ToList();
+            return (
+                Results: processed.Select(x => x.Result).ToList(),
+                TotalCount: processed.FirstOrDefault().TotalCount
+            );
         }
 
         public string BuildQuery(
@@ -180,24 +164,17 @@ CROSS JOIN CountQuery c";
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
 
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = @"
+            var sql = @"
                 SELECT id_usuario, login
                 FROM TCPCAD.login
                 WHERE UPPER(login) LIKE '%' || UPPER(:searchText) || '%'
                 FETCH FIRST 10 ROWS ONLY";
 
-            cmd.Parameters.Add(new OracleParameter("searchText", searchText ?? string.Empty));
+            var results = await connection.QueryAsync<(int id_usuario, string login)>(
+                sql,
+                new { searchText = searchText ?? string.Empty });
 
-            var users = new Dictionary<int, string>();
-            using var reader = await cmd.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                users[reader.GetInt32(0)] = reader.GetString(1);
-            }
-
-            return users;
+            return results.ToDictionary(x => x.id_usuario, x => x.login);
         }
     }
 }

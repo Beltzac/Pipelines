@@ -71,6 +71,12 @@
         "resolved": "0.0.7",
         "contentHash": "JQik5zuBENxzRG0u96QMPpdi9vI47pKMD6fq35hV6T5HrmatmM8m0j5w5XT+wIv8w63IaMsk+DnHt0BOyrfh9g=="
       },
+      "Dapper": {
+        "type": "Direct",
+        "requested": "[2.1.35, )",
+        "resolved": "2.1.35",
+        "contentHash": "YKRwjVfrG7GYOovlGyQoMvr1/IJdn+7QzNXJxyMh0YfFF5yvDmTYaJOVYWsckreNjGsGSEtrMTpnzxTUq/tZQw=="
+      },
       "DiffPlex": {
         "type": "Direct",
         "requested": "[1.7.2, )",

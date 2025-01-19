@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Models;
+using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
@@ -27,29 +28,11 @@ namespace Common.Services
                     FROM TCPCONF.MENSAGEM m
                     WHERE m.EXCLUIDO = 0";
 
-                using (var cmd = new OracleCommand(messageQuery, conn))
-                using (var reader = await cmd.ExecuteReaderAsync())
+                var messageResults = await conn.QueryAsync<MessageDefinition>(messageQuery);
+                foreach (var message in messageResults)
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        var message = new MessageDefinition
-                        {
-                            IdMensagem = reader.GetInt64(0),
-                            IdSistemaMensagem = reader.GetInt64(1),
-                            IdDestinoMensagem = reader.GetInt64(2),
-                            IdGrupoMensagem = reader.GetInt64(3),
-                            Verificado = reader.GetInt32(4) == 1,
-                            Modulo = reader.GetString(5),
-                            Codigo = reader.GetString(6),
-                            Prefixo = reader.GetString(7),
-                            Elemento = reader.IsDBNull(8) ? null : reader.GetString(8),
-                            Observacao = reader.IsDBNull(9) ? null : reader.GetString(9)
-                        };
-
-                        message.Key = $"{message.Prefixo}-{message.Codigo}";
-
-                        messages[message.Key] = message;
-                    }
+                    message.Key = $"{message.Prefixo}-{message.Codigo}";
+                    messages[message.Key] = message;
                 }
 
                 // Fetch language-specific data
@@ -58,23 +41,19 @@ namespace Common.Services
                     FROM TCPCONF.MENSAGEM_IDIOMA mi
                     WHERE mi.EXCLUIDO = 0";
 
-                using (var cmd = new OracleCommand(languageQuery, conn))
-                using (var reader = await cmd.ExecuteReaderAsync())
+                var languageResults = await conn.QueryAsync<(long IdMensagem, int Idioma, string Titulo, string Descricao, string Ajuda)>(languageQuery);
+                foreach (var lang in languageResults)
                 {
-                    while (await reader.ReadAsync())
+                    var message = messages.Values.FirstOrDefault(x => x.IdMensagem == lang.IdMensagem);
+                    if (message != null)
                     {
-                        var messageId = reader.GetInt64(0);
-                        var message = messages.Values.FirstOrDefault(x => x.IdMensagem == messageId);
-                        if (message != null)
+                        message.Languages[lang.Idioma] = new MessageLanguageDefinition
                         {
-                            message.Languages[reader.GetInt32(1)] = new MessageLanguageDefinition
-                            {
-                                Idioma = reader.GetInt32(1),
-                                Titulo = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                Descricao = reader.GetString(3),
-                                Ajuda = reader.IsDBNull(4) ? null : reader.GetString(4)
-                            };
-                        }
+                            Idioma = lang.Idioma,
+                            Titulo = lang.Titulo,
+                            Descricao = lang.Descricao,
+                            Ajuda = lang.Ajuda
+                        };
                     }
                 }
             }

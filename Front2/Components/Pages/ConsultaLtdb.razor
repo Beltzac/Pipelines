@@ -322,7 +322,7 @@
                 ConsultaSggStateService.CurrentPage,
                 cts.Token);
 
-            var delayTask = Task.FromResult(new List<(DateTime Timestamp, double AvgDelaySeconds, double MaxDelaySeconds, int RequestCount)>());
+            var delayTask = Task.FromResult(new List<DelayMetric>());
             if (!paginate)
             {
                 delayTask = LtdbService.GetDelayMetricsAsync(

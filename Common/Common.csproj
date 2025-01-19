@@ -16,6 +16,7 @@
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.1.2" />
     <PackageReference Include="Flurl" Version="4.0.0" />
