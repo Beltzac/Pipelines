@@ -2,7 +2,7 @@ using Common.Models;
 
 namespace Common.Services
 {
-    public interface ILtdbLtvcService
+    public interface ISggService
     {
         Task<(List<LtdbLtvcRecord> Results, int TotalCount)> ExecuteQueryAsync(
             string environment,

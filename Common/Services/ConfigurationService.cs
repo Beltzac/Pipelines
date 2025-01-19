@@ -9,7 +9,7 @@ public class ConfigurationService : IConfigurationService
     public ConfigurationService()
         : this(Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "BuildInfoBlazorApp",
+            "TugboatCaptainsPlayground",
             "config.json"))
     {
     }

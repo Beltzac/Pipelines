@@ -5,13 +5,13 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
-public class BuildInfoJob : IJob
+public class CreateRepositoriesJobsJob : IJob
 {
-    private readonly IBuildInfoService _buildInfoService;
-    private readonly ILogger<BuildInfoJob> _logger;
+    private readonly IRepositoryService _buildInfoService;
+    private readonly ILogger<CreateRepositoriesJobsJob> _logger;
     private TelemetryClient _telemetryClient;
 
-    public BuildInfoJob(IBuildInfoService buildInfoService, ILogger<BuildInfoJob> logger, TelemetryClient telemetryClient)
+    public CreateRepositoriesJobsJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient)
     {
         _buildInfoService = buildInfoService;
         _logger = logger;
@@ -34,7 +34,7 @@ public class BuildInfoJob : IJob
                         .StartNow()
                         .Build();
 
-                    var job = JobBuilder.Create<RepositoryUpdateJob>()
+                    var job = JobBuilder.Create<UpdateRepositoryJob>()
                         .WithIdentity($"RepositoryUpdateJob-{repoId}")
                         .UsingJobData("RepositoryId", repoId.ToString())
                         .Build();

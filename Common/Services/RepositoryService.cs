@@ -18,13 +18,13 @@ using System.Text.RegularExpressions;
 
 namespace Common.Services
 {
-    public class BuildInfoService : IBuildInfoService
+    public class RepositoryService : IRepositoryService
     {
         private readonly IRepositoryDatabase _repositoryDatabase;
         private readonly IBuildHttpClient _buildClient;
         private readonly IProjectHttpClient _projectClient;
         private readonly IGitHttpClient _gitClient;
-        private readonly ILogger<BuildInfoService> _logger;
+        private readonly ILogger<RepositoryService> _logger;
         private readonly string _localCloneFolder;
         private readonly string _privateToken;
         private readonly string _name;
@@ -33,8 +33,8 @@ namespace Common.Services
         private readonly IConfigurationService _configService;
         private readonly LocalEmbedder _embedder;
 
-        public BuildInfoService(
-            ILogger<BuildInfoService> logger,
+        public RepositoryService(
+            ILogger<RepositoryService> logger,
             IConfigurationService configService,
             IRepositoryDatabase repositoryDatabase,
             IBuildHttpClient buildClient,
@@ -327,9 +327,9 @@ namespace Common.Services
                     AuthorEmail = commit.Author.Email,
                     ProjectName = buildInfo.Project,
                     RepoName = buildInfo.Name,
-                    BranchName = CommitDataExportService.GetBranchName(branch),
+                    BranchName = CommitExportService.GetBranchName(branch),
                     CommitDate = commit.Author.Date.ToUniversalTime(),
-                    JiraCardID = CommitDataExportService.ExtractJiraCardID(commit.Comment)
+                    JiraCardID = CommitExportService.ExtractJiraCardID(commit.Comment)
                 };
             }
             catch (Exception ex)

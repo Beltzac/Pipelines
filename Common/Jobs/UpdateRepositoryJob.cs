@@ -1,4 +1,5 @@
 ﻿using Common.Services;
+using Common.Utils;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -8,14 +9,14 @@ using Quartz;
 
 namespace Common.Jobs
 {
-    public class RepositoryUpdateJob : IJob
+    public class UpdateRepositoryJob : IJob
     {
-        private readonly IBuildInfoService _buildInfoService;
-        private readonly ILogger<BuildInfoJob> _logger;
+        private readonly IRepositoryService _buildInfoService;
+        private readonly ILogger<CreateRepositoriesJobsJob> _logger;
         private TelemetryClient _telemetryClient;
         private readonly AsyncRetryPolicy _retryPolicy;
 
-        public RepositoryUpdateJob(IBuildInfoService buildInfoService, ILogger<BuildInfoJob> logger, TelemetryClient telemetryClient)
+        public UpdateRepositoryJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient)
         {
             _buildInfoService = buildInfoService;
             _logger = logger;

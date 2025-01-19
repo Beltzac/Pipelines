@@ -15,13 +15,8 @@ using SmartComponents.LocalEmbeddings;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
-// electronize start
-// electronize build /target win
-// python.exe -m pip install --upgrade --upgrade-strategy only-if-needed git+https://github.com/Aider-AI/aider.git
-
 internal class Program
 {
-    //private static void Main(string[] args)
     [STAThread]
     static void Main(string[] args)
     {
@@ -30,7 +25,7 @@ internal class Program
         CancellationTokenSource source = new CancellationTokenSource();
         CancellationToken token = source.Token;
 
-        var title = "¯\\_(ツ)_/¯";
+        var title = "Tugboat Captain's Playground";
         bool forceClose = false;
 
         var mainWindow = new PhotinoWindow()
@@ -72,21 +67,21 @@ internal class Program
 
         builder.Services.AddQuartz(q =>
         {
-            q.ScheduleJob<BuildInfoJob>(trigger => trigger
+            q.ScheduleJob<CreateRepositoriesJobsJob>(trigger => trigger
                 .WithIdentity("BuildInfoJob-trigger")
                 .WithCronSchedule("0 0 0/4 * * ?"), // Every 4 hours
                 job => job.WithIdentity("BuildInfoJob")
             );
 
             // Schedule hourly runs
-            q.ScheduleJob<OracleViewsBackupJob>(trigger => trigger
+            q.ScheduleJob<BackupOracleViewsJob>(trigger => trigger
                 .WithIdentity("OracleViewsBackupJob-hourly-trigger")
                 .WithCronSchedule("0 0 * * * ?"), // Run every hour
                 job => job.WithIdentity("OracleViewsBackupJob-hourly")
             );
 
             // Schedule hourly runs for ConsulBackupJob
-            q.ScheduleJob<ConsulBackupJob>(trigger => trigger
+            q.ScheduleJob<BackupConsulJob>(trigger => trigger
                 .WithIdentity("ConsulBackupJob-hourly-trigger")
                 .WithCronSchedule("0 0 * * * ?"), // Run every hour
                 job => job.WithIdentity("ConsulBackupJob-hourly")
