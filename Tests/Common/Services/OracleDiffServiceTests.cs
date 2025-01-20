@@ -1,5 +1,6 @@
 using Common.ExternalApis;
 using Common.Models;
+using Common.Services;
 using Common.Utils;
 using FluentAssertions;
 using Microsoft.VisualStudio.Services.Common;

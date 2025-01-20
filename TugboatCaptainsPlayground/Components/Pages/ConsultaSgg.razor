@@ -1,4 +1,4 @@
-@page "/consulta-ltdb"
+@page "/consulta-sgg"
 @using BlazorDateRangePicker
 @using Common.Models
 @using Common.Services
@@ -13,7 +13,7 @@
 
 <StickyFilter>
     <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label">Environment</label>
             <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
                 @foreach (var env in config.OracleEnvironments)
@@ -23,8 +23,11 @@
             </select>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6">
             <label class="form-label">Range</label>
+            <div class="d-flex gap-2 mb-2">
+                <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
+            </div>
             <DateRangePicker
                 Culture="@CultureInfo.GetCultureInfo("pt-BR")"
                 TimePicker="true"
@@ -37,7 +40,7 @@
                 class="form-control" />
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label">Placa</label>
             <input type="text" class="form-control" @bind="ConsultaSggStateService.Placa" placeholder="Search by plate number">
         </div>
@@ -57,22 +60,25 @@
             <input type="number" class="form-control" @bind="ConsultaSggStateService.IdAgendamento">
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label">Move Type</label>
-            <select class="form-select" @bind="ConsultaSggStateService.MoveType">
-                <option value="">All</option>
-                <option value="ENTRY">ENTRY</option>
-                <option value="EXIT">EXIT</option>
-            </select>
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Status</label>
-            <select class="form-select" @bind="ConsultaSggStateService.Status">
-                <option value="">All</option>
-                <option value="OK">OK</option>
-                <option value="Error">Error</option>
-            </select>
+        <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Move Type</label>
+                    <select class="form-select" @bind="ConsultaSggStateService.MoveType">
+                        <option value="">All</option>
+                        <option value="ENTRY">ENTRY</option>
+                        <option value="EXIT">EXIT</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="ConsultaSggStateService.Status">
+                        <option value="">All</option>
+                        <option value="OK">OK</option>
+                        <option value="Error">Error</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-3">
@@ -80,7 +86,7 @@
             <input type="number" class="form-control" @bind="ConsultaSggStateService.MinDelay" step="0.1" min="0">
         </div>
 
-        <div class="col-12">
+        <div class="col-md-6">
             @if (ConsultaSggStateService.IsLoading)
             {
                 <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
@@ -88,7 +94,7 @@
             else
             {
                 <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
-                <button class="btn btn-secondary" @onclick="ClearFilters">Clear</button>
+                <button class="btn btn-secondary" @onclick="async () => await ClearFilters()">Clear</button>
                 <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
             }
         </div>
@@ -251,7 +257,7 @@
         }
     }
 
-    private DotNetObjectReference<ConsultaLtdb>? objRef;
+    private DotNetObjectReference<ConsultaSgg>? objRef;
     public async ValueTask DisposeAsync()
     {
         if (objRef != null)
@@ -278,6 +284,13 @@
         }
 
         StateHasChanged();
+    }
+
+    private async Task HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) range)
+    {
+        ConsultaSggStateService.StartDate = range.StartDate;
+        ConsultaSggStateService.EndDate = range.EndDate;
+        await ExecuteQuery(false);
     }
 
     private async Task ClearFilters()
