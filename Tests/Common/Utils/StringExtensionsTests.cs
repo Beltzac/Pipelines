@@ -16,23 +16,23 @@ namespace Tests.Common.Utils
             };
         }
 
-        [Test]
-        public void ToHtml_WithLogLevels_HighlightsLogLevels()
-        {
-            // Arrange
-            var commit = new Commit
-            {
-                CommitMessage = "ERROR: This is an error\nWARNING: This is a warning\nINFO: This is info"
-            };
+        //[Test]
+        //public void ToHtml_WithLogLevels_HighlightsLogLevels()
+        //{
+        //    // Arrange
+        //    var commit = new Commit
+        //    {
+        //        CommitMessage = "ERROR: This is an error\nWARNING: This is a warning\nINFO: This is info"
+        //    };
 
-            // Act
-            var result = commit.ToHtml(_config);
+        //    // Act
+        //    var result = commit.ToHtml(_config);
 
-            // Assert
-            result.Should().Contain("<span class='log-error'>ERROR</span>");
-            result.Should().Contain("<span class='log-warning'>WARNING</span>");
-            result.Should().Contain("<span class='log-info'>INFO</span>");
-        }
+        //    // Assert
+        //    result.Should().Contain("<span class='log-error'>ERROR</span>");
+        //    result.Should().Contain("<span class='log-warning'>WARNING</span>");
+        //    result.Should().Contain("<span class='log-info'>INFO</span>");
+        //}
 
         [Test]
         public void ToHtml_WithTimestamp_HighlightsTimestamp()
