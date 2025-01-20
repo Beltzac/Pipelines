@@ -14,6 +14,7 @@
 @inject IConsulService ConsulService
 @inject ICommitExportService CommitDataExportService
 @inject IConfigurationService ConfigService
+@inject CommitsStateService CommitsStateService
 
 <StickyFilter>
     <div class="d-flex align-items-center">
@@ -22,7 +23,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar ProgressValue="@progress" TextColor="black" Height="25px" Label="Buscando commits..." />
+<ProgressBar IsLoading="@CommitsStateService.IsLoading" ProgressValue="@CommitsStateService.ProgressValue" TextColor="black" Height="25px" Label="Buscando commits..." />
 
 @if (commitDataList != null && commitDataList.Any())
 {
@@ -66,7 +67,6 @@ else
 
 @code {
     private List<Commit> commitDataList = new List<Commit>();
-    private int progress = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,14 +81,26 @@ else
 
     private async Task SyncCommits()
     {
-        var progressHandler = new Progress<int>(value =>
+        CommitsStateService.IsLoading = true;
+        try
         {
-            progress = value;
-            StateHasChanged();
-        });
+            var progressHandler = new Progress<int>(value =>
+            {
+                CommitsStateService.ProgressValue = value;
+                StateHasChanged();
+            });
 
-        await CommitDataExportService.FetchCommitDataAsync(progressHandler);
-        toastService.ShowSuccess("Commits synchronized successfully!");
+            await CommitDataExportService.FetchCommitDataAsync(progressHandler);
+            toastService.ShowSuccess("Commits synchronized successfully!");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            CommitsStateService.IsLoading = false;
+        }
     }
 
     private async Task DownloadCommits()

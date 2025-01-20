@@ -154,14 +154,14 @@ namespace Common.Services
                 return true;
             }
 
-            var isSimpleString = IsSimpleString(strInput);
-            if (isSimpleString)
+            var isBasicAuth = IsBasicAuth(strInput);
+            if (isBasicAuth)
             {
                 return true;
             }
 
-            var isBasicAuth = IsBasicAuth(strInput);
-            if (isBasicAuth)
+            var isSimpleString = IsSimpleString(strInput);
+            if (isSimpleString)
             {
                 return true;
             }

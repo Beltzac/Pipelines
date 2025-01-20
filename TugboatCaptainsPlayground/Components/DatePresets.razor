@@ -1,0 +1,31 @@
+@using System.Globalization
+
+<div class="date-presets mb-2">
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("today"))">Today</button>
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("yesterday"))">Yesterday</button>
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("last24"))">Last 24h</button>
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("week"))">Last 7 days</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => SetDateRange("month"))">Last 30 days</button>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<(DateTime? StartDate, DateTime? EndDate)> OnDateRangeSelected { get; set; }
+
+    private async Task SetDateRange(string preset)
+    {
+        var now = DateTime.Now;
+        var endDate = now.Date.AddDays(1).AddTicks(-1);
+        var startDate = preset switch
+        {
+            "today" => now.Date,
+            "yesterday" => now.Date.AddDays(-1),
+            "last24" => now.AddHours(-24),
+            "week" => now.Date.AddDays(-7),
+            "month" => now.Date.AddDays(-30),
+            _ => now.Date
+        };
+
+        await OnDateRangeSelected.InvokeAsync((startDate, endDate));
+    }
+}
