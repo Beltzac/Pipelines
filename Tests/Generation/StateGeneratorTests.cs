@@ -10,6 +10,101 @@ namespace Tests.Generation
     public class StateGeneratorTests
     {
         [Test]
+        public void ImplementsBaseClassInterfaces()
+        {
+            // Arrange
+            var source = @"
+namespace TestNamespace
+{
+    public interface IBaseInterface
+    {
+        void BaseMethod();
+    }
+
+    public class BaseState : IBaseInterface
+    {
+        public void BaseMethod() {}
+    }
+
+    public class DerivedState : BaseState
+    {
+    }
+}";
+
+            // Act
+            var outputs = GetGeneratedOutput(source);
+
+            // Assert
+            var serviceOutput = outputs.First(o => o.HintName.Contains("DerivedStateService.g.cs"));
+            var serviceText = serviceOutput.SourceText.ToString();
+            serviceText.Should().Contain("public class DerivedStateService : IBaseInterface");
+        }
+
+        [Test]
+        public void ImplementsMultipleInterfaces()
+        {
+            // Arrange
+            var source = @"
+namespace TestNamespace
+{
+    public interface IFirstInterface
+    {
+        void FirstMethod();
+    }
+
+    public interface ISecondInterface
+    {
+        void SecondMethod();
+    }
+
+    public class MultiInterfaceState : IFirstInterface, ISecondInterface
+    {
+        public void FirstMethod() {}
+        public void SecondMethod() {}
+    }
+}";
+
+            // Act
+            var outputs = GetGeneratedOutput(source);
+
+            // Assert
+            var serviceOutput = outputs.First(o => o.HintName.Contains("MultiInterfaceStateService.g.cs"));
+            var serviceText = serviceOutput.SourceText.ToString();
+            serviceText.Should().Contain("public class MultiInterfaceStateService : IFirstInterface, ISecondInterface");        
+        }
+
+        [Test]
+        public void HandlesDeepInheritance()
+        {
+            // Arrange
+            var source = @"
+namespace TestNamespace
+{
+    public interface IDeepInterface
+    {
+        void DeepMethod();
+    }
+
+    public class Level1 : IDeepInterface
+    {
+        public void DeepMethod() {}
+    }
+
+    public class Level2 : Level1 {}
+    public class Level3 : Level2 {}
+    public class DeepState : Level3 {}
+}";
+
+            // Act
+            var outputs = GetGeneratedOutput(source);
+
+            // Assert
+            var serviceOutput = outputs.First(o => o.HintName.Contains("DeepStateService.g.cs"));
+            var serviceText = serviceOutput.SourceText.ToString();
+            serviceText.Should().Contain("public class DeepStateService : IDeepInterface");
+        }
+
+        [Test]
         public void GeneratesStateService_ForSimpleState()
         {
             // Arrange

@@ -1,6 +1,6 @@
 @using System.Globalization
-
 <div class="date-presets mb-2">
+    <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("last6"))">Last 6h</button>
     <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("today"))">Today</button>
     <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("yesterday"))">Yesterday</button>
     <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => SetDateRange("last24"))">Last 24h</button>
@@ -18,6 +18,7 @@
         var endDate = now.Date.AddDays(1).AddTicks(-1);
         var startDate = preset switch
         {
+            "last6" => now.AddHours(-6),
             "today" => now.Date,
             "yesterday" => now.Date.AddDays(-1),
             "last24" => now.AddHours(-24),

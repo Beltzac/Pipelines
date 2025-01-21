@@ -1,27 +1,5 @@
 ﻿namespace TugboatCaptainsPlayground.Services
 {
-    public interface ITracksLoading
-    {
-        bool IsLoading { get; set; }
-        int? ProgressValue { get; set; }
-        string ProgressLabel { get; set; }
-    }
-
-    public class LoadingScope : IDisposable
-    {
-        private readonly ITracksLoading _state;
-
-        public LoadingScope(ITracksLoading state)
-        {
-            _state = state;
-            _state.IsLoading = true;
-        }
-
-        public void Dispose()
-        {
-            _state.IsLoading = false;
-        }
-    }
 
     public class StateBase : ITracksLoading
     {
