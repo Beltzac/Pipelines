@@ -1,6 +1,7 @@
 using Common.Models;
 using Common.Services;
 using FluentAssertions;
+using Flurl.Http.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json.Linq;
@@ -16,12 +17,25 @@ namespace Tests.Common.Services
         private readonly ConsulService _consulService;
         private readonly string _tempPath;
 
+        private readonly HttpTest _httpTest;
+
         public ConsulServiceTests()
         {
             _loggerMock = new Mock<ILogger<ConsulService>>();
             _configServiceMock = new Mock<IConfigurationService>();
             _consulService = new ConsulService(_loggerMock.Object, _configServiceMock.Object);
             _tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            _httpTest = new HttpTest();
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/?recurse")
+                .SimulateException(new Exception("Batch failed"));
+            _httpTest.ForCallsTo("*/v1/kv/?keys")
+                .RespondWithJson(new[] { "key1", "key2" });
+            _httpTest.ForCallsTo("*/v1/kv/key1")
+                .RespondWithJson(new[] { new { Key = "key1", Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1")) } });
+            _httpTest.ForCallsTo("*/v1/kv/key2")
+                .RespondWithJson(new[] { new { Key = "key2", Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2")) } });
         }
 
         [Test]
@@ -39,8 +53,9 @@ namespace Tests.Common.Services
 
             // Assert
             result.Should().NotBeNull();
-            // The fact that we get here means the fallback worked, as the batch request would fail
-            // and the sequential request would also fail, but we handle those failures gracefully
+            result.Should().HaveCount(2);
+            result["key1"].Value.Should().Be("value1");
+            result["key2"].Value.Should().Be("value2");
         }
 
         [Test]
@@ -520,6 +535,12 @@ namespace Tests.Common.Services
 
             // Assert
             result.Should().BeEmpty();
+        }
+
+        [After(HookType.Test)]
+        public void DisposeHttpTest()
+        {
+            _httpTest.Dispose();
         }
     }
 }
