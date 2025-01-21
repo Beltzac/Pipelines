@@ -50,7 +50,16 @@ namespace Generation
             {
                 if (tuple.symbol == null)
                 {
-                    return; // Skip if no valid symbol (transform returned default)
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "SG001",
+                            "Null Symbol",
+                            "Skipping generation due to null symbol",
+                            "StateGenerator",
+                            DiagnosticSeverity.Warning,
+                            true),
+                        Location.None));
+                    return;
                 }
 
                 try
@@ -59,39 +68,70 @@ namespace Generation
                     var className = tuple.symbol.Name;
                     var serviceName = $"{className}Service";
 
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "SG002",
+                            "Processing Class",
+                            "Processing class {0} in namespace {1}",
+                            "StateGenerator",
+                            DiagnosticSeverity.Warning,
+                            true),
+                        Location.None,
+                        className,
+                        namespaceName));
+
                     // Get all properties from the state class including inherited ones
                     var properties = new List<IPropertySymbol>();
-                    var currentType = tuple.symbol;
+                    var propertyType = tuple.symbol;
 
-                    while (currentType != null)
+                    while (propertyType != null)
                     {
-                        properties.AddRange(currentType.GetMembers()
+                        properties.AddRange(propertyType.GetMembers()
                             .OfType<IPropertySymbol>()
                             .Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic));
 
-                        currentType = currentType.BaseType;
+                        propertyType = propertyType.BaseType;
                     }
 
                     // Get all interfaces including those from base classes
                     var interfaces = new List<string>();
                     var interfaceNamespaces = new HashSet<string>();
-                    var currentInterfaceType = tuple.symbol;
+                    var currentType = tuple.symbol;
 
-                    while (currentInterfaceType != null)
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            "SG003",
+                            "Base Type Info",
+                            "Class {0} has base type: {1}",
+                            "StateGenerator",
+                            DiagnosticSeverity.Warning,
+                            true),
+                        Location.None,
+                        className,
+                        currentType.BaseType?.ToString() ?? "none"));
+
+                    // Get all interfaces including inherited ones
+                    var allInterfaces = currentType.AllInterfaces;
+                    foreach (var iface in allInterfaces)
                     {
-                        // Add interfaces from current type
-                        foreach (var i in currentInterfaceType.AllInterfaces)
+                        var interfaceName = iface.Name;
+                        if (!interfaces.Contains(interfaceName))
                         {
-                            var interfaceName = i.Name;
-                            if (!interfaces.Contains(interfaceName))
-                            {
-                                interfaces.Add(interfaceName);
-                                interfaceNamespaces.Add(i.ContainingNamespace.ToDisplayString());
-                            }
+                            interfaces.Add(interfaceName);
+                            interfaceNamespaces.Add(iface.ContainingNamespace.ToDisplayString());
+                            
+                            context.ReportDiagnostic(Diagnostic.Create(
+                                new DiagnosticDescriptor(
+                                    "SG004",
+                                    "Interface Found",
+                                    "Found interface {0} in namespace {1}",
+                                    "StateGenerator",
+                                    DiagnosticSeverity.Warning,
+                                    true),
+                                Location.None,
+                                interfaceName,
+                                iface.ContainingNamespace.ToDisplayString()));
                         }
-
-                        // Move to base type
-                        currentInterfaceType = currentInterfaceType.BaseType;
                     }
 
                     var source = GenerateStateServiceSource(
