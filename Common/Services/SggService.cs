@@ -76,7 +76,7 @@ public string BuildQuery(
         conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
     if (!string.IsNullOrEmpty(genericText))
-        conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
+        conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
 
     if (!string.IsNullOrEmpty(placa))
         conditions.Add($"PLACA LIKE '%{placa}%'");
@@ -244,7 +244,7 @@ CROSS JOIN CountQuery c";
                 conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
             if (!string.IsNullOrEmpty(genericText))
-                conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
+                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
 
             if (!string.IsNullOrEmpty(placa))
                 conditions.Add($"LTDB.XML LIKE '%{placa}%'");
