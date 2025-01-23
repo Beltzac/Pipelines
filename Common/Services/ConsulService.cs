@@ -456,7 +456,7 @@ namespace Common.Services
 
         public async Task OpenInVsCode(ConsulEnvironment env)
         {
-            OpenFolderUtils.OpenWithVSCode(_logger, env.ConsulFolder);
+            OpenFolderUtils.OpenWithVSCode(_logger, _configService, env.ConsulFolder);
         }
 
         private string Normalize(ConsulKeyValue json, bool recursive)
