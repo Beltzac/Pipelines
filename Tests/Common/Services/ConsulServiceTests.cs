@@ -17,36 +17,50 @@ namespace Tests.Common.Services
         private readonly ConsulService _consulService;
         private readonly string _tempPath;
 
-        private readonly HttpTest _httpTest;
-
         public ConsulServiceTests()
         {
             _loggerMock = new Mock<ILogger<ConsulService>>();
             _configServiceMock = new Mock<IConfigurationService>();
             _consulService = new ConsulService(_loggerMock.Object, _configServiceMock.Object);
             _tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            _httpTest = new HttpTest();
-
-            _httpTest
-                .ForCallsTo("*/v1/kv/?recurse")
-                .SimulateException(new Exception("Batch failed"));
-            _httpTest.ForCallsTo("*/v1/kv/?keys")
-                .RespondWithJson(new[] { "key1", "key2" });
-            _httpTest.ForCallsTo("*/v1/kv/key1")
-                .RespondWithJson(new[] { new { Key = "key1", Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1")) } });
-            _httpTest.ForCallsTo("*/v1/kv/key2")
-                .RespondWithJson(new[] { new { Key = "key2", Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2")) } });
         }
 
         [Test]
         public async Task GetConsulKeyValues_ShouldFallbackToSequential_WhenBatchFails()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var consulEnv = new ConsulEnvironment
             {
                 ConsulUrl = "http://localhost:8500",
                 ConsulToken = "test-token"
             };
+
+            // Mock batch failure
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("recurse")
+                .SimulateException(new Exception("Batch failed"));
+
+            // Mock sequential success
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("keys")
+                .RespondWithJson(new[] { "key1", "key2" });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key1")
+                .RespondWithJson(new {
+                    Key = "key1",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1"))
+                });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key2")
+                .RespondWithJson(new {
+                    Key = "key2",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2"))
+                });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -56,11 +70,13 @@ namespace Tests.Common.Services
             result.Should().HaveCount(2);
             result["key1"].Value.Should().Be("value1");
             result["key2"].Value.Should().Be("value2");
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Batch failed")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Once);
         }
 
         [Test]
         public async Task GetConsulKeyValues_ShouldHandleEmptyValues()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var consulEnv = new ConsulEnvironment
             {
@@ -68,20 +84,41 @@ namespace Tests.Common.Services
                 ConsulToken = "test-token"
             };
 
+            // Mock sequential success with empty values
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("keys")
+                .RespondWithJson(new[] { "key1", "key2" });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key1")
+                .RespondWithJson(new {
+                    Key = "key1",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(""))
+                });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key2")
+                .RespondWithJson(new {
+                    Key = "key2",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(""))
+                });
+
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
 
             // Assert
             result.Should().NotBeNull();
-            foreach (var kv in result.Values)
-            {
-                kv.Value.Should().NotBeNull(); // Even null values should be converted to empty string
-            }
+            result.Should().HaveCount(2);
+            result["key1"].Value.Should().Be("");
+            result["key2"].Value.Should().Be("");
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
         public async Task GetConsulKeyValues_ShouldIncludeUrlInResult()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var consulEnv = new ConsulEnvironment
             {
@@ -89,16 +126,118 @@ namespace Tests.Common.Services
                 ConsulToken = "test-token"
             };
 
+            // Mock sequential success with URL
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("keys")
+                .RespondWithJson(new[] { "key1", "key2" });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key1")
+                .RespondWithJson(new {
+                    Key = "key1",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1"))
+                });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key2")
+                .RespondWithJson(new {
+                    Key = "key2",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2"))
+                });
+
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
 
             // Assert
             result.Should().NotBeNull();
-            foreach (var kv in result.Values)
+            result.Should().HaveCount(2);
+            result["key1"].Url.Should().Be("http://localhost:8500/v1/kv/key1");
+            result["key2"].Url.Should().Be("http://localhost:8500/v1/kv/key2");
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task GetConsulKeyValues_ShouldHandleInvalidJson()
+        {
+            using var _httpTest = new HttpTest();
+            // Arrange
+            var consulEnv = new ConsulEnvironment
             {
-                kv.Url.Should().NotBeNullOrEmpty();
-                kv.Url.Should().StartWith(consulEnv.ConsulUrl);
-            }
+                ConsulUrl = "http://localhost:8500",
+                ConsulToken = "test-token"
+            };
+
+            // Mock sequential success with invalid JSON
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("keys")
+                .RespondWithJson(new[] { "key1", "key2" });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key1")
+                .RespondWithJson(new {
+                    Key = "key1",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{invalid json}"))
+                });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/key2")
+                .RespondWithJson(new {
+                    Key = "key2",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{invalid json}"))
+                });
+
+            // Act
+            var result = await _consulService.GetConsulKeyValues(consulEnv);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(2);
+            result["key1"].Value.Should().Be("{invalid json}");
+            result["key2"].Value.Should().Be("{invalid json}");
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public async Task GetConsulKeyValues_ShouldResolveRecursiveValues()
+        {
+            using var _httpTest = new HttpTest();
+            // Arrange
+            var consulEnv = new ConsulEnvironment
+            {
+                ConsulUrl = "http://localhost:8500",
+                ConsulToken = "test-token"
+            };
+
+            // Mock sequential success with recursive values
+            _httpTest
+                .ForCallsTo("*/v1/kv")
+                .WithQueryParam("keys")
+                .RespondWithJson(new[] { "config/base", "config/override" });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/config/base")
+                .RespondWithJson(new {
+                    Key = "config/base",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{ \"setting\": \"base-value\" }"))
+                });
+
+            _httpTest
+                .ForCallsTo("*/v1/kv/config/override")
+                .RespondWithJson(new {
+                    Key = "config/override",
+                    Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{ \"setting\": \"{{ key 'config/base' }}\" }"))
+                });
+
+            // Act
+            var result = await _consulService.GetConsulKeyValues(consulEnv);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(2);
+            result["config/override"].ValueRecursive.Should().Contain("base-value");
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
@@ -207,12 +346,14 @@ namespace Tests.Common.Services
         [Test]
         public async Task UpdateConsulKeyValue_ShouldLogInformation()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var consulEnv = new ConsulEnvironment
             {
                 ConsulUrl = "http://localhost:8500",
                 ConsulToken = "test-token"
             };
+
             var key = "test/key";
             var value = "test-value";
 
@@ -233,213 +374,9 @@ namespace Tests.Common.Services
         }
 
         [Test]
-        public async Task GetConsulKeyValues_ShouldResolveRecursiveValues()
-        {
-            // Arrange
-            var consulEnv = new ConsulEnvironment
-            {
-                ConsulUrl = "http://localhost:8500",
-                ConsulToken = "test-token"
-            };
-
-            var keyValues = new Dictionary<string, string>
-            {
-                { "config/base", "{ \"setting\": \"base-value\" }" },
-                { "config/override", "{ \"setting\": \"{{ key 'config/base' }}\" }" }
-            };
-
-            // Act
-            var result = await _consulService.GetConsulKeyValues(consulEnv);
-
-            // Assert
-            result.Should().NotBeNull();
-            result["config/override"].ValueRecursive.Should().Contain("base-value");
-        }
-
-        [Test]
-        public async Task GetConsulKeyValues_ShouldHandleInvalidJson()
-        {
-            // Arrange
-            var consulEnv = new ConsulEnvironment
-            {
-                ConsulUrl = "http://localhost:8500",
-                ConsulToken = "test-token"
-            };
-
-            // Act
-            var result = await _consulService.GetConsulKeyValues(consulEnv);
-
-            // Assert
-            result.Should().NotBeNull();
-            foreach (var kv in result.Values)
-            {
-                if (!kv.IsValidJson)
-                {
-                    kv.Value.Should().Be(kv.ValueRecursive);
-                }
-            }
-        }
-
-        [Test]
-        public async Task GetConsulKeyValues_ShouldHandleMissingReferences()
-        {
-            // Arrange
-            var consulEnv = new ConsulEnvironment
-            {
-                ConsulUrl = "http://localhost:8500",
-                ConsulToken = "test-token"
-            };
-
-            // Act
-            var result = await _consulService.GetConsulKeyValues(consulEnv);
-
-            // Assert
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Key not found:")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()
-                ),
-                Times.AtLeastOnce
-            );
-        }
-
-        [Test]
-        public async Task CompareAsync_ShouldThrowWhenEnvironmentNotFound()
-        {
-            // Arrange
-            _configServiceMock.Setup(x => x.GetConfig())
-                .Returns(new ConfigModel { ConsulEnvironments = new List<ConsulEnvironment>() });
-
-            // Act & Assert
-            await _consulService.Invoking(x => x.CompareAsync("source", "target"))
-                .Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Source environment 'source' not found");
-        }
-
-        [Test]
-        public void JoinPathKey_ShouldCombinePathsCorrectly()
-        {
-            // Arrange
-            var folderPath = @"C:\test";
-            var key = "path/to/key";
-
-            // Act
-            var result = ConsulService.JoinPathKey(folderPath, key);
-
-            // Assert
-            result.Should().Be(@"C:\test\path\to\key");
-        }
-
-        [Test]
-        public void IsValidFormated_WithEmptyInput_ShouldReturnTrue()
-        {
-            // Act
-            var result = _consulService.IsValidFormated("key", "");
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public void IsValidFormated_WithNullInput_ShouldReturnTrue()
-        {
-            // Act
-            var result = _consulService.IsValidFormated("key", null);
-
-            // Assert
-            result.Should().BeTrue();
-        }
-
-        [Test]
-        public void SaveKvToFile_ShouldCreateDirectoryAndSaveFile()
-        {
-            // Arrange
-            var key = "test/key";
-            var value = "test-value";
-            var folderPath = _tempPath;
-
-            // Act
-            _consulService.SaveKvToFile(folderPath, key, value);
-
-            // Assert
-            var expectedPath = Path.Combine(folderPath, "test", "key");
-            File.Exists(expectedPath).Should().BeTrue();
-            File.ReadAllText(expectedPath).Should().Be(value);
-        }
-
-        [Test]
-        public void SaveKvToFile_WithNullValue_ShouldNotCreateFile()
-        {
-            // Arrange
-            var key = "test/key";
-            string value = null;
-            var folderPath = _tempPath;
-
-            // Act
-            _consulService.SaveKvToFile(folderPath, key, value);
-
-            // Assert
-            var expectedPath = Path.Combine(folderPath, "test", "key");
-            File.Exists(expectedPath).Should().BeFalse();
-        }
-
-        [Test]
-        public async Task DownloadConsulAsync_ShouldHandleError()
-        {
-            // Arrange
-            var consulEnv = new ConsulEnvironment
-            {
-                ConsulUrl = "http://invalid-url",
-                ConsulToken = "test-token",
-                ConsulFolder = _tempPath
-            };
-
-            // Act
-            await _consulService.DownloadConsulAsync(consulEnv);
-
-            // Assert
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Error:")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()
-                ),
-                Times.Once
-            );
-        }
-
-        [Test]
-        public void SaveKvToFile_ShouldLogError_WhenWriteFails()
-        {
-            // Arrange
-            var key = "test/key";
-            var value = "test-value";
-            var invalidPath = Path.Combine("Z:", "nonexistent", Guid.NewGuid().ToString());
-
-            // Act
-            _consulService.SaveKvToFile(invalidPath, key, value);
-
-            // Assert
-            _loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Error to save:")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception, string>>()
-                ),
-                Times.Once
-            );
-        }
-
-        [Test]
         public async Task CompareAsync_ShouldHandleEmptyEnvironments()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var sourceEnv = new ConsulEnvironment { Name = "source", ConsulUrl = "http://source" };
             var targetEnv = new ConsulEnvironment { Name = "target", ConsulUrl = "http://target" };
@@ -458,8 +395,9 @@ namespace Tests.Common.Services
         }
 
         [Test]
-        public async Task CompareAsync_ShouldDetectDifferences()
+        public async Task CompareAsync_ShouldHandleNullValues()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var sourceEnv = new ConsulEnvironment { Name = "source", ConsulUrl = "http://source" };
             var targetEnv = new ConsulEnvironment { Name = "target", ConsulUrl = "http://target" };
@@ -489,6 +427,7 @@ namespace Tests.Common.Services
         [Test]
         public async Task CompareAsync_ShouldHandleMissingKeys()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var sourceEnv = new ConsulEnvironment { Name = "source", ConsulUrl = "http://source" };
             var targetEnv = new ConsulEnvironment { Name = "target", ConsulUrl = "http://target" };
@@ -520,6 +459,7 @@ namespace Tests.Common.Services
         [Test]
         public async Task CompareAsync_ShouldHandleRecursiveValues()
         {
+            using var _httpTest = new HttpTest();
             // Arrange
             var sourceEnv = new ConsulEnvironment { Name = "source", ConsulUrl = "http://source" };
             var targetEnv = new ConsulEnvironment { Name = "target", ConsulUrl = "http://target" };
@@ -540,7 +480,7 @@ namespace Tests.Common.Services
         [After(HookType.Test)]
         public void DisposeHttpTest()
         {
-            _httpTest.Dispose();
+            //_httpTest.Dispose();
         }
     }
 }

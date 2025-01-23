@@ -21,7 +21,7 @@ namespace Common.Services
             string environment,
             DateTimeOffset? startDate = null,
             DateTimeOffset? endDate = null,
-            string? containerNumber = null,
+            string? genericText = null,
             string? placa = null,
             string? motorista = null,
             string? moveType = null,
@@ -39,7 +39,7 @@ namespace Common.Services
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
 
-            var sql = BuildQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
+            var sql = BuildQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
 
             var queryResult = await connection.QueryAsync<LtdbLtvcRecord, decimal, (LtdbLtvcRecord Result, int TotalCount)>(
                 sql,
@@ -57,7 +57,7 @@ namespace Common.Services
 public string BuildQuery(
     DateTimeOffset? startDate,
     DateTimeOffset? endDate,
-    string? containerNumber = null,
+    string? genericText = null,
     string? placa = null,
     string? motorista = null,
     string? moveType = null,
@@ -75,8 +75,8 @@ public string BuildQuery(
     if (endDate.HasValue)
         conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-    if (!string.IsNullOrEmpty(containerNumber))
-        conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
+    if (!string.IsNullOrEmpty(genericText))
+        conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
 
     if (!string.IsNullOrEmpty(placa))
         conditions.Add($"PLACA LIKE '%{placa}%'");
@@ -199,7 +199,7 @@ CROSS JOIN CountQuery c";
             string environment,
             DateTimeOffset? startDate = null,
             DateTimeOffset? endDate = null,
-            string? containerNumber = null,
+            string? genericText = null,
             string? placa = null,
             string? motorista = null,
             string? moveType = null,
@@ -215,7 +215,7 @@ CROSS JOIN CountQuery c";
             await connection.OpenAsync();
 
             using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, containerNumber, placa, motorista, moveType, idAgendamento, status);
+            cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status);
 
             var result = await connection.QueryAsync<DelayMetric>(
                 cmd.CommandText,
@@ -228,7 +228,7 @@ CROSS JOIN CountQuery c";
         private string BuildDelayMetricsQuery(
             DateTimeOffset? startDate,
             DateTimeOffset? endDate,
-            string? containerNumber = null,
+            string? genericText = null,
             string? placa = null,
             string? motorista = null,
             string? moveType = null,
@@ -243,8 +243,8 @@ CROSS JOIN CountQuery c";
             if (endDate.HasValue)
                 conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (!string.IsNullOrEmpty(containerNumber))
-                conditions.Add($"LTDB.XML LIKE '%{containerNumber}%'");
+            if (!string.IsNullOrEmpty(genericText))
+                conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
 
             if (!string.IsNullOrEmpty(placa))
                 conditions.Add($"LTDB.XML LIKE '%{placa}%'");

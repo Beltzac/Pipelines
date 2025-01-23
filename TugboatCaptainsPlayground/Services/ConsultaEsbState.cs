@@ -11,7 +11,7 @@ namespace TugboatCaptainsPlayground.Services
         public RequisicaoExecucao SelectedItem { get; set; }
         public string UrlFilter { get; set; }
         public string HttpMethod { get; set; }
-        public string ContainerNumbers { get; set; }
+        public string GenericText { get; set; }
         public int? ExecucaoId { get; set; }
         public string HttpStatusRange { get; set; }
         public string ResponseStatus { get; set; }
