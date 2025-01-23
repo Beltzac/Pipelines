@@ -7,7 +7,7 @@
 {
     <!-- Show the 'Update Available' link -->
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
-        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> @($"v{latestRelease.tag_name}") Available!
+        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> @($"v{latestRelease.tag_name}") Disponível!
     </a>
 }
 else if (updateAvailable && downloadProgress > 0)
@@ -17,13 +17,13 @@ else if (updateAvailable && downloadProgress > 0)
 else if (isLoading)
 {
     <div class="spinner-border" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">Carregando...</span>
     </div>
 }
 else
 {
-    <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync" title="Click to check for updates">
-        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"v{currentVersion}")
+    <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync" title="Clique para verificar atualizações">
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"versão {currentVersion}")
     </a>
 }
 

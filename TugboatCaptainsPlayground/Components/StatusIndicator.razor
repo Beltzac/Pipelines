@@ -10,11 +10,21 @@
         Unknown,
         None
     }
+
+    private string GetStatusText(Status status) => status switch
+    {
+        Status.Working => "Em Execução",
+        Status.Error => "Erro",
+        Status.Success => "Sucesso", 
+        Status.Unknown => "Desconhecido",
+        Status.None => "Inativo",
+        _ => status.ToString()
+    };
 }
 
 <div class="status-indicator @(CurrentStatus.ToString().ToLower())">
     <div class="indicator-icon"></div>
-    <div class="indicator-text">@CurrentStatus.ToString()</div>
+    <div class="indicator-text">@GetStatusText(CurrentStatus)</div>
 </div>
 
 <style>

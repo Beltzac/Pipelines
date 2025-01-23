@@ -41,7 +41,7 @@
     {
         var uri = new Uri(NavigationManager.Uri, UriKind.Absolute);
 
-        _logger.LogInformation($"ScrollToFragment: {uri}");
+        _logger.LogInformation($"Rolando para fragmento: {uri}");
 
         var fragment = uri.Fragment;
         if (fragment.StartsWith('#'))
@@ -60,7 +60,7 @@
                 await JSRuntime.InvokeVoidAsync("BlazorScrollToId", elementId);
             }
 
-            _logger.LogInformation($"Scrolling to fragment: {elementId}");
+            _logger.LogInformation($"Rolando para o fragmento: {elementId}");
         }
     }
 }
