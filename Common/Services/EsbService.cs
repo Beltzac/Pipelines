@@ -22,7 +22,7 @@ namespace Common.Services
             DateTimeOffset? endDate = null,
             string? urlFilter = null,
             string? httpMethod = null,
-            string[]? containerNumbers = null,
+            string? genericText = null,
             int? userId = null,
             int? execucaoId = null,
             int pageSize = 10,
@@ -38,7 +38,7 @@ namespace Common.Services
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
 
-            var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, containerNumbers, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
+            var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, genericText, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
             
             var results = await connection.QueryAsync<RequisicaoExecucao, decimal, (RequisicaoExecucao Result, int TotalCount)>(
                 sql,
@@ -58,7 +58,7 @@ namespace Common.Services
             DateTimeOffset? endDate,
             string? urlFilter,
             string? httpMethod,
-            string[]? containerNumbers,
+            string? genericText,
             int? userId,
             int? execucaoId,
             int pageSize,
@@ -80,11 +80,8 @@ namespace Common.Services
             if (!string.IsNullOrEmpty(httpMethod))
                 conditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
 
-            if (containerNumbers?.Any() == true)
-            {
-                var containerConditions = containerNumbers.Select(c => $"RE.REQUISICAO LIKE '%{c}%' OR RE.RESPOSTA LIKE '%{c}%' OR RE.ERRO LIKE '%{c}%'");
-                conditions.Add($"({string.Join(" OR ", containerConditions)})");
-            }
+            if (!string.IsNullOrEmpty(genericText))
+                conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
 
             if (userId.HasValue)
                 conditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");

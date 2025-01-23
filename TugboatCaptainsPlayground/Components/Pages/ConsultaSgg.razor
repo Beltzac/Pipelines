@@ -51,8 +51,8 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Container Numbers</label>
-            <input type="text" class="form-control" @bind="ConsultaSggStateService.ContainerNumbers" placeholder="Search container numbers">
+            <label class="form-label">LTDB/LTVC"</label>
+            <input type="text" class="form-control" @bind="ConsultaSggStateService.GenericText" placeholder="Aceita ReGex">
         </div>
 
         <div class="col-md-3">
@@ -295,7 +295,7 @@
 
     private async Task ClearFilters()
     {
-        ConsultaSggStateService.ContainerNumbers = null;
+        ConsultaSggStateService.GenericText = null;
         ConsultaSggStateService.Placa = null;
         ConsultaSggStateService.MoveType = null;
         ConsultaSggStateService.IdAgendamento = null;
@@ -324,7 +324,7 @@
                 ConsultaSggStateService.SelectedEnvironment,
                 ConsultaSggStateService.StartDate,
                 ConsultaSggStateService.EndDate,
-                ConsultaSggStateService.ContainerNumbers,
+                ConsultaSggStateService.GenericText,
                 ConsultaSggStateService.Placa,
                 null,
                 ConsultaSggStateService.MoveType,
@@ -342,7 +342,7 @@
                     ConsultaSggStateService.SelectedEnvironment,
                     ConsultaSggStateService.StartDate,
                     ConsultaSggStateService.EndDate,
-                    ConsultaSggStateService.ContainerNumbers,
+                    ConsultaSggStateService.GenericText,
                     ConsultaSggStateService.Placa,
                     null,
                     ConsultaSggStateService.MoveType,
@@ -502,7 +502,7 @@
             ConsultaSggStateService.EndDate,
             ConsultaSggStateService.Placa,
             ConsultaSggStateService.RequestId,
-            ConsultaSggStateService.ContainerNumbers,
+            ConsultaSggStateService.GenericText,
             ConsultaSggStateService.MoveType,
             ConsultaSggStateService.IdAgendamento,
             ConsultaSggStateService.Status,

@@ -59,7 +59,7 @@
 
         <div class="col-md-3">
             <label class="form-label">Request/Response</label>
-            <input type="text" class="form-control" @bind="ConsultaEsbStateService.ContainerNumbers" placeholder="Comma separated values" title="You can enter multiple values separated by commas">
+            <input type="text" class="form-control" @bind="ConsultaEsbStateService.GenericText" placeholder="Aceita ReGex">
         </div>
 
         <div class="col-md-3">
@@ -359,7 +359,7 @@
     {
         ConsultaEsbStateService.UrlFilter = null;
         ConsultaEsbStateService.HttpMethod = null;
-        ConsultaEsbStateService.ContainerNumbers = null;
+        ConsultaEsbStateService.GenericText = null;
         ConsultaEsbStateService.User = null;
         ConsultaEsbStateService.ExecucaoId = null;
         ConsultaEsbStateService.HttpStatusRange = null;
@@ -393,17 +393,13 @@
 
             StateHasChanged();
 
-            var containerNumbersArray = !string.IsNullOrEmpty(ConsultaEsbStateService.ContainerNumbers)
-                ? ConsultaEsbStateService.ContainerNumbers.Split(',').Select(x => x.Trim()).ToArray()
-                : null;
-
             var (queryResults, total) = await RequisicaoService.ExecuteQueryAsync(
                 ConsultaEsbStateService.SelectedEnvironment,
                 ConsultaEsbStateService.StartDate,
                 ConsultaEsbStateService.EndDate,
                 ConsultaEsbStateService.UrlFilter,
                 ConsultaEsbStateService.HttpMethod,
-                containerNumbersArray,
+                ConsultaEsbStateService.GenericText,
                 ConsultaEsbStateService.User?.Key,
                 ConsultaEsbStateService.ExecucaoId,
                 ConsultaEsbStateService.PageSize,
@@ -458,7 +454,7 @@
             ConsultaEsbStateService.EndDate,
             ConsultaEsbStateService.UrlFilter,
             ConsultaEsbStateService.HttpMethod,
-            !string.IsNullOrEmpty(ConsultaEsbStateService.ContainerNumbers) ? ConsultaEsbStateService.ContainerNumbers.Split(',').Select(x => x.Trim()).ToArray() : null,
+            ConsultaEsbStateService.GenericText,
             ConsultaEsbStateService.User?.Key,
             ConsultaEsbStateService.ExecucaoId,
             ConsultaEsbStateService.PageSize,

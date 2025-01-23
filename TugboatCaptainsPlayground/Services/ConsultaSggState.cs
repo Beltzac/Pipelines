@@ -9,7 +9,7 @@ namespace TugboatCaptainsPlayground.Services
         public DateTimeOffset? EndDate { get; set; }
         public string Placa { get; set; }
         public string RequestId { get; set; }
-        public string ContainerNumbers { get; set; }
+        public string GenericText { get; set; }
         public long? IdAgendamento { get; set; }
         public string MoveType { get; set; }
         public string Status { get; set; }

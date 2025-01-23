@@ -47,8 +47,14 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
 
+            if (string.IsNullOrWhiteSpace(responseBody))
+            {
+                _logger.LogWarning("Empty response received from Consul agent endpoint");
+                return string.Empty;
+            }
+
             var json = JObject.Parse(responseBody);
-            return json["Config"]["Datacenter"].ToString();
+            return json["Config"]?["Datacenter"]?.ToString() ?? string.Empty;
         }
 
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
@@ -96,7 +102,6 @@ namespace Common.Services
                 return true;
             }
 
-
             var regex = new Regex(RegexPatternKey);
             if (regex.IsMatch(strInput))
             {
@@ -106,7 +111,7 @@ namespace Common.Services
             var isJson = key.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
             var looksLikeJson = strInput.Trim().StartsWith("{");
             var looksLikeArray = strInput.Trim().StartsWith("[");
-            var looksLikeProperty = strInput.Trim().StartsWith("\"");
+            var looksLikeProperty = strInput.Trim().StartsWith("\"") && strInput.Contains(":");
 
             if (looksLikeJson)
             {
@@ -115,7 +120,7 @@ namespace Common.Services
 
             if (looksLikeProperty)
             {
-                strInput = $"{{{strInput}}}"; // Pra testar se props soltas podem montar um obj
+                strInput = $"{{{strInput}}}"; // Wrap property in object
             }
 
             if (isJson || looksLikeJson || looksLikeArray || looksLikeProperty)
@@ -196,8 +201,12 @@ namespace Common.Services
 
         public bool IsSimpleString(string value)
         {
-            // No whitespace, no line breaks
-            return !value.Contains(" ") && !value.Contains("\n");
+            // No whitespace, line breaks, or special characters that might indicate a complex value
+            return !value.Contains(" ") &&
+                   !value.Contains("\n") &&
+                   !value.Contains("{") &&
+                   !value.Contains("}") &&
+                   !value.Contains(":");
         }
 
         public bool IsPath(string value)
@@ -219,6 +228,11 @@ namespace Common.Services
 
         public bool IsJson(string value)
         {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
             try
             {
                 var obj = JToken.Parse(value);
@@ -226,6 +240,11 @@ namespace Common.Services
             }
             catch (JsonReaderException)
             {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error parsing JSON");
                 return false;
             }
         }
@@ -310,46 +329,57 @@ namespace Common.Services
 
         async Task<Dictionary<string, string>> FetchConsulKVSequential(ConsulEnvironment consulEnv)
         {
-
-            Dictionary<string, string> keyValues = new Dictionary<string, string>();
-
-
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("X-Consul-Token", consulEnv.ConsulToken);
-
-            var url = $"{consulEnv.ConsulUrl}/v1/kv/?keys";
+            var keyValues = new Dictionary<string, string>();
 
             try
             {
                 // Fetch all keys at the root level
-                var response = await httpClient.GetAsync(url);
+                var keysResponse = await consulEnv.ConsulUrl
+                    .AppendPathSegment("v1")
+                    .AppendPathSegment("kv")
+                    .SetQueryParam("keys")
+                    .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                    .GetStringAsync();
 
-                if (!response.IsSuccessStatusCode)
+                if (string.IsNullOrEmpty(keysResponse))
                 {
-                    throw new Exception($"Failed to fetch keys. Status Code: {response.StatusCode}");
+                    return keyValues;
                 }
 
-                var keys = JArray.Parse(await response.Content.ReadAsStringAsync());
+                var keys = JArray.Parse(keysResponse);
 
                 foreach (var key in keys)
                 {
-                    var keyUrl = $"{consulEnv.ConsulUrl}/v1/kv/{key}";
-                    var keyResponse = await httpClient.GetAsync(keyUrl);
-
-                    if (keyResponse.IsSuccessStatusCode)
+                    try
                     {
-                        var json = await keyResponse.Content.ReadAsStringAsync();
-                        var keyDetail = JArray.Parse(json);
+                        var keyDetailResponse = await consulEnv.ConsulUrl
+                            .AppendPathSegment("v1")
+                            .AppendPathSegment("kv")
+                            .AppendPathSegment(key.ToString())
+                            .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                            .GetStringAsync();
 
-                        string keyy = keyDetail[0]["Key"].ToString();
-                        string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
-                        byte[] valueBytes = Convert.FromBase64String(value);
-                        string decodedValue = Encoding.UTF8.GetString(valueBytes);
-                        keyValues[keyy] = decodedValue;
+                        if (!string.IsNullOrEmpty(keyDetailResponse))
+                        {
+                            var keyDetail = JArray.Parse(keyDetailResponse);
+                            if (keyDetail.Count > 0)
+                            {
+                                string keyy = keyDetail[0]["Key"]?.ToString() ?? string.Empty;
+                                string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
+
+                                if (!string.IsNullOrEmpty(value))
+                                {
+                                    byte[] valueBytes = Convert.FromBase64String(value);
+                                    string decodedValue = Encoding.UTF8.GetString(valueBytes);
+                                    keyValues[keyy] = decodedValue;
+                                }
+                            }
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to fetch key details for {key}. Status Code: {keyResponse.StatusCode}");
+                        _logger.LogWarning(ex, "Error fetching key {Key}", key);
+                        continue;
                     }
                 }
 
@@ -357,8 +387,8 @@ namespace Common.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching Consul KV: {ex.Message}");
-                throw;
+                _logger.LogError(ex, "Error fetching Consul KV");
+                return keyValues;
             }
         }
 
@@ -521,17 +551,32 @@ namespace Common.Services
                 var targetExists = targetKVs.TryGetValue(key, out var targetKV);
 
                 if (!sourceExists)
-                    _logger.LogInformation($"Key {key} is present in {targetEnv} but not in {sourceEnv}");
+                {
+                    _logger.LogInformation("Key {Key} is present in {TargetEnv} but not in {SourceEnv}", key, targetEnv, sourceEnv);
+                    yield return new ConsulDiffResult(key, $"Key exists in {targetEnv} but not in {sourceEnv}");
+                    continue;
+                }
                 else if (!targetExists)
-                    _logger.LogInformation($"Key {key} is present in {sourceEnv} but not in {targetEnv}");
+                {
+                    _logger.LogInformation("Key {Key} is present in {SourceEnv} but not in {TargetEnv}", key, sourceEnv, targetEnv);
+                    yield return new ConsulDiffResult(key, $"Key exists in {sourceEnv} but not in {targetEnv}");
+                    continue;
+                }
+
+                if (sourceKV == null || targetKV == null)
+                {
+                    _logger.LogInformation("Difference in key: {Key} - Null value found", key);
+                    yield return new ConsulDiffResult(key, $"Null value found for key {key}");
+                    continue;
+                }
 
                 var diff = await GetDiff(key, sourceKV, targetKV, useRecursive);
 
-                if (diff == null)
-                    continue;
-
-                _logger.LogInformation($"Difference in key: {key}");
-                yield return diff;
+                if (diff != null)
+                {
+                    _logger.LogInformation("Difference in key: {Key}", key);
+                    yield return diff;
+                }
             }
         }
     }
