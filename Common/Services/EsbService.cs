@@ -81,7 +81,14 @@ namespace Common.Services
                 conditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
 
             if (!string.IsNullOrEmpty(genericText))
-                conditions.Add($"(LTDB.XML LIKE '%{genericText}%' OR LTVC.XML LIKE '%{genericText}%')");
+                conditions.Add($@"
+                    (
+                        REGEXP_LIKE(RE.REQUISICAO, '{genericText}')
+                        OR
+                        REGEXP_LIKE(RE.RESPOSTA, '{genericText}')
+                        OR
+                        REGEXP_LIKE(RE.ERRO, '{genericText}')
+                    )");
 
             if (userId.HasValue)
                 conditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");

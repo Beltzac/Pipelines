@@ -51,8 +51,8 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">LTDB/LTVC"</label>
-            <input type="text" class="form-control" @bind="ConsultaSggStateService.GenericText" placeholder="Aceita ReGex">
+            <label class="form-label">LTDB/LTVC</label>
+            <input type="text" class="form-control" @bind="ConsultaSggStateService.GenericText" placeholder="Aceita Regex">
         </div>
 
         <div class="col-md-3">
@@ -379,7 +379,7 @@
 
     private async Task UpdateChart()
     {
-        if (ConsultaSggStateService.DelayData == null || !ConsultaSggStateService.DelayData.Any()) return;
+        if (ConsultaSggStateService.DelayData == null) return;
 
         var labels = ConsultaSggStateService.DelayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
         var dataAvg = ConsultaSggStateService.DelayData.Select(d => d.AvgDelaySeconds).ToArray();
