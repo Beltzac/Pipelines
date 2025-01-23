@@ -29,7 +29,7 @@ namespace Common.Utils
             }
         }
 
-        public static void OpenWithVSCode(ILogger logger, string folderPath, bool disableExtensions = false)
+        public static void OpenWithVSCode(ILogger logger, IConfigurationService configService, string folderPath, bool disableExtensions = false)
         {
             try
             {
@@ -39,9 +39,12 @@ namespace Common.Utils
                     args += " --disable-extensions";
                 }
 
+                var config = configService.GetConfig();
+                var vscodePath = config.VSCodePath;
+
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = "code-insiders.cmd",
+                    FileName = vscodePath,
                     Arguments = args,
                     UseShellExecute = true,
                     CreateNoWindow = true,
@@ -109,11 +112,11 @@ namespace Common.Utils
                 else if (projectType == Repository.PROJECT_TYPE_VISUAL_STUDIO)
                 {
                     var slnFile = FindSolutionFile(folderPath);
-                    OpenWithVisualStudio(logger, slnFile);
+                    OpenWithVisualStudio(logger, configService, slnFile);
                 }
                 else
                 {
-                    OpenWithVSCode(logger, folderPath);
+                    OpenWithVSCode(logger, configService, folderPath);
                 }
             }
             else
@@ -149,15 +152,18 @@ namespace Common.Utils
             }
         }
 
-        public static void OpenWithVisualStudio(ILogger logger, string slnFile)
+        public static void OpenWithVisualStudio(ILogger logger, IConfigurationService configService, string slnFile)
         {
             try
             {
                 var requiresAdmin = SolutionContainsTopshelf(slnFile);
 
+                var config = configService.GetConfig();
+                var visualStudioPath = config.VisualStudioPath;
+
                 var processStartInfo = new ProcessStartInfo
                 {
-                    FileName = "devenv.exe",
+                    FileName = visualStudioPath,
                     Arguments = $"\"{slnFile}\"",
                     UseShellExecute = true,
                     Verb = requiresAdmin ? "runas" : ""

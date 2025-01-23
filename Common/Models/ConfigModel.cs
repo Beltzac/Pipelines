@@ -19,6 +19,8 @@
         public bool EnableOracleBackupJob { get; set; } = true;
         public bool EnableConsulBackupJob { get; set; } = true;
         public string AndroidStudioPath { get; set; } = "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe";
+        public string VisualStudioPath { get; set; } = "devenv.exe";
+        public string VSCodePath { get; set; } = "code-insiders.cmd";
     }
 
     public class OracleEnvironment

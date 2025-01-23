@@ -72,6 +72,16 @@
                             <InputText id="androidStudioPath" @bind-Value="config.AndroidStudioPath" class="form-control"/>
                             <ValidationMessage For="@(() => config.AndroidStudioPath)" />
                         </div>
+                        <div class="mb-3">
+                            <label for="visualStudioPath" class="form-label">Visual Studio Path</label>
+                            <InputText id="visualStudioPath" @bind-Value="config.VisualStudioPath" class="form-control" />
+                            <ValidationMessage For="@(() => config.VisualStudioPath)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="vscodePath" class="form-label">VS Code Path</label>
+                            <InputText id="vscodePath" @bind-Value="config.VSCodePath" class="form-control" />
+                            <ValidationMessage For="@(() => config.VSCodePath)" />
+                        </div>
                     </div>
                 </div>
 

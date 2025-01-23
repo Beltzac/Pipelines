@@ -426,7 +426,7 @@ namespace Common.Services
 
         public async Task OpenCloneFolderInVsCode()
         {
-            OpenFolderUtils.OpenWithVSCode(_logger, _localCloneFolder, true);
+            OpenFolderUtils.OpenWithVSCode(_logger, _configService, _localCloneFolder, true);
         }
 
         private async Task UpsertAndPublish(Repository buildInfo, bool notify = true)
