@@ -1,3 +1,4 @@
+using Azure.Core;
 using Common.Models;
 using Common.Services.Interfaces;
 using Common.Utils;
@@ -328,69 +329,67 @@ namespace Common.Services
             return keyValues;
         }
 
+        public void log(FlurlCall x)
+        {
+            //x.HttpRequestMessage .Headers.Add("X-Consul-Token", "sdf");
+        }
+
         async Task<Dictionary<string, string>> FetchConsulKVSequential(ConsulEnvironment consulEnv)
         {
             var keyValues = new Dictionary<string, string>();
 
-            try
+            // Fetch all keys at the root level
+
+            var keysResponse = await consulEnv.ConsulUrl
+                .AppendPathSegment("v1")
+                .AppendPathSegment("kv/") // Precisa da barra no final
+                .SetQueryParam("keys")            
+                .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                .GetStringAsync();
+
+            if (string.IsNullOrEmpty(keysResponse))
             {
-                // Fetch all keys at the root level
-                var keysResponse = await consulEnv.ConsulUrl
-                    .AppendPathSegment("v1")
-                    .AppendPathSegment("kv")
-                    .SetQueryParam("keys")
-                    .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
-                    .GetStringAsync();
+                return keyValues;
+            }
 
-                if (string.IsNullOrEmpty(keysResponse))
+            var keys = JArray.Parse(keysResponse);
+
+            foreach (var key in keys)
+            {
+                try
                 {
-                    return keyValues;
-                }
+                    var keyDetailResponse = await consulEnv.ConsulUrl
+                        .AppendPathSegment("v1")
+                        .AppendPathSegment("kv")
+                        .AppendPathSegment(key.ToString())
+                        .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
+                        .GetStringAsync();
 
-                var keys = JArray.Parse(keysResponse);
-
-                foreach (var key in keys)
-                {
-                    try
+                    if (!string.IsNullOrEmpty(keyDetailResponse))
                     {
-                        var keyDetailResponse = await consulEnv.ConsulUrl
-                            .AppendPathSegment("v1")
-                            .AppendPathSegment("kv")
-                            .AppendPathSegment(key.ToString())
-                            .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
-                            .GetStringAsync();
-
-                        if (!string.IsNullOrEmpty(keyDetailResponse))
+                        var keyDetail = JArray.Parse(keyDetailResponse);
+                        if (keyDetail.Count > 0)
                         {
-                            var keyDetail = JArray.Parse(keyDetailResponse);
-                            if (keyDetail.Count > 0)
-                            {
-                                string keyy = keyDetail[0]["Key"]?.ToString() ?? string.Empty;
-                                string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
+                            string keyy = keyDetail[0]["Key"]?.ToString() ?? string.Empty;
+                            string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
 
-                                if (!string.IsNullOrEmpty(value))
-                                {
-                                    byte[] valueBytes = Convert.FromBase64String(value);
-                                    string decodedValue = Encoding.UTF8.GetString(valueBytes);
-                                    keyValues[keyy] = decodedValue;
-                                }
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                byte[] valueBytes = Convert.FromBase64String(value);
+                                string decodedValue = Encoding.UTF8.GetString(valueBytes);
+                                keyValues[keyy] = decodedValue;
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Error fetching key {Key}", key);
-                        continue;
-                    }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error fetching key {Key}", key);
+                    continue;
+                }
+            }
 
-                return keyValues;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching Consul KV");
-                return keyValues;
-            }
+            return keyValues;
         }
 
 

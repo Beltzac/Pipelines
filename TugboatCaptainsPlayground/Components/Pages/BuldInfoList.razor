@@ -26,49 +26,49 @@
         var repo = context.Data as Repository;
         if (!repo.MasterClonned)
         {
-            <Item OnClick="@CloneClickAsync">Clone</Item>
+            <Item OnClick="@CloneClickAsync">Clonar</Item>
         }
         else
         {
-            <Item OnClick="@OpenClickAsync">Open</Item>
+            <Item OnClick="@OpenClickAsync">Abrir</Item>
         }
 
         if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
         {
-            <Item OnClick="@OpenLogDetailsClickAsync">Error Logs</Item>
+            <Item OnClick="@OpenLogDetailsClickAsync">Logs de Erro</Item>
         }
 
         <Item OnClick="@OpenSonarClickAsync">Sonar</Item>
 
         if (repo.Pipeline?.Last != null)
         {
-            <Item OnClick="@OpenExternalRunClickAsync">Open Last Build</Item>
+            <Item OnClick="@OpenExternalRunClickAsync">Abrir Última Build</Item>
         }
 
         if (repo.Pipeline?.Last?.Commit != null)
         {
-            <Item OnClick="@OpenExternalCommitClickAsync">Open Last Commit</Item>
+            <Item OnClick="@OpenExternalCommitClickAsync">Abrir Último Commit</Item>
         }
         else
         {
-            <Item OnClick="@OpenRepositoryClickAsync">Open Repository</Item>
+            <Item OnClick="@OpenRepositoryClickAsync">Abrir Repositório</Item>
         }
     }
 
-    <Item OnClick="@DeleteClickAsync">Delete</Item>
-    <Item OnClick="@RefetchClickAsync">Refetch</Item>
-    <Item OnClick="@NavigateToPRCreation">Open PR</Item>
+    <Item OnClick="@DeleteClickAsync">Excluir</Item>
+    <Item OnClick="@RefetchClickAsync">Recarregar</Item>
+    <Item OnClick="@NavigateToPRCreation">Abrir PR</Item>
 </ContextMenu>
 
-<ProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Loading..." />
+<ProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Carregando..." />
 
 <StickyFilter>
     <div class="mb-3 d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
-        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
-        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clone ALL</button>
-        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Open Clone Folder in VS CODE</button>
-        <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Clone All Script</button>
+        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Limpar</button>
+        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
+        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Abrir Pasta Clonada no VS CODE</button>
+        <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Script Clonar Todos</button>
     </div>
 </StickyFilter>
 
@@ -76,7 +76,7 @@
     <thead>
         <tr>
             <th>Status</th>
-            <th>Project</th>
+            <th>Projeto</th>
             <th>Pessoa</th>
             <th>Commit</th>
         </tr>
@@ -164,7 +164,7 @@
     private async ValueTask CloneAll()
     {
         await BuildInfoService.CloneAllRepositoriesAsync();
-        this.toastService.ShowSuccess("TODOS OS REPOS FORAM CLONADOS");
+        this.toastService.ShowSuccess("TODOS OS REPOSITÓRIOS FORAM CLONADOS");
     }
 
     private async ValueTask OpenCloneInVSCode()
@@ -195,7 +195,7 @@
 
     async Task CloneRepoAsync(Repository e)
     {
-        this.toastService.ShowInfo("Clonando repositorio");
+        this.toastService.ShowInfo("Clonando repositório");
         await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(e.Id);
         this.toastService.ShowSuccess("Clonado");
     }

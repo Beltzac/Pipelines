@@ -19,8 +19,8 @@
 
 <StickyFilter>
     <div class="d-flex align-items-center">
-        <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sync Commits</button>
-        <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Download to Excel</button>
+        <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sincronizar Commits</button>
+        <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Baixar para Excel</button>
     </div>
 </StickyFilter>
 
@@ -63,7 +63,7 @@
 }
 else
 {
-    <p>No commits fetched yet.</p>
+    <p>Nenhum commit buscado ainda.</p>
 }
 
 @code {
@@ -92,7 +92,7 @@ else
             });
 
             await CommitDataExportService.FetchCommitDataAsync(progressHandler);
-            toastService.ShowSuccess("Commits synchronized successfully!");
+            toastService.ShowSuccess("Commits sincronizados com sucesso!");
         }
         catch (Exception ex)
         {
@@ -112,7 +112,7 @@ else
     private async Task CopyToClipboard(string jiraCardID)
     {
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
-        toastService.ShowSuccess($"Copied {jiraCardID} to clipboard!");
+        toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
     }
 }
 
