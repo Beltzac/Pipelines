@@ -82,57 +82,73 @@
 </StickyFilter>
 
 <div class="diff-container">
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>Chave</th>
-                <th>Source Titulo</th>
-                <th>
-                    Source Value (@MessageDiffStateService.SelectedSourceEnv)
-                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts">
-                        Copy All Source Upserts
-                    </button>
-                </th>
-                <th>Target Titulo</th>
-                <th>
-                    Target Value (@MessageDiffStateService.SelectedTargetEnv)
-                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts">
-                        Copy All Target Upserts
-                    </button>
-                </th>
-                <th>Campos Alterados</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var diff in GetFilteredAndPaginatedDifferences())
-            {
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="sticky-top bg-light">
                 <tr>
-                    <td>@diff.Key</td>
-                    <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
-                    <td>
-                        @(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)
-                        @if (diff.Value.Source != null)
-                        {
-                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)">
-                                Copy Upsert
-                            </button>
-                        }
-                    </td>
-                    <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
-                    <td>
-                        @(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)
-                        @if (diff.Value.Target != null)
-                        {
-                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)">
-                                Copy Upsert
-                            </button>
-                        }
-                    </td>
-                    <td>@string.Join(", ", diff.Value.ChangedFields)</td>
+                    <th style="width: 15%">Chave</th>
+                    <th style="width: 15%">Source Titulo</th>
+                    <th style="width: 20%">
+                        Source Value (@MessageDiffStateService.SelectedSourceEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts">
+                            <i class="bi bi-clipboard"></i> Copy All Source Upserts
+                        </button>
+                    </th>
+                    <th style="width: 15%">Target Titulo</th>
+                    <th style="width: 20%">
+                        Target Value (@MessageDiffStateService.SelectedTargetEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts">
+                            <i class="bi bi-clipboard"></i> Copy All Target Upserts
+                        </button>
+                    </th>
+                    <th style="width: 15%">Campos Alterados</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var diff in GetFilteredAndPaginatedDifferences())
+                {
+                    <tr class="@(diff.Value.HasDifferences ? "table-warning" : "")">
+                        <td class="font-weight-bold">@diff.Key</td>
+                        <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-wrap">@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                @if (diff.Value.Source != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-wrap">@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                @if (diff.Value.Target != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @if (diff.Value.ChangedFields.Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var field in diff.Value.ChangedFields)
+                                    {
+                                        <li class="badge bg-warning text-dark">@field</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <Pagination CurrentPage="@MessageDiffStateService.CurrentPage"
@@ -143,9 +159,33 @@
 
 <style>
     .diff-container {
-        max-width: 80vw;
+        max-width: 95vw;
         margin: 0 auto;
         overflow-x: auto;
+    }
+
+    .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .sticky-top {
+        top: 0;
+        z-index: 1;
+    }
+
+    .text-wrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .badge {
+        margin: 2px;
+        white-space: normal;
     }
 
     .form-group {
