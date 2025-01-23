@@ -19,7 +19,7 @@
     <div class="row g-3">
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label">Source Environment:</label>
+                <label class="form-label" title="Ambiente de origem para comparação">Source Environment:</label>
                 <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
                     @foreach (var env in environments)
                     {
@@ -30,7 +30,7 @@
         </div>
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label">Target Environment:</label>
+                <label class="form-label" title="Ambiente de destino para comparação">Target Environment:</label>
                 <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
                     @foreach (var env in environments)
                     {
@@ -50,7 +50,8 @@
                 <input type="text" class="form-control" placeholder="Search by module, code or prefix..."
                        @bind="MessageDiffStateService.SearchKey"
                        @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()" />
+                       @onkeyup="async () => await HandleSearch()"
+                       title="Buscar por módulo, código ou prefixo da mensagem" />
             </div>
         </div>
         <div class="col-md-6">
@@ -58,16 +59,17 @@
                 <input type="text" class="form-control" placeholder="Search by descrição..."
                        @bind="MessageDiffStateService.SearchDescription"
                        @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()" />
+                       @onkeyup="async () => await HandleSearch()"
+                       title="Buscar pelo texto da descrição da mensagem" />
             </div>
         </div>
         <div class="col-md-2">
             <div class="form-group">
                 <select class="form-select" @bind="MessageDiffStateService.PageSize">
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
+                    <option value="5">5 por página</option>
+                    <option value="10">10 por página</option>
+                    <option value="20">20 por página</option>
+                    <option value="50">50 por página</option>
                 </select>
             </div>
         </div>
@@ -75,7 +77,7 @@
             <div class="form-check form-switch mt-3">
                 <input class="form-check-input" type="checkbox" role="switch"
                        id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
-                <label class="form-check-label" for="showOnlyChanged">Changed Only</label>
+                <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
             </div>
         </div>
     </div>
@@ -87,18 +89,18 @@
             <thead class="sticky-top bg-light">
                 <tr>
                     <th style="width: 15%">Chave</th>
-                    <th style="width: 15%">Source Titulo</th>
+                    <th style="width: 15%">Título Origem</th>
                     <th style="width: 20%">
-                        Source Value (@MessageDiffStateService.SelectedSourceEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts">
-                            <i class="bi bi-clipboard"></i> Copy All Source Upserts
+                        Valor Origem (@MessageDiffStateService.SelectedSourceEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts" title="Copiar todos os comandos UPSERT do ambiente source">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Origem
                         </button>
                     </th>
-                    <th style="width: 15%">Target Titulo</th>
+                    <th style="width: 15%">Título Destino</th>
                     <th style="width: 20%">
-                        Target Value (@MessageDiffStateService.SelectedTargetEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts">
-                            <i class="bi bi-clipboard"></i> Copy All Target Upserts
+                        Valor Destino (@MessageDiffStateService.SelectedTargetEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts" title="Copiar todos os comandos UPSERT do ambiente target">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Destino
                         </button>
                     </th>
                     <th style="width: 15%">Campos Alterados</th>
@@ -115,7 +117,9 @@
                                 <div class="text-wrap">@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
                                 @if (diff.Value.Source != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)">
+                                    <button class="btn btn-sm btn-outline-primary ms-2" 
+                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)"
+                                            title="Copiar comando SQL para atualizar esta mensagem no ambiente source">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -127,7 +131,9 @@
                                 <div class="text-wrap">@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
                                 @if (diff.Value.Target != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)">
+                                    <button class="btn btn-sm btn-outline-primary ms-2" 
+                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)"
+                                            title="Copiar comando SQL para atualizar esta mensagem no ambiente target">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -154,7 +160,7 @@
 <Pagination CurrentPage="@MessageDiffStateService.CurrentPage"
             TotalPages="@TotalPages"
             OnPageChange="@ChangePage">
-    Showing @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) to @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
+    Exibindo @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) até @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) de @GetFilteredCount() registros
 </Pagination>
 
 <style>

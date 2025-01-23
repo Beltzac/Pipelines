@@ -30,37 +30,37 @@
 
 @code {
     /// <summary>
-    /// The current progress value (0 to 100).
+    /// Valor atual do progresso (0 a 100).
     /// </summary>
     [Parameter]
     public int? ProgressValue { get; set; }
 
     /// <summary>
-    /// When true, shows an animated progress bar for operations where progress cannot be determined.
+    /// Quando verdadeiro, exibe uma barra de progresso animada para operações onde o progresso não pode ser determinado.
     /// </summary>
     [Parameter]
     public bool IsLoading { get; set; } = false;
 
     /// <summary>
-    /// The color of the progress text.
+    /// Cor do texto de progresso.
     /// </summary>
     [Parameter]
     public string TextColor { get; set; } = "black";
 
     /// <summary>
-    /// The height of the progress bar. Accepts any valid CSS height value (e.g., "20px", "1.5rem").
+    /// Altura da barra de progresso. Aceita qualquer valor CSS válido (ex: "20px", "1.5rem").
     /// </summary>
     [Parameter]
     public string Height { get; set; } = "20px";
 
     /// <summary>
-    /// An optional label to display alongside the progress percentage.
+    /// Rótulo opcional para exibir junto com a porcentagem de progresso.
     /// </summary>
     [Parameter]
     public string Label { get; set; }
 
     /// <summary>
-    /// Additional attributes to pass to the progress bar div.
+    /// Atributos adicionais para passar para a div da barra de progresso.
     /// </summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object> AdditionalAttributes { get; set; }

@@ -24,7 +24,7 @@
     <div class="row g-3">
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label">Source Environment:</label>
+                <label class="form-label">Ambiente Origem:</label>
                 <select class="form-select" @bind="ConsulDiffStateService.SelectedSourceEnv">
                     @foreach (var env in environments)
                     {
@@ -35,7 +35,7 @@
         </div>
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label">Target Environment:</label>
+                <label class="form-label">Ambiente Destino:</label>
                 <select class="form-select" @bind="ConsulDiffStateService.SelectedTargetEnv">
                     @foreach (var env in environments)
                     {
@@ -48,17 +48,17 @@
             <div class="form-check mt-4">
                 <input class="form-check-input" type="checkbox" @bind="ConsulDiffStateService.UseRecursive" id="useRecursive">
                 <label class="form-check-label" for="useRecursive">
-                    Use Recursive Values
+                    Usar Valores Recursivos
                 </label>
             </div>
-            <button class="btn btn-primary w-100 mt-2" @onclick="CompareEnvironments">Compare</button>
+            <button class="btn btn-primary w-100 mt-2" @onclick="CompareEnvironments">Comparar</button>
         </div>
     </div>
 
     <div class="row g-3 mt-2">
         <div class="col-md-6">
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="Search by key..."
+                <input type="text" class="form-control" placeholder="Buscar por chave..."
                 @bind="ConsulDiffStateService.SearchKey"
                 @bind:event="oninput"
                 @onkeyup="async () => await HandleSearch()" />
@@ -67,10 +67,10 @@
         <div class="col-md-3">
             <div class="form-group">
                 <select class="form-select" @bind="ConsulDiffStateService.PageSize">
-                    <option value="5">5 per page</option>
-                    <option value="10">10 per page</option>
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
+                    <option value="5">5 por página</option>
+                    <option value="10">10 por página</option>
+                    <option value="20">20 por página</option>
+                    <option value="50">50 por página</option>
                 </select>
             </div>
         </div>
@@ -85,7 +85,7 @@
 CurrentPage="@ConsulDiffStateService.CurrentPage"
 TotalPages="@TotalPages"
 OnPageChange="@ChangePage">
-    Showing @((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize + 1) to @Math.Min(ConsulDiffStateService.CurrentPage * ConsulDiffStateService.PageSize, GetFilteredCount()) of @GetFilteredCount() entries
+    Exibindo @((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize + 1) até @Math.Min(ConsulDiffStateService.CurrentPage * ConsulDiffStateService.PageSize, GetFilteredCount()) de @GetFilteredCount() registros
 </Pagination>
 
 <style>
@@ -131,7 +131,7 @@ OnPageChange="@ChangePage">
     <div class="d2h-file-side-diff">
     <div class="d-flex justify-content-end mb-2">
     <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('OpenConsulValue', '{{file.oldName}}', '${sourceEnv}')">
-    <i class="bi bi-box-arrow-up-right"></i> Open in Consul
+    <i class="bi bi-box-arrow-up-right"></i> Abrir no Consul
     </button>
     </div>
     <div class="d2h-code-wrapper">
@@ -145,7 +145,7 @@ OnPageChange="@ChangePage">
     <div class="d2h-file-side-diff">
     <div class="d-flex justify-content-end mb-2">
     <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('OpenConsulValue', '{{file.newName}}', '${targetEnv}')">
-    <i class="bi bi-box-arrow-up-right"></i> Open in Consul
+    <i class="bi bi-box-arrow-up-right"></i> Abrir no Consul
     </button>
     </div>
     <div class="d2h-code-wrapper">
