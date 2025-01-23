@@ -1,8 +1,9 @@
 using Common.Models;
+using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class ConsultaSggState : StateBase
+    public class ConsultaSggState : ITracksLoading, IPaginates
     {
         public string SelectedEnvironment { get; set; }
         public DateTimeOffset? StartDate { get; set; }
@@ -15,12 +16,18 @@ namespace TugboatCaptainsPlayground.Services
         public string Status { get; set; }
         public double? MinDelay { get; set; }
         public List<LtdbLtvcRecord> Results { get; set; } = new();
+
         public int TotalCount { get; set; }
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
+
         public LtdbLtvcRecord SelectedItem { get; set; }
         public string FormattedLtdbXml { get; set; }
         public string FormattedLtvcXml { get; set; }
         public List<DelayMetric> DelayData { get; set; } = new();
+
+        public bool IsLoading { get; set; }
+        public int? ProgressValue { get; set; }
+        public string ProgressLabel { get; set; } = string.Empty;
     }
 }

@@ -1,8 +1,9 @@
 using Common.Models;
+using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class ConsulState : StateBase
+    public class ConsulState : ITracksLoading
     {
         public string SelectedConsulEnv { get; set; }
         public Dictionary<string, ConsulKeyValue> ConsulKeyValues { get; set; } = new();
@@ -11,5 +12,9 @@ namespace TugboatCaptainsPlayground.Services
         public string SearchValue { get; set; } = string.Empty;
         public bool IsRecursive { get; set; }
         public bool ShowInvalidOnly { get; set; }
+
+        public bool IsLoading { get; set; }
+        public int? ProgressValue { get; set; }
+        public string ProgressLabel { get; set; } = string.Empty;
     }
 }

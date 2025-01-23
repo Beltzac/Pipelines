@@ -1,15 +1,16 @@
 @page "/"
+@using System.Linq.Expressions
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using System.Text.RegularExpressions
 @using Common
 @using Common.Services
+@using Common.Services.Interfaces
+@using Common.Utils
 @using FuzzySharp
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
-@using System.Text.RegularExpressions
-@using System.Reactive.Subjects
-@using System.Reactive.Linq
-@using System.Linq.Expressions
 @using Microsoft.AspNetCore.WebUtilities
-@using Common.Utils
 @inject IRepositoryService BuildInfoService
 @inject IToastService toastService
 @rendermode InteractiveServer
@@ -59,10 +60,9 @@
     <Item OnClick="@NavigateToPRCreation">Open PR</Item>
 </ContextMenu>
 
-<StickyFilter>
-
 <ProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Loading..." />
 
+<StickyFilter>
     <div class="mb-3 d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
         <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
@@ -118,7 +118,6 @@
                 try
                 {
                     BuildInfoStateService.IsLoading = true;
-                    var janelas = WindowUtils.EnumerarJanelas().Distinct();
                     var infos = await BuildInfoService.GetBuildInfoAsync(x);
                     BuildInfoStateService.BuildInfos = infos;
                 }

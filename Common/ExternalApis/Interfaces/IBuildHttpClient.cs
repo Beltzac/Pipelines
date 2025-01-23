@@ -1,6 +1,6 @@
 using Microsoft.TeamFoundation.Build.WebApi;
 
-namespace Common.ExternalApis
+namespace Common.ExternalApis.Interfaces
 {
     public interface IBuildHttpClient
     {

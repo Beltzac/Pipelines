@@ -1,3 +1,4 @@
+using Common.ExternalApis.Interfaces;
 using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 

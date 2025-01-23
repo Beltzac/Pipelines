@@ -1,4 +1,4 @@
-﻿using Common.Services;
+﻿using Common.Services.Interfaces;
 using Common.Utils;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;

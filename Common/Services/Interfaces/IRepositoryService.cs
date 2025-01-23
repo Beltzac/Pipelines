@@ -2,7 +2,7 @@
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using System.Linq.Expressions;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public interface IRepositoryService
     {

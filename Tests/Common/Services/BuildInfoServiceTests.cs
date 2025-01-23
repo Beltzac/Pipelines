@@ -1,6 +1,6 @@
-using Common.ExternalApis;
+using Common.ExternalApis.Interfaces;
 using Common.Models;
-using Common.Repositories;
+using Common.Repositories.Interfaces;
 using Common.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;

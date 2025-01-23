@@ -8,6 +8,7 @@ using SQL.Formatter;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
 using Dapper;
+using Common.Services.Interfaces;
 
 namespace Common.Services
 {

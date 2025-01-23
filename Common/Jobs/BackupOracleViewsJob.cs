@@ -1,9 +1,9 @@
 using Common.ExternalApis;
-using Common.Services;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using System.IO;
 using LibGit2Sharp;
+using Common.Services.Interfaces;
 
 namespace Common.Jobs
 {
