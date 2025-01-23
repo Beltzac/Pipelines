@@ -1,9 +1,10 @@
 using Common.Models;
 using System.Collections.Generic;
+using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class OracleDiffState : StateBase
+    public class OracleDiffState : ITracksLoading, IPaginates
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
@@ -15,5 +16,9 @@ namespace TugboatCaptainsPlayground.Services
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalCount { get; set; }
+
+        public bool IsLoading { get; set; }
+        public int? ProgressValue { get; set; }
+        public string ProgressLabel { get; set; } = string.Empty;
     }
 }

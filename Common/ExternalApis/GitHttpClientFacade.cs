@@ -1,4 +1,5 @@
 // Common/GitHttpClientFacade.cs
+using Common.ExternalApis.Interfaces;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 
 namespace Common.ExternalApis

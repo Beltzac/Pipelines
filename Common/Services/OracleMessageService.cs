@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Models;
+using Common.Services.Interfaces;
 using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
@@ -13,6 +15,16 @@ namespace Common.Services
 {
     public class OracleMessageService : IOracleMessageService
     {
+        private readonly IConfigurationService _configService;
+        private readonly ICadastroService _cadastroService;
+        private readonly ConcurrentDictionary<string, int> _userCodeCache = new();
+
+        public OracleMessageService(IConfigurationService configService, ICadastroService cadastroService)
+        {
+            _configService = configService;
+            _cadastroService = cadastroService;
+        }
+
         public async Task<Dictionary<string, MessageDefinition>> GetMessagesAsync(string connectionString)
         {
             var messages = new Dictionary<string, MessageDefinition>();
@@ -118,10 +130,20 @@ namespace Common.Services
             }
         }
 
-        public string GenerateUpsertStatement(MessageDefinition message)
+        public string GenerateUpsertStatement(string environment, MessageDefinition message)
         {
             if (message == null)
                 return string.Empty;
+
+            var config = _configService.GetConfig();
+            var userName = config.TcpUserName;
+            var cacheKey = $"{environment}_{userName}";
+
+            if (!_userCodeCache.TryGetValue(cacheKey, out var userCode))
+            {
+                userCode = _cadastroService.GetUsersAsync(environment, userName).Result.FirstOrDefault().Key;
+                _userCodeCache[cacheKey] = userCode;
+            }
 
             var baseUpsert = $@"MERGE INTO TCPCONF.MENSAGEM m
 USING DUAL
@@ -136,7 +158,7 @@ WHEN MATCHED THEN
         m.OBSERVACAO = {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
         m.VERIFICADO = {(message.Verificado ? "1" : "0")},
         m.DATA_ALTERACAO = SYSDATE,
-        m.ID_USUARIO_ALTERACAO = 30120
+        m.ID_USUARIO_ALTERACAO = {userCode}
 WHEN NOT MATCHED THEN
     INSERT (ID_SISTEMA_MENSAGEM, ID_DESTINO_MENSAGEM, ID_GRUPO_MENSAGEM, PREFIXO, CODIGO, MODULO, ELEMENTO, OBSERVACAO, VERIFICADO, EXCLUIDO,
             DATA_INCLUSAO, DATA_ALTERACAO, ID_USUARIO_INCLUSAO, ID_USUARIO_ALTERACAO)
@@ -145,7 +167,7 @@ WHEN NOT MATCHED THEN
             {(message.Elemento == null ? "NULL" : $"'{message.Elemento}'")},
             {(message.Observacao == null ? "NULL" : $"'{message.Observacao}'")},
             {(message.Verificado ? "1" : "0")}, 0,
-            SYSDATE, SYSDATE, 30120, 30120)";
+            SYSDATE, SYSDATE, {userCode}, {userCode})";
 
             var languageUpserts = message.Languages.Values.Select(lang => $@"MERGE INTO TCPCONF.MENSAGEM_IDIOMA mi
 USING (
@@ -161,7 +183,7 @@ WHEN MATCHED THEN
         mi.AJUDA = {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")},
         mi.EXCLUIDO = 0,
         mi.DATA_ALTERACAO = SYSDATE,
-        mi.ID_USUARIO_ALTERACAO = 30120
+        mi.ID_USUARIO_ALTERACAO = {userCode}
 WHEN NOT MATCHED THEN
     INSERT (ID_MENSAGEM, IDIOMA, TITULO, DESCRICAO, AJUDA, EXCLUIDO,
             DATA_INCLUSAO, DATA_ALTERACAO, ID_USUARIO_INCLUSAO, ID_USUARIO_ALTERACAO)
@@ -169,7 +191,7 @@ WHEN NOT MATCHED THEN
             {(lang.Titulo == null ? "NULL" : $"'{lang.Titulo?.Replace("'", "''")}'")},
             '{lang.Descricao?.Replace("'", "''")}',
             {(lang.Ajuda == null ? "NULL" : $"'{lang.Ajuda?.Replace("'", "''")}'")}, 0,
-            SYSDATE, SYSDATE, 30120, 30120)");
+            SYSDATE, SYSDATE, {userCode}, {userCode})");
 
             var fullSql = string.Join(";\n\n", new[] { baseUpsert }.Concat(languageUpserts)) + ";";
             return SqlFormatter.Of(Dialect.PlSql).Format(fullSql);

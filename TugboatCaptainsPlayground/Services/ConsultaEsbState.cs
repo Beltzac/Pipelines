@@ -1,8 +1,9 @@
 using Common.Models;
+using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class ConsultaEsbState : StateBase
+    public class ConsultaEsbState : ITracksLoading, IPaginates
     {
         public string SelectedEnvironment { get; set; }
         public DateTimeOffset? StartDate { get; set; }
@@ -16,11 +17,17 @@ namespace TugboatCaptainsPlayground.Services
         public string HttpStatusRange { get; set; }
         public string ResponseStatus { get; set; }
         public List<RequisicaoExecucao> Results { get; set; } = new();
+
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalCount { get; set; }
+
         public string FormattedRequest { get; set; }
         public string FormattedResponse { get; set; }
         public string FormattedError { get; set; }
+
+        public bool IsLoading { get; set; }
+        public int? ProgressValue { get; set; }
+        public string ProgressLabel { get; set; } = string.Empty;
     }
 }

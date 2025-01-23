@@ -1,7 +1,8 @@
 ﻿using ClosedXML.Excel;
-using Common.ExternalApis;
+using Common.ExternalApis.Interfaces;
 using Common.Models;
 using Common.Repositories;
+using Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;

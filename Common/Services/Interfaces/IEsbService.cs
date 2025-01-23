@@ -1,6 +1,6 @@
 ﻿using Common.Models;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public interface IEsbService
     {
@@ -31,7 +31,5 @@ namespace Common.Services
             int pageNumber,
             string? httpStatusRange,
             string? responseStatus);
-
-        Task<Dictionary<int, string>> GetUsersAsync(string environment, string? searchText = null);
     }
 }

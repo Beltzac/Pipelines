@@ -1,6 +1,6 @@
-﻿﻿﻿﻿﻿﻿using Common.Models;
+﻿using Common.Models;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public record ConsulDiffResult(string Key, string DiffString);
 

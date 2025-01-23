@@ -1,10 +1,10 @@
 ﻿using static Common.Services.AutoUpdateService;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public interface IAutoUpdateService
     {
-        Task<AutoUpdateService.Release> CheckForUpdatesAsync();
+        Task<Release> CheckForUpdatesAsync();
         Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback);
     }
 }

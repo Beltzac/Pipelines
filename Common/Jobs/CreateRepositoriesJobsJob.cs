@@ -1,5 +1,5 @@
 ﻿using Common.Jobs;
-using Common.Services;
+using Common.Services.Interfaces;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;

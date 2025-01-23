@@ -2,6 +2,7 @@
 @using Common
 @using Common.Models
 @using Common.Services
+@using Common.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
@@ -112,7 +113,7 @@
                         @(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)
                         @if (diff.Value.Source != null)
                         {
-                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(diff.Value.Source)">
+                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)">
                                 Copy Upsert
                             </button>
                         }
@@ -122,7 +123,7 @@
                         @(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)
                         @if (diff.Value.Target != null)
                         {
-                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(diff.Value.Target)">
+                            <button class="btn btn-sm btn-outline-primary ms-2" @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)">
                                 Copy Upsert
                             </button>
                         }
@@ -169,11 +170,11 @@
         }
     }
 
-    private async Task CopyUpsertStatement(MessageDefinition message)
+    private async Task CopyUpsertStatement(string environment, MessageDefinition message)
     {
         try
         {
-            var upsertStatement = OracleMessageService.GenerateUpsertStatement(message);
+            var upsertStatement = OracleMessageService.GenerateUpsertStatement(environment, message);
             await CopyToClipboard(upsertStatement);
             toastService.ShowSuccess("Upsert statement copied to clipboard");
         }
@@ -195,7 +196,7 @@
                 var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
                 if (message != null)
                 {
-                    upserts.Add(OracleMessageService.GenerateUpsertStatement(message));
+                    upserts.Add(OracleMessageService.GenerateUpsertStatement(MessageDiffStateService.SelectedSourceEnv, message));
                 }
             }
 
@@ -228,7 +229,7 @@
                 var message = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
                 if (message != null)
                 {
-                    upserts.Add(OracleMessageService.GenerateUpsertStatement(message));
+                    upserts.Add(OracleMessageService.GenerateUpsertStatement(MessageDiffStateService.SelectedTargetEnv, message));
                 }
             }
 

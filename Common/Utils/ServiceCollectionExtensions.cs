@@ -1,7 +1,10 @@
 using Blazored.Toast;
 using Common.ExternalApis;
+using Common.ExternalApis.Interfaces;
 using Common.Repositories;
+using Common.Repositories.Interfaces;
 using Common.Services;
+using Common.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -70,6 +73,7 @@ namespace Common.Utils
             services.AddScoped<IEsbService, EsbService>();
             services.AddScoped<ISggService, SggService>();
             services.AddScoped<IOracleMessageService, OracleMessageService>();
+            services.AddScoped<ICadastroService, CadastroService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 

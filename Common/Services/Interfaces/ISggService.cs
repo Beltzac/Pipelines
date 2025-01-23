@@ -1,6 +1,6 @@
 using Common.Models;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public interface ISggService
     {

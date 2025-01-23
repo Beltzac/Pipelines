@@ -1,11 +1,13 @@
 @page "/consulta-esb"
+@using System.Globalization
 @using BlazorDateRangePicker
+@using Blazored.Typeahead
 @using Common.Models
 @using Common.Services
+@using Common.Services.Interfaces
 @using Common.Utils
-@using Blazored.Typeahead
-@using System.Globalization
 @inject IEsbService RequisicaoService
+@inject ICadastroService CadastroService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ConsultaEsbStateService ConsultaEsbStateService
@@ -299,7 +301,7 @@
             return new List<KeyValuePair<int, string>>();
         }
 
-        var userLogins = await RequisicaoService.GetUsersAsync(ConsultaEsbStateService.SelectedEnvironment, searchText);
+        var userLogins = await CadastroService.GetUsersAsync(ConsultaEsbStateService.SelectedEnvironment, searchText);
         return userLogins.Select(kvp => new KeyValuePair<int, string>(kvp.Key, kvp.Value)).ToList();
     }
 

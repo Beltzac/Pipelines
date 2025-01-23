@@ -1,7 +1,7 @@
-using Common.ExternalApis;
+using Common.ExternalApis.Interfaces;
 using Common.Models;
-using Common.Repositories;
-using Common.Services;
+using Common.Repositories.Interfaces;
+using Common.Services.Interfaces;
 using Common.Utils;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;

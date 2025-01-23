@@ -1,11 +1,12 @@
 ﻿@page "/logdetails/{BuildId}"
+@using System.Text.RegularExpressions
+@using Common
 @using Common.Services
+@using Common.Services.Interfaces
+@using Common.Utils
 @using Markdig
 @using Microsoft.AspNetCore.Components
 @using Microsoft.JSInterop
-@using System.Text.RegularExpressions
-@using Common
-@using Common.Utils
 @inject IRepositoryService BuildInfoService
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer

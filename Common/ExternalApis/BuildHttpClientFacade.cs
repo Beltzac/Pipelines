@@ -1,3 +1,4 @@
+using Common.ExternalApis.Interfaces;
 using Microsoft.TeamFoundation.Build.WebApi;
 
 namespace Common.ExternalApis

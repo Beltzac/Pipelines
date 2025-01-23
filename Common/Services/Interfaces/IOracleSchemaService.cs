@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Models;
 
-namespace Common.Services
+namespace Common.Services.Interfaces
 {
     public interface IOracleSchemaService
     {

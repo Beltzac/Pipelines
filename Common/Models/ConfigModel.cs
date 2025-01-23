@@ -21,6 +21,7 @@
         public string AndroidStudioPath { get; set; } = "C:\\Program Files\\Android\\Android Studio\\bin\\studio64.exe";
         public string VisualStudioPath { get; set; } = "devenv.exe";
         public string VSCodePath { get; set; } = "code-insiders.cmd";
+        public string TcpUserName { get; set; }
     }
 
     public class OracleEnvironment
