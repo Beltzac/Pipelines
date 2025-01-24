@@ -1,4 +1,4 @@
-﻿using Common.ExternalApis.Interfaces;
+﻿﻿using Common.ExternalApis.Interfaces;
 using Common.Repositories.Interfaces;
 using Common.Services.Interfaces;
 using Common.Utils;
@@ -63,7 +63,7 @@ namespace Common.Services
         {
             if (repo == null)
             {
-                _logger.LogWarning("No repository selected for PR creation.");
+                _logger.LogWarning("Nenhum repositório selecionado para criação de PR.");
                 return;
             }
 
@@ -95,15 +95,15 @@ namespace Common.Services
 
                 if (areDatesEqual)
                 {
-                    _logger.LogInformation($"Pipeline {buildDefinition.Name} has not changed. Skipping.");
+                    _logger.LogInformation($"Pipeline {buildDefinition.Name} não alterado. Pulando.");
                     return existingRepo;
                 }
 
-                _logger.LogInformation($"Pipeline {buildDefinition.Name} has changed. Updating build info.");
+                _logger.LogInformation($"Pipeline {buildDefinition.Name} alterado. Atualizando informações de build.");
             }
             else
             {
-                _logger.LogInformation($"Repo {existingRepo.Name} has no pipeline/build. Creating build info.");
+                _logger.LogInformation($"Repositório {existingRepo.Name} não tem pipeline/build. Criando informações de build.");
             }
 
             var repo = await _gitClient.GetRepositoryAsync(repoId);
@@ -111,7 +111,7 @@ namespace Common.Services
             if (repo.IsDisabled ?? false)
             {
                 await Delete(repo.Id);
-                _logger.LogInformation($"Repo {repo.Name} is disabled. Deleting.");
+                _logger.LogInformation($"Repositório {repo.Name} está desabilitado. Excluindo.");
                 return null;
             }
 
@@ -370,7 +370,7 @@ namespace Common.Services
             }
             else
             {
-                _logger.LogInformation($"BuildInfo with ID {buildInfoId} not found");
+                _logger.LogInformation($"Build information with ID {buildInfoId} not found");
             }
         }
 
