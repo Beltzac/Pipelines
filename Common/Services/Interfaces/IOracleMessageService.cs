@@ -8,6 +8,6 @@ namespace Common.Services.Interfaces
     {
         Task<Dictionary<string, MessageDefinition>> GetMessagesAsync(string connectionString);
         Task<MessageDiffResult> GetMessageDiff(string key, MessageDefinition source, MessageDefinition target);
-        string GenerateUpsertStatement(string environment, MessageDefinition message);
+        Task<string> GenerateUpsertStatementAsync(string environment, MessageDefinition message);
     }
 }
