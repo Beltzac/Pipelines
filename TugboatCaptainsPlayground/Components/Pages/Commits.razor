@@ -18,10 +18,13 @@
 @inject CommitsStateService CommitsStateService
 
 <StickyFilter>
-    <div class="d-flex align-items-center">
+    <div class="d-flex flex-column gap-2">
+        <div class="d-flex align-items-center">
         <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sincronizar Commits</button>
         <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Baixar para Excel</button>
-    </div>
+            </div>
+            <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
+        </div>
 </StickyFilter>
 
 <ProgressBar IsLoading="@CommitsStateService.IsLoading" ProgressValue="@CommitsStateService.ProgressValue" TextColor="black" Height="25px" Label="Buscando commits..." />
@@ -74,10 +77,19 @@ else
         await FetchCommits();
     }
 
+    private async Task HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) args)
+    {
+        if (args.StartDate != null && args.EndDate != null)
+        {
+            CommitsStateService.DataInicial = args.StartDate.Value;
+            await FetchCommits();
+        }
+    }
+
     private async Task FetchCommits()
     {
         var config = ConfigService.GetConfig();
-        commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username);
+        commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, CommitsStateService.DataInicial);
     }
 
     private async Task SyncCommits()
@@ -91,7 +103,7 @@ else
                 StateHasChanged();
             });
 
-            await CommitDataExportService.FetchCommitDataAsync(progressHandler);
+            await CommitDataExportService.FetchCommitDataAsync(progressHandler, CommitsStateService.DataInicial);
             toastService.ShowSuccess("Commits sincronizados com sucesso!");
         }
         catch (Exception ex)
