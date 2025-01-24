@@ -5,7 +5,7 @@
         <nav aria-label="Pagination">
             <ul class="pagination mb-0">
                 <li class="page-item @(CurrentPage <= 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage - 1)" disabled="@(CurrentPage <= 1)">Anterior</button>
+                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage - 1)" disabled="@(CurrentPage <= 1)">‹ Anterior</button>
                 </li>
                 @{
                     const int maxVisiblePages = 5;
@@ -63,7 +63,7 @@
                     }
                 }
                 <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage + 1)" disabled="@(CurrentPage >= TotalPages)">Próximo</button>
+                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage + 1)" disabled="@(CurrentPage >= TotalPages)">Próximo ›</button>
                 </li>
             </ul>
         </nav>
