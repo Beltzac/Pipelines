@@ -200,24 +200,36 @@ OnPageChange="@ChangePage">
     {
         try
         {
-            var config = ConfigService.GetConfig();
-            var env = config.ConsulEnvironments.FirstOrDefault(e => e.Name == envName);
-
-            if (env == null)
+            if (ConsulDiffStateService.SelectedSourceEnv == envName)
             {
-                toastService.ShowError($"Ambiente {envName} não encontrado");
+                if (ConsulDiffStateService.SourceKeyValues.TryGetValue(key, out var consulValue))
+                {
+                    await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
+                }
+                else
+                {
+                    toastService.ShowError($"Chave {key} não encontrada em {envName}");
+                }
+
                 return;
             }
 
-            var keyValues = await ConsulService.GetConsulKeyValues(env);
-            if (keyValues.TryGetValue(key, out var consulValue))
+            if (ConsulDiffStateService.SelectedTargetEnv == envName)
             {
-                await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
+                if (ConsulDiffStateService.TargetKeyValues.TryGetValue(key, out var consulValue))
+                {
+                    await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
+                }
+                else
+                {
+                    toastService.ShowError($"Chave {key} não encontrada em {envName}");
+                }
+
+                return;
             }
-            else
-            {
-                toastService.ShowError($"Chave {key} não encontrada em {envName}");
-            }
+
+           toastService.ShowError($"Ambiente {envName} não encontrado");
+
         }
         catch (Exception ex)
         {
