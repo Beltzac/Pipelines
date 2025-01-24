@@ -504,82 +504,11 @@ namespace Common.Services
                 );
 
                 if (!patchResult.Hunks.Any())
-                    return null;
+                    return new ConsulDiffResult(key, string.Empty);
 
                 var diffString = ps.formatPatch(patchResult);
                 return new ConsulDiffResult(key, diffString);
             });
-        }
-
-        public async Task<List<ConsulDiffResult>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true)
-        {
-            var results = new List<ConsulDiffResult>();
-            await foreach (var diff in CompareAsyncEnumerable(sourceEnv, targetEnv, useRecursive))
-            {
-                results.Add(diff);
-            }
-            return results;
-        }
-
-        public async IAsyncEnumerable<ConsulDiffResult> CompareAsyncEnumerable(string sourceEnv, string targetEnv, bool useRecursive = true, int? skip = null, int? take = null)
-        {
-            var config = _configService.GetConfig();
-            var sourceEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == sourceEnv)
-                ?? throw new ArgumentException($"Source environment '{sourceEnv}' not found");
-            var targetEnvironment = config.ConsulEnvironments.FirstOrDefault(e => e.Name == targetEnv)
-                ?? throw new ArgumentException($"Target environment '{targetEnv}' not found");
-
-            // Fetch both environments' data in parallel
-            var (sourceKVs, targetKVs) = await Task.WhenAll(
-                GetConsulKeyValues(sourceEnvironment),
-                GetConsulKeyValues(targetEnvironment)
-            ).ContinueWith(t => (t.Result[0], t.Result[1]));
-
-            var allKeys = sourceKVs.Keys.Union(targetKVs.Keys).OrderBy(k => k).AsEnumerable();
-
-            if (skip.HasValue)
-            {
-                allKeys = allKeys.Skip(skip.Value);
-            }
-
-            if (take.HasValue)
-            {
-                allKeys = allKeys.Take(take.Value);
-            }
-
-            foreach (var key in allKeys)
-            {
-                var sourceExists = sourceKVs.TryGetValue(key, out var sourceKV);
-                var targetExists = targetKVs.TryGetValue(key, out var targetKV);
-
-                if (!sourceExists)
-                {
-                    _logger.LogInformation("Key {Key} is present in {TargetEnv} but not in {SourceEnv}", key, targetEnv, sourceEnv);
-                    yield return new ConsulDiffResult(key, $"Chave existe em {targetEnv} mas não em {sourceEnv}");
-                    continue;
-                }
-                else if (!targetExists)
-                {
-                    _logger.LogInformation("Key {Key} is present in {SourceEnv} but not in {TargetEnv}", key, sourceEnv, targetEnv);
-                    yield return new ConsulDiffResult(key, $"Chave existe em {sourceEnv} mas não em {targetEnv}");
-                    continue;
-                }
-
-                if (sourceKV == null || targetKV == null)
-                {
-                    _logger.LogInformation("Difference in key: {Key} - Null value found", key);
-                    yield return new ConsulDiffResult(key, $"Valor nulo encontrado para a chave {key}");
-                    continue;
-                }
-
-                var diff = await GetDiff(key, sourceKV, targetKV, useRecursive);
-
-                if (diff != null)
-                {
-                    _logger.LogInformation("Difference in key: {Key}", key);
-                    yield return diff;
-                }
-            }
         }
     }
 }
