@@ -133,6 +133,20 @@
                         <h5 class="mb-0">Configuração de Jobs de Backup</h5>
                     </div>
                     <div class="card-body">
+                        <!-- Backup Repositories -->
+                        <div class="mb-4">
+                            <h6 class="card-subtitle mb-3">Repositórios de Backup</h6>
+                            <div class="mb-3">
+                                <label for="oracleBackupRepo" class="form-label">Caminho do Backup Oracle</label>
+                                <InputText id="oracleBackupRepo" @bind-Value="config.OracleViewsBackupRepo" class="form-control"/>
+                                <ValidationMessage For="@(() => config.OracleViewsBackupRepo)" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="consulBackupRepo" class="form-label">Caminho do Backup Consul</label>
+                                <InputText id="consulBackupRepo" @bind-Value="config.ConsulBackupRepo" class="form-control"/>
+                                <ValidationMessage For="@(() => config.ConsulBackupRepo)" />
+                            </div>
+                        </div>
                         <!-- Oracle Backup Job -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="form-check form-switch">
