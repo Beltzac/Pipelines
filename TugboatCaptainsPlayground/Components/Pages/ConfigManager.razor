@@ -155,7 +155,7 @@
                                 </label>
                             </div>
                             <button type="button" class="btn btn-outline-primary" @onclick="RunConsulBackupNow">
-                                <i class="fas fa-play"></i> Run Now
+                                <i class="fas fa-play"></i> Executar Agora
                             </button>
                         </div>
                     </div>
@@ -305,16 +305,16 @@
             var result = await OracleService.TestConnectionAsync(env.ConnectionString, env.Schema);
             if (result)
             {
-                ToastService.ShowSuccess("Connection test successful");
+                ToastService.ShowSuccess("Teste de conexão bem-sucedido");
             }
             else
             {
-                ToastService.ShowError("Connection test failed");
+                ToastService.ShowError("Teste de conexão falhou");
             }
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Connection test failed: {ex.Message}");
+            ToastService.ShowError($"Teste de conexão falhou: {ex.Message}");
         }
     }
 
@@ -325,11 +325,11 @@
             var configJson = ConfigService.ExportConfig();
             var fileName = $"config-export-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}.json";
             await DownloadFile(fileName, configJson);
-            ToastService.ShowSuccess("Configuration exported successfully");
+            ToastService.ShowSuccess("Configuração exportada com sucesso");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to export configuration: {ex.Message}");
+            ToastService.ShowError($"Falha ao exportar configuração: {ex.Message}");
         }
     }
 
@@ -351,15 +351,15 @@
 
             await ConfigService.ImportConfigAsync(jsonConfig);
             config = ConfigService.GetConfig();
-            ToastService.ShowSuccess("Configuration imported successfully");
+            ToastService.ShowSuccess("Configuração importada com sucesso");
         }
         catch (ArgumentException ex)
         {
-            ToastService.ShowError($"Invalid configuration file: {ex.Message}");
+            ToastService.ShowError($"Arquivo de configuração inválido: {ex.Message}");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to import configuration: {ex.Message}");
+            ToastService.ShowError($"Falha ao importar configuração: {ex.Message}");
         }
     }
 
@@ -380,23 +380,23 @@
 
             if (invalidOracleEnvs.Any())
             {
-                ToastService.ShowError("All fields are required for Oracle environments");
+                ToastService.ShowError("Todos os campos são obrigatórios para ambientes Oracle");
                 return;
             }
 
             // Check for duplicate Oracle environment names
             if (config.OracleEnvironments.GroupBy(e => e.Name).Any(g => g.Count() > 1))
             {
-                ToastService.ShowError("Oracle environment names must be unique");
+                ToastService.ShowError("Os nomes dos ambientes Oracle devem ser únicos");
                 return;
             }
 
             await ConfigService.SaveConfigAsync(config);
-            ToastService.ShowSuccess("Configuration saved successfully!");
+            ToastService.ShowSuccess("Configuração salva com sucesso!");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Error saving configuration: {ex.Message}");
+            ToastService.ShowError($"Erro ao salvar configuração: {ex.Message}");
         }
     }
 
@@ -416,11 +416,11 @@
             jobData.PutAsString("IsManualRun", true);
 
             await scheduler.TriggerJob(jobKey, jobData);
-            ToastService.ShowSuccess("Oracle backup job started");
+            ToastService.ShowSuccess("Job de backup Oracle iniciado");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to start Oracle backup job: {ex.Message}");
+            ToastService.ShowError($"Falha ao iniciar job de backup Oracle: {ex.Message}");
         }
     }
 
@@ -435,11 +435,11 @@
             jobData.PutAsString("IsManualRun", true);
 
             await scheduler.TriggerJob(jobKey, jobData);
-            ToastService.ShowSuccess("Consul backup job started");
+            ToastService.ShowSuccess("Job de backup Consul iniciado");
         }
         catch (Exception ex)
         {
-            ToastService.ShowError($"Failed to start Consul backup job: {ex.Message}");
+            ToastService.ShowError($"Falha ao iniciar job de backup Consul: {ex.Message}");
         }
     }
 }

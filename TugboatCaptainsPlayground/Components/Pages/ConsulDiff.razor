@@ -205,7 +205,7 @@ OnPageChange="@ChangePage">
 
             if (env == null)
             {
-                toastService.ShowError($"Environment {envName} not found");
+                toastService.ShowError($"Ambiente {envName} não encontrado");
                 return;
             }
 
@@ -216,12 +216,12 @@ OnPageChange="@ChangePage">
             }
             else
             {
-                toastService.ShowError($"Key {key} not found in {envName}");
+                toastService.ShowError($"Chave {key} não encontrada em {envName}");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error opening value in Consul: {ex.Message}");
+            toastService.ShowError($"Erro ao abrir valor no Consul: {ex.Message}");
         }
     }
 
@@ -229,7 +229,7 @@ OnPageChange="@ChangePage">
     {
         if (string.IsNullOrEmpty(ConsulDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(ConsulDiffStateService.SelectedTargetEnv))
         {
-            toastService.ShowError("Please select both environments");
+            toastService.ShowError("Por favor, selecione ambos os ambientes");
             return;
         }
 
@@ -243,17 +243,17 @@ OnPageChange="@ChangePage">
 
             // Get source environment values
             ConsulDiffStateService.ProgressValue = 25;
-            ConsulDiffStateService.ProgressLabel = $"Loading values from {ConsulDiffStateService.SelectedSourceEnv}...";
+            ConsulDiffStateService.ProgressLabel = $"Carregando valores de {ConsulDiffStateService.SelectedSourceEnv}...";
             ConsulDiffStateService.SourceKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv));
 
             // Get target environment values
             ConsulDiffStateService.ProgressValue = 50;
-            ConsulDiffStateService.ProgressLabel = $"Loading values from {ConsulDiffStateService.SelectedTargetEnv}...";
+            ConsulDiffStateService.ProgressLabel = $"Carregando valores de {ConsulDiffStateService.SelectedTargetEnv}...";
             ConsulDiffStateService.TargetKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv));
 
             // Process keys
             ConsulDiffStateService.ProgressValue = 75;
-            ConsulDiffStateService.ProgressLabel = "Processing differences...";
+            ConsulDiffStateService.ProgressLabel = "Processando diferenças...";
             ConsulDiffStateService.AllKeys = new HashSet<string>(ConsulDiffStateService.SourceKeyValues.Keys.Union(ConsulDiffStateService.TargetKeyValues.Keys));
             ConsulDiffStateService.TotalCount = ConsulDiffStateService.AllKeys.Count;
 
@@ -262,7 +262,7 @@ OnPageChange="@ChangePage">
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error comparing environments: {ex.Message}");
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
         finally
         {
@@ -276,7 +276,7 @@ OnPageChange="@ChangePage">
         try
         {
             ConsulDiffStateService.ProgressValue = 80;
-            ConsulDiffStateService.ProgressLabel = "Loading page differences...";
+            ConsulDiffStateService.ProgressLabel = "Carregando diferenças da página...";
 
             var filteredKeys = string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey)
                 ? ConsulDiffStateService.AllKeys
@@ -299,7 +299,7 @@ OnPageChange="@ChangePage">
 
                 if (sourceValue?.Value != targetValue?.Value)
                 {
-                    ConsulDiffStateService.ProgressLabel = $"Processing differences ({processedKeys + 1}/{totalKeys}): {key}";
+                    ConsulDiffStateService.ProgressLabel = $"Processando diferenças ({processedKeys + 1}/{totalKeys}): {key}";
                     var diff = await ConsulService.GetDiff(key, sourceValue, targetValue, ConsulDiffStateService.UseRecursive);
                     if (diff != null)
                     {
@@ -326,7 +326,7 @@ OnPageChange="@ChangePage">
             await JS.InvokeVoidAsync("initializeDiff2Html2", "", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
             if (ConsulDiffStateService.Differences.Count > 0)
             {
-                toastService.ShowInfo("No differences found matching the search criteria");
+                toastService.ShowInfo("Nenhuma diferença encontrada que corresponda aos critérios de pesquisa");
             }
             return;
         }

@@ -17,7 +17,7 @@
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-3">
-            <label class="form-label">Environment</label>
+            <label class="form-label">Ambiente</label>
             <select class="form-select" @bind="ConsultaEsbStateService.SelectedEnvironment">
                 @foreach (var env in config.OracleEnvironments)
                 {
@@ -27,7 +27,7 @@
         </div>
 
         <div class="col-md-6">
-            <label class="form-label">Range</label>
+            <label class="form-label">Período</label>
             <div class="d-flex gap-2 mb-2">
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
             </div>
@@ -45,13 +45,13 @@
 
         <div class="col-md-3">
             <label class="form-label">URL/Nome Fluxo Filter</label>
-            <input type="text" class="form-control" @bind="ConsultaEsbStateService.UrlFilter" placeholder="Search URL or Nome Fluxo">
+            <input type="text" class="form-control" @bind="ConsultaEsbStateService.UrlFilter" placeholder="Buscar URL ou Nome do Fluxo">
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">HTTP Method</label>
+            <label class="form-label">Método HTTP</label>
             <select class="form-select" @bind="ConsultaEsbStateService.HttpMethod">
-                <option value="">All</option>
+                <option value="">Todos</option>
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
                 <option value="PUT">PUT</option>
@@ -61,18 +61,18 @@
 
         <div class="col-md-3">
             <label class="form-label">Request/Response</label>
-            <input type="text" class="form-control" @bind="ConsultaEsbStateService.GenericText" placeholder="Aceita Regex">
+            <input type="text" class="form-control" @bind="ConsultaEsbStateService.GenericText" placeholder="Aceita expressão regular">
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">User</label>
+            <label class="form-label">Usuário</label>
             <BlazoredTypeahead TItem="KeyValuePair<int, string>"
                               TValue="KeyValuePair<int, string>?"
                               ConvertMethod="x => x"
                               SearchMethod="async x => await SearchUsers(x)"
                               @bind-Value="@ConsultaEsbStateService.User"
                               EnableDropDown="true"
-                              placeholder="Search user..."
+                              placeholder="Buscar usuário..."
                               class="form-control">
                 <SelectedTemplate Context="user">
                     @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
@@ -81,34 +81,34 @@
                     @($"{kvp.Value} ({kvp.Key})")
                 </ResultTemplate>
                 <NotFoundTemplate>
-                    No users found
+                    Nenhum usuário encontrado
                 </NotFoundTemplate>
             </BlazoredTypeahead>
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Execução ID</label>
+            <label class="form-label">ID de Execução</label>
             <input type="number" class="form-control" @bind="ConsultaEsbStateService.ExecucaoId">
         </div>
 
         <div class="col-md-6">
             <div class="row">
                 <div class="col-md-6">
-                    <label class="form-label">HTTP Status Range</label>
+                    <label class="form-label">Faixa de Status HTTP</label>
                     <select class="form-select" @bind="ConsultaEsbStateService.HttpStatusRange">
-                        <option value="">All</option>
-                        <option value="2xx">2xx (Success)</option>
-                        <option value="3xx">3xx (Redirection)</option>
-                        <option value="4xx">4xx (Client Error)</option>
-                        <option value="5xx">5xx (Server Error)</option>
+                        <option value="">Todos</option>
+                        <option value="2xx">2xx (Sucesso)</option>
+                        <option value="3xx">3xx (Redirecionamento)</option>
+                        <option value="4xx">4xx (Erro do Cliente)</option>
+                        <option value="5xx">5xx (Erro do Servidor)</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Response Status</label>
+                    <label class="form-label">Status da Resposta</label>
                     <select class="form-select" @bind="ConsultaEsbStateService.ResponseStatus">
-                        <option value="">All</option>
-                        <option value="1">Success</option>
-                        <option value="2">Error</option>
+                        <option value="">Todos</option>
+                        <option value="1">Sucesso</option>
+                        <option value="2">Erro</option>
                     </select>
                 </div>
             </div>
@@ -117,19 +117,19 @@
         <div class="col-md-6">
             @if (ConsultaEsbStateService.IsLoading)
             {
-                <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+                <button class="btn btn-secondary" @onclick="CancelSearch">Cancelar</button>
             }
             else
             {
-                <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
-                <button class="btn btn-secondary" @onclick="async () => { await ClearFilters(); }">Clear</button>
-                <button class="btn btn-info" @onclick="async () => { await ExportSqlQuery(); }">Export SQL</button>
+                <button class="btn btn-primary" @onclick="async () => { ConsultaEsbStateService.CurrentPage = 1; await ExecuteQuery(false); }">Buscar</button>
+                <button class="btn btn-secondary" @onclick="async () => { await ClearFilters(); }">Limpar</button>
+                <button class="btn btn-info" @onclick="async () => { await ExportSqlQuery(); }">Exportar SQL</button>
             }
         </div>
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="Loading..." />
+<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="Carregando..." />
 
 @if (ConsultaEsbStateService.Results != null)
 {
@@ -137,16 +137,16 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Source</th>
+                    <th>Origem</th>
                     <th>ID</th>
-                    <th>Method</th>
-                    <th>HTTP Status</th>
-                    <th>Response Status</th>
+                    <th>Método</th>
+                    <th>Status HTTP</th>
+                    <th>Status da Resposta</th>
                     <th>URL / Fluxo</th>
-                    <th>Start Date</th>
-                    <th>User ID</th>
-                    <th>Delay (Segundos)</th>
-                    <th>Actions</th>
+                    <th>Data de Início</th>
+                    <th>ID do Usuário</th>
+                    <th>Atraso (Segundos)</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -170,7 +170,7 @@
                         <td>@(item.Duration?.TotalSeconds.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
-                                Details
+                                Detalhes
                             </button>
                         </td>
                     </tr>
@@ -196,7 +196,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content" @onclick:stopPropagation>
                 <div class="modal-header">
-                    <h5 class="modal-title">Execution Details</h5>
+                    <h5 class="modal-title">Detalhes da Execução</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
@@ -205,15 +205,15 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">Request</h6>
+                                        <h6 class="mb-0">Requisição</h6>
                                         <div>
                                             <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.FormattedRequest)">
-                                                <i class="bi bi-clipboard"></i> Copy
+                                                <i class="bi bi-clipboard"></i> Copiar
                                             </button>
                                             @if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest) || DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedRequest))
                                             {
                                                 <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertRequest()">
-                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest) ? "To XML" : "To JSON")
+                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedRequest) ? "Para XML" : "Para JSON")
                                                 </button>
                                             }
                                         </div>
@@ -226,15 +226,15 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">Response</h6>
+                                        <h6 class="mb-0">Resposta</h6>
                                         <div>
                                             <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.FormattedResponse)">
-                                                <i class="bi bi-clipboard"></i> Copy
+                                                <i class="bi bi-clipboard"></i> Copiar
                                             </button>
                                             @if (DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse) || DataFormatUtils.IsXml(ConsultaEsbStateService.FormattedResponse))
                                             {
                                                 <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertResponse()">
-                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse) ? "To XML" : "To JSON")
+                                                    @(DataFormatUtils.IsJson(ConsultaEsbStateService.FormattedResponse) ? "Para XML" : "Para JSON")
                                                 </button>
                                             }
                                         </div>
@@ -251,15 +251,15 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-header d-flex justify-content-between align-items-center">
-                                            <h6 class="mb-0">Error</h6>
+                                            <h6 class="mb-0">Erro</h6>
                                             <div>
                                                 <button class="btn btn-outline-secondary btn-sm me-2" @onclick="() => CopyToClipboard(ConsultaEsbStateService.SelectedItem.Erro)">
-                                                    <i class="bi bi-clipboard"></i> Copy
+                                                    <i class="bi bi-clipboard"></i> Copiar
                                                 </button>
                                                 @if (DataFormatUtils.IsJson(ConsultaEsbStateService.SelectedItem.Erro) || DataFormatUtils.IsXml(ConsultaEsbStateService.SelectedItem.Erro))
                                                 {
                                                     <button class="btn btn-outline-secondary btn-sm" @onclick="() => ConvertError()">
-                                                        @(DataFormatUtils.IsJson(ConsultaEsbStateService.SelectedItem.Erro) ? "To XML" : "To JSON")
+                                                        @(DataFormatUtils.IsJson(ConsultaEsbStateService.SelectedItem.Erro) ? "Para XML" : "Para JSON")
                                                     </button>
                                                 }
                                             </div>
@@ -538,12 +538,12 @@
             if (DataFormatUtils.IsJson(response))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(response, @"""Status""\s*:\s*""?([^"",}\s]+)");
-                return match.Success ? (match.Groups[1].Value == "1" ? "Success" : match.Groups[1].Value == "2" ? "Error" : match.Groups[1].Value) : "";
+                return match.Success ? (match.Groups[1].Value == "1" ? "Sucesso" : match.Groups[1].Value == "2" ? "Erro" : match.Groups[1].Value) : "";
             }
             else if (DataFormatUtils.IsXml(response))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(response, @"<Status>\s*([^<\s]+)");
-                return match.Success ? (match.Groups[1].Value == "1" ? "Success" : match.Groups[1].Value == "2" ? "Error" : match.Groups[1].Value) : "";
+                return match.Success ? (match.Groups[1].Value == "1" ? "Sucesso" : match.Groups[1].Value == "2" ? "Erro" : match.Groups[1].Value) : "";
             }
         }
         catch
