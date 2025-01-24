@@ -37,7 +37,7 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
 
-            _logger.LogInformation("Key updated: {Key}", key);
+            _logger.LogInformation("Chave atualizada: {Key}", key);
         }
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
@@ -51,7 +51,7 @@ namespace Common.Services
 
             if (string.IsNullOrWhiteSpace(responseBody))
             {
-                _logger.LogWarning("Empty response received from Consul agent endpoint");
+                _logger.LogWarning("Resposta vazia recebida do endpoint do agente Consul");
                 return string.Empty;
             }
 
@@ -286,11 +286,11 @@ namespace Common.Services
             {
                 var consulData = await GetConsulKeyValues(consulEnv);
                 await SaveKVToFiles(consulEnv, consulData);
-                _logger.LogInformation("Download completed successfully.");
+                _logger.LogInformation("Download concluído com sucesso.");
             }
             catch (Exception ex)
             {
-                _logger.LogInformation(ex, "Error: {Message}", ex.Message);
+                _logger.LogInformation(ex, "Erro: {Message}", ex.Message);
             }
         }
 
@@ -441,11 +441,11 @@ namespace Common.Services
 
                 File.WriteAllText(filePath, value);
 
-                _logger.LogInformation("Saved: {FilePath}", filePath);
+                _logger.LogInformation("Salvo: {FilePath}", filePath);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error to save: {FilePath} {Key} {Value}", folderPath, key, value);
+                _logger.LogError(ex, "Erro ao salvar: {FilePath} {Key} {Value}", folderPath, key, value);
             }
         }
 
@@ -553,20 +553,20 @@ namespace Common.Services
                 if (!sourceExists)
                 {
                     _logger.LogInformation("Key {Key} is present in {TargetEnv} but not in {SourceEnv}", key, targetEnv, sourceEnv);
-                    yield return new ConsulDiffResult(key, $"Key exists in {targetEnv} but not in {sourceEnv}");
+                    yield return new ConsulDiffResult(key, $"Chave existe em {targetEnv} mas não em {sourceEnv}");
                     continue;
                 }
                 else if (!targetExists)
                 {
                     _logger.LogInformation("Key {Key} is present in {SourceEnv} but not in {TargetEnv}", key, sourceEnv, targetEnv);
-                    yield return new ConsulDiffResult(key, $"Key exists in {sourceEnv} but not in {targetEnv}");
+                    yield return new ConsulDiffResult(key, $"Chave existe em {sourceEnv} mas não em {targetEnv}");
                     continue;
                 }
 
                 if (sourceKV == null || targetKV == null)
                 {
                     _logger.LogInformation("Difference in key: {Key} - Null value found", key);
-                    yield return new ConsulDiffResult(key, $"Null value found for key {key}");
+                    yield return new ConsulDiffResult(key, $"Valor nulo encontrado para a chave {key}");
                     continue;
                 }
 
