@@ -11,8 +11,6 @@ namespace Common.Services.Interfaces
         Task OpenInVsCode(ConsulEnvironment env);
         void SaveKvToFile(string folderPath, string key, string value);
         Task UpdateConsulKeyValue(ConsulEnvironment consulEnv, string key, string value);
-        IAsyncEnumerable<ConsulDiffResult> CompareAsyncEnumerable(string sourceEnv, string targetEnv, bool useRecursive = true, int? skip = null, int? take = null);
-        Task<List<ConsulDiffResult>> CompareAsync(string sourceEnv, string targetEnv, bool useRecursive = true);
         Task<ConsulDiffResult> GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive);
     }
 }
