@@ -15,7 +15,7 @@
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-3">
-            <label class="form-label">Environment</label>
+            <label class="form-label">Ambiente</label>
             <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
                 @foreach (var env in config.OracleEnvironments)
                 {
@@ -25,7 +25,7 @@
         </div>
 
         <div class="col-md-6">
-            <label class="form-label">Range</label>
+            <label class="form-label">Período</label>
             <div class="d-flex gap-2 mb-2">
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
             </div>
@@ -47,7 +47,7 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Request ID</label>
+            <label class="form-label">ID de Requisição</label>
             <input type="text" class="form-control" @bind="ConsultaSggStateService.RequestId">
         </div>
 
@@ -57,56 +57,56 @@
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Agendamento ID</label>
+            <label class="form-label">ID de Agendamento</label>
             <input type="number" class="form-control" @bind="ConsultaSggStateService.IdAgendamento">
         </div>
 
         <div class="col-md-6">
             <div class="row">
                 <div class="col-md-6">
-                    <label class="form-label">Move Type</label>
+                    <label class="form-label">Tipo de Movimento</label>
                     <select class="form-select" @bind="ConsultaSggStateService.MoveType">
-                        <option value="">All</option>
-                        <option value="ENTRY">ENTRY</option>
-                        <option value="EXIT">EXIT</option>
+                        <option value="">Todos</option>
+                        <option value="ENTRY">ENTRADA</option>
+                        <option value="EXIT">SAÍDA</option>
                     </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Status</label>
                     <select class="form-select" @bind="ConsultaSggStateService.Status">
-                        <option value="">All</option>
+                        <option value="">Todos</option>
                         <option value="OK">OK</option>
-                        <option value="Error">Error</option>
+                        <option value="Error">Erro</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <label class="form-label">Min Delay (seconds)</label>
+            <label class="form-label">Atraso Mínimo (segundos)</label>
             <input type="number" class="form-control" @bind="ConsultaSggStateService.MinDelay" step="0.1" min="0">
         </div>
 
         <div class="col-md-6">
             @if (ConsultaSggStateService.IsLoading)
             {
-                <button class="btn btn-secondary" @onclick="CancelSearch">Cancel</button>
+                <button class="btn btn-secondary" @onclick="CancelSearch">Cancelar</button>
             }
             else
             {
-                <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Search</button>
-                <button class="btn btn-secondary" @onclick="async () => await ClearFilters()">Clear</button>
-                <button class="btn btn-info" @onclick="ExportSqlQuery">Export SQL</button>
+                <button class="btn btn-primary" @onclick="async () => { ConsultaSggStateService.CurrentPage = 1; await ExecuteQuery(false); }">Buscar</button>
+                <button class="btn btn-secondary" @onclick="async () => await ClearFilters()">Limpar</button>
+                <button class="btn btn-info" @onclick="ExportSqlQuery">Exportar SQL</button>
             }
         </div>
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Loading..." />
+<ProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Carregando..." />
 
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Response Time Analysis</h5>
+        <h5 class="mb-0">Análise de Tempo de Resposta</h5>
     </div>
     <div class="card-body">
         <canvas id="delayChart" width="400" height="100" style='width:100%;height:100px'></canvas>
@@ -119,17 +119,17 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>LTDB Date</th>
-                    <th>LTVC Date</th>
-                    <th>Request ID</th>
+                    <th>Data LTDB</th>
+                    <th>Data LTVC</th>
+                    <th>ID de Requisição</th>
                     <th>Agendamento</th>
                     <th>Código Barras</th>
-                    <th>Move Type</th>
+                    <th>Tipo de Movimento</th>
                     <th>Placa</th>
                     <th>Status</th>
                     <th>Containers</th>
-                    <th>Delay</th>
-                    <th>Actions</th>
+                    <th>Atraso</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -152,7 +152,7 @@
                         <td>@(item.Delay?.TotalSeconds.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
-                                Details
+                                Detalhes
                             </button>
                         </td>
                     </tr>
@@ -168,7 +168,7 @@
         CurrentPage="@ConsultaSggStateService.CurrentPage"
         TotalPages="@((int)Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize))"
         OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })">
-        Showing @((ConsultaSggStateService.CurrentPage - 1) * ConsultaSggStateService.PageSize + 1) to @Math.Min(ConsultaSggStateService.CurrentPage * ConsultaSggStateService.PageSize, ConsultaSggStateService.TotalCount) of @ConsultaSggStateService.TotalCount entries
+        Showing @((ConsultaSggStateService.CurrentPage - 1) * ConsultaSggStateService.PageSize + 1) to @Math.Min(ConsultaSggStateService.CurrentPage * ConsultaSggStateService.PageSize, ConsultaSggStateService.TotalCount) of @ConsultaSggStateService.TotalCount entradas
     </Pagination>
 }
 
@@ -178,7 +178,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content" @onclick:stopPropagation>
                 <div class="modal-header">
-                    <h5 class="modal-title">LTDB/LTVC Details</h5>
+                    <h5 class="modal-title">Detalhes LTDB/LTVC</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
@@ -187,9 +187,9 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">LTDB XML</h6>
+                                        <h6 class="mb-0">XML LTDB</h6>
                                         <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(ConsultaSggStateService.FormattedLtdbXml)">
-                                            <i class="bi bi-clipboard"></i> Copy
+                                            <i class="bi bi-clipboard"></i> Copiar
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
@@ -200,9 +200,9 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card h-100">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">LTVC XML</h6>
+                                        <h6 class="mb-0">XML LTVC</h6>
                                         <button class="btn btn-outline-secondary btn-sm" @onclick="() => CopyToClipboard(ConsultaSggStateService.FormattedLtvcXml)">
-                                            <i class="bi bi-clipboard"></i> Copy
+                                            <i class="bi bi-clipboard"></i> Copiar
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
@@ -397,7 +397,7 @@
                 {
                     new
                     {
-                        label = "Avg Response Time (seconds)",
+                        label = "Tempo Médio de Resposta (segundos)",
                         data = dataAvg,
                         borderColor = "rgb(75, 192, 192)",
                         tension = 0.4,
@@ -405,7 +405,7 @@
                     },
                     new
                     {
-                        label = "Max Response Time (seconds)",
+                        label = "Tempo Máximo de Resposta (segundos)",
                         data = dataMax,
                         borderColor = "rgb(235, 64, 52)",
                         tension = 0.4,
@@ -413,7 +413,7 @@
                     },
                     new
                     {
-                        label = "Request Count",
+                        label = "Contagem de Requisições",
                         data = dataCount,
                         borderColor = "rgb(153, 102, 255)",
                         tension = 0.4,
@@ -433,7 +433,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Seconds"
+                            text = "Segundos"
                         }
                     },
                     y1 = new
@@ -445,7 +445,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Count"
+                            text = "Contagem"
                         },
                         grid = new
                         {
@@ -457,7 +457,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Time"
+                            text = "Tempo"
                         }
                     }
                 }
@@ -512,7 +512,7 @@
             ConsultaSggStateService.CurrentPage);
 
         await CopyToClipboard(sqlQuery);
-        toastService.ShowSuccess("SQL Query copied to clipboard");
+        toastService.ShowSuccess("Consulta copiada para área de transferência");
     }
 
     private void CloseModal()
