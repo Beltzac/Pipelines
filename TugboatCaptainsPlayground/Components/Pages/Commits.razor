@@ -20,9 +20,16 @@
 <StickyFilter>
     <div class="d-flex flex-column gap-2">
         <div class="d-flex align-items-center">
-        <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sincronizar Commits</button>
-        <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Baixar para Excel</button>
-            </div>
+            @if (CommitsStateService.IsLoading)
+            {
+                <button class="btn btn-danger text-nowrap me-2" @onclick="async () => await CancelSyncCommits()">Cancelar Sincronização</button>
+            }
+            else
+            {
+                <button class="btn btn-info text-nowrap me-2" @onclick="async () => await SyncCommits()">Sincronizar Commits</button>
+            }
+            <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Baixar para Excel</button>
+        </div>
             <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
         </div>
 </StickyFilter>
@@ -92,19 +99,26 @@ else
         commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, CommitsStateService.DataInicial);
     }
 
+    private CancellationTokenSource cts = new CancellationTokenSource();
+
     private async Task SyncCommits()
     {
         CommitsStateService.IsLoading = true;
         try
         {
+            cts = new CancellationTokenSource();
             var progressHandler = new Progress<int>(value =>
             {
                 CommitsStateService.ProgressValue = value;
                 StateHasChanged();
             });
 
-            await CommitDataExportService.FetchCommitDataAsync(progressHandler, CommitsStateService.DataInicial);
+            await CommitDataExportService.FetchCommitDataAsync(progressHandler, CommitsStateService.DataInicial, cts.Token);
             toastService.ShowSuccess("Commits sincronizados com sucesso!");
+        }
+        catch (OperationCanceledException)
+        {
+            toastService.ShowWarning("Sincronização cancelada pelo usuário.");
         }
         catch (Exception ex)
         {
@@ -114,6 +128,13 @@ else
         {
             CommitsStateService.IsLoading = false;
         }
+    }
+
+    private async Task CancelSyncCommits()
+    {
+        cts.Cancel();
+        await Task.Yield();
+        cts.Dispose();
     }
 
     private async Task DownloadCommits()
