@@ -33,7 +33,7 @@ namespace Common.Services
             _dbContext = dbContext;
         }
 
-        public async Task FetchCommitDataAsync(IProgress<int> progress = null)
+        public async Task FetchCommitDataAsync(IProgress<int> progress = null, DateTime? dateFilter = null)
         {
             try
             {
@@ -88,7 +88,14 @@ namespace Common.Services
                                     _logger.LogInformation($"Processando branch: {branchName} no repositório: {repoName}");
 
                                     // 4. List commits by the user from the configuration in the last 30 days
-                                    var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, _configService.GetConfig().Username, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+                                    // 4. List commits by the user from the configuration within the date filter
+                                    var commits = await _gitClient.GetCommitsAsync(
+                                        project.Id, 
+                                        repo.Id, 
+                                        branchName, 
+                                        _configService.GetConfig().Username, 
+                                        dateFilter ?? DateTime.UtcNow.AddDays(-30), 
+                                        DateTime.UtcNow);
 
                                     foreach (var commit in commits)
                                     {
@@ -205,13 +212,12 @@ namespace Common.Services
                 workbook.SaveAs(filePath);
             }
         }
-        public async Task<List<Commit>> GetRecentCommitsAsync(string username)
+        public async Task<List<Commit>> GetRecentCommitsAsync(string username, DateTime? dateFilter = null)
         {
-            string trimmedFilter = username.Trim();
-            var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+            var filterDate = dateFilter ?? DateTime.UtcNow.AddMonths(-1);
 
             return await _dbContext.Commits
-                .Where(x => EF.Functions.Like(x.AuthorName, $"%{trimmedFilter}%") && x.CommitDate >= oneMonthAgo)
+                .Where(x => EF.Functions.Like(x.AuthorName, $"%{username}%") && x.CommitDate >= filterDate)
                 .OrderByDescending(c => c.CommitDate)
                 .ToListAsync();
         }
