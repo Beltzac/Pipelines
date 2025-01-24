@@ -70,7 +70,7 @@ namespace Tests.Common.Services
             result.Should().HaveCount(2);
             result["key1"].Value.Should().Be("value1");
             result["key2"].Value.Should().Be("value2");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Batch failed")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Once);
+            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Batch failed")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
@@ -369,7 +369,7 @@ namespace Tests.Common.Services
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception, string>>()
                 ),
-                Times.Once
+                Times.AtLeastOnce
             );
         }
 

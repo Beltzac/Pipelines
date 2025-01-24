@@ -62,6 +62,11 @@ namespace Common.Services
         public async Task<Dictionary<string, ConsulKeyValue>> GetConsulKeyValues(ConsulEnvironment consulEnv)
         {
             var keyValues = await FetchConsulKV(consulEnv);
+            if (keyValues == null || keyValues.Count == 0)
+            {
+                _logger.LogWarning("No key-values found in Consul.");
+                return new Dictionary<string, ConsulKeyValue>();
+            }
 
             Dictionary<string, ConsulKeyValue> keyValuesWithJson = new Dictionary<string, ConsulKeyValue>();
             string datacenter = await GetDatacenterAsync(consulEnv);
