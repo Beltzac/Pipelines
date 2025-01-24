@@ -25,7 +25,7 @@
             return scaledValue + randomOffset;
         }
 
-        private static int ScaleValue(int value, int minValue, int maxValue, int minTimeSinceUpdate, int maxTimeSinceUpdate)
+        public static int ScaleValue(int value, int minValue, int maxValue, int minTimeSinceUpdate, int maxTimeSinceUpdate)
         {
             // Ensure minTimeSinceUpdate is at least 1 to avoid logarithm of zero
             minTimeSinceUpdate = Math.Max(minTimeSinceUpdate, 1);
