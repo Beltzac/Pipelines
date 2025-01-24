@@ -37,7 +37,7 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
 
-            _logger.LogInformation("Chave atualizada: {Key}", key);
+            _logger.LogInformation("Updated key: {Key}", key);
         }
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
@@ -378,12 +378,9 @@ namespace Common.Services
                             string keyy = keyDetail[0]["Key"]?.ToString() ?? string.Empty;
                             string value = keyDetail[0]["Value"]?.ToString() ?? string.Empty;
 
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                byte[] valueBytes = Convert.FromBase64String(value);
-                                string decodedValue = Encoding.UTF8.GetString(valueBytes);
-                                keyValues[keyy] = decodedValue;
-                            }
+                            byte[] valueBytes = Convert.FromBase64String(value);
+                            string decodedValue = Encoding.UTF8.GetString(valueBytes);
+                            keyValues[keyy] = decodedValue;
                         }
                     }
                 }
