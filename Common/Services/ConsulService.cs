@@ -37,7 +37,7 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .PutStringAsync(value);
 
-            _logger.LogInformation("Updated key: {Key}", key);
+            _logger.LogInformation("Key updated: {Key}", key);
         }
 
         private async Task<string> GetDatacenterAsync(ConsulEnvironment consulEnv)
@@ -343,7 +343,7 @@ namespace Common.Services
             var keysResponse = await consulEnv.ConsulUrl
                 .AppendPathSegment("v1")
                 .AppendPathSegment("kv/") // Precisa da barra no final
-                .SetQueryParam("keys")            
+                .SetQueryParam("keys")
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
 

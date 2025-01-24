@@ -1,4 +1,4 @@
-﻿using CSharpDiff.Diffs.Models;
+﻿﻿using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Common.Models;
@@ -57,7 +57,7 @@ namespace Common.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error testing Oracle connection");
+                _logger.LogError(ex, "Erro ao testar conexão do Oracle");
                 return false;
             }
         }
@@ -110,7 +110,7 @@ namespace Common.Services
                     var diff = await GetViewDiff(viewName, devViews[viewName], qaViews[viewName]);
                     if (diff.HasDifferences)
                     {
-                        _logger.LogInformation($"Difference in view: {viewName}");
+                        _logger.LogInformation($"Diferença na view: {viewName}");
                         differences.Add(diff);
                     }
                 }
@@ -118,7 +118,7 @@ namespace Common.Services
                 {
                     var diff = await GetViewDiff(viewName, devViews[viewName], string.Empty);
                     differences.Add(diff);
-                    _logger.LogInformation($"View {viewName} is present in DEV but not in QA");
+                    _logger.LogInformation($"A view {viewName} está presente no DEV, mas não no QA");
                 }
             }
 
@@ -128,7 +128,7 @@ namespace Common.Services
                 {
                     var diff = await GetViewDiff(viewName, string.Empty, qaViews[viewName]);
                     differences.Add(diff);
-                    _logger.LogInformation($"View {viewName} is present in QA but not in DEV");
+                    _logger.LogInformation($"A view {viewName} está presente no QA, mas não no DEV");
                 }
             }
 

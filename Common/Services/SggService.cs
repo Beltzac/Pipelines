@@ -35,7 +35,7 @@ namespace Common.Services
         {
             var config = _configService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
-                ?? throw new ArgumentException($"Environment {environment} not found");
+                ?? throw new ArgumentException($"Ambiente {environment} não encontrado");
 
             using var connection = new OracleConnection(oracleEnv.ConnectionString);
             await connection.OpenAsync();
@@ -102,7 +102,7 @@ public string BuildQuery(
                 : "";
 
             var sql = @$"
-WITH 
+WITH
 MainQuery AS (
     SELECT
         LTDB.CREATED_AT AS DATA_LTDB,
@@ -120,21 +120,21 @@ MainQuery AS (
             TO_CHAR(LTVC_MESSAGE),
             --TO_CHAR(LTDB.EXCEPTION),
             --TO_CHAR(LTVC.EXCEPTION),
-            'NO_MESSAGE'
+            'MENSAGEM_NAO_ENCONTRADA'
         ) AS MESSAGE_TEXT,
 		(
           SELECT
              LISTAGG(NVL(X.container_num, 'UNKNOWN'), ', ')
                 WITHIN GROUP (ORDER BY X.container_seq)
-          FROM 
+          FROM
         XMLTABLE(
           XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
-          '/ns:LTDB/ns:Chassis/ns:Container' 
+          '/ns:LTDB/ns:Chassis/ns:Container'
 					PASSING CASE
 						WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
 						ELSE NULL
 					END
-					COLUMNS 
+					COLUMNS
 					container_seq NUMBER PATH '@sequence',
           container_num VARCHAR2(100) PATH '@number'
         ) X
