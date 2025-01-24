@@ -52,11 +52,11 @@ namespace Common.Services
                     // Skip specific projects
                     if (projectName.Equals("Repositories Backups", StringComparison.OrdinalIgnoreCase))
                     {
-                        _logger.LogInformation($"Skipping project: {projectName}");
+                        _logger.LogInformation($"Pulando projeto: {projectName}");
                         continue;
                     }
 
-                    _logger.LogInformation($"Processing project: {projectName}");
+                    _logger.LogInformation($"Processando projeto: {projectName}");
 
                     // 2. List all repositories in the project
                     var repositories = await _gitClient.GetRepositoriesAsync(project.Id);
@@ -68,11 +68,11 @@ namespace Common.Services
                         // Skip specific repositories
                         if (repoName.Equals("IdentityServer4", StringComparison.OrdinalIgnoreCase))
                         {
-                            _logger.LogInformation($"Skipping repository: {repoName}");
+                            _logger.LogInformation($"Pulando repositório: {repoName}");
                             continue;
                         }
 
-                        _logger.LogInformation($"Processing repository: {repoName}");
+                        _logger.LogInformation($"Processando repositório: {repoName}");
 
                         // 3. List all branches in the repository
                         try
@@ -85,7 +85,7 @@ namespace Common.Services
                                 {
                                     string branchName = GetBranchName(branch.Name);
 
-                                    _logger.LogInformation($"Processing branch: {branchName} in repository: {repoName}");
+                                    _logger.LogInformation($"Processando branch: {branchName} no repositório: {repoName}");
 
                                     // 4. List commits by the user from the configuration in the last 30 days
                                     var commits = await _gitClient.GetCommitsAsync(project.Id, repo.Id, branchName, _configService.GetConfig().Username, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
@@ -117,18 +117,18 @@ namespace Common.Services
                                             options.MergeKeepIdentity = true;
                                         });
 
-                                        _logger.LogInformation($"Commit added to database: {commitDate} - {commitMessage}");
+                                        _logger.LogInformation($"Commit adicionado ao banco de dados: {commitDate} - {commitMessage}");
                                     }
                                 }
                                 catch (Exception ex)
                                 {
-                                    _logger.LogError(ex, $"An error occurred while processing branch: {branch.Name} in repository: {repo.Name}");
+                                    _logger.LogError(ex, $"Ocorreu um erro ao processar a branch: {branch.Name} no repositório: {repo.Name}");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"An error occurred while processing repository: {repo.Name}");
+                            _logger.LogError(ex, $"Ocorreu um erro ao processar o repositório: {repo.Name}");
                         }
                     }
                 }
@@ -137,7 +137,7 @@ namespace Common.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while exporting commit data.");
+                _logger.LogError(ex, "Ocorreu um erro ao exportar os dados do commit.");
             }
 
         }
@@ -235,11 +235,11 @@ namespace Common.Services
                 Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
 
 
-                _logger.LogInformation($"Commit data exported to {filePath}");
+                _logger.LogInformation($"Dados do commit exportados para {filePath}");
             }
             else
             {
-                _logger.LogInformation("No commit data available to export.");
+                _logger.LogInformation("Nenhum dado de commit disponível para exportação.");
             }
         }
     }
