@@ -19,7 +19,7 @@
     <div class="row g-3">
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label" title="Ambiente de origem para comparação">Source Environment:</label>
+                <label class="form-label" title="Ambiente de origem para comparação">Ambiente Origem:</label>
                 <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
                     @foreach (var env in environments)
                     {
@@ -30,7 +30,7 @@
         </div>
         <div class="col-md-5">
             <div class="form-group">
-                <label class="form-label" title="Ambiente de destino para comparação">Target Environment:</label>
+                <label class="form-label" title="Ambiente de destino para comparação">Ambiente Destino:</label>
                 <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
                     @foreach (var env in environments)
                     {
@@ -40,27 +40,27 @@
             </div>
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Compare</button>
+            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Comparar</button>
         </div>
     </div>
 
     <div class="row g-3 mt-2">
         <div class="col-md-6">
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="Search by module, code or prefix..."
+                <input type="text" class="form-control" placeholder="Pesquisar por módulo, código ou prefixo..."
                        @bind="MessageDiffStateService.SearchKey"
                        @bind:event="oninput"
                        @onkeyup="async () => await HandleSearch()"
-                       title="Buscar por módulo, código ou prefixo da mensagem" />
+                       title="Filtrar por módulo, código ou prefixo da mensagem" />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="Search by descrição..."
+                <input type="text" class="form-control" placeholder="Pesquisar por descrição..."
                        @bind="MessageDiffStateService.SearchDescription"
                        @bind:event="oninput"
                        @onkeyup="async () => await HandleSearch()"
-                       title="Buscar pelo texto da descrição da mensagem" />
+                       title="Filtrar pelo texto da descrição da mensagem" />
             </div>
         </div>
         <div class="col-md-2">
@@ -92,14 +92,14 @@
                     <th style="width: 15%">Título Origem</th>
                     <th style="width: 20%">
                         Valor Origem (@MessageDiffStateService.SelectedSourceEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts" title="Copiar todos os comandos UPSERT do ambiente source">
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllSourceUpserts" title="Copiar todos os comandos UPSERT do ambiente origem">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Origem
                         </button>
                     </th>
                     <th style="width: 15%">Título Destino</th>
                     <th style="width: 20%">
                         Valor Destino (@MessageDiffStateService.SelectedTargetEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts" title="Copiar todos os comandos UPSERT do ambiente target">
+                        <button class="btn btn-sm btn-outline-primary ms-2" @onclick="CopyAllTargetUpserts" title="Copiar todos os comandos UPSERT do ambiente destino">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Destino
                         </button>
                     </th>
@@ -222,11 +222,11 @@
         {
             var upsertStatement = OracleMessageService.GenerateUpsertStatement(environment, message);
             await CopyToClipboard(upsertStatement);
-            toastService.ShowSuccess("Upsert statement copied to clipboard");
+            toastService.ShowSuccess("Comando UPSERT copiado para a área de transferência");
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error generating upsert statement: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comando UPSERT: {ex.Message}");
         }
     }
 
@@ -250,16 +250,16 @@
             {
                 var allUpserts = string.Join("\n\n", upserts);
                 await CopyToClipboard(allUpserts);
-                toastService.ShowSuccess($"Copied {upserts.Count} upsert statements to clipboard");
+                toastService.ShowSuccess($"Copiados {upserts.Count} comandos UPSERT para a área de transferência");
             }
             else
             {
-                toastService.ShowWarning("No source messages found to generate upserts");
+                toastService.ShowWarning("Nenhuma mensagem de origem encontrada para gerar comandos UPSERT");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error generating upsert statements: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comandos UPSERT: {ex.Message}");
         }
     }
 
@@ -283,16 +283,16 @@
             {
                 var allUpserts = string.Join(";\n\n", upserts);
                 await CopyToClipboard(allUpserts);
-                toastService.ShowSuccess($"Copied {upserts.Count} upsert statements to clipboard");
+                toastService.ShowSuccess($"Copiados {upserts.Count} comandos UPSERT para a área de transferência");
             }
             else
             {
-                toastService.ShowWarning("No target messages found to generate upserts");
+                toastService.ShowWarning("Nenhuma mensagem de destino encontrada para gerar comandos UPSERT");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error generating upsert statements: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comandos UPSERT: {ex.Message}");
         }
     }
 
@@ -312,7 +312,7 @@
     {
         if (string.IsNullOrEmpty(MessageDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(MessageDiffStateService.SelectedTargetEnv))
         {
-            toastService.ShowError("Please select both environments");
+            toastService.ShowError("Por favor, selecione ambos os ambientes");
             return;
         }
 
@@ -326,19 +326,19 @@
 
             // Get source environment messages
             MessageDiffStateService.ProgressValue = 25;
-            MessageDiffStateService.ProgressLabel = $"Loading messages from {MessageDiffStateService.SelectedSourceEnv}...";
+            MessageDiffStateService.ProgressLabel = $"Carregando mensagens do ambiente {MessageDiffStateService.SelectedSourceEnv}...";
             var sourceEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedSourceEnv);
             MessageDiffStateService.SourceMessages = await OracleMessageService.GetMessagesAsync(sourceEnv.ConnectionString);
 
             // Get target environment messages
             MessageDiffStateService.ProgressValue = 50;
-            MessageDiffStateService.ProgressLabel = $"Loading messages from {MessageDiffStateService.SelectedTargetEnv}...";
+            MessageDiffStateService.ProgressLabel = $"Carregando mensagens do ambiente {MessageDiffStateService.SelectedTargetEnv}...";
             var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
             MessageDiffStateService.TargetMessages = await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
 
             // Process messages
             MessageDiffStateService.ProgressValue = 75;
-            MessageDiffStateService.ProgressLabel = "Processing message differences...";
+            MessageDiffStateService.ProgressLabel = "Processando diferenças das mensagens...";
             MessageDiffStateService.AllMessageKeys = new HashSet<string>(
                 MessageDiffStateService.SourceMessages.Keys.Union(MessageDiffStateService.TargetMessages.Keys)
             );
@@ -349,7 +349,7 @@
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error comparing environments: {ex.Message}");
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
         finally
         {
@@ -363,7 +363,7 @@
         try
         {
             MessageDiffStateService.ProgressValue = 80;
-            MessageDiffStateService.ProgressLabel = "Loading differences...";
+            MessageDiffStateService.ProgressLabel = "Carregando diferenças...";
 
             MessageDiffStateService.Differences.Clear();
             var totalKeys = MessageDiffStateService.AllMessageKeys.Count;
@@ -371,7 +371,7 @@
 
             foreach (var key in MessageDiffStateService.AllMessageKeys)
             {
-                MessageDiffStateService.ProgressLabel = $"Processing differences ({processedKeys + 1}/{totalKeys}): {key}";
+                MessageDiffStateService.ProgressLabel = $"Processando diferenças ({processedKeys + 1}/{totalKeys}): {key}";
 
                 var sourceMessage = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
                 var targetMessage = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
@@ -394,10 +394,6 @@
     protected async Task RunCompare()
     {
         var filteredDiffs = GetFilteredAndPaginatedDifferences();
-        @* if (filteredDiffs.Count == 0 && MessageDiffStateService.Differences.Count > 0)
-        {
-            toastService.ShowInfo("No differences found matching the search criteria");
-        } *@
         StateHasChanged();
     }
 
