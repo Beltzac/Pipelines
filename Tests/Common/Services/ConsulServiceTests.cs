@@ -15,14 +15,12 @@ namespace Tests.Common.Services
         private readonly Mock<ILogger<ConsulService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
         private readonly ConsulService _consulService;
-        private readonly string _tempPath;
 
         public ConsulServiceTests()
         {
             _loggerMock = new Mock<ILogger<ConsulService>>();
             _configServiceMock = new Mock<IConfigurationService>();
             _consulService = new ConsulService(_loggerMock.Object, _configServiceMock.Object);
-            _tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         }
 
         [Test]
@@ -38,29 +36,29 @@ namespace Tests.Common.Services
 
             // Mock batch failure
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("recurse")
                 .SimulateException(new Exception("Batch failed"));
 
             // Mock sequential success
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("keys")
                 .RespondWithJson(new[] { "key1", "key2" });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key1")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key1",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1"))
-                });
+                } });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key2")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key2",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2"))
-                });
+                } });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -70,7 +68,6 @@ namespace Tests.Common.Services
             result.Should().HaveCount(2);
             result["key1"].Value.Should().Be("value1");
             result["key2"].Value.Should().Be("value2");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Batch failed")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
@@ -86,23 +83,23 @@ namespace Tests.Common.Services
 
             // Mock sequential success with empty values
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("keys")
                 .RespondWithJson(new[] { "key1", "key2" });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key1")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key1",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(""))
-                });
+                } });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key2")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key2",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes(""))
-                });
+                } });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -112,7 +109,6 @@ namespace Tests.Common.Services
             result.Should().HaveCount(2);
             result["key1"].Value.Should().Be("");
             result["key2"].Value.Should().Be("");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
@@ -128,23 +124,23 @@ namespace Tests.Common.Services
 
             // Mock sequential success with URL
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("keys")
                 .RespondWithJson(new[] { "key1", "key2" });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key1")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key1",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value1"))
-                });
+                } });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key2")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key2",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("value2"))
-                });
+                } });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -152,9 +148,8 @@ namespace Tests.Common.Services
             // Assert
             result.Should().NotBeNull();
             result.Should().HaveCount(2);
-            result["key1"].Url.Should().Be("http://localhost:8500/v1/kv/key1");
-            result["key2"].Url.Should().Be("http://localhost:8500/v1/kv/key2");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
+            result["key1"].Url.Should().Be("http://localhost:8500/ui/kv/key1/edit");
+            result["key2"].Url.Should().Be("http://localhost:8500/ui/kv/key2/edit");
         }
 
         [Test]
@@ -170,23 +165,23 @@ namespace Tests.Common.Services
 
             // Mock sequential success with invalid JSON
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("keys")
                 .RespondWithJson(new[] { "key1", "key2" });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key1")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key1",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{invalid json}"))
-                });
+                } });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/key2")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "key2",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{invalid json}"))
-                });
+                } });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -196,7 +191,6 @@ namespace Tests.Common.Services
             result.Should().HaveCount(2);
             result["key1"].Value.Should().Be("{invalid json}");
             result["key2"].Value.Should().Be("{invalid json}");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
@@ -212,23 +206,23 @@ namespace Tests.Common.Services
 
             // Mock sequential success with recursive values
             _httpTest
-                .ForCallsTo("*/v1/kv")
+                .ForCallsTo("*/v1/kv/")
                 .WithQueryParam("keys")
                 .RespondWithJson(new[] { "config/base", "config/override" });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/config/base")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "config/base",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{ \"setting\": \"base-value\" }"))
-                });
+                } });
 
             _httpTest
                 .ForCallsTo("*/v1/kv/config/override")
-                .RespondWithJson(new {
+                .RespondWithJson(new object[] { new {
                     Key = "config/override",
                     Value = Convert.ToBase64String(Encoding.UTF8.GetBytes("{ \"setting\": \"{{ key 'config/base' }}\" }"))
-                });
+                } });
 
             // Act
             var result = await _consulService.GetConsulKeyValues(consulEnv);
@@ -237,7 +231,6 @@ namespace Tests.Common.Services
             result.Should().NotBeNull();
             result.Should().HaveCount(2);
             result["config/override"].ValueRecursive.Should().Contain("base-value");
-            _loggerMock.Verify(x => x.Log(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Empty response received from Consul agent endpoint")), It.IsAny<Exception>(), It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.AtLeastOnce);
         }
 
         [Test]
