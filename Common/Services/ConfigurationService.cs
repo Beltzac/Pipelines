@@ -14,7 +14,7 @@ public class ConfigurationService : IConfigurationService
     {
     }
 
-    // This constructor is used for testing
+    // Este construtor é usado para testes
     public ConfigurationService(string configPath)
     {
         _configPath = configPath;
@@ -79,35 +79,35 @@ public class ConfigurationService : IConfigurationService
         {
             var importedConfig = JsonSerializer.Deserialize<ConfigModel>(jsonConfig);
             if (importedConfig == null)
-                throw new ArgumentException("Invalid configuration format");
+                throw new ArgumentException("Formato de configuração inválido");
 
             ValidateConfig(importedConfig);
             await SaveConfigAsync(importedConfig);
         }
         catch (JsonException)
         {
-            throw new ArgumentException("Invalid JSON format");
+            throw new ArgumentException("Formato JSON inválido");
         }
     }
 
     private void ValidateConfig(ConfigModel config)
     {
         if (config == null)
-            throw new ArgumentException("Configuration cannot be null");
+            throw new ArgumentException("A configuração não pode ser nula");
 
         if (string.IsNullOrWhiteSpace(config.OrganizationUrl))
-            throw new ArgumentException("Organization URL is required");
+            throw new ArgumentException("A URL da organização é obrigatória");
 
         if (config.OracleEnvironments != null)
         {
             foreach (var env in config.OracleEnvironments)
             {
                 if (string.IsNullOrWhiteSpace(env.Name))
-                    throw new ArgumentException("Oracle environment name is required");
+                    throw new ArgumentException("O nome do ambiente Oracle é obrigatório");
                 if (string.IsNullOrWhiteSpace(env.ConnectionString))
-                    throw new ArgumentException("Oracle connection string is required");
+                    throw new ArgumentException("A string de conexão Oracle é obrigatória");
                 if (string.IsNullOrWhiteSpace(env.Schema))
-                    throw new ArgumentException("Oracle schema is required");
+                    throw new ArgumentException("O esquema Oracle é obrigatório");
             }
         }
 
@@ -116,9 +116,9 @@ public class ConfigurationService : IConfigurationService
             foreach (var env in config.ConsulEnvironments)
             {
                 if (string.IsNullOrWhiteSpace(env.Name))
-                    throw new ArgumentException("Consul environment name is required");
+                    throw new ArgumentException("O nome do ambiente Consul é obrigatório");
                 if (string.IsNullOrWhiteSpace(env.ConsulUrl))
-                    throw new ArgumentException("Consul URL is required");
+                    throw new ArgumentException("A URL do Consul é obrigatória");
             }
         }
     }

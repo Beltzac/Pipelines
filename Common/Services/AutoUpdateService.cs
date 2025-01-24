@@ -19,11 +19,11 @@ namespace Common.Services
             _repositoryOwner = config.RepositoryOwner;
             _repositoryName = config.RepositoryName;
             _userAgent = config.UserAgent;
-            _accessToken = config.AccessToken; // Added this line
+            _accessToken = config.AccessToken;
         }
 
         /// <summary>
-        /// Gets the current version of the application.
+        /// Obtém a versão atual da aplicação.
         /// </summary>
         public static Version GetCurrentVersion()
         {
@@ -32,59 +32,59 @@ namespace Common.Services
         }
 
         /// <summary>
-        /// Checks for updates and performs the update if available.
+        /// Verifica atualizações e realiza a atualização se disponível.
         /// </summary>
         public async Task<Release> CheckForUpdatesAsync()
         {
-            // Get current version
-            // check if it is dev or release
+            // Obtém a versão atual
+            // verifica se é dev ou release
 
 
             Version currentVersion = GetCurrentVersion();
 
-            Console.WriteLine("Current version: " + currentVersion);
+            Console.WriteLine("Versão atual: " + currentVersion);
 
-            // GitHub API URL for the latest release
+            // URL da API do GitHub para a última versão
             string latestReleaseUrl = $"https://api.github.com/repos/{_repositoryOwner}/{_repositoryName}/releases/latest";
 
             using (HttpClient client = new HttpClient())
             {
-                // GitHub API requires a User-Agent header
+                // A API do GitHub requer um cabeçalho User-Agent
                 client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
 
-                // Add the Authorization header with the access token
+                // Adiciona o cabeçalho de Autorização com o token de acesso
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
 
                 try
                 {
-                    // Fetch the latest release information
+                    // Busca as informações da última versão
                     HttpResponseMessage response = await client.GetAsync(latestReleaseUrl);
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    // Deserialize JSON response
+                    // Desserializa a resposta JSON
                     Release latestRelease = JsonConvert.DeserializeObject<Release>(responseBody);
 
                     string latestVersionString = latestRelease.tag_name; // e.g., "0.0.14"
                     Version latestVersion = ParseVersion(latestVersionString);
 
-                    Console.WriteLine("Latest version: " + latestVersion);
+                    Console.WriteLine("Última versão: " + latestVersion);
 
-                    // Compare versions
+                    // Compara as versões
                     if (latestVersion > currentVersion)
                     {
-                        Console.WriteLine("An update is available.");
+                        Console.WriteLine("Uma atualização está disponível.");
                         return latestRelease;
                     }
                     else
                     {
-                        Console.WriteLine("You are using the latest version.");
+                        Console.WriteLine("Você está usando a última versão.");
                         return null;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error checking for updates: " + ex.Message);
+                    Console.WriteLine("Erro ao verificar atualizações: " + ex.Message);
                 }
             }
 
@@ -92,22 +92,22 @@ namespace Common.Services
         }
 
         /// <summary>
-        /// Downloads the installer and runs it.
+        /// Baixa o instalador e o executa.
         /// </summary>
-        /// <param name="latestRelease">The latest release information from GitHub.</param>
+        /// <param name="latestRelease">As informações da última versão do GitHub.</param>
         public async Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
 
-                // Add the Authorization header with the access token
+                // Adiciona o cabeçalho de Autorização com o token de acesso
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
 
-                // Add the Accept header to get the binary content
+                // Adiciona o cabeçalho Accept para obter o conteúdo binário
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
 
-                // Find the installer asset
+                // Encontra o asset do instalador
                 foreach (Asset asset in latestRelease.assets)
                 {
                     if (asset.name.EndsWith(".exe"))
@@ -115,13 +115,13 @@ namespace Common.Services
                         string installerUrl = asset.url; // Use asset.url
                         string installerFileName = asset.name;
 
-                        // Get the temp folder path
+                        // Obtém o caminho da pasta temporária
                         string tempFolder = Path.GetTempPath();
                         string installerFilePath = Path.Combine(tempFolder, installerFileName);
 
-                        Console.WriteLine("Downloading installer to temp folder...");
+                        Console.WriteLine("Baixando instalador para a pasta temporária...");
 
-                        // Download the installer
+                        // Baixa o instalador
                         using (var response = await client.GetAsync(installerUrl, HttpCompletionOption.ResponseHeadersRead))
                         {
                             response.EnsureSuccessStatusCode();
@@ -143,12 +143,12 @@ namespace Common.Services
                             }
                         }
 
-                        Console.WriteLine("Installer downloaded to " + installerFilePath);
+                        Console.WriteLine("Instalador baixado para " + installerFilePath);
 
-                        // Prepare the command to execute
+                        // Prepara o comando para executar
                         string cmdCommand = $"/C timeout /T 5 /NOBREAK & start \"\" \"{installerFilePath}\"";
 
-                        // Start the cmd process
+                        // Inicia o processo cmd
                         Process.Start(new ProcessStartInfo
                         {
                             FileName = "cmd.exe",
@@ -157,7 +157,7 @@ namespace Common.Services
                             WindowStyle = ProcessWindowStyle.Hidden
                         });
 
-                        // Exit the Electron app
+                        // Sai da aplicação Electron
                         //ElectronNET.API.Electron.App.Exit();
 
                         break;
@@ -167,13 +167,13 @@ namespace Common.Services
         }
 
         /// <summary>
-        /// Parses the version string from GitHub release tag.
+        /// Analisa a string de versão do tag da release do GitHub.
         /// </summary>
-        /// <param name="versionString">The version string to parse.</param>
-        /// <returns>A Version object.</returns>
+        /// <param name="versionString">A string de versão a ser analisada.</param>
+        /// <returns>Um objeto Version.</returns>
         private Version ParseVersion(string versionString)
         {
-            // Remove any leading 'v' or 'V'
+            // Remove qualquer 'v' ou 'V' inicial
             if (versionString.StartsWith("v", StringComparison.OrdinalIgnoreCase))
             {
                 versionString = versionString.Substring(1);
@@ -186,7 +186,7 @@ namespace Common.Services
             }
             else
             {
-                // Manually parse the version string
+                // Analisa manualmente a string de versão
                 string[] parts = versionString.Split('.');
                 int major = 0, minor = 0, build = 0, revision = 0;
 
@@ -199,7 +199,7 @@ namespace Common.Services
             }
         }
 
-        // Classes to deserialize JSON response
+        // Classes para desserializar a resposta JSON
         public class Release
         {
             public string tag_name { get; set; }
