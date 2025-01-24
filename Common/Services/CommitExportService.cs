@@ -33,18 +33,21 @@ namespace Common.Services
             _dbContext = dbContext;
         }
 
-        public async Task FetchCommitDataAsync(IProgress<int> progress = null, DateTime? dateFilter = null)
+        public async Task FetchCommitDataAsync(IProgress<int> progress = null, DateTime? dateFilter = null, CancellationToken cancellationToken = default)
         {
             try
             {
                 // 1. List all projects
                 var projects = await _projectClient.GetProjects();
 
+                cancellationToken.ThrowIfCancellationRequested();
+
                 int totalProjects = projects.Count;
                 int currentProject = 0;
 
                 foreach (var project in projects)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     currentProject++;
                     progress?.Report((currentProject * 100) / totalProjects);
                     string projectName = project.Name;
@@ -81,6 +84,9 @@ namespace Common.Services
 
                             foreach (var branch in branches)
                             {
+                                // Validar o token de cancelamento
+                                cancellationToken.ThrowIfCancellationRequested();
+
                                 try
                                 {
                                     string branchName = GetBranchName(branch.Name);
@@ -130,12 +136,14 @@ namespace Common.Services
                                 catch (Exception ex)
                                 {
                                     _logger.LogError(ex, $"Ocorreu um erro ao processar a branch: {branch.Name} no repositório: {repo.Name}");
+                                    throw;
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, $"Ocorreu um erro ao processar o repositório: {repo.Name}");
+                            throw;
                         }
                     }
                 }
@@ -145,6 +153,7 @@ namespace Common.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ocorreu um erro ao exportar os dados do commit.");
+                throw;
             }
 
         }
@@ -224,28 +233,38 @@ namespace Common.Services
 
         public async Task ExportCommitDataAsync()
         {
-            var config = _configService.GetConfig();
-            var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
+            try { 
+                var config = _configService.GetConfig();
+                var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
 
-            var commitDataList = await _dbContext.Commits
-                .Where(c => EF.Functions.Like(c.AuthorName, $"%{config.Username}%") && c.CommitDate >= twoMonthsAgo)
-                .ToListAsync();
+                var commitDataList = await _dbContext.Commits
+                    .Where(c => EF.Functions.Like(c.AuthorName, $"%{config.Username}%") && c.CommitDate >= twoMonthsAgo)
+                    .ToListAsync();
 
-            if (commitDataList != null && commitDataList.Any())
-            {
-                // Export to Excel
-                string filePath = GenerateExcelFilePath();
-                ExportToExcel(commitDataList, filePath);
+                if (commitDataList != null && commitDataList.Any())
+                {
+                    // Export to Excel
+                    string filePath = GenerateExcelFilePath();
+                    ExportToExcel(commitDataList, filePath);
 
-                // Open the file in the default application
-                Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+                    // Open the file in the default application
+                    Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
 
 
-                _logger.LogInformation($"Dados do commit exportados para {filePath}");
-            }
-            else
-            {
+                    _logger.LogInformation($"Dados do commit exportados para {filePath}");
+                }
+                else
                 _logger.LogInformation("Nenhum dado de commit disponível para exportação.");
+            }
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogInformation("A operação foi cancelada pelo usuário.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ocorreu um erro ao exportar os dados do commit.");
+                throw;
             }
         }
     }
