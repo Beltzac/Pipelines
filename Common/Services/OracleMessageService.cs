@@ -130,7 +130,7 @@ namespace Common.Services
             }
         }
 
-        public string GenerateUpsertStatement(string environment, MessageDefinition message)
+        public async Task<string> GenerateUpsertStatementAsync(string environment, MessageDefinition message)
         {
             if (message == null)
                 return string.Empty;
@@ -141,7 +141,7 @@ namespace Common.Services
 
             if (!_userCodeCache.TryGetValue(cacheKey, out var userCode))
             {
-                userCode = _cadastroService.GetUsersAsync(environment, userName).Result.FirstOrDefault().Key;
+                userCode = (await _cadastroService.GetUsersAsync(environment, userName)).FirstOrDefault().Key;
                 _userCodeCache[cacheKey] = userCode;
             }
 
