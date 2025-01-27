@@ -114,23 +114,26 @@ namespace Generation
                     var allInterfaces = currentType.AllInterfaces;
                     foreach (var iface in allInterfaces)
                     {
-                        var interfaceName = iface.Name;
+                        // Use ToDisplayString to capture any generic parameters (e.g., IFoo<T>)
+                        var interfaceName = iface.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
                         if (!interfaces.Contains(interfaceName))
                         {
                             interfaces.Add(interfaceName);
                             interfaceNamespaces.Add(iface.ContainingNamespace.ToDisplayString());
-                            
-                            context.ReportDiagnostic(Diagnostic.Create(
-                                new DiagnosticDescriptor(
-                                    "SG004",
-                                    "Interface Found",
-                                    "Found interface {0} in namespace {1}",
-                                    "StateGenerator",
-                                    DiagnosticSeverity.Warning,
-                                    true),
-                                Location.None,
-                                interfaceName,
-                                iface.ContainingNamespace.ToDisplayString()));
+
+                            context.ReportDiagnostic(
+                                Diagnostic.Create(
+                                    new DiagnosticDescriptor(
+                                        "SG004",
+                                        "Interface Found",
+                                        "Found interface {0} in namespace {1}",
+                                        "StateGenerator",
+                                        DiagnosticSeverity.Warning,
+                                        isEnabledByDefault: true),
+                                    Location.None,
+                                    interfaceName,
+                                    iface.ContainingNamespace.ToDisplayString()));
                         }
                     }
 
@@ -295,6 +298,7 @@ namespace Generation
             usingsBuilder.AppendLine("using System.Collections.Generic;");
             usingsBuilder.AppendLine("using System.Text.Json;");
             usingsBuilder.AppendLine("using System.IO;");
+            usingsBuilder.AppendLine("using Common.Models;");
 
             foreach (var ns in interfaceNamespaces)
             {

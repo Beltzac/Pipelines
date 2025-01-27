@@ -19,7 +19,7 @@ namespace Tests.Common.Services
             var result = await (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
 
             result.Should().NotBeNull();
-            result.ViewName.Should().Be(view);
+            result.Key.Should().Be(view);
             result.FormattedDiff.Should().NotBeNullOrEmpty();
             result.HasDifferences.Should().BeTrue();
         }

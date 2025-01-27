@@ -69,7 +69,7 @@
     <div class="col-md-1">
         <div class="form-check form-switch mt-3">
             <input class="form-check-input" type="checkbox" role="switch"
-                   id="showOnlyChanged" @bind="ConsulDiffStateService.ShowOnlyChanged">
+            id="showOnlyChanged" @bind="ConsulDiffStateService.ShowOnlyChanged">
             <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas chaves com diferenças">Mostrar apenas alterações</label>
         </div>
     </div>
@@ -86,6 +86,10 @@
     max-width: 80vw;
     margin: 0 auto;
     overflow-x: auto;
+    }
+    finally
+    {
+    ConsulDiffStateService.IsLoading = false;
     }
 
     .form-group {
@@ -170,6 +174,8 @@
 @code {
     private List<ConsulEnvironment> environments = new();
 
+    private PaginationService<string, ConsulKeyValue, ConsulDiffResult> paginationService;
+
     protected override async Task OnInitializedAsync()
     {
         var config = ConfigService.GetConfig();
@@ -180,6 +186,14 @@
     {
         ConsulDiffStateService.OnChange += StateHasChanged;
         ConsulDiffStateService.Load();
+
+        paginationService = new PaginationService<string, ConsulKeyValue, ConsulDiffResult>(
+            ConsulDiffStateService,
+            async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv)),
+            async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv)),
+            async (key, source, target) => await ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive),
+            (key, source, target, diff) => key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences)
+        );
     }
 
     public void Dispose()
@@ -195,7 +209,7 @@
         {
             if (ConsulDiffStateService.SelectedSourceEnv == envName)
             {
-                if (ConsulDiffStateService.SourceKeyValues.TryGetValue(key, out var consulValue))
+                if (ConsulDiffStateService.SourceValues.TryGetValue(key, out var consulValue))
                 {
                     await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
                 }
@@ -209,7 +223,7 @@
 
             if (ConsulDiffStateService.SelectedTargetEnv == envName)
             {
-                if (ConsulDiffStateService.TargetKeyValues.TryGetValue(key, out var consulValue))
+                if (ConsulDiffStateService.TargetValues.TryGetValue(key, out var consulValue))
                 {
                     await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
                 }
@@ -230,7 +244,7 @@
         }
     }
 
-    private async Task CompareEnvironments()
+    protected async Task CompareEnvironments()
     {
         if (string.IsNullOrEmpty(ConsulDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(ConsulDiffStateService.SelectedTargetEnv))
         {
@@ -240,100 +254,47 @@
 
         try
         {
-            ConsulDiffStateService.ProgressValue = 0;
-            ConsulDiffStateService.IsLoading = true;
-
-            ConsulDiffStateService.CurrentPage = 1;
-            ConsulDiffStateService.Differences.Clear();
-
-            // Get source environment values
-            ConsulDiffStateService.ProgressValue = 25;
-            ConsulDiffStateService.ProgressLabel = $"Carregando valores de {ConsulDiffStateService.SelectedSourceEnv}...";
-            ConsulDiffStateService.SourceKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv));
-
-            // Get target environment values
-            ConsulDiffStateService.ProgressValue = 50;
-            ConsulDiffStateService.ProgressLabel = $"Carregando valores de {ConsulDiffStateService.SelectedTargetEnv}...";
-            ConsulDiffStateService.TargetKeyValues = await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv));
-
-            // Process keys
-            ConsulDiffStateService.ProgressValue = 75;
-            ConsulDiffStateService.ProgressLabel = "Processando diferenças...";
-            ConsulDiffStateService.AllKeys = new HashSet<string>(ConsulDiffStateService.SourceKeyValues.Keys.Union(ConsulDiffStateService.TargetKeyValues.Keys));
-            ConsulDiffStateService.TotalCount = ConsulDiffStateService.AllKeys.Count;
+            // Initialize pagination service
+            await paginationService.InitializeAsync();
 
             // Get differences for the current page
-            await LoadPageDifferences();
+            await paginationService.GetPageAsync();
+
+            await RunCompare();
         }
         catch (Exception ex)
         {
             toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
-        finally
-        {
-            ConsulDiffStateService.IsLoading = false;
-        }
     }
 
     private async Task LoadPageDifferences()
     {
-        ConsulDiffStateService.IsLoading = true;
         try
         {
-            ConsulDiffStateService.ProgressValue = 80;
-            ConsulDiffStateService.ProgressLabel = "Carregando diferenças da página...";
-
-            var filteredKeys = string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey)
-                ? ConsulDiffStateService.AllKeys
-                : ConsulDiffStateService.AllKeys.Where(key =>
-                    key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
-
-            var pagedKeys = filteredKeys
-                .Skip((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize)
-                .Take(ConsulDiffStateService.PageSize)
-                .ToList();
-
-            ConsulDiffStateService.Differences.Clear();
-            var totalKeys = pagedKeys.Count;
-            var processedKeys = 0;
-
-            foreach (var key in pagedKeys)
-            {
-                var sourceValue = ConsulDiffStateService.SourceKeyValues.GetValueOrDefault(key);
-                var targetValue = ConsulDiffStateService.TargetKeyValues.GetValueOrDefault(key);
-
-                if (sourceValue?.Value != targetValue?.Value)
-                {
-                    ConsulDiffStateService.ProgressLabel = $"Processando diferenças ({processedKeys + 1}/{totalKeys}): {key}";
-
-                    var diff = await ConsulService.GetDiff(key, sourceValue, targetValue, ConsulDiffStateService.UseRecursive);
-                    ConsulDiffStateService.Differences[key] = diff;
-                }
-                processedKeys++;
-                ConsulDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20); // Progress from 80 to 100
-            }
+            await paginationService.GetPageAsync();
 
             await RunCompare();
         }
-        finally
+        catch (Exception ex)
         {
-            ConsulDiffStateService.IsLoading = false;
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
     }
 
     protected async Task RunCompare()
     {
-        if (ConsulDiffStateService.Differences.Count == 0)
+        if (ConsulDiffStateService.PageItems.Count == 0)
         {
             await JS.InvokeVoidAsync("initializeDiff2Html2", "", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
-            if (ConsulDiffStateService.Differences.Count > 0)
+            if (ConsulDiffStateService.PageItems.Count > 0)
             {
                 toastService.ShowInfo("Nenhuma diferença encontrada que corresponda aos critérios de pesquisa");
             }
             return;
         }
 
-        var diff = String.Join("\r\n", ConsulDiffStateService.Differences.Values);
+        var diff = String.Join("\r\n", ConsulDiffStateService.PageItems.Select(x => x.FormattedDiff));
         await JS.InvokeVoidAsync("initializeDiff2Html2", diff, ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
     }
 
@@ -374,14 +335,5 @@
                 await RunCompare();
             }
         }
-    }
-
-    public int GetFilteredCount()
-    {
-        if (string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey))
-            return ConsulDiffStateService.AllKeys.Count;
-
-        return ConsulDiffStateService.AllKeys.Count(key =>
-            key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
     }
 }

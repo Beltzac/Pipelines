@@ -86,6 +86,7 @@ namespace Common.Services
 
                 keyValuesWithJson[keyValue.Key] = new ConsulKeyValue
                 {
+                    Key = keyValue.Key,
                     Value = value,
                     ValueRecursive = recursiveValue,
                     IsValidJson = isValidJson,
