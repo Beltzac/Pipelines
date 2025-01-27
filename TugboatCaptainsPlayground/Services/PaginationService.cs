@@ -27,9 +27,60 @@ namespace TugboatCaptainsPlayground.Services
             _filter = filter;
         }
 
+        private async Task<IList<TDiffResult>> GetAllFilteredDiffsAsync()
+        {
+            if (_loading != null)
+            {
+                _loading.IsLoading = true;
+                _loading.ProgressValue = 0;
+                _loading.ProgressLabel = "Calculando diffs...";
+            }
+
+            var keys = _state.AllKeys.ToList();
+            var filteredDiffs = new List<TDiffResult>(keys.Count);
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                var key = keys[i];
+                var sourceItem = _state.SourceValues.TryGetValue(key, out var s) ? s : default;
+                var targetItem = _state.TargetValues.TryGetValue(key, out var t) ? t : default;
+
+                // Atualiza o progresso em português
+                if (_loading != null && keys.Count > 0)
+                {
+                    double fraction = (double)(i + 1) / keys.Count;
+                    _loading.ProgressValue = (int)(fraction * 100);
+                    _loading.ProgressLabel = $"Calculando diferenças... {key} ({i + 1}/{keys.Count})";
+                }
+
+                // Tenta obter do cache
+                if (!_state.DiffCache.TryGetValue(key, out var diffResult))
+                {
+                    // Se não estava no cache, calcula e guarda
+                    diffResult = await _getDiffAsync(key, sourceItem, targetItem);
+                    _state.DiffCache[key] = diffResult;
+                }
+
+                // Aplica o filtro
+                if (_filter(key, sourceItem, targetItem, diffResult))
+                {
+                    filteredDiffs.Add(diffResult);
+                }
+            }
+
+            // Concluído
+            if (_loading != null)
+            {
+                _loading.ProgressValue = 100;
+                _loading.ProgressLabel = "Concluído";
+                _loading.IsLoading = false;
+            }
+
+            return filteredDiffs;
+        }
+
         public async Task GetPageAsync()
         {
-            // Início do carregamento para obter a página
             if (_loading != null)
             {
                 _loading.IsLoading = true;
@@ -39,68 +90,24 @@ namespace TugboatCaptainsPlayground.Services
 
             try
             {
-                // Passo 1: Paginar as chaves
-                if (_loading != null)
-                {
-                    _loading.ProgressValue = 25;
-                    _loading.ProgressLabel = "Paginando as chaves...";
-                }
+                var filteredDiffs = await GetAllFilteredDiffsAsync();
+                _state.TotalCount = filteredDiffs.Count;
 
-                var paginatedKeys = _state.AllKeys
-                    .Skip((_state.CurrentPage - 1) * _state.PageSize)
+                // Paginação
+                int skip = (_state.CurrentPage - 1) * _state.PageSize;
+                var pagedDiffs = filteredDiffs
+                    .Skip(skip)
                     .Take(_state.PageSize)
                     .ToList();
 
-                // Passo 2: Calcular diferenças
-                // Começaremos o loop em 25% e iremos até 100%.
-                // A cada item, incrementamos a barra de progresso proporcionalmente.
-                if (_loading != null)
-                {
-                    _loading.ProgressValue = 25;
-                    _loading.ProgressLabel = "Calculando diferenças...";
-                }
-
-                var differences = new List<TDiffResult>();
-                int itemCount = paginatedKeys.Count;
-
-                for (int i = 0; i < itemCount; i++)
-                {
-                    var key = paginatedKeys[i];
-                    var sourceItem = _state.SourceValues.TryGetValue(key, out var source) ? source : default;
-                    var targetItem = _state.TargetValues.TryGetValue(key, out var target) ? target : default;
-
-                    differences.Add(await _getDiffAsync(key, sourceItem, targetItem));
-
-                    // Atualizar o progresso depois de cada cálculo de diff
-                    if (_loading != null && itemCount > 0)
-                    {
-                        // Progresso vai de 25% até 100%,
-                        // então calculamos qual fração do caminho percorrido dentro desse intervalo.
-                        double fraction = (double)(i + 1) / itemCount; // vai de 0 até 1
-                        double rangeStart = 25;  // começamos em 25%
-                        double rangeEnd = 100;   // terminamos em 100%
-                        double currentProgress = rangeStart + (rangeEnd - rangeStart) * fraction;
-
-                        _loading.ProgressValue = (int)currentProgress;
-                        _loading.ProgressLabel = $"Calculando diferenças... {key} ({i + 1} / {itemCount})";
-                    }
-                }
-
-                // Ao final do loop, salvamos o resultado
-                _state.PageItems = differences;
-
-                // Pode-se assegurar que o progresso seja 100%
+                _state.PageItems = pagedDiffs;
+            }
+            finally
+            {
                 if (_loading != null)
                 {
                     _loading.ProgressValue = 100;
                     _loading.ProgressLabel = "Página obtida com sucesso";
-                }
-            }
-            finally
-            {
-                // Garantir que IsLoading seja desativado mesmo em caso de erro
-                if (_loading != null)
-                {
                     _loading.IsLoading = false;
                 }
             }
@@ -142,6 +149,9 @@ namespace TugboatCaptainsPlayground.Services
                 }
                 _state.AllKeys = new HashSet<TKey>(_state.SourceValues.Keys.Union(_state.TargetValues.Keys));
                 _state.TotalCount = _state.AllKeys.Count;
+
+                // Limpar cache
+                _state.DiffCache.Clear();
 
                 // Conclusão
                 if (_loading != null)

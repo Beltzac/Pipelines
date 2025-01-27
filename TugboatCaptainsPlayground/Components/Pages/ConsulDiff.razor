@@ -46,7 +46,7 @@
         </div>
         <div class="col-md-2">
             <div class="form-check mt-4">
-                <input class="form-check-input" type="checkbox" @bind="ConsulDiffStateService.UseRecursive" id="useRecursive">
+                <input class="form-check-input" type="checkbox" @bind="ConsulDiffStateService.UseRecursive" @bind:after="HandleSearch" id="useRecursive">
                 <label class="form-check-label" for="useRecursive">
                     Usar Valores Recursivos
                 </label>
@@ -61,7 +61,7 @@
                 <input type="text" class="form-control" placeholder="Buscar por chave..."
                 @bind="ConsulDiffStateService.SearchKey"
                 @bind:event="oninput"
-                @onkeyup="async () => await HandleSearch()" />
+                @onkeyup="HandleSearch" />
             </div>
         </div>
     </div>
@@ -69,7 +69,7 @@
     <div class="col-md-1">
         <div class="form-check form-switch mt-3">
             <input class="form-check-input" type="checkbox" role="switch"
-            id="showOnlyChanged" @bind="ConsulDiffStateService.ShowOnlyChanged">
+                   id="showOnlyChanged" @bind="ConsulDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
             <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas chaves com diferenças">Mostrar apenas alterações</label>
         </div>
     </div>
@@ -192,7 +192,7 @@
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv)),
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv)),
             async (key, source, target) => await ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive),
-            (key, source, target, diff) => key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences)
+            (key, source, target, diff) => (string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) || (!string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) && key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences)
         );
     }
 

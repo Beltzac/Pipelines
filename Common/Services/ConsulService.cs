@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Common.Services
@@ -21,6 +22,7 @@ namespace Common.Services
         private readonly ILogger<ConsulService> _logger;
 
         private readonly IConfigurationService _configService;
+        private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
 
         public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
@@ -468,7 +470,6 @@ namespace Common.Services
                 return string.Empty;
 
             var value = recursive ? json.ValueRecursive : json.Value;
-
             if (string.IsNullOrEmpty(value))
                 return value;
 
@@ -477,9 +478,11 @@ namespace Common.Services
 
             try
             {
-                // Parse and format JSON to ensure consistent formatting
-                var obj = JToken.Parse(value);
-                return obj.ToString(Formatting.Indented);
+                // Parse once, then serialize again with indentation
+                using var doc = JsonDocument.Parse(value);
+                // Re-serialize with indentation
+            
+                return System.Text.Json.JsonSerializer.Serialize(doc.RootElement, _jsonSerializerOptions);
             }
             catch
             {
@@ -488,18 +491,26 @@ namespace Common.Services
             }
         }
 
+
         public async Task<ConsulDiffResult> GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
         {
             return await Task.Run(() =>
             {
                 var keyFormatted = key;
+
+                var value1 = Normalize(oldValue, recursive);
+                var value2 = Normalize(newValue, recursive);
+
+                if (value1 == value2)
+                    return new ConsulDiffResult(key, string.Empty, false);
+
                 var ps = new Patch(new PatchOptions(), new DiffOptions());
 
                 var patchResult = ps.createPatchResult(
                     keyFormatted,
                     keyFormatted,
-                    Normalize(oldValue, recursive),
-                    Normalize(newValue, recursive),
+                    value1,
+                    value2,
                     null,
                     null
                 );

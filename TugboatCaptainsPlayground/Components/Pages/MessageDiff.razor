@@ -50,7 +50,7 @@
                 <input type="text" class="form-control" placeholder="Pesquisar por módulo, código ou prefixo..."
                 @bind="MessageDiffStateService.SearchKey"
                 @bind:event="oninput"
-                @onkeyup="async () => await HandleSearch()"
+                @onkeyup="HandleSearch"
                 title="Filtrar por módulo, código ou prefixo da mensagem" />
             </div>
         </div>
@@ -59,14 +59,14 @@
                 <input type="text" class="form-control" placeholder="Pesquisar por descrição..."
                 @bind="MessageDiffStateService.SearchDescription"
                 @bind:event="oninput"
-                @onkeyup="async () => await HandleSearch()"
+                @onkeyup="HandleSearch"
                 title="Filtrar pelo texto da descrição da mensagem" />
             </div>
         </div>
         <div class="col-md-1">
             <div class="form-check form-switch mt-3">
                 <input class="form-check-input" type="checkbox" role="switch"
-                id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
+                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
                 <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
             </div>
         </div>

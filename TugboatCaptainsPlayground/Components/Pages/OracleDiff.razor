@@ -55,7 +55,7 @@
                 <input type="text" class="form-control" placeholder="Buscar por nome da view..."
                        @bind="OracleDiffStateService.SearchKey"
                        @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()" />
+                       @onkeyup="HandleSearch" />
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
     <div class="col-md-1">
         <div class="form-check form-switch mt-3">
             <input class="form-check-input" type="checkbox" role="switch"
-                   id="showOnlyChanged" @bind="OracleDiffStateService.ShowOnlyChanged">
+                   id="showOnlyChanged" @bind="OracleDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
             <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas views com diferenças">Mostrar apenas alterações</label>
         </div>
     </div>
