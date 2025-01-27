@@ -4,7 +4,7 @@ using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class MessageDiffState : ITracksLoading, IPaginates
+    public class MessageDiffState : ITracksLoading, IPaginates<MessageDiffResult>
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
@@ -12,13 +12,13 @@ namespace TugboatCaptainsPlayground.Services
         public Dictionary<string, MessageDefinition> SourceMessages { get; set; } = new();
         public Dictionary<string, MessageDefinition> TargetMessages { get; set; } = new();
         public HashSet<string> AllMessageKeys { get; set; } = new();
-        public Dictionary<string, MessageDiffResult> Differences { get; set; } = new();
 
         public string SearchKey { get; set; }
         public string SearchDescription { get; set; }
 
         public bool ShowOnlyChanged { get; set; }
 
+        public List<MessageDiffResult> PageItems { get; set; } = new();
         public int PageSize { get; set; } = 50;
         public int CurrentPage { get; set; } = 1;
         public int TotalCount { get; set; }

@@ -237,7 +237,7 @@
             OracleDiffStateService.IsLoading = true;
 
             OracleDiffStateService.CurrentPage = 1;
-            OracleDiffStateService.Differences.Clear();
+            OracleDiffStateService.PageItems.Clear();
 
             // Get all view definitions from both environments
             var sourceEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedSourceEnv);
@@ -296,7 +296,7 @@
                 .Take(OracleDiffStateService.PageSize)
                 .ToList();
 
-            OracleDiffStateService.Differences.Clear();
+            OracleDiffStateService.PageItems.Clear();
             var totalViews = pagedViews.Count;
             var processedViews = 0;
 
@@ -311,7 +311,7 @@
                 var targetDefinition = targetView?.Definition ?? string.Empty;
 
                 var diff = await OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
-                OracleDiffStateService.Differences[viewName] = diff;
+                OracleDiffStateService.PageItems.Add(diff);
 
                 processedViews++;
                 OracleDiffStateService.ProgressValue = 80 + (int)((processedViews / (double)totalViews) * 20); // Progress from 80 to 100
@@ -327,17 +327,17 @@
 
     protected async Task RunCompare()
     {
-        if (OracleDiffStateService.Differences.Count == 0)
+        if (OracleDiffStateService.PageItems.Count == 0)
         {
             await JS.InvokeVoidAsync("initializeDiff2Html", "", OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
-            if (OracleDiffStateService.Differences.Count > 0)
+            if (OracleDiffStateService.PageItems.Count > 0)
             {
                 toastService.ShowInfo("No differences found matching the search criteria");
             }
             return;
         }
 
-        var diff = String.Join("\r\n", OracleDiffStateService.Differences.Values.Select(d => d.FormattedDiff));
+        var diff = String.Join("\r\n", OracleDiffStateService.PageItems.Select(d => d.FormattedDiff));
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
     }
 

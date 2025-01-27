@@ -4,7 +4,7 @@ using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class OracleDiffState : ITracksLoading, IPaginates
+    public class OracleDiffState : ITracksLoading, IPaginates<OracleDiffResult>
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
@@ -12,11 +12,11 @@ namespace TugboatCaptainsPlayground.Services
         public Dictionary<string, OracleViewDefinition> SourceViews { get; set; } = new();
         public Dictionary<string, OracleViewDefinition> TargetViews { get; set; } = new();
         public HashSet<string> AllViewNames { get; set; } = new();
-        public Dictionary<string, OracleDiffResult> Differences { get; set; } = new();
 
         public bool ShowOnlyChanged { get; set; }
         public string SearchKey { get; set; }
 
+        public List<OracleDiffResult> PageItems { get; set; } = new();
         public int CurrentPage { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public int TotalCount { get; set; }

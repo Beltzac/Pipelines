@@ -4,15 +4,15 @@ using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class ConsulDiffState : ITracksLoading, IPaginates
+    public class ConsulDiffState : ITracksLoading, IComparesItems<string, ConsulKeyValue, ConsulDiffResult>
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
 
-        public Dictionary<string, ConsulDiffResult> Differences { get; set; } = new();
+        public List<ConsulDiffResult> PageItems { get; set; } = new();
         public HashSet<string> AllKeys { get; set; } = new();
-        public Dictionary<string, ConsulKeyValue> SourceKeyValues { get; set; } = new();
-        public Dictionary<string, ConsulKeyValue> TargetKeyValues { get; set; } = new();
+        public Dictionary<string, ConsulKeyValue> SourceValues { get; set; } = new();
+        public Dictionary<string, ConsulKeyValue> TargetValues { get; set; } = new();
 
         public bool UseRecursive { get; set; } = true;
         public bool ShowOnlyChanged { get; set; } = true;

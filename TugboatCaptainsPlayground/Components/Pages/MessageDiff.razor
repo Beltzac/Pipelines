@@ -48,25 +48,25 @@
         <div class="col-md-6">
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Pesquisar por módulo, código ou prefixo..."
-                       @bind="MessageDiffStateService.SearchKey"
-                       @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()"
-                       title="Filtrar por módulo, código ou prefixo da mensagem" />
+                @bind="MessageDiffStateService.SearchKey"
+                @bind:event="oninput"
+                @onkeyup="async () => await HandleSearch()"
+                title="Filtrar por módulo, código ou prefixo da mensagem" />
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Pesquisar por descrição..."
-                       @bind="MessageDiffStateService.SearchDescription"
-                       @bind:event="oninput"
-                       @onkeyup="async () => await HandleSearch()"
-                       title="Filtrar pelo texto da descrição da mensagem" />
+                @bind="MessageDiffStateService.SearchDescription"
+                @bind:event="oninput"
+                @onkeyup="async () => await HandleSearch()"
+                title="Filtrar pelo texto da descrição da mensagem" />
             </div>
         </div>
         <div class="col-md-1">
             <div class="form-check form-switch mt-3">
                 <input class="form-check-input" type="checkbox" role="switch"
-                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
+                id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged">
                 <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
             </div>
         </div>
@@ -83,8 +83,8 @@
                     <th style="width: 20%">
                         Valor Origem (@MessageDiffStateService.SelectedSourceEnv)
                         <button class="btn btn-sm btn-outline-primary ms-2" 
-                                @onclick="CopyAllSourceUpserts" 
-                                title="Copiar todos os comandos UPSERT do ambiente origem">
+                        @onclick="CopyAllSourceUpserts" 
+                        title="Copiar todos os comandos UPSERT do ambiente origem">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Origem
                         </button>
                     </th>
@@ -92,8 +92,8 @@
                     <th style="width: 20%">
                         Valor Destino (@MessageDiffStateService.SelectedTargetEnv)
                         <button class="btn btn-sm btn-outline-primary ms-2" 
-                                @onclick="CopyAllTargetUpserts"
-                                title="Copiar todos os comandos UPSERT do ambiente destino">
+                        @onclick="CopyAllTargetUpserts"
+                        title="Copiar todos os comandos UPSERT do ambiente destino">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Destino
                         </button>
                     </th>
@@ -112,8 +112,8 @@
                                 @if (diff.Value.Source != null)
                                 {
                                     <button class="btn btn-sm btn-outline-primary ms-2" 
-                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)"
-                                            title="Copiar comando SQL para atualizar esta mensagem no ambiente source">
+                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)"
+                                    title="Copiar comando SQL para atualizar esta mensagem no ambiente source">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -126,8 +126,8 @@
                                 @if (diff.Value.Target != null)
                                 {
                                     <button class="btn btn-sm btn-outline-primary ms-2" 
-                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)"
-                                            title="Copiar comando SQL para atualizar esta mensagem no ambiente target">
+                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)"
+                                    title="Copiar comando SQL para atualizar esta mensagem no ambiente target">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -155,37 +155,37 @@
 
 <style>
     .diff-container {
-        max-width: 95vw;
-        margin: 0 auto;
-        overflow-x: auto;
+    max-width: 95vw;
+    margin: 0 auto;
+    overflow-x: auto;
     }
 
     .table-responsive {
-        max-height: 70vh;
-        overflow-y: auto;
+    max-height: 70vh;
+    overflow-y: auto;
     }
 
     .sticky-top {
-        top: 0;
-        z-index: 1;
+    top: 0;
+    z-index: 1;
     }
 
     .text-wrap {
-        white-space: normal;
-        word-break: break-word;
+    white-space: normal;
+    word-break: break-word;
     }
 
     .table-hover tbody tr:hover {
-        background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(0, 0, 0, 0.05);
     }
 
     .badge {
-        margin: 2px;
-        white-space: normal;
+    margin: 2px;
+    white-space: normal;
     }
 
     .form-group {
-        margin-bottom: 0;
+    margin-bottom: 0;
     }
 </style>
 
@@ -312,7 +312,7 @@
             MessageDiffStateService.IsLoading = true;
 
             MessageDiffStateService.CurrentPage = 1;
-            MessageDiffStateService.Differences.Clear();
+            MessageDiffStateService.PageItems.Clear();
 
             // Get source environment messages
             MessageDiffStateService.ProgressValue = 25;
@@ -355,7 +355,7 @@
             MessageDiffStateService.ProgressValue = 80;
             MessageDiffStateService.ProgressLabel = "Carregando diferenças...";
 
-            MessageDiffStateService.Differences.Clear();
+            MessageDiffStateService.PageItems.Clear();
             var totalKeys = MessageDiffStateService.AllMessageKeys.Count;
             var processedKeys = 0;
 
@@ -367,7 +367,7 @@
                 var targetMessage = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
 
                 var diff = await OracleMessageService.GetMessageDiff(key, sourceMessage, targetMessage);
-                MessageDiffStateService.Differences[key] = diff;
+                MessageDiffStateService.PageItems.Add(diff);
 
                 processedKeys++;
                 MessageDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20);
@@ -442,13 +442,13 @@
             }).ToHashSet();
         }
 
-        if (MessageDiffStateService.ShowOnlyChanged)
-        {
-            filtered = filtered.Where(key =>
-                MessageDiffStateService.Differences.ContainsKey(key) &&
-                MessageDiffStateService.Differences[key].HasDifferences
-            ).ToHashSet();
-        }
+        // if (MessageDiffStateService.ShowOnlyChanged)
+        // {
+        //     filtered = filtered.Where(key =>
+        //         MessageDiffStateService.Differences.ContainsKey(key) &&
+        //         MessageDiffStateService.Differences[key].HasDifferences
+        //     ).ToHashSet();
+        // }
 
         return filtered;
     }
@@ -463,10 +463,10 @@
     public Dictionary<string, MessageDiffResult> GetFilteredAndPaginatedDifferences()
     {
         return GetCurrentPageKeys()
-            .Where(key => MessageDiffStateService.Differences.ContainsKey(key))
+        .Where(key => MessageDiffStateService.PageItems.Any(x => x.Key == key))
             .ToDictionary(
                 key => key,
-                key => MessageDiffStateService.Differences[key]
+                key => MessageDiffStateService.PageItems.First(x => x.Key == key)
             );
     }
 
