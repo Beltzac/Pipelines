@@ -65,6 +65,14 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-1">
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   id="showOnlyChanged" @bind="ConsulDiffStateService.ShowOnlyChanged">
+            <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas chaves com diferenças">Mostrar apenas alterações</label>
+        </div>
+    </div>
 </StickyFilter>
 
 <div class="diff-container">
@@ -297,11 +305,9 @@
                 if (sourceValue?.Value != targetValue?.Value)
                 {
                     ConsulDiffStateService.ProgressLabel = $"Processando diferenças ({processedKeys + 1}/{totalKeys}): {key}";
+
                     var diff = await ConsulService.GetDiff(key, sourceValue, targetValue, ConsulDiffStateService.UseRecursive);
-                    if (diff != null)
-                    {
-                        ConsulDiffStateService.Differences[key] = diff.DiffString;
-                    }
+                    ConsulDiffStateService.Differences[key] = diff;
                 }
                 processedKeys++;
                 ConsulDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20); // Progress from 80 to 100
@@ -317,8 +323,7 @@
 
     protected async Task RunCompare()
     {
-        var filteredDiffs = GetFilteredAndPaginatedDifferences();
-        if (filteredDiffs.Count == 0)
+        if (ConsulDiffStateService.Differences.Count == 0)
         {
             await JS.InvokeVoidAsync("initializeDiff2Html2", "", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
             if (ConsulDiffStateService.Differences.Count > 0)
@@ -328,7 +333,7 @@
             return;
         }
 
-        var diff = String.Join("\r\n", filteredDiffs.Values);
+        var diff = String.Join("\r\n", ConsulDiffStateService.Differences.Values);
         await JS.InvokeVoidAsync("initializeDiff2Html2", diff, ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
     }
 
@@ -369,11 +374,6 @@
                 await RunCompare();
             }
         }
-    }
-
-    public Dictionary<string, string> GetFilteredAndPaginatedDifferences()
-    {
-        return ConsulDiffStateService.Differences;
     }
 
     public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)ConsulDiffStateService.PageSize);

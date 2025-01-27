@@ -16,6 +16,7 @@ namespace TugboatCaptainsPlayground.Services
 
         public string SearchKey { get; set; }
         public string SearchDescription { get; set; }
+
         public bool ShowOnlyChanged { get; set; }
 
         public int PageSize { get; set; } = 50;

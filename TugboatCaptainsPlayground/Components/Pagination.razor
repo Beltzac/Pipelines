@@ -166,9 +166,6 @@
     [Parameter]
     public required IPaginates State { get; set; }
 
-    // For demonstration, we presume there's an OracleDiffStateService or some logic to handle PageSize.
-    // If you want the selection to trigger a reload, you'd add the logic in the property or an event.
-
     [Parameter]
     public EventCallback<int> OnPageChange { get; set; }
 
