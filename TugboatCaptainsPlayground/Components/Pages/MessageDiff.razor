@@ -161,11 +161,7 @@
     </div>
 </div>
 
-<Pagination CurrentPage="@MessageDiffStateService.CurrentPage"
-            TotalPages="@TotalPages"
-            OnPageChange="@ChangePage">
-    Exibindo @((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize + 1) até @Math.Min(MessageDiffStateService.CurrentPage * MessageDiffStateService.PageSize, GetFilteredCount()) de @GetFilteredCount() registros
-</Pagination>
+<Pagination State="@MessageDiffStateService" OnPageChange="@ChangePage" />
 
 <style>
     .diff-container {

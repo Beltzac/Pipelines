@@ -1,37 +1,38 @@
 @using Microsoft.AspNetCore.Components
+@using TugboatCaptainsPlayground.Services.Interfaces
 
 <div class="sticky-pagination @Class">
     <div class="sticky-pagination-content">
-        <nav aria-label="Pagination">
+        <nav aria-label="Paginação">
             <ul class="pagination mb-0">
-                <li class="page-item @(CurrentPage <= 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage - 1)" disabled="@(CurrentPage <= 1)">‹ Anterior</button>
+                <li class="page-item @(State.CurrentPage <= 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="async () => await ChangePage(State.CurrentPage - 1)" disabled="@(State.CurrentPage <= 1)">‹ Anterior</button>
                 </li>
                 @{
                     const int maxVisiblePages = 5;
-                    if (TotalPages <= maxVisiblePages)
+                    if (State.TotalCount <= maxVisiblePages)
                     {
-                        // Show all pages if total is less than max visible
-                        for (int i = 1; i <= TotalPages; i++)
+                        // Mostrar todas as páginas se o total for menor que o máximo visível
+                        for (int i = 1; i <= State.TotalCount; i++)
                         {
                             var pageNumber = i;
-                            <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                            <li class="page-item @(State.CurrentPage == pageNumber ? "active" : "")">
                                 <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
                             </li>
                         }
                     }
                     else
                     {
-                        // Always show first page
-                        <li class="page-item @(CurrentPage == 1 ? "active" : "")">
+                        // Sempre mostrar a primeira página
+                        <li class="page-item @(State.CurrentPage == 1 ? "active" : "")">
                             <button class="page-link" @onclick="async () => await ChangePage(1)">1</button>
                         </li>
 
-                        // Calculate range around current page
-                        var rangeStart = Math.Max(2, CurrentPage - 1);
-                        var rangeEnd = Math.Min(TotalPages - 1, CurrentPage + 1);
+                        // Calcular intervalo ao redor da página atual
+                        var rangeStart = Math.Max(2, State.CurrentPage - 1);
+                        var rangeEnd = Math.Min(State.TotalCount - 1, State.CurrentPage + 1);
 
-                        // Show ellipsis after first page if needed
+                        // Mostrar reticências após a primeira página, se necessário
                         if (rangeStart > 2)
                         {
                             <li class="page-item disabled">
@@ -39,40 +40,39 @@
                             </li>
                         }
 
-                        // Show pages around current page
+                        // Mostrar páginas ao redor da página atual
                         for (int i = rangeStart; i <= rangeEnd; i++)
                         {
                             var pageNumber = i;
-                            <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                            <li class="page-item @(State.CurrentPage == pageNumber ? "active" : "")">
                                 <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
                             </li>
                         }
 
-                        // Show ellipsis before last page if needed
-                        if (rangeEnd < TotalPages - 1)
+                        // Mostrar reticências antes da última página, se necessário
+                        if (rangeEnd < State.TotalCount - 1)
                         {
                             <li class="page-item disabled">
                                 <span class="page-link">...</span>
                             </li>
                         }
 
-                        // Always show last page
-                        <li class="page-item @(CurrentPage == TotalPages ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(TotalPages)">@TotalPages</button>
+                        // Sempre mostrar a última página
+                        <li class="page-item @(State.CurrentPage == State.TotalCount ? "active" : "")">
+                            <button class="page-link" @onclick="async () => await ChangePage(State.TotalCount)">@State.TotalCount</button>
                         </li>
                     }
                 }
-                <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(CurrentPage + 1)" disabled="@(CurrentPage >= TotalPages)">Próximo ›</button>
+                <li class="page-item @(State.CurrentPage >= State.TotalCount ? "disabled" : "")">
+                    <button class="page-link" @onclick="async () => await ChangePage(State.CurrentPage + 1)" disabled="@(State.CurrentPage >= State.TotalCount)">Próximo ›</button>
                 </li>
             </ul>
         </nav>
-        @if (ChildContent != null)
-        {
-            <div class="ms-3 d-none d-md-block">
-                @ChildContent
-            </div>
-        }
+
+        <div class="ms-3 d-none d-md-block">
+            Mostrando @((State.CurrentPage - 1) * State.PageSize + 1) a @Math.Min(State.CurrentPage * State.PageSize, State.TotalCount) de @State.TotalCount
+        </div>
+       
     </div>
 </div>
 
@@ -111,20 +111,14 @@
     public string Class { get; set; } = string.Empty;
 
     [Parameter]
-    public int CurrentPage { get; set; }
-
-    [Parameter]
-    public int TotalPages { get; set; }
+    required public IPaginates State { get; set; }
 
     [Parameter]
     public EventCallback<int> OnPageChange { get; set; }
 
-    [Parameter]
-    public RenderFragment ChildContent { get; set; }
-
     private async Task ChangePage(int page)
     {
-        if (page < 1 || page > TotalPages)
+        if (page < 1 || page > State.TotalCount)
             return;
 
         await OnPageChange.InvokeAsync(page);

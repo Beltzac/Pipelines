@@ -75,12 +75,7 @@
     <div id="myDiffElement"></div>
 </div>
 
-<Pagination
-    CurrentPage="@OracleDiffStateService.CurrentPage"
-    TotalPages="@TotalPages"
-    OnPageChange="@ChangePage">
-    Exibindo @((OracleDiffStateService.CurrentPage - 1) * OracleDiffStateService.PageSize + 1) até @Math.Min(OracleDiffStateService.CurrentPage * OracleDiffStateService.PageSize, GetFilteredCount()) de @GetFilteredCount() registros
-</Pagination>
+<Pagination State="@OracleDiffStateService" OnPageChange="@ChangePage"/>
 
 <style>
     .diff-container {

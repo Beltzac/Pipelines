@@ -81,12 +81,7 @@
     <div id="myDiffElement"></div>
 </div>
 
-<Pagination
-CurrentPage="@ConsulDiffStateService.CurrentPage"
-TotalPages="@TotalPages"
-OnPageChange="@ChangePage">
-    Exibindo @((ConsulDiffStateService.CurrentPage - 1) * ConsulDiffStateService.PageSize + 1) até @Math.Min(ConsulDiffStateService.CurrentPage * ConsulDiffStateService.PageSize, GetFilteredCount()) de @GetFilteredCount() registros
-</Pagination>
+<Pagination State="@ConsulDiffStateService" OnPageChange="@ChangePage"/>
 
 <style>
     .diff-container {
