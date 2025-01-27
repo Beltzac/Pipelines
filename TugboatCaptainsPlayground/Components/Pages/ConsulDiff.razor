@@ -376,8 +376,6 @@
         }
     }
 
-    public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)ConsulDiffStateService.PageSize);
-
     public int GetFilteredCount()
     {
         if (string.IsNullOrWhiteSpace(ConsulDiffStateService.SearchKey))
