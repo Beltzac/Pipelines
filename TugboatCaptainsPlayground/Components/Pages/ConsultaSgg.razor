@@ -162,10 +162,7 @@
     </div>
 }
 
-@if (ConsultaSggStateService.Results != null && ConsultaSggStateService.TotalCount > 0)
-{
-    <Pagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
-}
+<Pagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
 
 @if (ConsultaSggStateService.SelectedItem != null)
 {
