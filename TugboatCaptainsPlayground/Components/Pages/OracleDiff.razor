@@ -59,6 +59,14 @@
             </div>
         </div>
     </div>
+
+    <div class="col-md-1">
+        <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch"
+                   id="showOnlyChanged" @bind="OracleDiffStateService.ShowOnlyChanged">
+            <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas views com diferenças">Mostrar apenas alterações</label>
+        </div>
+    </div>
 </StickyFilter>
 
 <div class="diff-container">
@@ -303,10 +311,7 @@
                 var targetDefinition = targetView?.Definition ?? string.Empty;
 
                 var diff = await OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
-                if (diff.HasDifferences)
-                {
-                    OracleDiffStateService.Differences[viewName] = diff;
-                }
+                OracleDiffStateService.Differences[viewName] = diff;
 
                 processedViews++;
                 OracleDiffStateService.ProgressValue = 80 + (int)((processedViews / (double)totalViews) * 20); // Progress from 80 to 100
@@ -322,8 +327,7 @@
 
     protected async Task RunCompare()
     {
-        var filteredDiffs = GetFilteredAndPaginatedDifferences();
-        if (filteredDiffs.Count == 0)
+        if (OracleDiffStateService.Differences.Count == 0)
         {
             await JS.InvokeVoidAsync("initializeDiff2Html", "", OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
             if (OracleDiffStateService.Differences.Count > 0)
@@ -333,7 +337,7 @@
             return;
         }
 
-        var diff = String.Join("\r\n", filteredDiffs.Values.Select(d => d.FormattedDiff));
+        var diff = String.Join("\r\n", OracleDiffStateService.Differences.Values.Select(d => d.FormattedDiff));
         await JS.InvokeVoidAsync("initializeDiff2Html", diff, OracleDiffStateService.SelectedSourceEnv, OracleDiffStateService.SelectedTargetEnv);
     }
 
@@ -347,11 +351,6 @@
     {
         OracleDiffStateService.CurrentPage = page;
         await LoadPageDifferences();
-    }
-
-    public Dictionary<string, OracleDiffResult> GetFilteredAndPaginatedDifferences()
-    {
-        return OracleDiffStateService.Differences;
     }
 
     public int TotalPages => (int)Math.Ceiling(GetFilteredCount() / (double)OracleDiffStateService.PageSize);
