@@ -6,73 +6,114 @@
         <nav aria-label="Paginação">
             <ul class="pagination mb-0">
                 <li class="page-item @(State.CurrentPage <= 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(State.CurrentPage - 1)" disabled="@(State.CurrentPage <= 1)">‹ Anterior</button>
+                    <button class="page-link page-link-prev" @onclick="async () => await ChangePage(State.CurrentPage - 1)" disabled="@(State.CurrentPage <= 1)">
+                        ‹ Anterior
+                    </button>
                 </li>
+
                 @{
+                    // We want a stable number of visible page links (e.g., 5) around the current page
+                    // plus we always show the first and last (if total pages are greater).
                     const int maxVisiblePages = 5;
+
+                    // If total pages are less than or equal to maxVisiblePages,
+                    // simply show all pages.
                     if (State.TotalCount <= maxVisiblePages)
                     {
-                        // Mostrar todas as páginas se o total for menor que o máximo visível
                         for (int i = 1; i <= State.TotalCount; i++)
                         {
                             var pageNumber = i;
                             <li class="page-item @(State.CurrentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
+                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">
+                                    @pageNumber
+                                </button>
                             </li>
                         }
                     }
                     else
                     {
-                        // Sempre mostrar a primeira página
+                        // Always show first page
                         <li class="page-item @(State.CurrentPage == 1 ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(1)">1</button>
+                            <button class="page-link" @onclick="async () => await ChangePage(1)">
+                                1
+                            </button>
                         </li>
 
-                        // Calcular intervalo ao redor da página atual
-                        var rangeStart = Math.Max(2, State.CurrentPage - 1);
-                        var rangeEnd = Math.Min(State.TotalCount - 1, State.CurrentPage + 1);
+                        // Determine how many pages appear in the 'middle' (excludes first/last).
+                        int middleCount = maxVisiblePages - 2; // e.g., if maxVisiblePages=5, 3 are in the middle
 
-                        // Mostrar reticências após a primeira página, se necessário
-                        if (rangeStart > 2)
+                        // We'll center them around the CurrentPage.
+                        int half = middleCount / 2;
+                        int middleStart = State.CurrentPage - half;
+                        int middleEnd = State.CurrentPage + half;
+
+                        // If middleCount is odd, expand end by 1 so we get an extra slot.
+                        if (middleCount % 2 == 1)
                         {
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
+                            middleEnd++;
                         }
 
-                        // Mostrar páginas ao redor da página atual
-                        for (int i = rangeStart; i <= rangeEnd; i++)
+                        // Clip left side
+                        if (middleStart < 2)
+                        {
+                            // shift the range to the right
+                            middleEnd += (2 - middleStart);
+                            middleStart = 2;
+                        }
+                        // Clip right side
+                        if (middleEnd > State.TotalCount - 1)
+                        {
+                            // shift the range to the left
+                            middleStart -= (middleEnd - (State.TotalCount - 1));
+                            middleEnd = State.TotalCount - 1;
+                        }
+
+                        // Render middle pages
+                        for (int i = middleStart; i <= middleEnd; i++)
                         {
                             var pageNumber = i;
                             <li class="page-item @(State.CurrentPage == pageNumber ? "active" : "")">
-                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">@pageNumber</button>
+                                <button class="page-link" @onclick="async () => await ChangePage(pageNumber)">
+                                    @pageNumber
+                                </button>
                             </li>
                         }
 
-                        // Mostrar reticências antes da última página, se necessário
-                        if (rangeEnd < State.TotalCount - 1)
-                        {
-                            <li class="page-item disabled">
-                                <span class="page-link">...</span>
-                            </li>
-                        }
-
-                        // Sempre mostrar a última página
+                        // Always show last page
                         <li class="page-item @(State.CurrentPage == State.TotalCount ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(State.TotalCount)">@State.TotalCount</button>
+                            <button class="page-link" @onclick="async () => await ChangePage(State.TotalCount)">
+                                @State.TotalCount
+                            </button>
                         </li>
                     }
                 }
+
                 <li class="page-item @(State.CurrentPage >= State.TotalCount ? "disabled" : "")">
-                    <button class="page-link" @onclick="async () => await ChangePage(State.CurrentPage + 1)" disabled="@(State.CurrentPage >= State.TotalCount)">Próximo ›</button>
+                    <button class="page-link page-link-next" @onclick="async () => await ChangePage(State.CurrentPage + 1)" disabled="@(State.CurrentPage >= State.TotalCount)">
+                        Próximo ›
+                    </button>
                 </li>
             </ul>
         </nav>
 
-        <div class="ms-3 d-none d-md-block">
-            Mostrando @((State.CurrentPage - 1) * State.PageSize + 1) a @Math.Min(State.CurrentPage * State.PageSize, State.TotalCount) de @State.TotalCount
+        <div class="d-flex align-items-center">
+            <div class="ms-3 d-none d-md-block">
+                Mostrando @((State.CurrentPage - 1) * State.PageSize + 1) a @Math.Min(State.CurrentPage * State.PageSize, State.TotalCount) de @State.TotalCount
+            </div>
+
+
+            <div class="ms-3" style="min-width: 8rem;">
+                <div class="form-group">
+                    <select class="form-select w-auto" @bind="State.PageSize">
+                        <option value="5">5 por página</option>
+                        <option value="10">10 por página</option>
+                        <option value="20">20 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                </div>
+            </div>
+
         </div>
-       
     </div>
 </div>
 
@@ -94,6 +135,18 @@
         justify-content: space-between;
     }
 
+    /* Use a fixed width for numeric pages. */
+    .pagination .page-link {
+        min-width: 4rem;
+        text-align: center;
+    }
+
+    /* Make Prev/Next buttons even wider */
+    .page-link-prev,
+    .page-link-next {
+        min-width: 6rem;
+    }
+
     @@media (max-width: 768px) {
         .sticky-pagination {
             position: static;
@@ -111,7 +164,10 @@
     public string Class { get; set; } = string.Empty;
 
     [Parameter]
-    required public IPaginates State { get; set; }
+    public required IPaginates State { get; set; }
+
+    // For demonstration, we presume there's an OracleDiffStateService or some logic to handle PageSize.
+    // If you want the selection to trigger a reload, you'd add the logic in the property or an event.
 
     [Parameter]
     public EventCallback<int> OnPageChange { get; set; }
