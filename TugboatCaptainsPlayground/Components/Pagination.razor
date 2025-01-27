@@ -18,9 +18,9 @@
 
                     // If total pages are less than or equal to maxVisiblePages,
                     // simply show all pages.
-                    if (State.TotalCount <= maxVisiblePages)
+                    if (PageCount <= maxVisiblePages)
                     {
-                        for (int i = 1; i <= State.TotalCount; i++)
+                        for (int i = 1; i <= PageCount; i++)
                         {
                             var pageNumber = i;
                             <li class="page-item @(State.CurrentPage == pageNumber ? "active" : "")">
@@ -61,11 +61,11 @@
                             middleStart = 2;
                         }
                         // Clip right side
-                        if (middleEnd > State.TotalCount - 1)
+                        if (middleEnd > PageCount - 1)
                         {
                             // shift the range to the left
-                            middleStart -= (middleEnd - (State.TotalCount - 1));
-                            middleEnd = State.TotalCount - 1;
+                            middleStart -= (middleEnd - (PageCount - 1));
+                            middleEnd = PageCount - 1;
                         }
 
                         // Render middle pages
@@ -80,16 +80,16 @@
                         }
 
                         // Always show last page
-                        <li class="page-item @(State.CurrentPage == State.TotalCount ? "active" : "")">
-                            <button class="page-link" @onclick="async () => await ChangePage(State.TotalCount)">
-                                @State.TotalCount
+                        <li class="page-item @(State.CurrentPage == PageCount ? "active" : "")">
+                            <button class="page-link" @onclick="async () => await ChangePage(PageCount)">
+                                @PageCount
                             </button>
                         </li>
                     }
                 }
 
-                <li class="page-item @(State.CurrentPage >= State.TotalCount ? "disabled" : "")">
-                    <button class="page-link page-link-next" @onclick="async () => await ChangePage(State.CurrentPage + 1)" disabled="@(State.CurrentPage >= State.TotalCount)">
+                <li class="page-item @(State.CurrentPage >= PageCount ? "disabled" : "")">
+                    <button class="page-link page-link-next" @onclick="async () => await ChangePage(State.CurrentPage + 1)" disabled="@(State.CurrentPage >= PageCount)">
                         Próximo ›
                     </button>
                 </li>
@@ -171,12 +171,14 @@
 
     private bool IsDisabled => !(State is ITracksLoading) || (State is ITracksLoading loadingState && loadingState.IsLoading);
 
+    private int PageCount => (int)Math.Ceiling((double)State.TotalCount / State.PageSize);
+
     private async Task ChangePage(int page)
     {
         if (IsDisabled)
             return;
 
-        if (page < 1 || page > State.TotalCount)
+        if (page < 1 || (page * State.PageSize) - State.PageSize > State.TotalCount)
             return;
 
         await OnPageChange.InvokeAsync(page);

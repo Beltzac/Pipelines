@@ -5,6 +5,7 @@
         HashSet<TKey> AllKeys { get; set; }
         Dictionary<TKey, T1> SourceValues { get; set; }
         Dictionary<TKey, T1> TargetValues { get; set; }
+        Dictionary<TKey, T> DiffCache { get; set; }
     }
 
     public interface IPaginates<T> : IPaginates where T : class
