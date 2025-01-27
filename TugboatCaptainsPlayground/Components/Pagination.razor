@@ -101,7 +101,6 @@
                 Mostrando @((State.CurrentPage - 1) * State.PageSize + 1) a @Math.Min(State.CurrentPage * State.PageSize, State.TotalCount) de @State.TotalCount
             </div>
 
-
             <div class="ms-3" style="min-width: 8rem;">
                 <div class="form-group">
                     <select class="form-select w-auto" @bind="State.PageSize">
@@ -109,6 +108,7 @@
                         <option value="10">10 por página</option>
                         <option value="20">20 por página</option>
                         <option value="50">50 por página</option>
+                        <option value="100">100 por página</option>
                     </select>
                 </div>
             </div>
