@@ -25,13 +25,4 @@ namespace Common.Models
         public string Ajuda { get; set; }
         public int Idioma { get; set; }
     }
-
-    public class MessageDiffResult
-    {
-        public bool HasDifferences { get; set; }
-        public string FormattedDiff { get; set; }
-        public MessageDefinition Target { get; set; }
-        public MessageDefinition Source { get; set; }
-        public List<string> ChangedFields { get; set; } = new();
-    }
 }

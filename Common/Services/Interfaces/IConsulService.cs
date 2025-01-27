@@ -2,7 +2,6 @@
 
 namespace Common.Services.Interfaces
 {
-    public record ConsulDiffResult(string Key, string DiffString);
 
     public interface IConsulService
     {

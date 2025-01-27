@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Common.Models
 {
-    public class OracleDiffResult
+    public class OracleDiffResult: IDiffResult
     {
         public string ViewName { get; set; }
         public string FormattedDiff { get; set; }
