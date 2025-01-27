@@ -504,10 +504,10 @@ namespace Common.Services
                 );
 
                 if (!patchResult.Hunks.Any())
-                    return new ConsulDiffResult(key, string.Empty);
+                    return new ConsulDiffResult(key, string.Empty, false);
 
                 var diffString = ps.formatPatch(patchResult);
-                return new ConsulDiffResult(key, diffString);
+                return new ConsulDiffResult(key, diffString, true);
             });
         }
     }
