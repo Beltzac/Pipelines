@@ -182,12 +182,7 @@
 
 @if (ConsultaEsbStateService.Results != null && ConsultaEsbStateService.TotalCount > 0)
 {
-    <Pagination
-        CurrentPage="@ConsultaEsbStateService.CurrentPage"
-        TotalPages="@((int)Math.Ceiling(ConsultaEsbStateService.TotalCount / (double)ConsultaEsbStateService.PageSize))"
-        OnPageChange="@(async (page) => { ConsultaEsbStateService.CurrentPage = page; await ExecuteQuery(); })">
-        Showing @((ConsultaEsbStateService.CurrentPage - 1) * ConsultaEsbStateService.PageSize + 1) to @Math.Min(ConsultaEsbStateService.CurrentPage * ConsultaEsbStateService.PageSize, ConsultaEsbStateService.TotalCount) of @ConsultaEsbStateService.TotalCount entries
-    </Pagination>
+    <Pagination State="@ConsultaEsbStateService" OnPageChange="@(async (page) => { ConsultaEsbStateService.CurrentPage = page; await ExecuteQuery(); })" />
 }
 
 @if (ConsultaEsbStateService.SelectedItem != null)

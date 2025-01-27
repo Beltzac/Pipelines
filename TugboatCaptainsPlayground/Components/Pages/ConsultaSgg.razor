@@ -164,12 +164,7 @@
 
 @if (ConsultaSggStateService.Results != null && ConsultaSggStateService.TotalCount > 0)
 {
-    <Pagination
-        CurrentPage="@ConsultaSggStateService.CurrentPage"
-        TotalPages="@((int)Math.Ceiling(ConsultaSggStateService.TotalCount / (double)ConsultaSggStateService.PageSize))"
-        OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })">
-        Showing @((ConsultaSggStateService.CurrentPage - 1) * ConsultaSggStateService.PageSize + 1) to @Math.Min(ConsultaSggStateService.CurrentPage * ConsultaSggStateService.PageSize, ConsultaSggStateService.TotalCount) of @ConsultaSggStateService.TotalCount entradas
-    </Pagination>
+    <Pagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
 }
 
 @if (ConsultaSggStateService.SelectedItem != null)
