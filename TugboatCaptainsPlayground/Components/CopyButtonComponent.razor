@@ -1,0 +1,45 @@
+<div class="d-flex justify-content-end">
+    <button class="btn btn-sm btn-outline-primary ms-2"
+            @onclick="CopyToClipboard"
+            title="@Title">
+        <i class="bi bi-clipboard"></i> @Text
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string Text { get; set; } = "Copiar";
+
+    [Parameter]
+    public string Title { get; set; } = "Copiar para área de transferência";
+
+    [Parameter]
+    public Func<string> FetchText { get; set; }
+
+    [Parameter]
+    public bool ShowIcon { get; set; } = true;
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
+
+    [Inject]
+    private IToastService ToastService { get; set; }
+
+    private async Task CopyToClipboard()
+    {
+        try
+        {
+            var value = FetchText.Invoke();
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                await JS.InvokeVoidAsync("navigator.clipboard.writeText", value);
+                ToastService.ShowSuccess("Texto copiado para a área de transferência");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Erro ao copiar: {ex.Message}");
+        }
+    }
+}
