@@ -4,14 +4,15 @@ using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class OracleDiffState : ITracksLoading, IPaginates<OracleDiffResult>
+    public class OracleDiffState : ITracksLoading, IComparesItems<string, OracleViewDefinition, OracleDiffResult>
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
 
-        public Dictionary<string, OracleViewDefinition> SourceViews { get; set; } = new();
-        public Dictionary<string, OracleViewDefinition> TargetViews { get; set; } = new();
-        public HashSet<string> AllViewNames { get; set; } = new();
+        public Dictionary<string, OracleViewDefinition> SourceValues { get; set; } = new();
+        public Dictionary<string, OracleViewDefinition> TargetValues { get; set; } = new();
+        public HashSet<string> AllKeys { get; set; } = new();
+        public Dictionary<string, OracleDiffResult> DiffCache { get; set; } = new();
 
         public bool ShowOnlyChanged { get; set; }
         public string SearchKey { get; set; }

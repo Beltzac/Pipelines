@@ -8,9 +8,9 @@ namespace Common.Models
         public string FormattedDiff { get; set; }
         public bool HasDifferences { get; set; }
 
-        public OracleDiffResult(string viewName, string formattedDiff, bool hasDifferences)
+        public OracleDiffResult(string key, string formattedDiff, bool hasDifferences)
         {
-            Key = viewName;
+            Key = key;
             FormattedDiff = formattedDiff;
             HasDifferences = hasDifferences;
         }
