@@ -4,14 +4,15 @@ using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {
-    public class MessageDiffState : ITracksLoading, IPaginates<MessageDiffResult>
+    public class MessageDiffState : ITracksLoading, IComparesItems<string, MessageDefinition, MessageDiffResult>
     {
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
 
-        public Dictionary<string, MessageDefinition> SourceMessages { get; set; } = new();
-        public Dictionary<string, MessageDefinition> TargetMessages { get; set; } = new();
-        public HashSet<string> AllMessageKeys { get; set; } = new();
+        public Dictionary<string, MessageDefinition> SourceValues { get; set; } = new();
+        public Dictionary<string, MessageDefinition> TargetValues { get; set; } = new();
+        public HashSet<string> AllKeys { get; set; } = new();
+        public Dictionary<string, MessageDiffResult> DiffCache { get; set; } = new();
 
         public string SearchKey { get; set; }
         public string SearchDescription { get; set; }

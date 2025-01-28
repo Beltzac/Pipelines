@@ -164,6 +164,7 @@
 
 @code {
     private List<OracleEnvironment> environments = new();
+    private PaginationService<string, OracleViewDefinition, OracleDiffResult> paginationService;
 
     protected override async Task OnInitializedAsync()
     {
@@ -175,6 +176,33 @@
     {
         OracleDiffStateService.OnChange += StateHasChanged;
         OracleDiffStateService.Load();
+
+        paginationService = new PaginationService<string, OracleViewDefinition, OracleDiffResult>(
+            OracleDiffStateService,
+            async () =>
+            {
+                var sourceEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedSourceEnv);
+                return (await OracleSchemaService.GetViewDefinitionsAsync(sourceEnv.ConnectionString, sourceEnv.Schema))
+                    .ToDictionary(v => v.Name);
+            },
+            async () =>
+            {
+                var targetEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedTargetEnv);
+                return (await OracleSchemaService.GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema))
+                    .ToDictionary(v => v.Name);
+            },
+            async (viewName, source, target) =>
+            {
+                var sourceDefinition = source?.Definition ?? string.Empty;
+                var targetDefinition = target?.Definition ?? string.Empty;
+                return await OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
+            },
+            (viewName, source, target, diff) =>
+                (string.IsNullOrEmpty(OracleDiffStateService.SearchKey) ||
+                (!string.IsNullOrEmpty(OracleDiffStateService.SearchKey) &&
+                viewName.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) &&
+                (!OracleDiffStateService.ShowOnlyChanged || diff.HasDifferences)
+        );
     }
 
     public void Dispose()
@@ -236,34 +264,8 @@
             OracleDiffStateService.ProgressValue = 0;
             OracleDiffStateService.IsLoading = true;
 
-            OracleDiffStateService.CurrentPage = 1;
-            OracleDiffStateService.PageItems.Clear();
-
-            // Get all view definitions from both environments
-            var sourceEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedSourceEnv);
-            var targetEnv = environments.First(e => e.Name == OracleDiffStateService.SelectedTargetEnv);
-
-            // Get source views
-            OracleDiffStateService.ProgressValue = 25;
-            OracleDiffStateService.ProgressLabel = $"Loading views from {OracleDiffStateService.SelectedSourceEnv}...";
-            var sourceViews = (await OracleSchemaService.GetViewDefinitionsAsync(sourceEnv.ConnectionString, sourceEnv.Schema))
-                .ToDictionary(v => v.Name);
-            OracleDiffStateService.SourceViews = sourceViews;
-
-            // Get target views
-            OracleDiffStateService.ProgressValue = 50;
-            OracleDiffStateService.ProgressLabel = $"Loading views from {OracleDiffStateService.SelectedTargetEnv}...";
-            var targetViews = (await OracleSchemaService.GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema))
-                .ToDictionary(v => v.Name);
-            OracleDiffStateService.TargetViews = targetViews;
-
-            // Process views
-            OracleDiffStateService.ProgressValue = 75;
-            OracleDiffStateService.ProgressLabel = "Processing view differences...";
-            OracleDiffStateService.AllViewNames = new HashSet<string>(
-                OracleDiffStateService.SourceViews.Keys.Union(OracleDiffStateService.TargetViews.Keys)
-            );
-            OracleDiffStateService.TotalCount = OracleDiffStateService.AllViewNames.Count;
+            // Initialize pagination service
+            await paginationService.InitializeAsync();
 
             // Get differences for the current page
             await LoadPageDifferences();
@@ -286,36 +288,7 @@
             OracleDiffStateService.ProgressValue = 80;
             OracleDiffStateService.ProgressLabel = "Loading page differences...";
 
-            var filteredViews = string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey)
-                ? OracleDiffStateService.AllViewNames
-                : OracleDiffStateService.AllViewNames.Where(view =>
-                    view.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
-
-            var pagedViews = filteredViews
-                .Skip((OracleDiffStateService.CurrentPage - 1) * OracleDiffStateService.PageSize)
-                .Take(OracleDiffStateService.PageSize)
-                .ToList();
-
-            OracleDiffStateService.PageItems.Clear();
-            var totalViews = pagedViews.Count;
-            var processedViews = 0;
-
-            foreach (var viewName in pagedViews)
-            {
-                OracleDiffStateService.ProgressLabel = $"Processing view ({processedViews + 1}/{totalViews}): {viewName}";
-
-                OracleDiffStateService.SourceViews.TryGetValue(viewName, out var sourceView);
-                OracleDiffStateService.TargetViews.TryGetValue(viewName, out var targetView);
-
-                var sourceDefinition = sourceView?.Definition ?? string.Empty;
-                var targetDefinition = targetView?.Definition ?? string.Empty;
-
-                var diff = await OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
-                OracleDiffStateService.PageItems.Add(diff);
-
-                processedViews++;
-                OracleDiffStateService.ProgressValue = 80 + (int)((processedViews / (double)totalViews) * 20); // Progress from 80 to 100
-            }
+            await paginationService.GetPageAsync();
 
             await RunCompare();
         }
@@ -356,9 +329,9 @@
     public int GetFilteredCount()
     {
         if (string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey))
-            return OracleDiffStateService.AllViewNames.Count;
+            return OracleDiffStateService.AllKeys.Count;
 
-        return OracleDiffStateService.AllViewNames.Count(view =>
+        return OracleDiffStateService.AllKeys.Count(view =>
             view.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
     }
 

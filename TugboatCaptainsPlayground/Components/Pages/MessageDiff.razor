@@ -82,8 +82,8 @@
                     <th style="width: 15%">Título Origem</th>
                     <th style="width: 20%">
                         Valor Origem (@MessageDiffStateService.SelectedSourceEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" 
-                        @onclick="CopyAllSourceUpserts" 
+                        <button class="btn btn-sm btn-outline-primary ms-2"
+                        @onclick="CopyAllSourceUpserts"
                         title="Copiar todos os comandos UPSERT do ambiente origem">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Origem
                         </button>
@@ -91,7 +91,7 @@
                     <th style="width: 15%">Título Destino</th>
                     <th style="width: 20%">
                         Valor Destino (@MessageDiffStateService.SelectedTargetEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2" 
+                        <button class="btn btn-sm btn-outline-primary ms-2"
                         @onclick="CopyAllTargetUpserts"
                         title="Copiar todos os comandos UPSERT do ambiente destino">
                             <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Destino
@@ -101,32 +101,32 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var diff in GetFilteredAndPaginatedDifferences())
+                @foreach (var diff in MessageDiffStateService.PageItems)
                 {
-                    <tr class="@(diff.Value.HasDifferences ? "table-warning" : "")">
+                    <tr class="@(diff.HasDifferences ? "table-warning" : "")">
                         <td class="font-weight-bold">@diff.Key</td>
-                        <td>@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
+                        <td>@(diff.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                         <td>
                             <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@(diff.Value.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
-                                @if (diff.Value.Source != null)
+                                <div class="text-wrap">@(diff.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                @if (diff.Source != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2" 
-                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source)"
+                                    <button class="btn btn-sm btn-outline-primary ms-2"
+                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Source)"
                                     title="Copiar comando SQL para atualizar esta mensagem no ambiente source">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
                             </div>
                         </td>
-                        <td>@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
+                        <td>@(diff.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                         <td>
                             <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@(diff.Value.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
-                                @if (diff.Value.Target != null)
+                                <div class="text-wrap">@(diff.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                @if (diff.Target != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2" 
-                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target)"
+                                    <button class="btn btn-sm btn-outline-primary ms-2"
+                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Target)"
                                     title="Copiar comando SQL para atualizar esta mensagem no ambiente target">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
@@ -134,10 +134,10 @@
                             </div>
                         </td>
                         <td>
-                            @if (diff.Value.ChangedFields.Any())
+                            @if (diff.ChangedFields.Any())
                             {
                                 <ul class="list-unstyled mb-0">
-                                    @foreach (var field in diff.Value.ChangedFields)
+                                    @foreach (var field in diff.ChangedFields)
                                     {
                                         <li class="badge bg-warning text-dark">@field</li>
                                     }
@@ -155,42 +155,43 @@
 
 <style>
     .diff-container {
-    max-width: 95vw;
-    margin: 0 auto;
-    overflow-x: auto;
+        max-width: 95vw;
+        margin: 0 auto;
+        overflow-x: auto;
     }
 
     .table-responsive {
-    max-height: 70vh;
-    overflow-y: auto;
+        max-height: 70vh;
+        overflow-y: auto;
     }
 
     .sticky-top {
-    top: 0;
-    z-index: 1;
+        top: 0;
+        z-index: 1;
     }
 
     .text-wrap {
-    white-space: normal;
-    word-break: break-word;
+        white-space: normal;
+        word-break: break-word;
     }
 
     .table-hover tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+        background-color: rgba(0, 0, 0, 0.05);
     }
 
     .badge {
-    margin: 2px;
-    white-space: normal;
+        margin: 2px;
+        white-space: normal;
     }
 
     .form-group {
-    margin-bottom: 0;
+        margin-bottom: 0;
     }
 </style>
 
 @code {
     private List<OracleEnvironment> environments = new();
+    private PaginationService<string, MessageDefinition, MessageDiffResult> paginationService;
 
     protected override async Task OnInitializedAsync()
     {
@@ -224,16 +225,12 @@
     {
         try
         {
-            var filteredKeys = GetFilteredKeys();
+            var diffs = MessageDiffStateService.DiffCache;
             var upserts = new List<string>();
 
-            foreach (var key in filteredKeys)
+            foreach (var diff in diffs)
             {
-                var message = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
-                if (message != null)
-                {
-                    upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedSourceEnv, message));
-                }
+                upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedSourceEnv, diff.Value.Source));
             }
 
             if (upserts.Any())
@@ -257,16 +254,12 @@
     {
         try
         {
-            var filteredKeys = GetFilteredKeys();
+            var diffs = MessageDiffStateService.DiffCache;
             var upserts = new List<string>();
 
-            foreach (var key in filteredKeys)
+            foreach (var diff in diffs)
             {
-                var message = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-                if (message != null)
-                {
-                    upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedTargetEnv, message));
-                }
+                upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target));   
             }
 
             if (upserts.Any())
@@ -290,6 +283,45 @@
     {
         MessageDiffStateService.OnChange += StateHasChanged;
         MessageDiffStateService.Load();
+
+        paginationService = new PaginationService<string, MessageDefinition, MessageDiffResult>(
+            MessageDiffStateService,
+            async () =>
+            {
+                var sourceEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedSourceEnv);
+                return await OracleMessageService.GetMessagesAsync(sourceEnv.ConnectionString);
+            },
+            async () =>
+            {
+                var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
+                return await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
+            },
+            async (key, source, target) => await OracleMessageService.GetMessageDiff(key, source, target),
+            (key, source, target, diff) =>
+            {
+                var matchesSearch = true;
+                if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey))
+                {
+                    matchesSearch = (source?.Key?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (source?.Modulo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (source?.Codigo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (source?.Prefixo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Key?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Modulo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Codigo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Prefixo?.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false);
+                }
+
+                var matchesDescription = true;
+                if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription))
+                {
+                    matchesDescription = (source?.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false) ?? false) ||
+                                       (target?.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false) ?? false);
+                }
+
+                return matchesSearch && matchesDescription && (!MessageDiffStateService.ShowOnlyChanged || diff.HasDifferences);
+            }
+        );
     }
 
     public void Dispose()
@@ -308,31 +340,8 @@
 
         try
         {
-            MessageDiffStateService.ProgressValue = 0;
-            MessageDiffStateService.IsLoading = true;
-
-            MessageDiffStateService.CurrentPage = 1;
-            MessageDiffStateService.PageItems.Clear();
-
-            // Get source environment messages
-            MessageDiffStateService.ProgressValue = 25;
-            MessageDiffStateService.ProgressLabel = $"Carregando mensagens do ambiente {MessageDiffStateService.SelectedSourceEnv}...";
-            var sourceEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedSourceEnv);
-            MessageDiffStateService.SourceMessages = await OracleMessageService.GetMessagesAsync(sourceEnv.ConnectionString);
-
-            // Get target environment messages
-            MessageDiffStateService.ProgressValue = 50;
-            MessageDiffStateService.ProgressLabel = $"Carregando mensagens do ambiente {MessageDiffStateService.SelectedTargetEnv}...";
-            var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
-            MessageDiffStateService.TargetMessages = await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
-
-            // Process messages
-            MessageDiffStateService.ProgressValue = 75;
-            MessageDiffStateService.ProgressLabel = "Processando diferenças das mensagens...";
-            MessageDiffStateService.AllMessageKeys = new HashSet<string>(
-                MessageDiffStateService.SourceMessages.Keys.Union(MessageDiffStateService.TargetMessages.Keys)
-            );
-            MessageDiffStateService.TotalCount = MessageDiffStateService.AllMessageKeys.Count;
+            // Initialize pagination service
+            await paginationService.InitializeAsync();
 
             // Get differences for the current page
             await LoadPageDifferences();
@@ -341,49 +350,24 @@
         {
             toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
-        finally
-        {
-            MessageDiffStateService.IsLoading = false;
-        }
     }
 
     private async Task LoadPageDifferences()
     {
-        MessageDiffStateService.IsLoading = true;
         try
         {
-            MessageDiffStateService.ProgressValue = 80;
-            MessageDiffStateService.ProgressLabel = "Carregando diferenças...";
-
-            MessageDiffStateService.PageItems.Clear();
-            var totalKeys = MessageDiffStateService.AllMessageKeys.Count;
-            var processedKeys = 0;
-
-            foreach (var key in MessageDiffStateService.AllMessageKeys)
-            {
-                MessageDiffStateService.ProgressLabel = $"Processando diferenças ({processedKeys + 1}/{totalKeys}): {key}";
-
-                var sourceMessage = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
-                var targetMessage = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-
-                var diff = await OracleMessageService.GetMessageDiff(key, sourceMessage, targetMessage);
-                MessageDiffStateService.PageItems.Add(diff);
-
-                processedKeys++;
-                MessageDiffStateService.ProgressValue = 80 + (int)((processedKeys / (double)totalKeys) * 20);
-            }
+            await paginationService.GetPageAsync();
 
             await RunCompare();
         }
-        finally
+        catch (Exception ex)
         {
-            MessageDiffStateService.IsLoading = false;
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
     }
 
     protected async Task RunCompare()
     {
-        var filteredDiffs = GetFilteredAndPaginatedDifferences();
         StateHasChanged();
     }
 
@@ -397,82 +381,6 @@
     {
         MessageDiffStateService.CurrentPage = page;
         await LoadPageDifferences();
-    }
-
-    private HashSet<string> GetFilteredKeys()
-    {
-        var filtered = MessageDiffStateService.AllMessageKeys;
-
-        if (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) || !string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription))
-        {
-            filtered = filtered.Where(key =>
-            {
-                var message1 = MessageDiffStateService.SourceMessages.GetValueOrDefault(key);
-                var message2 = MessageDiffStateService.TargetMessages.GetValueOrDefault(key);
-
-                var msg1 = message1 != null && (
-
-                   (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) &&
-                   (message1.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message1.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message1.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message1.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
-
-                    ||
-
-                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message1.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
-
-                    );
-
-                var msg2 = message2 != null && (
-
-                   (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchKey) &&
-                   (message2.Key.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message2.Modulo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message2.Codigo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ||
-                    message2.Prefixo.Contains(MessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase)))
-
-                    ||
-
-                    (!string.IsNullOrWhiteSpace(MessageDiffStateService.SearchDescription) && message2.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false))
-
-                    );
-
-                return msg1 || msg2;
-            }).ToHashSet();
-        }
-
-        // if (MessageDiffStateService.ShowOnlyChanged)
-        // {
-        //     filtered = filtered.Where(key =>
-        //         MessageDiffStateService.Differences.ContainsKey(key) &&
-        //         MessageDiffStateService.Differences[key].HasDifferences
-        //     ).ToHashSet();
-        // }
-
-        return filtered;
-    }
-
-    private IEnumerable<string> GetCurrentPageKeys()
-    {
-        return GetFilteredKeys()
-            .Skip((MessageDiffStateService.CurrentPage - 1) * MessageDiffStateService.PageSize)
-            .Take(MessageDiffStateService.PageSize);
-    }
-
-    public Dictionary<string, MessageDiffResult> GetFilteredAndPaginatedDifferences()
-    {
-        return GetCurrentPageKeys()
-        .Where(key => MessageDiffStateService.PageItems.Any(x => x.Key == key))
-            .ToDictionary(
-                key => key,
-                key => MessageDiffStateService.PageItems.First(x => x.Key == key)
-            );
-    }
-
-    public int GetFilteredCount()
-    {
-        return GetFilteredKeys().Count;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
