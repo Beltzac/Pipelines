@@ -14,15 +14,18 @@
     <!--<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\SourceGeneratorFiles</CompilerGeneratedFilesOutputPath>-->
 
 
+	  
+
 	  <!-- Bundle .NET runtime -->
 	  <SelfContained>true</SelfContained>
+	  <!--<SelfContained>false</SelfContained>-->
 
 	  <!-- Bundle all dependencies into a single executable -->
 	  <PublishSingleFile>true</PublishSingleFile>
 	  <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 
 	  <!-- Enable compression for the single executable -->
-	  <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+	  <!--<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>-->
 
 	  <!--
     Disable default content for better control of which files are bundled.
@@ -34,12 +37,45 @@
 	  <!-- Include debug symbols into the executable -->
 	  <DebugType>embedded</DebugType>
 
+	  <!--<ScopedCssEnabled>false</ScopedCssEnabled>-->
+
+	  <!--<DefaultItemExcludes>wwwroot\**</DefaultItemExcludes>-->
+
+	  <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+	  <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
   </PropertyGroup>
+  <!--<ItemGroup>
+    <Compile Remove="wwwroot\**" />
+    <Content Remove="wwwroot\**" />
+    <EmbeddedResource Remove="wwwroot\**" />
+    <None Remove="wwwroot\**" />
+  </ItemGroup>-->
+
+	<ItemGroup>
+		<!--<Content Remove="wwwroot\**" />-->
+		<!--<Content Update="wwwroot\**" CopyToPublishDirectory="Never" />-->
+		<EmbeddedResource Include="wwwroot\**"/>
+	</ItemGroup>
+	
+	<ItemGroup>
+        <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
+    </ItemGroup>
+	
+	<!--<ItemGroup>
+		<None Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>-->
 
 <!-- <PropertyGroup>
 	<LocalEmbeddingsModelUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx</LocalEmbeddingsModelUrl>
 	<LocalEmbeddingsVocabUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/vocab.txt</LocalEmbeddingsVocabUrl>
 </PropertyGroup> -->
+
+	<!--<Target Name="EmbedScopedCss" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="BundleScopedCssFiles">
+		<ItemGroup>
+			<EmbeddedResource Include="$(IntermediateOutputPath)wwwroot\$(AssemblyName).styles.css" LogicalName="$(AssemblyName).styles.css" />
+		</ItemGroup>
+	</Target>-->
+	
   <ItemGroup>
     <Content Include="Assets\app.ico" />
   </ItemGroup>
@@ -61,6 +97,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.1" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Photino.NET" Version="3.2.3" />
     <PackageReference Include="Quartz" Version="3.13.1" />
@@ -95,7 +132,7 @@
 	<!--<ItemGroup>
 		<Content Include="wwwroot/**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>-->
-	<ItemGroup>
+	<!--<ItemGroup>
 		<Content Update="wwwroot\css\app.css">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
@@ -107,14 +144,14 @@
 		</Content>
 
 
-	</ItemGroup>
+	</ItemGroup>-->
   <ItemGroup>
     <EmbeddedResource Update="Resource.resx">
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
+  <!--<ItemGroup>
     <None Update="Assets\app.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -129,5 +166,5 @@
     <Content Update="electron.manifest.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
+  </ItemGroup>-->
 </Project>

@@ -7,12 +7,14 @@ using Generation;
 using H.NotifyIcon.Core;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Photino.NET;
 using Quartz;
 using Serilog;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 internal class Program
@@ -138,8 +140,21 @@ internal class Program
             app.UseHsts();
         }
 
-        //app.MapStaticAssets();
-        app.UseStaticFiles();
+        app.MapStaticAssets();
+        //app.UseStaticFiles();
+
+        //app.UseStaticFiles(new StaticFileOptions
+        //{
+        //    FileProvider = new PhysicalFileProvider(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "wwwroot")),
+        //    RequestPath = ""
+        //});
+
+        //var provider = new ManifestEmbeddedFileProvider(Assembly.GetAssembly(type: typeof(Program)), "wwwroot");
+        //app.UseStaticFiles(new StaticFileOptions
+        //{
+        //    FileProvider = provider,
+        //    RequestPath = "",
+        //});
 
         app.UseAntiforgery();
 

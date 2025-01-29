@@ -133,11 +133,10 @@
         }, !BuildInfoStateService.BuildInfos.Any());
     }
 
-    private async Task ReloadById(Guid id, Action<Repository> action)
+    private async Task ReloadById(Guid id)
     {
         if (BuildInfoStateService.BuildInfos != null && BuildInfoStateService.BuildInfos.Any(b => b.Id == id))
         {
-            var newBuildInfo = await BuildInfoService.GetBuildInfoByIdAsync(id);
             BuildInfoStateService.BuildInfos = await BuildInfoService.GetBuildInfoAsync(BuildInfoStateService.Filter);
         }
     }
@@ -231,7 +230,8 @@
     async Task RefetchClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+        await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id, true);
+        await ReloadById(repo.Id);
     }
 
     async Task OpenExternalCommitClickAsync(ItemClickEventArgs e)
@@ -239,6 +239,7 @@
         this.toastService.ShowInfo("Atualizando informações da pipeline");
         var repo = e.Data as Repository;
         repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+        await ReloadById(repo.Id);
 
         var url = repo.Pipeline.Last.Commit.Url;
         await OpenFolderUtils.OpenUrlAsync(url);
@@ -256,6 +257,7 @@
         this.toastService.ShowInfo("Atualizando informações da pipeline");
         var repo = e.Data as Repository;
         repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+        await ReloadById(repo.Id);
 
         var url = repo.Pipeline.Last.Url;
         await OpenFolderUtils.OpenUrlAsync(url);
