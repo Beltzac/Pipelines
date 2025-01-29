@@ -76,7 +76,7 @@ namespace Common.Services
             await OpenFolderUtils.OpenUrlAsync(url);
         }
 
-        public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId)
+        public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId, bool force = false)
         {
             var existingRepo = await _repositoryDatabase.FindByIdAsync(repoId);
 
@@ -92,8 +92,7 @@ namespace Common.Services
                 bool areDatesEqual = existingDate.HasValue &&
                                         Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
 
-
-                if (areDatesEqual)
+                if (areDatesEqual && !force)
                 {
                     _logger.LogInformation($"Pipeline {buildDefinition.Name} não alterado. Pulando.");
                     return existingRepo;

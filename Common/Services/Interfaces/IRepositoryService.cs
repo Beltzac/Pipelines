@@ -11,7 +11,7 @@ namespace Common.Services.Interfaces
         Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId);
         Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition);
         Task Delete(Guid id);
-        Task<Repository> FetchRepoBuildInfoAsync(Guid repoId);
+        Task<Repository> FetchRepoBuildInfoAsync(Guid repoId, bool force = false);
         Task<string> GenerateCloneCommands();
         Task<string> GetBuildErrorLogsAsync(Guid id);
         Task<List<Repository>> GetBuildInfoAsync(string filter = null);
