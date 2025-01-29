@@ -4,6 +4,7 @@ using Common.Repositories;
 using Common.Services;
 using Common.Utils;
 using Generation;
+using GlobalHotKey;
 using H.NotifyIcon.Core;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ using SmartComponents.LocalEmbeddings;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 internal class Program
 {
@@ -37,6 +39,17 @@ internal class Program
                .RegisterWindowClosingHandler(WindowIsClosing)
                .SetLogVerbosity(5);
 
+        var hotKeyManager = new HotKeyManager();
+
+        var hotKey = hotKeyManager.Register(Key.A, ModifierKeys.Control | ModifierKeys.Shift);
+
+        hotKeyManager.KeyPressed += HotKeyManagerPressed;
+
+        void HotKeyManagerPressed(object sender, KeyPressedEventArgs e)
+        {
+            ToggleWindow(mainWindow);
+            //mainWindow.Load("http://localhost:8002/");
+        }
 
         //return;
 
@@ -301,6 +314,8 @@ internal class Program
 
         //await task;
         task.GetAwaiter().GetResult();
+
+        hotKeyManager.Dispose();
 
 
         static void ShowMessage(TrayIcon trayIcon, string message)
