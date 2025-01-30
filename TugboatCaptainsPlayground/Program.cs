@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
+using Vanara.PInvoke;
 
 internal class Program
 {
@@ -38,6 +39,35 @@ internal class Program
                .SetMaximized(true)
                .RegisterWindowClosingHandler(WindowIsClosing)
                .SetLogVerbosity(5);
+
+
+        // Subscribe to the WindowCreated event to access the native handle
+        mainWindow.WindowCreated += (sender, e) =>
+        {
+            // Get the native window handle
+            IntPtr hwnd = ((PhotinoWindow)sender).WindowHandle;
+
+            // Get current extended window style
+            var exStyle = (User32.WindowStylesEx)User32.GetWindowLong(hwnd, User32.WindowLongFlags.GWL_EXSTYLE);
+
+            // Add the WS_EX_TOOLWINDOW style to hide from taskbar and adjust appearance
+            exStyle |= User32.WindowStylesEx.WS_EX_TOOLWINDOW;
+
+            // Apply the new extended style
+            User32.SetWindowLong(hwnd, User32.WindowLongFlags.GWL_EXSTYLE, (IntPtr)exStyle);
+
+            //// Force the window to update its frame
+            //User32.SetWindowPos(
+            //    hwnd,
+            //    hWndInsertAfter: IntPtr.Zero,
+            //    X: 0, Y: 0,
+            //    cx: 0, cy: 0,
+            //    uFlags: User32.SetWindowPosFlags.SWP_NOMOVE |
+            //           User32.SetWindowPosFlags.SWP_NOSIZE |
+            //           User32.SetWindowPosFlags.SWP_NOZORDER |
+            //           User32.SetWindowPosFlags.SWP_FRAMECHANGED);
+        };
+
 
         var hotKeyManager = new HotKeyManager();
 
@@ -153,8 +183,8 @@ internal class Program
             app.UseHsts();
         }
 
-        app.MapStaticAssets();
-        //app.UseStaticFiles();
+        //app.MapStaticAssets();
+        app.UseStaticFiles();
 
         //app.UseStaticFiles(new StaticFileOptions
         //{
