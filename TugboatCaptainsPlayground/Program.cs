@@ -308,7 +308,7 @@ internal class Program
         trayIcon.ContextMenu = new PopupMenu();
 
         // Add the "Open" menu item
-        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle", (s, e) => ToggleWindow(mainWindow)));
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle (CTRL + SHIFT + A)", (s, e) => ToggleWindow(mainWindow)));
 
         // Add the "Exit" menu item
         trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => { forceClose = true; mainWindow.Close(); }/*source.Cancel()*/ /*Environment.Exit(0)*/));
