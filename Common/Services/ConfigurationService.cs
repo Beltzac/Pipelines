@@ -1,4 +1,8 @@
+using Common.Jobs;
 using Common.Models;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Quartz;
 using System.Text.Json;
 
 public class ConfigurationService : IConfigurationService
@@ -17,7 +21,7 @@ public class ConfigurationService : IConfigurationService
     // Este construtor é usado para testes
     public ConfigurationService(string configPath)
     {
-        _configPath = configPath;
+        _configPath = configPath;        
         string appFolder = Path.GetDirectoryName(_configPath);
 
         if (!Directory.Exists(appFolder))

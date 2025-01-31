@@ -10,12 +10,14 @@ public class CreateRepositoriesJobsJob : IJob
     private readonly IRepositoryService _buildInfoService;
     private readonly ILogger<CreateRepositoriesJobsJob> _logger;
     private TelemetryClient _telemetryClient;
+    private readonly IConfigurationService _configurationService;
 
-    public CreateRepositoriesJobsJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient)
+    public CreateRepositoriesJobsJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient, IConfigurationService configurationService)
     {
         _buildInfoService = buildInfoService;
         _logger = logger;
         _telemetryClient = telemetryClient;
+        _configurationService = configurationService;
     }
 
     public async Task Execute(IJobExecutionContext context)
@@ -24,6 +26,9 @@ public class CreateRepositoriesJobsJob : IJob
         {
             using (_telemetryClient.StartOperation<RequestTelemetry>("criar-jobs-update"))
             {
+                if (string.IsNullOrEmpty(_configurationService.GetConfig().PAT))
+                    return;
+
                 var repos = await _buildInfoService.FetchProjectsRepos();
 
                 // For each repository, schedule a job to update the repository with a random start time
