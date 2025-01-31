@@ -15,8 +15,9 @@ namespace Common.Jobs
         private readonly ILogger<CreateRepositoriesJobsJob> _logger;
         private TelemetryClient _telemetryClient;
         private readonly AsyncRetryPolicy _retryPolicy;
+        private readonly IConfigurationService _configurationService;
 
-        public UpdateRepositoryJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient)
+        public UpdateRepositoryJob(IRepositoryService buildInfoService, ILogger<CreateRepositoriesJobsJob> logger, TelemetryClient telemetryClient, IConfigurationService configurationService)
         {
             _buildInfoService = buildInfoService;
             _logger = logger;
@@ -29,15 +30,20 @@ namespace Common.Jobs
                     {
                         _logger.LogWarning($"Retry {retryCount} encountered an error: {exception.Message}. Waiting {timeSpan} before next retry.");
                     });
+
+            _configurationService = configurationService;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             using (_telemetryClient.StartOperation<RequestTelemetry>("repository-update-job"))
             {
+                if (string.IsNullOrEmpty(_configurationService.GetConfig().PAT))
+                    return;
+
                 var repositoryId = Guid.Parse(context.MergedJobDataMap.GetString("RepositoryId"));
 
-                var nextRun = 0;
+                var nextRun = 60;
                 Repository? repo = null;
 
                 try

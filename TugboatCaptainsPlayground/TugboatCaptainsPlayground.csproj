@@ -42,6 +42,8 @@
 	  <!--<DefaultItemExcludes>wwwroot\**</DefaultItemExcludes>-->
 
 	  <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+
+	  <OutputType>WinExe</OutputType>
 	  <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
   </PropertyGroup>
   <!--<ItemGroup>
@@ -116,6 +118,7 @@
     <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="9.0.1" />
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.4" />
+    <PackageReference Include="Vanara.Windows.Shell" Version="4.0.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />

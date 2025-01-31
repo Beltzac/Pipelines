@@ -16,15 +16,19 @@ using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using Vanara.PInvoke;
+using Vanara.Windows.Shell;
 
 internal class Program
 {
     [STAThread]
     static void Main(string[] args)
     {
+        //ToggleConsole();
+
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         CancellationTokenSource source = new CancellationTokenSource();
@@ -40,12 +44,47 @@ internal class Program
                .RegisterWindowClosingHandler(WindowIsClosing)
                .SetLogVerbosity(5);
 
+        mainWindow.WindowMaximized += (sender, e) =>
+        {
+            try
+            {
+                // Get the native window handle
+                IntPtr hwnd = ((PhotinoWindow)sender).WindowHandle;
 
-        // Subscribe to the WindowCreated event to access the native handle
+                HideTaskbarIcon(hwnd);
+            }
+            catch (Exception)
+            {
+
+          
+            }
+
+
+      
+
+
+            return;
+        };
+
+        mainWindow.WindowMinimized += (sender, e) =>
+        {
+            // Get the native window handle
+            IntPtr hwnd = ((PhotinoWindow)sender).WindowHandle;
+
+            HideTaskbarIcon(hwnd);
+
+            return;
+        };
+
+            // Subscribe to the WindowCreated event to access the native handle
         mainWindow.WindowCreated += (sender, e) =>
         {
             // Get the native window handle
             IntPtr hwnd = ((PhotinoWindow)sender).WindowHandle;
+
+            HideTaskbarIcon(hwnd);
+
+            return;
 
             // Get current extended window style
             var exStyle = (User32.WindowStylesEx)User32.GetWindowLong(hwnd, User32.WindowLongFlags.GWL_EXSTYLE);
@@ -56,16 +95,7 @@ internal class Program
             // Apply the new extended style
             User32.SetWindowLong(hwnd, User32.WindowLongFlags.GWL_EXSTYLE, (IntPtr)exStyle);
 
-            //// Force the window to update its frame
-            //User32.SetWindowPos(
-            //    hwnd,
-            //    hWndInsertAfter: IntPtr.Zero,
-            //    X: 0, Y: 0,
-            //    cx: 0, cy: 0,
-            //    uFlags: User32.SetWindowPosFlags.SWP_NOMOVE |
-            //           User32.SetWindowPosFlags.SWP_NOSIZE |
-            //           User32.SetWindowPosFlags.SWP_NOZORDER |
-            //           User32.SetWindowPosFlags.SWP_FRAMECHANGED);
+           
         };
 
 
@@ -112,6 +142,10 @@ internal class Program
 
         builder.Services.AddQuartz(q =>
         {
+            var provider = builder.Services.BuildServiceProvider();
+            var configService = provider.GetRequiredService<IConfigurationService>();
+            var config = configService.GetConfig();
+
             q.ScheduleJob<CreateRepositoriesJobsJob>(trigger => trigger
                 .WithIdentity("BuildInfoJob-trigger")
                 .WithCronSchedule("0 0 0/4 * * ?"), // Every 4 hours
@@ -132,9 +166,6 @@ internal class Program
                 job => job.WithIdentity("ConsulBackupJob-hourly")
             );
 
-            var provider = builder.Services.BuildServiceProvider();
-            var configService = provider.GetRequiredService<IConfigurationService>();
-            var config = configService.GetConfig();
             var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
             var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
 
@@ -309,6 +340,7 @@ internal class Program
 
         // Add the "Open" menu item
         trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle (CTRL + SHIFT + A)", (s, e) => ToggleWindow(mainWindow)));
+        //trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle Console", (s, e) => ToggleConsole()));
 
         // Add the "Exit" menu item
         trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => { forceClose = true; mainWindow.Close(); }/*source.Cancel()*/ /*Environment.Exit(0)*/));
@@ -384,4 +416,168 @@ internal class Program
             mainWindow.Minimized = true;
         }
     }
+
+
+    public static void HideTaskbarIcon(IntPtr hWnd)
+    {
+        try
+        {
+            TaskbarList.UnregisterTab(hWnd);
+        }
+        catch (Exception)
+        {
+
+        }
+    }
+   
+
+    private static void ToggleConsole()
+    {
+        var console = Kernel32.GetConsoleWindow();
+
+        
+        HideTaskbarIcon(console.DangerousGetHandle());
+
+        //// Get current extended window style
+        //var exStyle = (User32.WindowStylesEx)User32.GetWindowLong(console, User32.WindowLongFlags.GWL_EXSTYLE);
+
+        //// Add the WS_EX_TOOLWINDOW style to hide from taskbar and adjust appearance
+        //exStyle |= User32.WindowStylesEx.WS_EX_TOOLWINDOW;
+
+        //// Apply the new extended style
+        //User32.SetWindowLong(console, User32.WindowLongFlags.GWL_EXSTYLE, (IntPtr)exStyle);
+
+
+        //User32.SetForegroundWindow(console);
+
+        //console = User32.GetForegroundWindow();
+
+        //User32.ShowWindow(console, ShowWindowCommand.SW_HIDE);
+        //User32.ShowWindow(console, ShowWindowCommand.SW_HIDE);
+
+
+        //var visivel = User32.IsWindowVisible(console);
+
+
+
+        //if (visivel)
+        //{
+        //    User32.ShowWindow(console, ShowWindowCommand.SW_HIDE);
+
+        //}
+        //else
+        //{
+        //    User32.ShowWindow(console, ShowWindowCommand.SW_SHOW);
+        //}
+    }
+
+    //private static void ToggleWindow(PhotinoWindow mainWindow)
+    //{
+    //    IntPtr hwnd = mainWindow.WindowHandle;
+
+    //    if (IsWindowInTopmostLayer(hwnd))
+    //    {
+    //        // Minimize if in topmost layer or just below topmost
+    //        User32.ShowWindow(hwnd, ShowWindowCommand.SW_MINIMIZE);
+    //    }
+    //    else
+    //    {
+    //        // Bring to appropriate position
+    //        if (User32.IsIconic(hwnd))
+    //            User32.ShowWindow(hwnd, ShowWindowCommand.SW_RESTORE);
+
+    //        BringToOptimalPosition(hwnd);
+    //    }
+    //}
+
+    //private static bool IsWindowInTopmostLayer(IntPtr hwnd)
+    //{
+    //    // Check if window itself is topmost
+    //    var exStyle = (User32.WindowStylesEx)User32.GetWindowLong(hwnd,
+    //        User32.WindowLongFlags.GWL_EXSTYLE);
+    //    if (exStyle.HasFlag(User32.WindowStylesEx.WS_EX_TOPMOST))
+    //        return true;
+
+    //    // Check if directly below a topmost window
+    //    IntPtr hwndAbove = User32.GetWindow(hwnd, User32.GetWindowCmd.GW_HWNDPREV);
+    //    if (hwndAbove != IntPtr.Zero)
+    //    {
+    //        var aboveStyle = (User32.WindowStylesEx)User32.GetWindowLong(hwndAbove,
+    //            User32.WindowLongFlags.GWL_EXSTYLE);
+    //        if (aboveStyle.HasFlag(User32.WindowStylesEx.WS_EX_TOPMOST))
+    //            return true;
+    //    }
+
+    //    return false;
+    //}
+
+    //private static void BringToOptimalPosition(IntPtr hwnd)
+    //{
+    //    // Find highest external topmost window
+    //    IntPtr topmostHwnd = FindHighestExternalTopmost();
+
+    //    if (topmostHwnd != IntPtr.Zero)
+    //    {
+    //        // Place just below the topmost overlay
+    //        User32.SetWindowPos(
+    //            hwnd,
+    //            topmostHwnd,
+    //            0, 0, 0, 0,
+    //            User32.SetWindowPosFlags.SWP_NOSIZE |
+    //            User32.SetWindowPosFlags.SWP_NOMOVE |
+    //            User32.SetWindowPosFlags.SWP_NOACTIVATE |
+    //            User32.SetWindowPosFlags.SWP_SHOWWINDOW);
+    //    }
+    //    else
+    //    {
+    //        // Become topmost if no overlays exist
+    //        User32.SetWindowPos(
+    //            hwnd,
+    //            User32.HWND_TOPMOST,
+    //            0, 0, 0, 0,
+    //            User32.SetWindowPosFlags.SWP_NOSIZE |
+    //            User32.SetWindowPosFlags.SWP_NOMOVE |
+    //            User32.SetWindowPosFlags.SWP_SHOWWINDOW);
+    //    }
+
+    //    User32.SetForegroundWindow(hwnd);
+    //}
+
+    //private static IntPtr FindHighestExternalTopmost()
+    //{
+    //    var currentPID = Process.GetCurrentProcess().Id;
+    //    IntPtr highestHwnd = IntPtr.Zero;
+
+    //    User32.EnumWindows((hwnd, param) =>
+    //    {
+    //        if (!User32.IsWindowVisible(hwnd)) return true;
+
+    //        // Check for WS_EX_TOPMOST
+    //        var exStyle = (User32.WindowStylesEx)User32.GetWindowLong(hwnd,
+    //            User32.WindowLongFlags.GWL_EXSTYLE);
+    //        if (!exStyle.HasFlag(User32.WindowStylesEx.WS_EX_TOPMOST)) return true;
+
+    //        // Check if from another process
+    //        User32.GetWindowThreadProcessId(hwnd, out uint pid);
+    //        if (pid != currentPID && IsSystemOwnedWindow(hwnd))
+    //        {
+    //            highestHwnd = hwnd;  // Return last found (topmost in Z-order)
+    //            return true;
+    //        }
+    //        return true;
+    //    }, IntPtr.Zero);
+
+    //    return highestHwnd;
+    //}
+
+    //private static bool IsSystemOwnedWindow(IntPtr hwnd)
+    //{
+    //    // Filter out system-owned windows that shouldn't be considered
+    //    int classNameLen = 256;
+    //    System.Text.StringBuilder className = new System.Text.StringBuilder(classNameLen);
+    //    User32.GetClassName(hwnd, className, classNameLen);
+
+    //    return !className.ToString().StartsWith("Windows.UI.Core.");
+    //}
+
 }

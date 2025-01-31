@@ -25,10 +25,14 @@ namespace Common.Utils
             services.AddScoped<IRepositoryDatabase, SqliteRepositoryDatabase>();
 
             // Register VssConnection as a singleton
-            services.AddSingleton<IVssConnection>(provider =>
+            services.AddScoped<IVssConnection>(provider =>
             {
                 var configService = provider.GetRequiredService<IConfigurationService>();
                 var config = configService.GetConfig();
+
+                if (config.PAT == null)
+                    return null;
+
                 var connection = new VssConnection(
                     new Uri(config.OrganizationUrl),
                     new VssBasicCredential(string.Empty, config.PAT)
@@ -37,29 +41,29 @@ namespace Common.Utils
             });
 
             // Register BuildHttpClient
-            services.AddSingleton(provider =>
+            services.AddScoped(provider =>
             {
-                var connection = provider.GetRequiredService<IVssConnection>();
-                return connection.GetClient<BuildHttpClient>();
+                var connection = provider.GetService<IVssConnection>();
+                return connection?.GetClient<BuildHttpClient>();
             });
 
             // Register GitHttpClient
-            services.AddSingleton(provider =>
+            services.AddScoped(provider =>
             {
-                var connection = provider.GetRequiredService<IVssConnection>();
-                return connection.GetClient<GitHttpClient>();
+                var connection = provider.GetService<IVssConnection>();
+                return connection?.GetClient<GitHttpClient>();
             });
 
             // Register ProjectHttpClient
-            services.AddSingleton(provider =>
+            services.AddScoped(provider =>
             {
-                var connection = provider.GetRequiredService<IVssConnection>();
-                return connection.GetClient<ProjectHttpClient>();
+                var connection = provider.GetService<IVssConnection>();
+                return connection?.GetClient<ProjectHttpClient>();
             });
 
-            services.AddSingleton<IBuildHttpClient, BuildHttpClientFacade>();
-            services.AddSingleton<IProjectHttpClient, ProjectHttpClientFacade>();
-            services.AddSingleton<IGitHttpClient, GitHttpClientFacade>();
+            services.AddScoped<IBuildHttpClient, BuildHttpClientFacade>();
+            services.AddScoped<IProjectHttpClient, ProjectHttpClientFacade>();
+            services.AddScoped<IGitHttpClient, GitHttpClientFacade>();
 
             services.AddScoped<IAutoUpdateService, AutoUpdateService>();
 

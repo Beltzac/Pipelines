@@ -365,6 +365,9 @@
 
             await ConfigService.ImportConfigAsync(jsonConfig);
             config = ConfigService.GetConfig();
+
+            await AfterSaveAsync();
+
             ToastService.ShowSuccess("Configuração importada com sucesso");
         }
         catch (ArgumentException ex)
@@ -406,11 +409,34 @@
             }
 
             await ConfigService.SaveConfigAsync(config);
+
+            await AfterSaveAsync();
+
             ToastService.ShowSuccess("Configuração salva com sucesso!");
         }
         catch (Exception ex)
         {
             ToastService.ShowError($"Erro ao salvar configuração: {ex.Message}");
+        }
+    }
+
+    private async Task AfterSaveAsync()
+    {
+        if (!string.IsNullOrEmpty(config.PAT))
+        {
+            var scheduler = await SchedulerFactory.GetScheduler();
+
+            var triggerAgora = TriggerBuilder.Create()
+                .WithIdentity("BuildInfoJob-trigger-agora")
+                .StartNow()
+                .ForJob("BuildInfoJob")
+                .Build();
+
+            // Check if the trigger already exists
+            if (!await scheduler. CheckExists(triggerAgora.Key))
+            {
+                await scheduler.ScheduleJob(triggerAgora);
+            }
         }
     }
 
