@@ -166,7 +166,7 @@ internal class Program
                 job => job.WithIdentity("ConsulBackupJob-hourly")
             );
 
-            var databasePath = Path.Combine(config.LocalCloneFolder, "Builds.db");
+            var databasePath = DBUtils.MainDBPath;
             var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
 
             q.UsePersistentStore(s =>
