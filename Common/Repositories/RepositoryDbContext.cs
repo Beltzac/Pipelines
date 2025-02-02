@@ -14,17 +14,9 @@ namespace Common.Repositories
     //EntityFrameworkCore\Add-Migration AddProjectTypeToRepository
     public class RepositoryDbContext : DbContext
     {
-
-        private readonly TelemetryClient _telemetryClient;
-        private readonly IConfigurationService _configService;
-        private readonly ConfigModel _config;
-
-        public RepositoryDbContext(DbContextOptions<RepositoryDbContext> options, TelemetryClient telemetryClient, IConfigurationService configService)
+        public RepositoryDbContext(DbContextOptions<RepositoryDbContext> options)
             : base(options)
         {
-            _telemetryClient = telemetryClient;
-            _configService = configService;
-            _config = _configService.GetConfig();
         }
 
         public DbSet<Commit> Commits { get; set; }
@@ -40,9 +32,6 @@ namespace Common.Repositories
                 var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
                 optionsBuilder.UseSqlite(connectionString)
                     .EnableSensitiveDataLogging();
-
-                if (_telemetryClient != null)
-                    optionsBuilder.AddInterceptors(new ApplicationInsightsDbCommandInterceptor(_telemetryClient));
             }
         }
 
