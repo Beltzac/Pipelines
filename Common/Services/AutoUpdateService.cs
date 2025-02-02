@@ -1,8 +1,8 @@
 ﻿using Common.Services.Interfaces;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Net.Http.Headers;
-using System.Reflection;
 
 namespace Common.Services
 {
@@ -27,9 +27,15 @@ namespace Common.Services
         /// </summary>
         public static Version GetCurrentVersion()
         {
-            bool isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-            return isDevelopment ? Version.Parse("0.0.0.0") : Assembly.GetEntryAssembly().GetName().Version;
+#if DEBUG
+            // Return a default version when in debug mode.
+            return Version.Parse("0.0.0.0");
+#else
+    // Return the version from your Git tag (or similar) in release mode.
+    return Version.Parse(ThisAssembly.Git.BaseTag);
+#endif
         }
+
 
         /// <summary>
         /// Verifica atualizações e realiza a atualização se disponível.
@@ -90,46 +96,35 @@ namespace Common.Services
 
             return null;
         }
-
-        /// <summary>
-        /// Baixa o instalador e o executa.
-        /// </summary>
-        /// <param name="latestRelease">As informações da última versão do GitHub.</param>
         public async Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
-
-                // Adiciona o cabeçalho de Autorização com o token de acesso
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
-
-                // Adiciona o cabeçalho Accept para obter o conteúdo binário
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
 
-                // Encontra o asset do instalador
+                // Find the update asset containing the zip with new files.
                 foreach (Asset asset in latestRelease.assets)
                 {
-                    if (asset.name.EndsWith(".exe"))
+                    if (asset.name.StartsWith("TugboatCaptainsPlayground") && asset.name.EndsWith(".zip"))
                     {
-                        string installerUrl = asset.url; // Use asset.url
-                        string installerFileName = asset.name;
+                        string updateUrl = asset.url;
+                        string updateZipName = asset.name;
 
-                        // Obtém o caminho da pasta temporária
+                        // Use the system temporary folder.
                         string tempFolder = Path.GetTempPath();
-                        string installerFilePath = Path.Combine(tempFolder, installerFileName);
+                        string updateZipPath = Path.Combine(tempFolder, updateZipName);
 
-                        Console.WriteLine("Baixando instalador para a pasta temporária...");
+                        Console.WriteLine("Downloading update zip to temporary folder...");
 
-                        // Baixa o instalador
-                        using (var response = await client.GetAsync(installerUrl, HttpCompletionOption.ResponseHeadersRead))
+                        using (var response = await client.GetAsync(updateUrl, HttpCompletionOption.ResponseHeadersRead))
                         {
                             response.EnsureSuccessStatusCode();
                             var totalBytes = response.Content.Headers.ContentLength ?? 1;
                             var downloadedBytes = 0;
-
                             using (var contentStream = await response.Content.ReadAsStreamAsync())
-                            using (var fileStream = new FileStream(installerFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, false))
+                            using (var fileStream = new FileStream(updateZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, false))
                             {
                                 var buffer = new byte[8192];
                                 int bytesRead;
@@ -143,28 +138,57 @@ namespace Common.Services
                             }
                         }
 
-                        Console.WriteLine("Instalador baixado para " + installerFilePath);
+                        Console.WriteLine("Update zip downloaded to: " + updateZipPath);
 
-                        // Prepara o comando para executar
-                        string cmdCommand = $"/C timeout /T 5 /NOBREAK & start \"\" \"{installerFilePath}\"";
+                        // Extract the update zip into a dedicated update folder.
+                        string updateFolder = Path.Combine(tempFolder, Path.GetFileNameWithoutExtension(updateZipName));
+                        if (Directory.Exists(updateFolder))
+                        {
+                            Directory.Delete(updateFolder, true);
+                        }
+                        Directory.CreateDirectory(updateFolder);
 
-                        // Inicia o processo cmd
+                        Console.WriteLine("Extracting update zip to: " + updateFolder);
+                        ZipFile.ExtractToDirectory(updateZipPath, updateFolder);
+                        Console.WriteLine("Extraction complete.");
+
+                        // Determine the current application's folder.
+
+                        // Determine the current application's folder from the process main module.
+                        string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+                        string appFolder = Path.GetDirectoryName(currentExePath);
+
+                        // Create a temporary batch file that will wait for the current process to exit,
+                        // then copy the update files over the application folder, and finally restart the app.
+                        string updaterBatchPath = Path.Combine(tempFolder, "update.bat");
+                        string batchContent = $@"
+    @echo off
+    REM Wait for the current application to exit.
+    timeout /t 5 /nobreak > NUL
+    echo Copying update files...
+    xcopy /E /Y /I ""{updateFolder}\*"" ""{appFolder}""
+    echo Update complete. Restarting application...
+    start """" ""{Path.Combine(appFolder, "TugboatCaptainsPlayground.exe")}""
+    ";
+                        File.WriteAllText(updaterBatchPath, batchContent);
+
+                        Console.WriteLine("Launching updater batch file: " + updaterBatchPath);
                         Process.Start(new ProcessStartInfo
                         {
-                            FileName = "cmd.exe",
-                            Arguments = cmdCommand,
+                            FileName = updaterBatchPath,
+                            WindowStyle = ProcessWindowStyle.Hidden,
                             CreateNoWindow = true,
-                            WindowStyle = ProcessWindowStyle.Hidden
+                            UseShellExecute = false
                         });
 
-                        // Sai da aplicação Electron
-                        //ElectronNET.API.Electron.App.Exit();
-
+                        // Exit the current application so that the updater can replace locked files.
+                        Environment.Exit(0);
                         break;
                     }
                 }
             }
         }
+
 
         /// <summary>
         /// Analisa a string de versão do tag da release do GitHub.
