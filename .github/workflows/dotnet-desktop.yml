@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - '*'  # Trigger on all tag pushes
+      - '*'
   pull_request:
     branches:
       - master
@@ -31,35 +31,23 @@ jobs:
         shell: powershell
         run: |
           if ($env:GITHUB_REF -like 'refs/tags/*') {
-            # Extract the tag name by removing 'refs/tags/' prefix
             $VERSION = $env:GITHUB_REF.Substring(10)
           } else {
             try {
-              # Get the latest tag
               $latestTag = git describe --tags --abbrev=0
               if (-not $latestTag) {
                 throw "No tags found."
               }
               $latestTag = $latestTag.Trim()
-              # Remove any leading 'v' from the tag
               $baseVersion = $latestTag.TrimStart('v')
             } catch {
-              # No tags found, use a default base version
               $baseVersion = "0.1.0"
             }
-            # Use the short commit SHA (first 7 characters)
             $commitId = $env:GITHUB_SHA.Substring(0,7)
-            # Construct a pre-release version
             $VERSION = "$baseVersion-beta.$commitId"
           }
-
-          # Output the computed version for debugging
           Write-Host "Computed VERSION: $VERSION"
-
-          # Set environment variable
           Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$VERSION"
-
-          # Set output variable
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$VERSION"
 
       - name: Setup .NET Core
@@ -69,19 +57,25 @@ jobs:
           cache: true
           cache-dependency-path: '**/packages.lock.json'
 
-      - name: Install Wix nuget package
-        run: dotnet tool install --global wix
-
       - name: Restore dependencies
         run: dotnet restore TugboatCaptainsPlayground
 
       - name: Test
         run: dotnet test --verbosity minimal
 
-      - name: Build WiX Installer
+      - name: Publish using FolderProfile.pubxml
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          dotnet build Pipelines.Installer\Pipelines.Installer.wixproj -c Release
+          dotnet publish TugboatCaptainsPlayground/TugboatCaptainsPlayground.csproj -c Release -p:PublishProfile=FolderProfile.pubxml
+
+      - name: Create zip artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $appName = "TugboatCaptainsPlayground"
+          $version = $env:VERSION
+          $zipName = "$appName-v$version.zip"
+          Compress-Archive -Path $(ArtifactStagingDirectory)\* -DestinationPath $zipName
+          mv $zipName $(Build.ArtifactStagingDirectory)
 
       - name: Generate Release Notes
         id: generate_release_notes
@@ -103,7 +97,7 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.generate_release_notes.outputs.release_notes }}
-          artifacts: Pipelines.Installer/bin/Release/**/*.msi
+          artifacts: release/*.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           prerelease: false
