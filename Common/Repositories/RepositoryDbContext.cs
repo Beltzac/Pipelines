@@ -1,6 +1,7 @@
 using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite;
 using Common.Models;
+using Common.Utils;
 using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -35,7 +36,7 @@ namespace Common.Repositories
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var databasePath = Path.Combine(_config.LocalCloneFolder, "Builds.db");
+                var databasePath = DBUtils.MainDBPath;
                 var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
                 optionsBuilder.UseSqlite(connectionString)
                     .EnableSensitiveDataLogging();
