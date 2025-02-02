@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="8.0.0-alpha.1" />
+    <PackageReference Include="FluentAssertions" Version="8.0.1" />
     <PackageReference Include="FluentAssertions.Analyzers" Version="0.34.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -22,7 +22,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Moq.EntityFrameworkCore" Version="9.0.0.1" />
-    <PackageReference Include="TUnit" Version="0.6.159" />
+    <PackageReference Include="TUnit" Version="0.7.24" />
   </ItemGroup>
 
   <ItemGroup>
