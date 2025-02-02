@@ -1,25 +1,19 @@
-﻿using BlazorApplicationInsights;
-using Common.Jobs;
+﻿using Common.Jobs;
 using Common.Repositories;
-using Common.Services;
 using Common.Utils;
 using Generation;
 using GlobalHotKey;
 using H.NotifyIcon.Core;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Photino.NET;
 using Quartz;
 using Serilog;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
-using System.Reflection;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
-using Vanara.PInvoke;
 using Vanara.Windows.Shell;
 
 internal class Program

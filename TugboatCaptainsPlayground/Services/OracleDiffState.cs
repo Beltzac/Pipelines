@@ -1,5 +1,4 @@
 using Common.Models;
-using System.Collections.Generic;
 using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services

@@ -1,14 +1,13 @@
-﻿﻿using CSharpDiff.Diffs.Models;
+﻿using Common.Models;
+using Common.Services.Interfaces;
+using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
-using Common.Models;
+using Dapper;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
-using SQL.Formatter;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
-using Dapper;
-using Common.Services.Interfaces;
 
 namespace Common.Services
 {

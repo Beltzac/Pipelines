@@ -4,9 +4,7 @@ using FluentAssertions;
 using Flurl.Http.Testing;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Newtonsoft.Json.Linq;
 using System.Text;
-using TUnit;
 
 namespace Tests.Common.Services
 {

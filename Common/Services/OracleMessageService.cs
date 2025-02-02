@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using Common.Models;
 using Common.Services.Interfaces;
 using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
+using System.Collections.Concurrent;
+using System.Data;
 
 namespace Common.Services
 {
