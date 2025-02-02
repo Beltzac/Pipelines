@@ -4,7 +4,6 @@ using Common.Utils;
 using Generation;
 using GlobalHotKey;
 using H.NotifyIcon.Core;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Photino.NET;
 using Quartz;
@@ -70,7 +69,6 @@ internal class Program
         builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         {
             loggerConfiguration
-                .WriteTo.ApplicationInsights(services.GetRequiredService<TelemetryConfiguration>(), TelemetryConverter.Traces)
                 .WriteTo.Console();
         });
 

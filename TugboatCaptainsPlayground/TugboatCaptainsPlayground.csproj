@@ -83,7 +83,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
-    <PackageReference Include="BlazorApplicationInsights" Version="3.1.0" />
     <PackageReference Include="BlazorDateRangePicker" Version="5.3.0" />
     <PackageReference Include="Blazored.Toast" Version="4.2.1" />
     <PackageReference Include="Blazored.Typeahead" Version="4.7.0" />
@@ -93,8 +92,6 @@
     <PackageReference Include="Json.More.Net" Version="2.1.0" />
     <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="Markdig" Version="0.40.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -109,7 +106,6 @@
     <PackageReference Include="Quartz.Serialization.Json" Version="3.13.1" />
     <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="4.0.1-dev-00046" />
     <PackageReference Include="Serilog.Sinks.BrowserConsole" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="SmartComponents.LocalEmbeddings" Version="0.1.0-preview10148" />
