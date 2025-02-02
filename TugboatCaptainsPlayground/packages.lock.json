@@ -192,11 +192,11 @@
       },
       "Photino.NET": {
         "type": "Direct",
-        "requested": "[3.2.3, )",
-        "resolved": "3.2.3",
-        "contentHash": "RclLYqWaiL4C1COsZPXa+iw4mN5IQO2Re7qspWB0R9HXWzMD1tOPsdHm192A2OHD7bgWgGKRUm2iTxO1qrZMwQ==",
+        "requested": "[4.0.16, )",
+        "resolved": "4.0.16",
+        "contentHash": "2oTFsxt8XpLlVvtChlBD8HzLw6MgfHF+DQ4aLEDfgc4GbYjumEywB1JMfWDChm2Whfkr4ZF7DV2deRrpitiBcw==",
         "dependencies": {
-          "Photino.Native": "3.2.3"
+          "Photino.Native": "4.0.22"
         }
       },
       "Quartz": {
@@ -1476,8 +1476,8 @@
       },
       "Photino.Native": {
         "type": "Transitive",
-        "resolved": "3.2.3",
-        "contentHash": "TsaTqpXOYB/xutQJGyFb3R93rEXBHMh5YHlfZgd4TqG20jCH7w/Nk91MnzFHCyTWKHywpGfjvfOYvaEbpDXZGQ=="
+        "resolved": "4.0.22",
+        "contentHash": "VIHipEOe4CZ7HElZE8zTwcvANOsCZ2yak/4nQ4LXzjdlwIjdbY8htmHfNR6rRPgWlCfTfT349GCa6V6Id2/Xyg=="
       },
       "Polly": {
         "type": "Transitive",
@@ -3063,8 +3063,8 @@
       },
       "Photino.Native": {
         "type": "Transitive",
-        "resolved": "3.2.3",
-        "contentHash": "TsaTqpXOYB/xutQJGyFb3R93rEXBHMh5YHlfZgd4TqG20jCH7w/Nk91MnzFHCyTWKHywpGfjvfOYvaEbpDXZGQ=="
+        "resolved": "4.0.22",
+        "contentHash": "VIHipEOe4CZ7HElZE8zTwcvANOsCZ2yak/4nQ4LXzjdlwIjdbY8htmHfNR6rRPgWlCfTfT349GCa6V6Id2/Xyg=="
       },
       "runtime.any.System.Collections": {
         "type": "Transitive",
