@@ -36,7 +36,7 @@ namespace Generation
                     var model = generatorSyntaxContext.SemanticModel;
 
                     // Get semantic information about the class
-                    var symbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+                    var symbol = model.GetDeclaredSymbol(classDeclaration);
                     if (symbol == null) return default;
 
                     return (classDeclaration, symbol);

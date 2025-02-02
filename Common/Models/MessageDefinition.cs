@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Common.Models
 {
     public class MessageDefinition

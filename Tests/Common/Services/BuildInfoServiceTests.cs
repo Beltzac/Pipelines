@@ -3,7 +3,6 @@ using Common.Models;
 using Common.Repositories.Interfaces;
 using Common.Services;
 using FluentAssertions;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SmartComponents.LocalEmbeddings;

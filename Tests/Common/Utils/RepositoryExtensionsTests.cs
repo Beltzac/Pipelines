@@ -1,7 +1,5 @@
-using Common.Models;
 using Common.Utils;
 using FluentAssertions;
-using System;
 
 namespace Tests.Common.Utils
 {

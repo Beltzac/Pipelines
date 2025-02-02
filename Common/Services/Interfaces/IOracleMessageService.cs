@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Common.Models;
 
 namespace Common.Services.Interfaces

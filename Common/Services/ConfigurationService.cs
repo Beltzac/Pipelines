@@ -1,8 +1,4 @@
-using Common.Jobs;
 using Common.Models;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Quartz;
 using System.Text.Json;
 
 public class ConfigurationService : IConfigurationService

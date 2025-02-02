@@ -256,7 +256,7 @@ namespace Common.Services
                 else
                 _logger.LogInformation("Nenhum dado de commit disponível para exportação.");
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
                 _logger.LogInformation("A operação foi cancelada pelo usuário.");
                 throw;
