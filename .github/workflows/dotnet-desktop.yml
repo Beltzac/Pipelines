@@ -28,7 +28,7 @@ jobs:
 
       - name: Set VERSION variable
         id: set_version
-        shell: powershell
+        shell: pwsh
         run: |
           if ($env:GITHUB_REF -like 'refs/tags/*') {
             $VERSION = $env:GITHUB_REF.Substring(10)
@@ -63,10 +63,16 @@ jobs:
       - name: Test
         run: dotnet test --verbosity minimal
 
-      - name: Publish using FolderProfile.pubxml
+      - name: Publish to Release Folder
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          dotnet publish TugboatCaptainsPlayground/TugboatCaptainsPlayground.csproj -c Release -p:PublishProfile=FolderProfile.pubxml
+          # Define a dedicated folder for publish output
+          $publishFolder = "$env:GITHUB_WORKSPACE\release"
+          if (-Not (Test-Path -Path $publishFolder)) {
+            New-Item -ItemType Directory -Force -Path $publishFolder | Out-Null
+          }
+          # Publish the project output to the release folder
+          dotnet publish TugboatCaptainsPlayground/TugboatCaptainsPlayground.csproj -c Release -o $publishFolder
 
       - name: Create zip artifact
         if: startsWith(github.ref, 'refs/tags/')
@@ -74,8 +80,9 @@ jobs:
           $appName = "TugboatCaptainsPlayground"
           $version = $env:VERSION
           $zipName = "$appName-v$version.zip"
-          Compress-Archive -Path $(ArtifactStagingDirectory)\* -DestinationPath $zipName
-          mv $zipName $(Build.ArtifactStagingDirectory)
+          $publishFolder = "$env:GITHUB_WORKSPACE\release"
+          # Compress all contents of the release folder into a zip file in the workspace root
+          Compress-Archive -Path "$publishFolder\*" -DestinationPath "$env:GITHUB_WORKSPACE\$zipName"
 
       - name: Generate Release Notes
         id: generate_release_notes
@@ -97,7 +104,7 @@ jobs:
           tag: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           body: ${{ steps.generate_release_notes.outputs.release_notes }}
-          artifacts: release/*.zip
+          artifacts: ${{ github.workspace }}/*.zip
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           prerelease: false
