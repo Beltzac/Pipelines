@@ -21,8 +21,6 @@ internal class Program
     [STAThread]
     static void Main(string[] args)
     {
-        //ToggleConsole();
-
 #if DEBUG
         var port = 8001;
 #else
@@ -79,14 +77,14 @@ internal class Program
             options.ListenLocalhost(port);
         });
 
-        builder.Host.UseSerilog((context, services, configuration) =>
-        {
-            configuration
-                .MinimumLevel.Debug()
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
-        });
+        //builder.Host.UseSerilog((context, services, configuration) =>
+        //{
+        //    configuration
+        //        .MinimumLevel.Debug()
+        //        .Enrich.FromLogContext()
+        //        .WriteTo.Console()
+        //        .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
+        //});
 
         builder.Services.AddAntiforgery();
         builder.Services.AddRazorComponents()
