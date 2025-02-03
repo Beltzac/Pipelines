@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Photino.NET;
 using Quartz;
 using Serilog;
+using Serilog.Events;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
@@ -22,6 +23,12 @@ internal class Program
     {
         //ToggleConsole();
 
+#if DEBUG
+        var port = 8001;
+#else
+        var port = 8002;
+#endif
+
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         CancellationTokenSource source = new CancellationTokenSource();
@@ -31,7 +38,7 @@ internal class Program
         bool forceClose = false;
 
         var mainWindow = new PhotinoWindow()
-               .Load("http://localhost:8002/")
+               .Load($"http://localhost:{port}")
                .SetTitle(title)
                .SetMaximized(true)
                .RegisterWindowClosingHandler(WindowIsClosing)
@@ -53,7 +60,6 @@ internal class Program
             void HotKeyManagerPressed(object sender, KeyPressedEventArgs e)
             {
                 ToggleWindow(mainWindow);
-                //mainWindow.Load("http://localhost:8002/");
             }
         }
         catch (Exception ex)
@@ -66,7 +72,6 @@ internal class Program
 
         var builder = WebApplication.CreateBuilder();
 
-        var port = false ? 8001 : 8002;
 
         // Configure the WebHost to set the URLs
         builder.WebHost.ConfigureKestrel((context, options) =>
@@ -74,10 +79,13 @@ internal class Program
             options.ListenLocalhost(port);
         });
 
-        builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+        builder.Host.UseSerilog((context, services, configuration) =>
         {
-            loggerConfiguration
-                .WriteTo.Console();
+            configuration
+                .MinimumLevel.Debug()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
         });
 
         builder.Services.AddAntiforgery();
@@ -92,10 +100,6 @@ internal class Program
 
         builder.Services.AddQuartz(q =>
         {
-            var provider = builder.Services.BuildServiceProvider();
-            var configService = provider.GetRequiredService<IConfigurationService>();
-            var config = configService.GetConfig();
-
             q.ScheduleJob<CreateRepositoriesJobsJob>(trigger => trigger
                 .WithIdentity("BuildInfoJob-trigger")
                 .WithCronSchedule("0 0 0/4 * * ?"), // Every 4 hours
@@ -300,17 +304,13 @@ internal class Program
 
         var task = app.RunAsync(token);
 
-        //var mainWindowTask = Task.Run(() => mainWindow.WaitForClose(), token);
-
         mainWindow.WaitForClose();
 
         source.Cancel();
 
-        //await task;
-        task.GetAwaiter().GetResult();
+        app.WaitForShutdown();
 
         hotKeyManager.Dispose();
-
 
         static void ShowMessage(TrayIcon trayIcon, string message)
         {
