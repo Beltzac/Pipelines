@@ -44,15 +44,23 @@ internal class Program
 
         var hotKeyManager = new HotKeyManager();
 
-        var hotKey = hotKeyManager.Register(Key.A, ModifierKeys.Control | ModifierKeys.Shift);
-
-        hotKeyManager.KeyPressed += HotKeyManagerPressed;
-
-        void HotKeyManagerPressed(object sender, KeyPressedEventArgs e)
+        try
         {
-            ToggleWindow(mainWindow);
-            //mainWindow.Load("http://localhost:8002/");
+            var hotKey = hotKeyManager.Register(Key.A, ModifierKeys.Control | ModifierKeys.Shift);
+
+            hotKeyManager.KeyPressed += HotKeyManagerPressed;
+
+            void HotKeyManagerPressed(object sender, KeyPressedEventArgs e)
+            {
+                ToggleWindow(mainWindow);
+                //mainWindow.Load("http://localhost:8002/");
+            }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error registering hotkey: {ex.Message}");
+        }
+
 
         //return;
 
