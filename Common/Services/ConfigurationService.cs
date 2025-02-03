@@ -25,26 +25,23 @@ public class ConfigurationService : IConfigurationService
             Directory.CreateDirectory(appFolder);
         }
 
-        LoadConfigAsync().GetAwaiter().GetResult();
+        LoadConfig();
     }
 
-    private async Task LoadConfigAsync()
+    private void LoadConfig()
     {
         if (File.Exists(_configPath))
         {
-            string jsonConfig = await File.ReadAllTextAsync(_configPath);
+            string jsonConfig = File.ReadAllText(_configPath);
             _config = JsonSerializer.Deserialize<ConfigModel>(jsonConfig);
+            return;
         }
-        else
+ 
+        _config = new ConfigModel
         {
-            _config = new ConfigModel
-            {
-                OrganizationUrl = "https://dev.azure.com/terminal-cp",
-                LocalCloneFolder = @"C:\repos",
-                IgnoreRepositoriesRegex = new List<string>()
-            };
-            await SaveConfigAsync();
-        }
+            OrganizationUrl = "https://dev.azure.com/terminal-cp",
+            LocalCloneFolder = @"C:\repos",
+        };
     }
 
     private async Task SaveConfigAsync()

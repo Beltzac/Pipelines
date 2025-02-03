@@ -4,6 +4,7 @@
 @using System.Reactive.Subjects
 @using System.Text.RegularExpressions
 @using Common
+@using Common.AOP
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
@@ -13,7 +14,6 @@
 @using Microsoft.AspNetCore.WebUtilities
 @inject IRepositoryService BuildInfoService
 @inject IToastService toastService
-@rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigService
