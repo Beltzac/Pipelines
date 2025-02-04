@@ -460,6 +460,9 @@ namespace Common.Services
 
         public async Task OpenInVsCode(ConsulEnvironment env)
         {
+            if (!Path.Exists(env.ConsulFolder))
+                await DownloadConsulAsync(env);
+
             OpenFolderUtils.OpenWithVSCode(_logger, _configService, env.ConsulFolder);
         }
 
