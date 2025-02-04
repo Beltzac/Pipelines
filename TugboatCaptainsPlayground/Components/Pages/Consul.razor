@@ -339,7 +339,22 @@
             return;
         }
 
-        await ConsulService.OpenInVsCode(consulEnv);
+        try
+        {
+            ConsulStateService.IsLoading = true;
+            ConsulStateService.ProgressValue = null;
+
+            await ConsulService.OpenInVsCode(consulEnv);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Falha ao abrir pasta / salvar conteúdo do Consul: {ex.Message}");
+        }
+        finally
+        {
+            ConsulStateService.IsLoading = false;
+        }
+
     }
 
     public void Dispose()
