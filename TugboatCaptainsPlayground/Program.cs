@@ -96,6 +96,12 @@ internal class Program
 
         builder.Services.AddCustomServices();
 
+        builder.Services.AddHttpClient("Github").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        });
+
         builder.Services.AddQuartz(q =>
         {
             q.ScheduleJob<CreateRepositoriesJobsJob>(trigger => trigger

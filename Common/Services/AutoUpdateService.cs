@@ -2,6 +2,8 @@
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace Common.Services
@@ -12,14 +14,16 @@ namespace Common.Services
         private readonly string _repositoryName;
         private readonly string _userAgent;
         private readonly string _accessToken;
+        private readonly IHttpClientFactory _clientFactory;
 
-        public AutoUpdateService(IConfigurationService configService)
+        public AutoUpdateService(IConfigurationService configService, IHttpClientFactory clientFactory)
         {
             var config = configService.GetConfig();
             _repositoryOwner = config.RepositoryOwner;
             _repositoryName = config.RepositoryName;
             _userAgent = config.UserAgent;
             _accessToken = config.AccessToken;
+            _clientFactory = clientFactory;
         }
 
         /// <summary>
@@ -53,115 +57,113 @@ namespace Common.Services
             // URL da API do GitHub para a última versão
             string latestReleaseUrl = $"https://api.github.com/repos/{_repositoryOwner}/{_repositoryName}/releases/latest";
 
-            using (HttpClient client = new HttpClient())
+            using var client = _clientFactory.CreateClient("Github");
+
+            // A API do GitHub requer um cabeçalho User-Agent
+            client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
+
+            // Adiciona o cabeçalho de Autorização com o token de acesso
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
+
+            try
             {
-                // A API do GitHub requer um cabeçalho User-Agent
-                client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
+                // Busca as informações da última versão
+                HttpResponseMessage response = await client.GetAsync(latestReleaseUrl);
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
 
-                // Adiciona o cabeçalho de Autorização com o token de acesso
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
+                // Desserializa a resposta JSON
+                Release latestRelease = JsonConvert.DeserializeObject<Release>(responseBody);
 
-                try
+                string latestVersionString = latestRelease.tag_name; // e.g., "0.0.14"
+                Version latestVersion = ParseVersion(latestVersionString);
+
+                Console.WriteLine("Última versão: " + latestVersion);
+
+                // Compara as versões
+                if (latestVersion > currentVersion)
                 {
-                    // Busca as informações da última versão
-                    HttpResponseMessage response = await client.GetAsync(latestReleaseUrl);
-                    response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
-
-                    // Desserializa a resposta JSON
-                    Release latestRelease = JsonConvert.DeserializeObject<Release>(responseBody);
-
-                    string latestVersionString = latestRelease.tag_name; // e.g., "0.0.14"
-                    Version latestVersion = ParseVersion(latestVersionString);
-
-                    Console.WriteLine("Última versão: " + latestVersion);
-
-                    // Compara as versões
-                    if (latestVersion > currentVersion)
-                    {
-                        Console.WriteLine("Uma atualização está disponível.");
-                        return latestRelease;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Você está usando a última versão.");
-                        return null;
-                    }
+                    Console.WriteLine("Uma atualização está disponível.");
+                    return latestRelease;
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine("Erro ao verificar atualizações: " + ex.Message);
+                    Console.WriteLine("Você está usando a última versão.");
+                    return null;
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao verificar atualizações: " + ex.Message);
             }
 
             return null;
         }
         public async Task DownloadAndInstallAsync(Release latestRelease, Action<int> progressCallback)
         {
-            using (HttpClient client = new HttpClient())
+            using var client = _clientFactory.CreateClient("Github");
+            client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+
+            // Find the update asset containing the zip with new files.
+            foreach (Asset asset in latestRelease.assets)
             {
-                client.DefaultRequestHeaders.Add("User-Agent", _userAgent);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", _accessToken);
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
-
-                // Find the update asset containing the zip with new files.
-                foreach (Asset asset in latestRelease.assets)
+                if (asset.name.StartsWith("TugboatCaptainsPlayground") && asset.name.EndsWith(".zip"))
                 {
-                    if (asset.name.StartsWith("TugboatCaptainsPlayground") && asset.name.EndsWith(".zip"))
+                    string updateUrl = asset.url;
+                    string updateZipName = asset.name;
+
+                    // Use the system temporary folder.
+                    string tempFolder = Path.GetTempPath();
+                    string updateZipPath = Path.Combine(tempFolder, updateZipName);
+
+                    Console.WriteLine("Downloading update zip to temporary folder...");
+
+                    using (var response = await client.GetAsync(updateUrl, HttpCompletionOption.ResponseHeadersRead))
                     {
-                        string updateUrl = asset.url;
-                        string updateZipName = asset.name;
-
-                        // Use the system temporary folder.
-                        string tempFolder = Path.GetTempPath();
-                        string updateZipPath = Path.Combine(tempFolder, updateZipName);
-
-                        Console.WriteLine("Downloading update zip to temporary folder...");
-
-                        using (var response = await client.GetAsync(updateUrl, HttpCompletionOption.ResponseHeadersRead))
+                        response.EnsureSuccessStatusCode();
+                        var totalBytes = response.Content.Headers.ContentLength ?? 1;
+                        var downloadedBytes = 0;
+                        using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        using (var fileStream = new FileStream(updateZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, false))
                         {
-                            response.EnsureSuccessStatusCode();
-                            var totalBytes = response.Content.Headers.ContentLength ?? 1;
-                            var downloadedBytes = 0;
-                            using (var contentStream = await response.Content.ReadAsStreamAsync())
-                            using (var fileStream = new FileStream(updateZipPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, false))
+                            var buffer = new byte[8192];
+                            int bytesRead;
+                            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                             {
-                                var buffer = new byte[8192];
-                                int bytesRead;
-                                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                                {
-                                    await fileStream.WriteAsync(buffer, 0, bytesRead);
-                                    downloadedBytes += bytesRead;
-                                    int progress = (int)((double)downloadedBytes / totalBytes * 100);
-                                    progressCallback(progress);
-                                }
+                                await fileStream.WriteAsync(buffer, 0, bytesRead);
+                                downloadedBytes += bytesRead;
+                                int progress = (int)((double)downloadedBytes / totalBytes * 100);
+                                progressCallback(progress);
                             }
                         }
+                    }
 
-                        Console.WriteLine("Update zip downloaded to: " + updateZipPath);
+                    Console.WriteLine("Update zip downloaded to: " + updateZipPath);
 
-                        // Extract the update zip into a dedicated update folder.
-                        string updateFolder = Path.Combine(tempFolder, Path.GetFileNameWithoutExtension(updateZipName));
-                        if (Directory.Exists(updateFolder))
-                        {
-                            Directory.Delete(updateFolder, true);
-                        }
-                        Directory.CreateDirectory(updateFolder);
+                    // Extract the update zip into a dedicated update folder.
+                    string updateFolder = Path.Combine(tempFolder, Path.GetFileNameWithoutExtension(updateZipName));
+                    if (Directory.Exists(updateFolder))
+                    {
+                        Directory.Delete(updateFolder, true);
+                    }
+                    Directory.CreateDirectory(updateFolder);
 
-                        Console.WriteLine("Extracting update zip to: " + updateFolder);
-                        ZipFile.ExtractToDirectory(updateZipPath, updateFolder);
-                        Console.WriteLine("Extraction complete.");
+                    Console.WriteLine("Extracting update zip to: " + updateFolder);
+                    ZipFile.ExtractToDirectory(updateZipPath, updateFolder);
+                    Console.WriteLine("Extraction complete.");
 
-                        // Determine the current application's folder.
+                    // Determine the current application's folder.
 
-                        // Determine the current application's folder from the process main module.
-                        string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
-                        string appFolder = Path.GetDirectoryName(currentExePath);
+                    // Determine the current application's folder from the process main module.
+                    string currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+                    string appFolder = Path.GetDirectoryName(currentExePath);
 
-                        // Create a temporary batch file that will wait for the current process to exit,
-                        // then copy the update files over the application folder, and finally restart the app.
-                        string updaterBatchPath = Path.Combine(tempFolder, "update.bat");
-                        string batchContent = $@"
+                    // Create a temporary batch file that will wait for the current process to exit,
+                    // then copy the update files over the application folder, and finally restart the app.
+                    string updaterBatchPath = Path.Combine(tempFolder, "update.bat");
+                    string batchContent = $@"
     @echo off
     REM Wait for the current application to exit.
     timeout /t 5 /nobreak > NUL
@@ -170,21 +172,20 @@ namespace Common.Services
     echo Update complete. Restarting application...
     start """" ""{Path.Combine(appFolder, "TugboatCaptainsPlayground.exe")}""
     ";
-                        File.WriteAllText(updaterBatchPath, batchContent);
+                    File.WriteAllText(updaterBatchPath, batchContent);
 
-                        Console.WriteLine("Launching updater batch file: " + updaterBatchPath);
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = updaterBatchPath,
-                            WindowStyle = ProcessWindowStyle.Hidden,
-                            CreateNoWindow = true,
-                            UseShellExecute = false
-                        });
+                    Console.WriteLine("Launching updater batch file: " + updaterBatchPath);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = updaterBatchPath,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
 
-                        // Exit the current application so that the updater can replace locked files.
-                        Environment.Exit(0);
-                        break;
-                    }
+                    // Exit the current application so that the updater can replace locked files.
+                    Environment.Exit(0);
+                    break;
                 }
             }
         }
