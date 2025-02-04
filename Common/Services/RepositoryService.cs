@@ -80,6 +80,12 @@ namespace Common.Services
         {
             var existingRepo = await _repositoryDatabase.FindByIdAsync(repoId);
 
+            if (existingRepo == null)
+            {
+                _logger.LogInformation($"Repositório {existingRepo} não encontrado.");
+                return null;
+            }
+
             var buildDefinitions = await _buildClient.GetDefinitionsAsync(existingRepo.Project, repositoryId: existingRepo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
             var buildDefinition = buildDefinitions.FirstOrDefault();
 
