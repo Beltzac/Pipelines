@@ -1,73 +1,3 @@
-html[data-theme='light'] {
-    /* Light theme */
-    --background-color: #ffffff;
-    --background-secondary: #f8f9fa;
-    --text-color: #2d3748;
-    --text-muted: #718096;
-    --primary-color: #3182ce;
-    --primary-hover: #2b6cb0;
-    --secondary-color: #718096;
-    --border-color: #e2e8f0;
-    --border-hover: #cbd5e0;
-    --hover-color: #edf2f7;
-    --success-color: #38a169;
-    --success-hover: #2f855a;
-    --warning-color: #d69e2e;
-    --warning-hover: #b7791f;
-    --error-color: #e53e3e;
-    --error-hover: #c53030;
-    --info-color: #4299e1;
-    --info-hover: #3182ce;
-    --link-color: #4299e1;
-    --link-hover: #2b6cb0;
-    --code-background: #f7fafc;
-    --shadow-color: rgba(0, 0, 0, 0.1);
-    --focus-ring: #63b3ed;
-}
-
-html[data-theme='dark'] {
-    /* Dark theme */
-    --background-color: #1e1e2e;
-    --background-secondary: #282839;
-    --text-color: #e2e2e7;
-    --text-muted: #9999a3;
-    --primary-color: #7aa2f7;
-    --primary-hover: #5980d4;
-    --secondary-color: #9399b2;
-    --border-color: #3d3d4f;
-    --border-hover: #565674;
-    --hover-color: #2a2a3c;
-    --success-color: #9ece6a;
-    --success-hover: #7fb352;
-    --warning-color: #e0af68;
-    --warning-hover: #c99a54;
-    --error-color: #f7768e;
-    --error-hover: #e35c75;
-    --info-color: #7dcfff;
-    --info-hover: #5fb5e6;
-    --link-color: #73daca;
-    --link-hover: #57c4b0;
-    --code-background: #24243b;
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --focus-ring: #bb9af7;
-}
-
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-}
-
-a, .btn-link {
-    color: var(--primary-color);
-}
-
-.btn-primary {
-    color: var(--background-color);
-    background-color: var(--primary-color);
-    border-color: var(--border-color);
-}
-
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -95,16 +25,11 @@ h1:focus {
 .blazor-error-boundary {
     background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, var(--secondary-color);
     padding: 1rem 1rem 1rem 3.7rem;
-    color: var(--background-color);
 }
 
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
-
-.darker-border-checkbox.form-check-input {
-    border-color: var(--border-color);
-}
 
 
 .log-error {
@@ -159,13 +84,13 @@ h1:focus {
 
 @keyframes changeColor {
     0%, 100% {
-        border-top-color: var(--primary-color);
+        border-top-color: #3182ce;
     }
     33% {
-        border-top-color: var(--success-color);
+        border-top-color: #38a169;
     }
     66% {
-        border-top-color: var(--error-color);
+        border-top-color: #e53e3e;
     }
 }
 
@@ -199,7 +124,7 @@ span.deleted {
 }
 
 span.unchanged {
-    color: var(--text-color);
+    color: #2d3748;
 }
 
 .badge-small {

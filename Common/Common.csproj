@@ -44,6 +44,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.1" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.246.0-preview" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.7.0" />
