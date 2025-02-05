@@ -1,6 +1,7 @@
 <div class="d-flex justify-content-end">
     <button class="btn btn-sm btn-outline-primary ms-2"
             @onclick="CopyToClipboard"
+            @onclick:stopPropagation
             title="@Title">
         <i class="bi bi-clipboard"></i> @Text
     </button>

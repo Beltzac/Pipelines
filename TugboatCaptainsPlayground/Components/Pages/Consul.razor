@@ -66,6 +66,7 @@
             <div class="key-header" @onclick="() => ToggleKeyVisibility(kvp.Key)" style="cursor: pointer;">
                 <span>@(kvp.Value.IsValidJson ? "✔️" : "❌")</span>
                 <span class="key-name">@kvp.Key</span>
+                <CopyButton FetchText="@(() => kvp.Key)"/>
                 <button class="btn btn-primary open-consul" @onclick="async (e) => await OpenConsulUrl(kvp.Value.Url)" @onclick:stopPropagation>
                     Abrir no Consul
                 </button>
