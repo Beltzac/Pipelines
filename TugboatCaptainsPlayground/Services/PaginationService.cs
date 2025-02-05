@@ -7,7 +7,7 @@ namespace TugboatCaptainsPlayground.Services
     {
         private Func<Task<Dictionary<TKey, TValue>>> _getSourceItemsAsync;
         private Func<Task<Dictionary<TKey, TValue>>> _getTargetItemsAsync;
-        private Func<TKey, TValue, TValue, Task<TDiffResult>> _getDiffAsync;
+        private Func<TKey, TValue, TValue, TDiffResult> _getDiffAsync;
         private Func<TKey, TValue, TValue, TDiffResult, bool> _filter;
 
         private IComparesItems<TKey, TValue, TDiffResult> _state;
@@ -17,7 +17,7 @@ namespace TugboatCaptainsPlayground.Services
         public PaginationService(IComparesItems<TKey, TValue, TDiffResult> state,
             Func<Task<Dictionary<TKey, TValue>>> getSourceItemsAsync,
             Func<Task<Dictionary<TKey, TValue>>> getTargetItemsAsync,
-            Func<TKey, TValue, TValue, Task<TDiffResult>> getDiffAsync,
+            Func<TKey, TValue, TValue, TDiffResult> getDiffAsync,
             Func<TKey, TValue, TValue, TDiffResult, bool> filter)
         {
             _state = state;
@@ -57,7 +57,7 @@ namespace TugboatCaptainsPlayground.Services
                 if (!_state.DiffCache.TryGetValue(key, out var diffResult))
                 {
                     // Se não estava no cache, calcula e guarda
-                    diffResult = await _getDiffAsync(key, sourceItem, targetItem);
+                    diffResult = _getDiffAsync(key, sourceItem, targetItem);
                     _state.DiffCache[key] = diffResult;
                 }
 

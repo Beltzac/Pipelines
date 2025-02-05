@@ -190,7 +190,7 @@
             ConsulDiffStateService,
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv)),
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv)),
-            async (key, source, target) => await ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive),
+            (key, source, target) => ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive),
             (key, source, target, diff) => (string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) || (!string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) && key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences)
         );
     }
@@ -210,7 +210,7 @@
             {
                 if (ConsulDiffStateService.SourceValues.TryGetValue(key, out var consulValue))
                 {
-                    await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
+                    OpenFolderUtils.OpenUrl(consulValue.Url);
                 }
                 else
                 {
@@ -224,7 +224,7 @@
             {
                 if (ConsulDiffStateService.TargetValues.TryGetValue(key, out var consulValue))
                 {
-                    await OpenFolderUtils.OpenUrlAsync(consulValue.Url);
+                    OpenFolderUtils.OpenUrl(consulValue.Url);
                 }
                 else
                 {

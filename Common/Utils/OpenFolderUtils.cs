@@ -7,7 +7,7 @@ namespace Common.Utils
     public static class OpenFolderUtils
     {
 
-        public static async Task OpenUrlAsync(string url)
+        public static void OpenUrl(string url)
         {
             Process.Start(new ProcessStartInfo
             {

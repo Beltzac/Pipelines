@@ -154,9 +154,9 @@ namespace Common.Services
                         {
                             var buffer = new byte[8192];
                             int bytesRead;
-                            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                            while ((bytesRead = await contentStream.ReadAsync(buffer)) > 0)
                             {
-                                await fileStream.WriteAsync(buffer, 0, bytesRead);
+                                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                                 downloadedBytes += bytesRead;
                                 int progress = (int)((double)downloadedBytes / totalBytes * 100);
                                 progressCallback(progress);

@@ -43,59 +43,57 @@ namespace Common.Jobs
                 LibGit2Sharp.Repository.Init(backupPath);
             }
 
-            using (var repo = new LibGit2Sharp.Repository(backupPath))
+            using var repo = new LibGit2Sharp.Repository(backupPath);
+            foreach (var env in config.OracleEnvironments)
             {
-                foreach (var env in config.OracleEnvironments)
+                var envPath = Path.Combine(backupPath, env.Name);
+                Directory.CreateDirectory(envPath);
+
+                try
                 {
-                    var envPath = Path.Combine(backupPath, env.Name);
-                    Directory.CreateDirectory(envPath);
+                    var views = await _oracleSchemaService.GetViewDefinitionsAsync(env.ConnectionString, env.Schema);
 
-                    try
+                    // Track existing files to detect deletions
+                    var existingFiles = new HashSet<string>();
+                    foreach (var view in views)
                     {
-                        var views = await _oracleSchemaService.GetViewDefinitionsAsync(env.ConnectionString, env.Schema);
+                        var filePath = Path.Combine(envPath, $"{view.Name}.sql");
+                        existingFiles.Add(filePath);
+                        await File.WriteAllTextAsync(filePath, view.Definition);
+                    }
 
-                        // Track existing files to detect deletions
-                        var existingFiles = new HashSet<string>();
-                        foreach (var view in views)
+                    // Remove files that no longer exist in Oracle
+                    if (Directory.Exists(envPath))
+                    {
+                        foreach (var file in Directory.GetFiles(envPath, "*.sql", SearchOption.TopDirectoryOnly))
                         {
-                            var filePath = Path.Combine(envPath, $"{view.Name}.sql");
-                            existingFiles.Add(filePath);
-                            await File.WriteAllTextAsync(filePath, view.Definition);
-                        }
-
-                        // Remove files that no longer exist in Oracle
-                        if (Directory.Exists(envPath))
-                        {
-                            foreach (var file in Directory.GetFiles(envPath, "*.sql", SearchOption.TopDirectoryOnly))
+                            if (!existingFiles.Contains(file))
                             {
-                                if (!existingFiles.Contains(file))
-                                {
-                                    File.Delete(file);
-                                    _logger.LogInformation($"Deleted file that no longer exists in Oracle: {file}");
-                                }
+                                File.Delete(file);
+                                _logger.LogInformation($"Deleted file that no longer exists in Oracle: {file}");
                             }
                         }
-
-                        // Stage all changes including deletions
-                        Commands.Stage(repo, "*");
-
-                        var status = repo.RetrieveStatus();
-                        // Create commit if there are changes
-                        if (status.IsDirty)
-                        {
-                            var signature = new LibGit2Sharp.Signature("OracleBackup", "backup@local", DateTimeOffset.Now);
-                            repo.Commit($"Backup views from {env.Name} at {DateTime.Now}", signature, signature);
-                            _logger.LogInformation($"Created backup commit for environment {env.Name}");
-                        }
-                        else
-                        {
-                            _logger.LogInformation($"No changes detected for environment {env.Name}");
-                        }
                     }
-                    catch (Exception ex)
+
+                    // Stage all changes including deletions
+                    Commands.Stage(repo, "*");
+
+                    var status = repo.RetrieveStatus();
+                    // Create commit if there are changes
+                    if (status.IsDirty)
                     {
-                        _logger.LogError(ex, $"Error backing up views for environment {env.Name}");
+                        var signature = new LibGit2Sharp.Signature("OracleBackup", "backup@local", DateTimeOffset.Now);
+                        repo.Commit($"Backup views from {env.Name} at {DateTime.Now}", signature, signature);
+                        _logger.LogInformation($"Created backup commit for environment {env.Name}");
                     }
+                    else
+                    {
+                        _logger.LogInformation($"No changes detected for environment {env.Name}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error backing up views for environment {env.Name}");
                 }
             }
         }

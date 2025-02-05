@@ -43,9 +43,20 @@
 
 	  <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 
-	  <OutputType>WinExe</OutputType>
+	  <NoWarn>SPELL,NU1902,NU1903,TA100</NoWarn>
+
+	  
 	  <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
   </PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+		<OutputType>WinExe</OutputType>
+	</PropertyGroup>
+		
   <!--<ItemGroup>
     <Compile Remove="wwwroot\**" />
     <Content Remove="wwwroot\**" />

@@ -190,11 +190,11 @@
                 return (await OracleSchemaService.GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema))
                     .ToDictionary(v => v.Name);
             },
-            async (viewName, source, target) =>
+            (viewName, source, target) =>
             {
                 var sourceDefinition = source?.Definition ?? string.Empty;
                 var targetDefinition = target?.Definition ?? string.Empty;
-                return await OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
+                return OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
             },
             (viewName, source, target, diff) =>
                 (string.IsNullOrEmpty(OracleDiffStateService.SearchKey) ||

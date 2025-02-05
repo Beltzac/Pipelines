@@ -69,7 +69,7 @@ namespace Common.Services
             return messages;
         }
 
-        public async Task<MessageDiffResult> GetMessageDiff(string key, MessageDefinition source, MessageDefinition target)
+        public MessageDiffResult GetMessageDiff(string key, MessageDefinition source, MessageDefinition target)
         {
             var diff = new MessageDiffResult
             {

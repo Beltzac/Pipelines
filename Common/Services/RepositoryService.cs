@@ -59,7 +59,7 @@ namespace Common.Services
             _configService = configService;
         }
 
-        public async Task NavigateToPRCreationAsync(Repository repo)
+        public void NavigateToPRCreation(Repository repo)
         {
             if (repo == null)
             {
@@ -73,7 +73,7 @@ namespace Common.Services
                 .AppendPathSegment(repo.Name)
                 .AppendPathSegment("pullrequests")
                 .SetQueryParams(new { _a = "mine" });
-            await OpenFolderUtils.OpenUrlAsync(url);
+            OpenFolderUtils.OpenUrl(url);
         }
 
         public async Task<Repository> FetchRepoBuildInfoAsync(Guid repoId, bool force = false)
@@ -430,7 +430,7 @@ namespace Common.Services
             }
         }
 
-        public async Task OpenCloneFolderInVsCode()
+        public void OpenCloneFolderInVsCode()
         {
             OpenFolderUtils.OpenWithVSCode(_logger, _configService, _localCloneFolder, true);
         }

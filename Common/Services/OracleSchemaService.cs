@@ -34,8 +34,8 @@ namespace Common.Services
             var targetEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvName)
                 ?? throw new ArgumentException($"Target environment '{targetEnvName}' not found");
 
-            var sourceViews = GetViewDefinitions(sourceEnv.ConnectionString, sourceEnv.Schema);
-            var targetViews = GetViewDefinitions(targetEnv.ConnectionString, targetEnv.Schema);
+            var sourceViews = await GetViewDefinitionsAsync(sourceEnv.ConnectionString, sourceEnv.Schema);
+            var targetViews = await GetViewDefinitionsAsync(targetEnv.ConnectionString, targetEnv.Schema);
 
             return await CompareViewDefinitions(sourceViews, targetViews);
         }
@@ -75,38 +75,34 @@ namespace Common.Services
             return new OracleViewDefinition(viewName, text ?? string.Empty);
         }
 
-        public Dictionary<string, string> GetViewDefinitions(string connectionString, string schema)
+        public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)
         {
             using var connection = new OracleConnection(connectionString);
             var sql = "SELECT VIEW_NAME, TEXT FROM ALL_VIEWS WHERE OWNER = :schema";
 
-            var results = connection.Query<(string ViewName, string Text)>(
+            var results = await connection.QueryAsync<(string ViewName, string Text)>(
                 sql,
                 new { schema },
                 commandTimeout: 120
             );
 
-            return results.ToDictionary(
-                x => x.ViewName,
-                x => x.Text
-            );
+            return results.Select(x => new OracleViewDefinition(x.ViewName, x.Text ?? string.Empty));
         }
 
-        public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)
-        {
-            var definitions = GetViewDefinitions(connectionString, schema);
-            return definitions.Select(kvp => new OracleViewDefinition(kvp.Key, kvp.Value));
-        }
-
-        public async Task<IEnumerable<OracleDiffResult>> CompareViewDefinitions(Dictionary<string, string> devViews, Dictionary<string, string> qaViews)
+        public async Task<IEnumerable<OracleDiffResult>> CompareViewDefinitions(IEnumerable<OracleViewDefinition> devViews, IEnumerable<OracleViewDefinition> qaViews)
         {
             var differences = new List<OracleDiffResult>();
 
-            foreach (var viewName in devViews.Keys)
+            // Create dictionaries for faster lookups
+            var devViewDict = devViews.ToDictionary(v => v.Name, v => v.Definition);
+            var qaViewDict = qaViews.ToDictionary(v => v.Name, v => v.Definition);
+
+            foreach (var devView in devViews)
             {
-                if (qaViews.ContainsKey(viewName))
+                var viewName = devView.Name;
+                if (qaViewDict.ContainsKey(viewName))
                 {
-                    var diff = await GetViewDiff(viewName, devViews[viewName], qaViews[viewName]);
+                    var diff = GetViewDiff(viewName, devView.Definition, qaViewDict[viewName]);
                     if (diff.HasDifferences)
                     {
                         _logger.LogInformation($"Diferença na view: {viewName}");
@@ -115,17 +111,18 @@ namespace Common.Services
                 }
                 else
                 {
-                    var diff = await GetViewDiff(viewName, devViews[viewName], string.Empty);
+                    var diff = GetViewDiff(viewName, devView.Definition, string.Empty);
                     differences.Add(diff);
                     _logger.LogInformation($"A view {viewName} está presente no DEV, mas não no QA");
                 }
             }
 
-            foreach (var viewName in qaViews.Keys)
+            foreach (var qaView in qaViews)
             {
-                if (!devViews.ContainsKey(viewName))
+                var viewName = qaView.Name;
+                if (!devViewDict.ContainsKey(viewName))
                 {
-                    var diff = await GetViewDiff(viewName, string.Empty, qaViews[viewName]);
+                    var diff = GetViewDiff(viewName, string.Empty, qaView.Definition);
                     differences.Add(diff);
                     _logger.LogInformation($"A view {viewName} está presente no QA, mas não no DEV");
                 }
@@ -134,27 +131,25 @@ namespace Common.Services
             return differences;
         }
 
-        public async Task<OracleDiffResult> GetViewDiff(string viewName, string oldContent, string newContent)
+
+        public OracleDiffResult GetViewDiff(string viewName, string oldContent, string newContent)
         {
-            return await Task.Run(() =>
-            {
-                var viewNameFormatted = $"{viewName}.SQL";
-                var ps = new Patch(new PatchOptions(), new DiffOptions());
+            var viewNameFormatted = $"{viewName}.SQL";
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
 
-                var patch = ps.createPatchResult(
-                    viewNameFormatted,
-                    viewNameFormatted,
-                    NormalizeLineBreaks(oldContent),
-                    NormalizeLineBreaks(newContent),
-                    null,
-                    null
-                );
+            var patch = ps.createPatchResult(
+                viewNameFormatted,
+                viewNameFormatted,
+                NormalizeLineBreaks(oldContent),
+                NormalizeLineBreaks(newContent),
+                null,
+                null
+            );
 
-                var formattedDiff = ps.formatPatch(patch);
-                var hasDifferences = patch.Hunks.Any();
+            var formattedDiff = ps.formatPatch(patch);
+            var hasDifferences = patch.Hunks.Any();
 
-                return new OracleDiffResult(viewName, formattedDiff, hasDifferences);
-            });
+            return new OracleDiffResult(viewName, formattedDiff, hasDifferences);
         }
 
         private string NormalizeLineBreaks(string text)

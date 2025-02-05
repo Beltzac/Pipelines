@@ -120,7 +120,7 @@ namespace Common.Services
             var isJson = key.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
             var looksLikeJson = strInput.Trim().StartsWith("{");
             var looksLikeArray = strInput.Trim().StartsWith("[");
-            var looksLikeProperty = strInput.Trim().StartsWith("\"") && strInput.Contains(":");
+            var looksLikeProperty = strInput.Trim().StartsWith("\"") && strInput.Contains(':');
 
             if (looksLikeJson)
             {
@@ -200,7 +200,7 @@ namespace Common.Services
 
                 var decodedValue = Encoding.UTF8.GetString(Convert.FromBase64String(base64Value));
 
-                return decodedValue.Contains(":");
+                return decodedValue.Contains(':');
             }
             catch (Exception)
             {
@@ -211,17 +211,17 @@ namespace Common.Services
         public bool IsSimpleString(string value)
         {
             // No whitespace, line breaks, or special characters that might indicate a complex value
-            return !value.Contains(" ") &&
-                   !value.Contains("\n") &&
-                   !value.Contains("{") &&
-                   !value.Contains("}") &&
-                   !value.Contains(":");
+            return !value.Contains(' ') &&
+                   !value.Contains('\n') &&
+                   !value.Contains('{') &&
+                   !value.Contains('}') &&
+                   !value.Contains(':');
         }
 
         public bool IsPath(string value)
         {
             char[] invalidPathChars = Path.GetInvalidPathChars();
-            return (value.Contains("\\") || value.Contains("/")) && !value.Any(c => invalidPathChars.Contains(c));
+            return (value.Contains('\\') || value.Contains('/')) && !value.Any(c => invalidPathChars.Contains(c));
         }
 
         public bool IsConnectionString(string value)
@@ -336,11 +336,6 @@ namespace Common.Services
             return keyValues;
         }
 
-        public void log(FlurlCall x)
-        {
-            //x.HttpRequestMessage .Headers.Add("X-Consul-Token", "sdf");
-        }
-
         async Task<Dictionary<string, string>> FetchConsulKVSequential(ConsulEnvironment consulEnv)
         {
             var keyValues = new Dictionary<string, string>();
@@ -413,8 +408,8 @@ namespace Common.Services
                 {
                     var pathNormal = Path.Combine(folderPath, "original");
                     var pathRecursive = Path.Combine(folderPath, "recursive");
-                    SaveKvToFile(pathNormal, kv.Key, kv.Value.Value);
-                    SaveKvToFile(pathRecursive, kv.Key, kv.Value.ValueRecursive);
+                    await SaveKvToFileAsync(pathNormal, kv.Key, kv.Value.Value);
+                    await SaveKvToFileAsync(pathRecursive, kv.Key, kv.Value.ValueRecursive);
                 }
                 catch (Exception ex)
                 {
@@ -423,7 +418,7 @@ namespace Common.Services
             }
         }
 
-        public void SaveKvToFile(string folderPath, string key, string value)
+        public async Task SaveKvToFileAsync(string folderPath, string key, string value)
         {
             try
             {
@@ -443,7 +438,7 @@ namespace Common.Services
                     return;
                 }
 
-                File.WriteAllText(filePath, value);
+                await File.WriteAllTextAsync(filePath, value);
 
                 _logger.LogInformation("Salvo: {FilePath}", filePath);
             }
@@ -494,35 +489,32 @@ namespace Common.Services
         }
 
 
-        public async Task<ConsulDiffResult> GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
+        public ConsulDiffResult GetDiff(string key, ConsulKeyValue oldValue, ConsulKeyValue newValue, bool recursive)
         {
-            return await Task.Run(() =>
-            {
-                var keyFormatted = key;
+            var keyFormatted = key;
 
-                var value1 = Normalize(oldValue, recursive);
-                var value2 = Normalize(newValue, recursive);
+            var value1 = Normalize(oldValue, recursive);
+            var value2 = Normalize(newValue, recursive);
 
-                if (value1 == value2)
-                    return new ConsulDiffResult(key, string.Empty, false);
+            if (value1 == value2)
+                return new ConsulDiffResult(key, string.Empty, false);
 
-                var ps = new Patch(new PatchOptions(), new DiffOptions());
+            var ps = new Patch(new PatchOptions(), new DiffOptions());
 
-                var patchResult = ps.createPatchResult(
-                    keyFormatted,
-                    keyFormatted,
-                    value1,
-                    value2,
-                    null,
-                    null
-                );
+            var patchResult = ps.createPatchResult(
+                keyFormatted,
+                keyFormatted,
+                value1,
+                value2,
+                null,
+                null
+            );
 
-                if (!patchResult.Hunks.Any())
-                    return new ConsulDiffResult(key, string.Empty, false);
+            if (!patchResult.Hunks.Any())
+                return new ConsulDiffResult(key, string.Empty, false);
 
-                var diffString = ps.formatPatch(patchResult);
-                return new ConsulDiffResult(key, diffString, true);
-            });
+            var diffString = ps.formatPatch(patchResult);
+            return new ConsulDiffResult(key, diffString, true);
         }
     }
 }
