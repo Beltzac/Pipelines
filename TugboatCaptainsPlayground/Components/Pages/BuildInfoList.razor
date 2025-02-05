@@ -35,7 +35,7 @@
 
         if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
         {
-            <Item OnClick="@OpenLogDetailsClickAsync">Logs de Erro</Item>
+            <Item OnClick="@OpenLogDetailsClick">Logs de Erro</Item>
         }
 
         <Item OnClick="@OpenSonarClickAsync">Sonar</Item>
@@ -168,7 +168,7 @@
 
     private async ValueTask OpenCloneInVSCode()
     {
-        await BuildInfoService.OpenCloneFolderInVsCode();
+        BuildInfoService.OpenCloneFolderInVsCode();
     }
 
     private async ValueTask CloneAllCmd()
@@ -242,14 +242,14 @@
         await ReloadById(repo.Id);
 
         var url = repo.Pipeline.Last.Commit.Url;
-        await OpenFolderUtils.OpenUrlAsync(url);
+        OpenFolderUtils.OpenUrl(url);
     }
 
     async Task OpenRepositoryClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         var url = repo.Url;
-        await OpenFolderUtils.OpenUrlAsync(url);
+        OpenFolderUtils.OpenUrl(url);
     }
 
     async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
@@ -260,26 +260,26 @@
         await ReloadById(repo.Id);
 
         var url = repo.Pipeline.Last.Url;
-        await OpenFolderUtils.OpenUrlAsync(url);
+        OpenFolderUtils.OpenUrl(url);
     }
 
     async Task OpenSonarClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         var url = $"https://sonarcloud.io/project/branches_list?id={repo.Project.Replace('.', '-')}-{repo.Name.Replace('.', '-')}";
-        await OpenFolderUtils.OpenUrlAsync(url);
+        OpenFolderUtils.OpenUrl(url);
     }
 
-    async Task OpenLogDetailsClickAsync(ItemClickEventArgs e)
+    void OpenLogDetailsClick(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         NavigationManager.NavigateTo($"/logdetails/{repo.Id}");
     }
 
-    async Task NavigateToPRCreation(ItemClickEventArgs e)
+    void NavigateToPRCreation(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        await BuildInfoService.NavigateToPRCreationAsync(repo);
+        BuildInfoService.NavigateToPRCreation(repo);
     }
 
     private StatusIndicator.Status GetStatusIndicator(Repository repo)

@@ -5,7 +5,7 @@ namespace Common.Services.Interfaces
     public interface IOracleMessageService
     {
         Task<Dictionary<string, MessageDefinition>> GetMessagesAsync(string connectionString);
-        Task<MessageDiffResult> GetMessageDiff(string key, MessageDefinition source, MessageDefinition target);
+        MessageDiffResult GetMessageDiff(string key, MessageDefinition source, MessageDefinition target);
         Task<string> GenerateUpsertStatementAsync(string environment, MessageDefinition message);
     }
 }

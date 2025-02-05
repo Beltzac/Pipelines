@@ -296,7 +296,7 @@
                 var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
                 return await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
             },
-            async (key, source, target) => await OracleMessageService.GetMessageDiff(key, source, target),
+            (key, source, target) => OracleMessageService.GetMessageDiff(key, source, target),
             (key, source, target, diff) =>
             {
                 var matchesSearch = true;
