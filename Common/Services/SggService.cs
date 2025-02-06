@@ -95,7 +95,7 @@ public string BuildQuery(
         conditions.Add($"LTVC_STATUS = '{status}'");
 
     if (minDelay.HasValue)
-        conditions.Add($"EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT)) >= {minDelay.Value}");
+        conditions.Add($"extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400) >= {minDelay.Value}");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
@@ -114,7 +114,7 @@ MainQuery AS (
         NVL(MOTORISTA, 'INVALID_XML') AS MOTORISTA,
         LTDB.XML AS LTDB_XML,
         LTVC.XML AS LTVC_XML,
-        LTVC.CREATED_AT - LTDB.CREATED_AT AS DELAY,
+        extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT) *86400*1000) / 1000 AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
         COALESCE(
             TO_CHAR(LTVC_MESSAGE),
@@ -269,8 +269,8 @@ CROSS JOIN CountQuery c";
             return $@"
 SELECT
     TO_CHAR(TRUNC(LTDB.CREATED_AT, 'HH'), 'YYYY-MM-DD HH24:MI:SS') as TIMESTAMP,
-    CAST(AVG(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
-    CAST(MAX(EXTRACT(SECOND FROM (LTVC.CREATED_AT - LTDB.CREATED_AT))) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
+    CAST(AVG(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
+    CAST(MAX(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
     COUNT(*) as REQUEST_COUNT
 FROM
     TCPSGATE.TRACKING LTDB

@@ -149,7 +149,7 @@
                             </span>
                         </td>
                         <td>@item.ContainerNumbers</td>
-                        <td>@(item.Delay?.TotalSeconds.ToString("F3"))</td>
+                        <td>@(item.Delay?.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
                                 Detalhes

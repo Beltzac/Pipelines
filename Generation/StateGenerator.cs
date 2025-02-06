@@ -330,7 +330,6 @@ namespace {namespaceName}
         /// </summary>
         protected void NotifyStateChanged()
         {{
-            _isInitialized = true;
             OnChange?.Invoke();
         }}
 
@@ -349,6 +348,7 @@ namespace {namespaceName}
             if (!_isInitialized || force)
             {{
                 UpdateState(initializeAction);
+                _isInitialized = true;
             }}
         }}
 
