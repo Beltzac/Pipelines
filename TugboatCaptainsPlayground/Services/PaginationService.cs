@@ -1,4 +1,4 @@
-using Common.Models;
+Ôªøusing Common.Models;
 using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
@@ -45,19 +45,19 @@ namespace TugboatCaptainsPlayground.Services
                 var sourceItem = _state.SourceValues.TryGetValue(key, out var s) ? s : default;
                 var targetItem = _state.TargetValues.TryGetValue(key, out var t) ? t : default;
 
-                // Atualiza o progresso em portuguÍs
+                // Atualiza o progresso em portugu√™s
                 if (_loading != null && keys.Count > 0)
                 {
                     double fraction = (double)(i + 1) / keys.Count;
                     _loading.ProgressValue = (int)(fraction * 100);
-                    _loading.ProgressLabel = $"Calculando diferenÁas... {key} ({i + 1}/{keys.Count})";
+                    _loading.ProgressLabel = $"Calculando diferen√ßas... {key} ({i + 1}/{keys.Count})";
                 }
 
                 // Tenta obter do cache
                 if (!_state.DiffCache.TryGetValue(key, out var diffResult))
                 {
-                    // Se n„o estava no cache, calcula e guarda
-                    diffResult = _getDiffAsync(key, sourceItem, targetItem);
+                    // Se n√£o estava no cache, calcula e guarda
+                    diffResult = await Task.Run(() => _getDiffAsync(key, sourceItem, targetItem));
                     _state.DiffCache[key] = diffResult;
                 }
 
@@ -68,11 +68,11 @@ namespace TugboatCaptainsPlayground.Services
                 }
             }
 
-            // ConcluÌdo
+            // Conclu√≠do
             if (_loading != null)
             {
                 _loading.ProgressValue = 100;
-                _loading.ProgressLabel = "ConcluÌdo";
+                _loading.ProgressLabel = "Conclu√≠do";
                 _loading.IsLoading = false;
             }
 
@@ -85,7 +85,7 @@ namespace TugboatCaptainsPlayground.Services
             {
                 _loading.IsLoading = true;
                 _loading.ProgressValue = 0;
-                _loading.ProgressLabel = "Obtendo p·gina...";
+                _loading.ProgressLabel = "Obtendo p√°gina...";
             }
 
             try
@@ -93,7 +93,7 @@ namespace TugboatCaptainsPlayground.Services
                 var filteredDiffs = await GetAllFilteredDiffsAsync();
                 _state.TotalCount = filteredDiffs.Count;
 
-                // PaginaÁ„o
+                // Pagina√ß√£o
                 int skip = (_state.CurrentPage - 1) * _state.PageSize;
                 var pagedDiffs = filteredDiffs
                     .Skip(skip)
@@ -107,7 +107,7 @@ namespace TugboatCaptainsPlayground.Services
                 if (_loading != null)
                 {
                     _loading.ProgressValue = 100;
-                    _loading.ProgressLabel = "P·gina obtida com sucesso";
+                    _loading.ProgressLabel = "P√°gina obtida com sucesso";
                     _loading.IsLoading = false;
                 }
             }
@@ -119,45 +119,50 @@ namespace TugboatCaptainsPlayground.Services
             if (_loading != null)
             {
                 _loading.IsLoading = true;
-                _loading.ProgressValue = 0;
+                _loading.ProgressValue = 25;
                 _loading.ProgressLabel = "Iniciando...";
             }
 
             try
             {
-                // Passo 1: Carregar valores de origem
-                if (_loading != null)
-                {
-                    _loading.ProgressValue = 25;
-                    _loading.ProgressLabel = "Carregando valores de origem...";
-                }
-                _state.SourceValues = await _getSourceItemsAsync();
+                var getSourceTask = _getSourceItemsAsync();
+                var getTargetTask = _getTargetItemsAsync();
 
-                // Passo 2: Carregar valores de destino
-                if (_loading != null)
-                {
-                    _loading.ProgressValue = 50;
-                    _loading.ProgressLabel = "Carregando valores de destino...";
-                }
-                _state.TargetValues = await _getTargetItemsAsync();
+                var tasksWithProgress = new[]
+                { 
+                    new { Task = getSourceTask, Label = "Carregado valores fonte..." },
+                    new { Task = getTargetTask, Label = "Carregado valores alvo..." }
+                };
 
-                // Passo 3: Combinar chaves
-                if (_loading != null)
+                // Update progress using task labels
+                int completed = 0;
+                await foreach (var completedTask in Task.WhenEach(tasksWithProgress.Select(t => t.Task)))
                 {
-                    _loading.ProgressValue = 75;
-                    _loading.ProgressLabel = "Processando chaves...";
+                    var taskInfo = tasksWithProgress.First(t => t.Task == completedTask);
+                    completed++;
+                    if (_loading != null)
+                    {
+                        var progress = (double)completed / tasksWithProgress.Length;
+                        _loading.ProgressValue = (int)(progress * 100);
+                        _loading.ProgressLabel = $"{taskInfo.Label} ({completed}/{tasksWithProgress.Length})";
+                    }
                 }
+
+                // Obter resultados
+                _state.SourceValues = await getSourceTask;
+                _state.TargetValues = await getTargetTask;
+
                 _state.AllKeys = new HashSet<TKey>(_state.SourceValues.Keys.Union(_state.TargetValues.Keys));
                 _state.TotalCount = _state.AllKeys.Count;
 
                 // Limpar cache
                 _state.DiffCache.Clear();
 
-                // Conclus„o
+                // Conclus√£o
                 if (_loading != null)
                 {
                     _loading.ProgressValue = 100;
-                    _loading.ProgressLabel = "ConcluÌdo";
+                    _loading.ProgressLabel = "Conclu√≠do";
                 }
             }
             finally

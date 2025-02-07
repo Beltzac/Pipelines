@@ -1,5 +1,6 @@
 @using Common.Services
 @using Common.Services.Interfaces
+@using Common.Utils
 @using static Common.Services.AutoUpdateService
 @inject IAutoUpdateService AutoUpdateService
 @inject IToastService toastService
@@ -8,12 +9,12 @@
 {
     <!-- Show the 'Update Available' link -->
     <a class="nav-link" href="#" @onclick="DownloadUpdateAsync">
-        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> @($"v{latestRelease.tag_name}") Disponível!
+        <span class="bi bi-cloud-arrow-down" aria-hidden="true"></span> @(latestRelease.tag_name) Disponível!
     </a>
 }
 else if (updateAvailable && downloadProgress > 0)
 {
-    <ProgressBar ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
+    <ProgressBar IsLoading="@isLoading" ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
 }
 else if (isLoading)
 {
@@ -24,7 +25,7 @@ else if (isLoading)
 else
 {
     <a class="nav-link" href="#" @onclick="CheckForUpdatesAsync" title="Clique para verificar atualizações">
-        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"versão {currentVersion}")
+        <span class="bi bi-cloud-check" aria-hidden="true"></span> @($"Versão {currentVersion}")
     </a>
 }
 
@@ -37,7 +38,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        currentVersion = Common.Services.AutoUpdateService.GetCurrentVersion().ToString();
+        currentVersion = VersionHelper.GetCurrentVersion().ToString();
         await CheckForUpdatesAsync();
     }
 

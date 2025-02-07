@@ -13,6 +13,7 @@ using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Windows.Input;
 using Vanara.Windows.Shell;
 
@@ -32,7 +33,7 @@ internal class Program
         CancellationTokenSource source = new CancellationTokenSource();
         CancellationToken token = source.Token;
 
-        var title = "Tugboat Captain's Playground";
+        var title = $"Tugboat Captain's Playground {VersionHelper.GetCurrentVersion()}";
         bool forceClose = false;
 
         var mainWindow = new PhotinoWindow()
@@ -213,7 +214,7 @@ internal class Program
                 if (enable)
                 {
                     CreateStartupShortcut(shortcutPath, exePath);
-                    ShowMessage(trayIcon, $"Habilitado");
+                    ShowMessage(trayIcon, title, $"Habilitado");
                 }
                 else
                 {
@@ -221,7 +222,7 @@ internal class Program
                     {
                         File.Delete(shortcutPath);
                     }
-                    ShowMessage(trayIcon, $"Desabilitado");
+                    ShowMessage(trayIcon, title, $"Desabilitado");
                 }
 
                 trayIcon.ContextMenu.Items.OfType<PopupMenuItem>().First(m => m.Text == "Enable Startup with Windows").Visible = !enable;
@@ -229,7 +230,7 @@ internal class Program
             }
             else
             {
-                ShowMessage(trayIcon, $"Startup setting is only supported on Windows.");
+                ShowMessage(trayIcon, title, $"Startup setting is only supported on Windows.");
             }
         }
 
@@ -316,13 +317,12 @@ internal class Program
 
         hotKeyManager.Dispose();
 
-        static void ShowMessage(TrayIcon trayIcon, string message)
+        static void ShowMessage(TrayIcon trayIcon, string title, string message)
         {
             trayIcon.ShowNotification(
-                title: nameof(NotificationIcon.None),
+                title: title,
                 message: message,
                 icon: NotificationIcon.None);
-            Console.WriteLine(nameof(trayIcon.ShowNotification));
         }
 
         bool WindowIsClosing(object sender, EventArgs e)

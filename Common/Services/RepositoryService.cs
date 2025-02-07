@@ -82,7 +82,7 @@ namespace Common.Services
 
             if (existingRepo == null)
             {
-                _logger.LogInformation($"Repositório {existingRepo} não encontrado.");
+                _logger.LogInformation($"Repositório {repoId} não encontrado.");
                 return null;
             }
 
@@ -111,9 +111,18 @@ namespace Common.Services
                 _logger.LogInformation($"Repositório {existingRepo.Name} não tem pipeline/build. Criando informações de build.");
             }
 
-            var repo = await _gitClient.GetRepositoryAsync(repoId);
+            GitRepository repo = null;
 
-            if (repo.IsDisabled ?? false)
+            try
+            {
+                repo = await _gitClient.GetRepositoryAsync(repoId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao buscar repositório git {repoId}");
+            }
+
+            if (repo?.IsDisabled ?? false)
             {
                 await Delete(repo.Id);
                 _logger.LogInformation($"Repositório {repo.Name} está desabilitado. Excluindo.");
@@ -130,8 +139,6 @@ namespace Common.Services
         {
             //https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md
 
-
-
             var query = _repositoryDatabase.Query()
                 .Where(repo => !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Name, pattern))
                                && !_repoRegexFilters.Any(pattern => Regex.IsMatch(repo.Project, pattern)));
@@ -140,8 +147,6 @@ namespace Common.Services
 
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                //var janelas = string.Join(" ", WindowUtils.EnumerarJanelas().Distinct());
-
                 var filtroEmbedding = _embedder.Embed(filter);
                 var results = await GenerateEmbeddingsForReposAsync(repos);
 
@@ -149,23 +154,6 @@ namespace Common.Services
 
                 return results2.ToList();
             }
-
-
-
-            //if (!string.IsNullOrEmpty(filter))
-            //{
-            //    var parts = filter.Split([' ', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            //    foreach (var part in parts)
-            //    {
-            //        query = query.Where(x =>
-            //            x.Project.ToLower().Contains(part.ToLower()) ||
-            //            x.Name.ToLower().Contains(part.ToLower()) ||
-            //            (x.Pipeline != null && x.Pipeline.Last != null &&
-            //             x.Pipeline.Last.Commit != null &&
-            //             x.Pipeline.Last.Commit.AuthorName.ToLower().Contains(part.ToLower())));
-            //    }
-            //}
 
             //var results = query.ToList();
             var ordered = repos.AsQueryable()
