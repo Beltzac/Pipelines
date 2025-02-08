@@ -12,7 +12,7 @@ namespace Tests.Common.Services
             string old = "old";
             string newString = "new";
 
-            var result = await (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
+            var result = (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
 
             result.Should().NotBeNull();
             result.Key.Should().Be(view);
