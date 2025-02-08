@@ -433,7 +433,7 @@ namespace Common.Services
                 }
 
                 // If the path ends with a slash, treat it as a directory
-                if (value == null)
+                if (filePath.EndsWith('\\'))
                 {
                     return;
                 }
