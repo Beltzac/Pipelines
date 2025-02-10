@@ -79,6 +79,8 @@ namespace Common.Utils
             services.AddScoped<IOracleMessageService, OracleMessageService>();
             services.AddScoped<ICadastroService, CadastroService>();
 
+            services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
+
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
             return services;

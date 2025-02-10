@@ -1,5 +1,7 @@
 using Common.Services;
 using FluentAssertions;
+using Moq;
+using Common.Services.Interfaces;
 
 namespace Tests.Common.Services
 {
@@ -12,7 +14,8 @@ namespace Tests.Common.Services
             string old = "old";
             string newString = "new";
 
-            var result = (new OracleSchemaService(null, null)).GetViewDiff(view, old, newString);
+            var connectionFactoryMock = new Mock<IOracleConnectionFactory>();
+            var result = (new OracleSchemaService(null, null, connectionFactoryMock.Object)).GetViewDiff(view, old, newString);
 
             result.Should().NotBeNull();
             result.Key.Should().Be(view);

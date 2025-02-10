@@ -5,7 +5,6 @@ using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Dapper;
 using Microsoft.Extensions.Logging;
-using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;
 
@@ -16,12 +15,17 @@ namespace Common.Services
         private readonly ILogger<OracleSchemaService> _logger;
         private readonly IConfigurationService _configService;
         private readonly Formatter _formatter;
+        private readonly IOracleConnectionFactory _connectionFactory;
 
-        public OracleSchemaService(ILogger<OracleSchemaService> logger, IConfigurationService configService)
+        public OracleSchemaService(
+            ILogger<OracleSchemaService> logger,
+            IConfigurationService configService,
+            IOracleConnectionFactory connectionFactory)
         {
             _logger = logger;
             _configService = configService;
             _formatter = Of(Dialect.PlSql);
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<IEnumerable<OracleDiffResult>> Compare(string sourceEnvName, string targetEnvName)
@@ -44,7 +48,8 @@ namespace Common.Services
         {
             try
             {
-                using var connection = new OracleConnection(connectionString);
+                using var connection = _connectionFactory.CreateConnection(connectionString);
+
                 var sql = "SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = :schema";
 
                 await connection.QueryFirstAsync<int>(
@@ -63,7 +68,8 @@ namespace Common.Services
 
         public async Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName)
         {
-            using var connection = new OracleConnection(connectionString);
+            using var connection = _connectionFactory.CreateConnection(connectionString);
+
             var sql = "SELECT TEXT FROM ALL_VIEWS WHERE OWNER = :schema AND VIEW_NAME = :viewName";
 
             var text = await connection.QueryFirstOrDefaultAsync<string>(
@@ -75,14 +81,23 @@ namespace Common.Services
             return new OracleViewDefinition(viewName, text ?? string.Empty);
         }
 
+        private Dictionary<string, string> CreateViewDictionary(IEnumerable<OracleViewDefinition> views)
+        {
+            return views.ToDictionary(
+                v => v.Name.ToUpperInvariant(), 
+                v => v.Definition,
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+
         public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)
         {
-            using var connection = new OracleConnection(connectionString);
+            using var connection = _connectionFactory.CreateConnection(connectionString);
             var sql = "SELECT VIEW_NAME, TEXT FROM ALL_VIEWS WHERE OWNER = :schema";
-
+            
             var results = await connection.QueryAsync<(string ViewName, string Text)>(
-                sql,
-                new { schema },
+                sql, 
+                new { schema }, 
                 commandTimeout: 120
             );
 
@@ -93,9 +108,8 @@ namespace Common.Services
         {
             var differences = new List<OracleDiffResult>();
 
-            // Create dictionaries for faster lookups
-            var devViewDict = devViews.ToDictionary(v => v.Name, v => v.Definition);
-            var qaViewDict = qaViews.ToDictionary(v => v.Name, v => v.Definition);
+            var devViewDict = CreateViewDictionary(devViews);
+            var qaViewDict = CreateViewDictionary(qaViews);
 
             foreach (var devView in devViews)
             {
@@ -136,7 +150,7 @@ namespace Common.Services
         {
             var viewNameFormatted = $"{viewName}.SQL";
             var ps = new Patch(new PatchOptions(), new DiffOptions());
-
+            
             var patch = ps.createPatchResult(
                 viewNameFormatted,
                 viewNameFormatted,
@@ -166,7 +180,7 @@ namespace Common.Services
             text = text.Replace("\r", "\n");
 
             text = _formatter.Format(text);
-
+            
             return text;
         }
     }
