@@ -77,12 +77,6 @@
         "resolved": "0.0.7",
         "contentHash": "JQik5zuBENxzRG0u96QMPpdi9vI47pKMD6fq35hV6T5HrmatmM8m0j5w5XT+wIv8w63IaMsk+DnHt0BOyrfh9g=="
       },
-      "Dapper": {
-        "type": "Direct",
-        "requested": "[2.1.35, )",
-        "resolved": "2.1.35",
-        "contentHash": "YKRwjVfrG7GYOovlGyQoMvr1/IJdn+7QzNXJxyMh0YfFF5yvDmTYaJOVYWsckreNjGsGSEtrMTpnzxTUq/tZQw=="
-      },
       "DiffPlex": {
         "type": "Direct",
         "requested": "[1.7.2, )",
@@ -299,6 +293,16 @@
           "System.Security.Principal.Windows": "5.0.0",
           "System.ServiceModel.Primitives": "4.10.0",
           "System.Xml.XPath.XmlDocument": "4.3.0"
+        }
+      },
+      "Oracle.EntityFrameworkCore": {
+        "type": "Direct",
+        "requested": "[9.23.60, )",
+        "resolved": "9.23.60",
+        "contentHash": "eF4929EV43fBV5xCrnbkcc6kHUFpetc2HKAWOy/YPca3ga1FpbBgFsADVIz1k/TO+AsJXIcztPFzQV7RE4CsIQ==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "[9.0.0, 10.0.0)",
+          "Oracle.ManagedDataAccess.Core": "[23.6.1, 24.0.0)"
         }
       },
       "Oracle.ManagedDataAccess.Core": {

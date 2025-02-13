@@ -16,5 +16,6 @@ namespace Common.Models
         public string MessageText { get; set; }
         public string ContainerNumbers { get; set; }
         public string CodigoBarras { get; set; }
+        public int TotalCount { get; set; }
     }
 }

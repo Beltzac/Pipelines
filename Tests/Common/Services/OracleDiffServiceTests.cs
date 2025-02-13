@@ -1,7 +1,8 @@
+using Common.Repositories.TCP.Interfaces;
 using Common.Services;
+using Common.Services.Interfaces;
 using FluentAssertions;
 using Moq;
-using Common.Services.Interfaces;
 
 namespace Tests.Common.Services
 {
@@ -15,7 +16,8 @@ namespace Tests.Common.Services
             string newString = "new";
 
             var connectionFactoryMock = new Mock<IOracleConnectionFactory>();
-            var result = (new OracleSchemaService(null, null, connectionFactoryMock.Object)).GetViewDiff(view, old, newString);
+            var oracleRepositoryMock = new Mock<IOracleRepository>();
+            var result = (new OracleSchemaService(null, null, oracleRepositoryMock.Object)).GetViewDiff(view, old, newString);
 
             result.Should().NotBeNull();
             result.Key.Should().Be(view);

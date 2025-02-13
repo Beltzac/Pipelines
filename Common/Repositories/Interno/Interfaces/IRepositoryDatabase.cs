@@ -1,4 +1,4 @@
-namespace Common.Repositories.Interfaces
+namespace Common.Repositories.Interno.Interfaces
 {
     public interface IRepositoryDatabase
     {

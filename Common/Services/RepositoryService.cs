@@ -1,5 +1,5 @@
 ﻿using Common.ExternalApis.Interfaces;
-using Common.Repositories.Interfaces;
+using Common.Repositories.Interno.Interfaces;
 using Common.Services.Interfaces;
 using Common.Utils;
 

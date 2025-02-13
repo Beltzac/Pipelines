@@ -1,4 +1,4 @@
-using Common.Repositories.Interfaces;
+using Common.Repositories.Interno.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Repositories
