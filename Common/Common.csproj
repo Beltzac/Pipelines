@@ -17,7 +17,6 @@
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
-    <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.1.2" />
     <PackageReference Include="Flurl" Version="4.0.0" />
@@ -47,6 +46,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.1" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.246.0-preview" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.60" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.7.0" />
     <PackageReference Include="Polly" Version="8.5.2" />
     <PackageReference Include="Quartz" Version="3.13.1" />

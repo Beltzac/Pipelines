@@ -16,5 +16,6 @@ namespace Common.Models
         public DateTime DataInicio { get; set; }
         public int IdUsuarioInclusao { get; set; }
         public string? UserLogin { get; set; }
+        public int TotalCount { get; set; }
     }
 }

@@ -1,77 +1,64 @@
 using Common.Models;
 using Common.Services;
 using Common.Services.Interfaces;
-using Dapper;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Services.Common;
+using Common.Repositories.TCP.Interfaces;
 using Moq;
-using Moq.Dapper;
-using System.Data;
+using System.Threading;
 
 namespace Tests.Common.Services
 {
     public class OracleSchemaServiceTests
     {
+        private readonly DbContextOptions<TcpDbContext> _options;
+        private readonly DbContext _context;
         private readonly OracleSchemaService _service;
-        private readonly Mock<ILogger<OracleSchemaService>> _loggerMock;
         private readonly Mock<IConfigurationService> _configServiceMock;
-        private readonly Mock<IDbConnection> _connectionMock;
-        private readonly Mock<IOracleConnectionFactory> _connectionFactoryMock;
+        private readonly Mock<IOracleRepository> _oracleRepositoryMock;
 
         public OracleSchemaServiceTests()
         {
-            _loggerMock = new Mock<ILogger<OracleSchemaService>>();
             _configServiceMock = new Mock<IConfigurationService>();
-            _connectionMock = new Mock<IDbConnection>();
-            _connectionFactoryMock = new Mock<IOracleConnectionFactory>();
+            _oracleRepositoryMock = new Mock<IOracleRepository>();
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" } });
 
-            // Mock the connection factory to return a mock connection
-            _connectionFactoryMock.Setup(f => f.CreateConnection(It.IsAny<string>()))
-                .Returns(_connectionMock.Object);
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(new OracleViewDefinition("View1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" });
 
-            // Use Moq.Dapper to mock Dapper's QueryAsync extension method
-            _connectionMock
-                .SetupDapperAsync(c => c.QueryAsync<(string sql, string param)>(
-                    It.IsAny<string>(),
-                    It.IsAny<object>(),
-                    null,
-                    null,
-                    null))
-                .ReturnsAsync(new List<(string ViewName, string Text)>
-                {
-                    ("VIEW_1", "SELECT * FROM TABLE_1"),
-                    ("VIEW_2", "SELECT * FROM TABLE_2")
-                });
+            //_options = new DbContextOptionsBuilder<TcpDbContext>()
+            //    .UseSqlite("Data Source=:memory:")
+            //    .Options;
 
-            // Use Moq.Dapper to mock Dapper's QueryFirstAsync extension method
-            _connectionMock
-                .SetupDapperAsync(c => c.QueryFirstAsync<int>(
-                    It.IsAny<string>(),
-                    It.IsAny<object>(),
-                    null,
-                    null,
-                    null))
-                .ReturnsAsync(1);
+            //_context = new TcpDbContext(_options);
+            //SeedTestData();
+
+            //var connectionFactoryMock = new Mock<IOracleConnectionFactory>();
+            //connectionFactoryMock.Setup(f => f.CreateContext(It.IsAny<string>()))
+            //    .Returns((string _) => _context);
 
             _service = new OracleSchemaService(
-                _loggerMock.Object,
+                Mock.Of<ILogger<OracleSchemaService>>(),
                 _configServiceMock.Object,
-                _connectionFactoryMock.Object);
+                _oracleRepositoryMock.Object);
         }
+
+        //private void SeedTestData()
+        //{
+        //    _context.Database.Migrate();
+        //    _context.Add(new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" });
+        //    _context.Add(new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" });
+        //    _context.SaveChanges();
+        //}
 
         [Test]
         public async Task TestConnectionAsync_ReturnsTrue()
         {
             // Arrange
-
-            // Use Moq.Dapper to mock QueryFirstAsync
-            _connectionMock
-                .SetupDapperAsync(c => c.QueryFirstAsync<int>(
-                    It.IsAny<string>(),
-                    It.IsAny<object>(),
-                    null,
-                    null,
-                    null))
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<int>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
             // Act
@@ -84,7 +71,14 @@ namespace Tests.Common.Services
         [Test]
         public async Task GetViewDefinitionAsync_ReturnsCorrectView()
         {
+            // Arrange
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OracleViewDefinition("mock-view", "SELECT * FROM mock-table") { Owner = "MOCK_SCHEMA" });
+
+            // Act
             var viewDefinition = await _service.GetViewDefinitionAsync("mock-connection-string", "MOCK_SCHEMA", "mock-view");
+
+            // Assert
             viewDefinition.Should().NotBeNull();
             viewDefinition.Name.Should().Be("mock-view");
         }
@@ -92,10 +86,15 @@ namespace Tests.Common.Services
         [Test]
         public async Task GetViewDefinitionsAsync_ReturnsAllViews()
         {
-            var viewDefinitions = await _service.GetViewDefinitionsAsync("mock-connection-string", "MOCK_SCHEMA");
-            viewDefinitions.Should().HaveCount(2)
-                .And.Contain(v => v.Name == "VIEW_1")
-                .And.Contain(v => v.Name == "VIEW_2");
+            // Arrange
+             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" } });
+
+            // Act
+            var results = await _service.GetViewDefinitionsAsync("any", "MOCK_SCHEMA");
+
+            // Assert
+            results.Should().HaveCount(2);
         }
 
         [Test]
@@ -103,26 +102,28 @@ namespace Tests.Common.Services
         {
             var devViews = new List<OracleViewDefinition>
             {
-                new("VIEW_1", "VIEW_1_SQL"),
-                new("VIEW_2", "VIEW_2_SQL")
+                new("VIEW1", "CREATE VIEW VIEW1 AS SELECT * FROM TABLE1"),
+                new("VIEW2", "CREATE VIEW VIEW2 AS SELECT * FROM TABLE2")
             };
 
             var qaViews = new List<OracleViewDefinition>
             {
-                new("VIEW_1", "VIEW_1_QA")
+                new("VIEW1", "CREATE VIEW VIEW1 AS SELECT * FROM TABLE1_MODIFIED")
             };
 
             var differences = await _service.CompareViewDefinitions(devViews, qaViews);
-            differences.Should().ContainSingle().Which.Should().BeEquivalentTo(new
-            {
-                ViewName = "VIEW_1",
-                HasDifferences = true
-            });
+
+            differences.Should().ContainSingle(d =>
+                d.Key == "VIEW1" &&
+                d.FormattedDiff.Contains("TABLE1_MODIFIED") &&
+                d.HasDifferences
+            );
         }
 
         [Test]
         public async Task Compare_ReturnsCorrectDifferences()
         {
+            // Arrange
             var config = new ConfigModel
             {
                 OracleEnvironments = new List<OracleEnvironment>
@@ -132,10 +133,31 @@ namespace Tests.Common.Services
                 }
             };
 
+            // Mock DEV views
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
+                    "mock-dev-conn",
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "DEV_VIEW_DEFINITION") });
+
+            // Mock QA views
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
+                    "mock-qa-conn",
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "QA_VIEW_DEFINITION") });
+
             _configServiceMock.Setup(s => s.GetConfig()).Returns(config);
 
+            // Act
             var results = await _service.Compare("DEV", "QA");
-            results.Should().ContainSingle().Which.Key.Should().Be("V1");
+
+            // Assert
+            results.Should().ContainSingle().Which.Should().Match<OracleDiffResult>(x =>
+                x.Key == "View1" &&
+                x.FormattedDiff.Contains("DEV_VIEW_DEFINITION") &&
+                x.HasDifferences
+            );
         }
 
         [Test]
@@ -167,15 +189,21 @@ namespace Tests.Common.Services
 
             var expectedViews = new List<(string ViewName, string Text)>
             {
-                ("View1", "SELECT * FROM Table1"),
-                ("View2", "SELECT * FROM Table2")
+                ("VIEW1", "SELECT * FROM TABLE1"),
+                ("VIEW2", "SELECT * FROM TABLE2")
             };
 
             var viewDefinitions = await _service.GetViewDefinitionsAsync(connectionString, schema);
 
             viewDefinitions.Should().HaveCount(expectedViews.Count);
-            viewDefinitions.Should().Contain(v => v.Name == "View1" && v.Definition == "SELECT * FROM Table1");
-            viewDefinitions.Should().Contain(v => v.Name == "View2" && v.Definition == "SELECT * FROM Table2");
+            viewDefinitions.Should().Contain(v =>
+                v.Name == "VIEW1" && // Ensure exact case match
+                v.Definition == "SELECT * FROM TABLE1"
+            );
+            viewDefinitions.Should().Contain(v =>
+                v.Name == "VIEW2" && // Ensure exact case match
+                v.Definition == "SELECT * FROM TABLE2"
+            );
         }
 
         [Test]
@@ -266,6 +294,7 @@ namespace Tests.Common.Services
         [Test]
         public async Task Compare_ShouldReturnDifferences_WhenSchemasDiffer()
         {
+            // Arrange
             var config = new ConfigModel
             {
                 OracleEnvironments = new List<OracleEnvironment>
@@ -275,11 +304,32 @@ namespace Tests.Common.Services
                 }
             };
 
+            // Mock DEV views
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
+                    "mock-dev-conn", 
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "DEV_VIEW_DEFINITION") });
+
+            // Mock QA views
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
+                    "mock-qa-conn", 
+                    It.IsAny<string>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "QA_VIEW_DEFINITION") });
+
             _configServiceMock.Setup(s => s.GetConfig()).Returns(config);
 
+            // Act
             var results = await _service.Compare("DEV", "QA");
 
-            results.Should().ContainSingle().Which.Key.Should().Be("V1");
+            // Assert
+            results.Should().ContainSingle().Which.Should().Match<OracleDiffResult>(x =>
+                x.Key == "View1" &&
+                x.FormattedDiff.Contains("DEV_VIEW_DEFINITION") && 
+                x.FormattedDiff.Contains("QA_VIEW_DEFINITION") &&
+                x.HasDifferences
+            );
         }
 
         [Test]

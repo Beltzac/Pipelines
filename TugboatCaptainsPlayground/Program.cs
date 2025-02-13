@@ -7,13 +7,10 @@ using H.NotifyIcon.Core;
 using Microsoft.EntityFrameworkCore;
 using Photino.NET;
 using Quartz;
-using Serilog;
-using Serilog.Events;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Windows.Input;
 using Vanara.Windows.Shell;
 
@@ -27,8 +24,6 @@ internal class Program
 #else
         var port = 8002;
 #endif
-
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 
         CancellationTokenSource source = new CancellationTokenSource();
         CancellationToken token = source.Token;

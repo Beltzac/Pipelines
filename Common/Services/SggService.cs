@@ -1,10 +1,12 @@
 using Common.Models;
 using Common.Services.Interfaces;
-using Dapper;
+using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
 using System.Data;
+using Common.Repositories.TCP.Interfaces;
 
 namespace Common.Services
 {
@@ -12,10 +14,12 @@ namespace Common.Services
     public class SggService : ISggService
     {
         private readonly IConfigurationService _configService;
+        private readonly IOracleRepository _repo;
 
-        public SggService(IConfigurationService configService)
+        public SggService(IConfigurationService configService, IOracleRepository repo)
         {
             _configService = configService;
+            _repo = repo;
         }
 
         public async Task<(List<LtdbLtvcRecord> Results, int TotalCount)> ExecuteQueryAsync(
@@ -37,22 +41,16 @@ namespace Common.Services
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
                 ?? throw new ArgumentException($"Ambiente {environment} não encontrado");
 
-            using var connection = new OracleConnection(oracleEnv.ConnectionString);
-            await connection.OpenAsync();
-
             var sql = BuildQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
 
-            var queryResult = await connection.QueryAsync<LtdbLtvcRecord, decimal, (LtdbLtvcRecord Result, int TotalCount)>(
+            var results = await _repo.GetFromSqlAsync<LtdbLtvcRecord>(
+                environment,
                 sql,
-                (record, total) => (record, Convert.ToInt32(total)),
-                splitOn: "TotalCount",
-                commandTimeout: 120
-            );
+                cancellationToken);
 
-            var processed = queryResult.ToList();
             return (
-                Results: processed.Select(x => x.Result).ToList(),
-                TotalCount: processed.FirstOrDefault().TotalCount
+                Results: results,
+                TotalCount: results.FirstOrDefault()?.TotalCount ?? 0
             );
         }
 public string BuildQuery(
@@ -212,18 +210,14 @@ CROSS JOIN CountQuery c";
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
                 ?? throw new ArgumentException($"Environment {environment} not found");
 
-            using var connection = new OracleConnection(oracleEnv.ConnectionString);
-            await connection.OpenAsync();
+            var sql = BuildDelayMetricsQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status);
 
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = BuildDelayMetricsQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status);
+            var results = await _repo.GetFromSqlAsync<DelayMetric>(
+                environment,
+                sql,
+                cancellationToken);
 
-            var result = await connection.QueryAsync<DelayMetric>(
-                cmd.CommandText,
-                commandTimeout: cmd.CommandTimeout,
-                commandType: CommandType.Text);
-
-            return result.ToList();
+            return results;
         }
 
         private string BuildDelayMetricsQuery(

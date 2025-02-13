@@ -1,20 +1,22 @@
 using Common.Models;
 using Common.Services.Interfaces;
-using Dapper;
 using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
 using System.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
+using Common.Repositories.TCP.Interfaces;
 
 namespace Common.Services
 {
     public class EsbService : IEsbService
     {
-        private readonly IConfigurationService _configService;
+        private readonly IOracleRepository _repo;
 
-        public EsbService(IConfigurationService configService)
+        public EsbService(IOracleRepository repo)
         {
-            _configService = configService;
+            _repo = repo;
         }
 
         public async Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteQueryAsync(
@@ -24,7 +26,7 @@ namespace Common.Services
             string? urlFilter = null,
             string? httpMethod = null,
             string? genericText = null,
-            int? userId = null,
+            long? userId = null,
             int? execucaoId = null,
             int pageSize = 10,
             int pageNumber = 1,
@@ -32,25 +34,14 @@ namespace Common.Services
             string? responseStatus = null,
             CancellationToken cancellationToken = default)
         {
-            var config = _configService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
-                ?? throw new ArgumentException($"Environment {environment} not found");
+            var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, genericText, userId,
+                execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
 
-            using var connection = new OracleConnection(oracleEnv.ConnectionString);
-            await connection.OpenAsync();
+            var results = await _repo.GetFromSqlAsync<RequisicaoExecucao>(environment, sql, cancellationToken);
 
-            var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, genericText, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
-            
-            var results = await connection.QueryAsync<RequisicaoExecucao, decimal, (RequisicaoExecucao Result, int TotalCount)>(
-                sql,
-                (requisicao, totalCount) => (requisicao, Convert.ToInt32(totalCount)),
-                splitOn: "TotalCount",
-                commandTimeout: 120);
-
-            var processed = results.ToList();
             return (
-                Results: processed.Select(x => x.Result).ToList(),
-                TotalCount: processed.FirstOrDefault().TotalCount
+                Results: results,
+                TotalCount: results.FirstOrDefault()?.TotalCount ?? 0
             );
         }
 
@@ -60,7 +51,7 @@ namespace Common.Services
             string? urlFilter,
             string? httpMethod,
             string? genericText,
-            int? userId,
+            long? userId,
             int? execucaoId,
             int pageSize,
             int pageNumber,

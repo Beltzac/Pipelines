@@ -1,10 +1,10 @@
-using Oracle.ManagedDataAccess.Client;
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Common.Models;
 
 namespace Common.Services.Interfaces
 {
     public interface IOracleConnectionFactory
     {
-        IDbConnection CreateConnection(string connectionString);
+        DbContext CreateContext(string connectionString);
     }
 }

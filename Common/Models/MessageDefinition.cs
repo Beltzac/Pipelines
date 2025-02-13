@@ -22,5 +22,6 @@ namespace Common.Models
         public string Descricao { get; set; }
         public string Ajuda { get; set; }
         public int Idioma { get; set; }
+        public long IdMensagem { get; set; }
     }
 }

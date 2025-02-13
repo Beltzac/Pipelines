@@ -1,11 +1,14 @@
 using Common.Models;
 using Common.Services.Interfaces;
-using Dapper;
-using Oracle.ManagedDataAccess.Client;
+using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 using SQL.Formatter;
 using SQL.Formatter.Language;
 using System.Collections.Concurrent;
 using System.Data;
+using Common.Repositories.TCP.Interfaces;
+using System.Threading;
+using System;
 
 namespace Common.Services
 {
@@ -13,56 +16,62 @@ namespace Common.Services
     {
         private readonly IConfigurationService _configService;
         private readonly ICadastroService _cadastroService;
-        private readonly ConcurrentDictionary<string, int> _userCodeCache = new();
+        private readonly ConcurrentDictionary<string, long> _userCodeCache = new();
+        private readonly IOracleRepository _repo;
 
-        public OracleMessageService(IConfigurationService configService, ICadastroService cadastroService)
+
+        public OracleMessageService(IConfigurationService configService, ICadastroService cadastroService, IOracleRepository repo)
         {
             _configService = configService;
             _cadastroService = cadastroService;
+            _repo = repo;
         }
 
         public async Task<Dictionary<string, MessageDefinition>> GetMessagesAsync(string connectionString)
         {
             var messages = new Dictionary<string, MessageDefinition>();
 
-            using (var conn = new OracleConnection(connectionString))
+            // Fetch base message data
+            var messageQuery = @"
+                SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM, m.ID_GRUPO_MENSAGEM,
+                        m.VERIFICADO, m.MODULO, m.CODIGO, m.PREFIXO, m.ELEMENTO, m.OBSERVACAO
+                FROM TCPCONF.MENSAGEM m
+                WHERE m.EXCLUIDO = 0";
+
+            var messageResults = await _repo.GetFromSqlAsync<MessageDefinition>(
+                connectionString,
+                messageQuery,
+                default);
+
+            foreach (var message in messageResults)
             {
-                await conn.OpenAsync();
+                message.Key = $"{message.Prefixo}-{message.Codigo}";
+                messages[message.Key] = message;
+            }
 
-                // Fetch base message data
-                var messageQuery = @"
-                    SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM, m.ID_GRUPO_MENSAGEM,
-                           m.VERIFICADO, m.MODULO, m.CODIGO, m.PREFIXO, m.ELEMENTO, m.OBSERVACAO
-                    FROM TCPCONF.MENSAGEM m
-                    WHERE m.EXCLUIDO = 0";
+            // Fetch language-specific data
+            var languageQuery = @"
+                SELECT mi.ID_MENSAGEM, mi.IDIOMA, mi.TITULO, mi.DESCRICAO, mi.AJUDA
+                FROM TCPCONF.MENSAGEM_IDIOMA mi
+                WHERE mi.EXCLUIDO = 0";
 
-                var messageResults = await conn.QueryAsync<MessageDefinition>(messageQuery);
-                foreach (var message in messageResults)
+            var languageResults = await _repo.GetFromSqlAsync<MessageLanguageDefinition>(
+                connectionString,
+                languageQuery,
+                default);
+
+            foreach (var lang in languageResults)
+            {
+                var message = messages.Values.FirstOrDefault(x => x.IdMensagem == lang.IdMensagem);
+                if (message != null)
                 {
-                    message.Key = $"{message.Prefixo}-{message.Codigo}";
-                    messages[message.Key] = message;
-                }
-
-                // Fetch language-specific data
-                var languageQuery = @"
-                    SELECT mi.ID_MENSAGEM, mi.IDIOMA, mi.TITULO, mi.DESCRICAO, mi.AJUDA
-                    FROM TCPCONF.MENSAGEM_IDIOMA mi
-                    WHERE mi.EXCLUIDO = 0";
-
-                var languageResults = await conn.QueryAsync<(long IdMensagem, int Idioma, string Titulo, string Descricao, string Ajuda)>(languageQuery);
-                foreach (var lang in languageResults)
-                {
-                    var message = messages.Values.FirstOrDefault(x => x.IdMensagem == lang.IdMensagem);
-                    if (message != null)
+                    message.Languages[lang.Idioma] = new MessageLanguageDefinition
                     {
-                        message.Languages[lang.Idioma] = new MessageLanguageDefinition
-                        {
-                            Idioma = lang.Idioma,
-                            Titulo = lang.Titulo,
-                            Descricao = lang.Descricao,
-                            Ajuda = lang.Ajuda
-                        };
-                    }
+                        Idioma = lang.Idioma,
+                        Titulo = lang.Titulo,
+                        Descricao = lang.Descricao,
+                        Ajuda = lang.Ajuda
+                    };
                 }
             }
 
@@ -137,7 +146,7 @@ namespace Common.Services
 
             if (!_userCodeCache.TryGetValue(cacheKey, out var userCode))
             {
-                userCode = (await _cadastroService.GetUsersAsync(environment, userName)).FirstOrDefault().Key;
+                userCode = (await _cadastroService.GetUsersAsync(environment, userName)).FirstOrDefault().IdUsuario;
                 _userCodeCache[cacheKey] = userCode;
             }
 
