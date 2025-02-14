@@ -17,7 +17,7 @@ public class ConfigurationService : IConfigurationService
     // Este construtor é usado para testes
     public ConfigurationService(string configPath)
     {
-        _configPath = configPath;        
+        _configPath = configPath;
         string appFolder = Path.GetDirectoryName(_configPath);
 
         if (!Directory.Exists(appFolder))
@@ -36,7 +36,7 @@ public class ConfigurationService : IConfigurationService
             _config = JsonSerializer.Deserialize<ConfigModel>(jsonConfig);
             return;
         }
- 
+
         _config = new ConfigModel
         {
             OrganizationUrl = "https://dev.azure.com/terminal-cp",

@@ -70,7 +70,7 @@ namespace TestNamespace
             // Assert
             var serviceOutput = outputs.First(o => o.HintName.Contains("MultiInterfaceStateService.g.cs"));
             var serviceText = serviceOutput.SourceText.ToString();
-            serviceText.Should().Contain("public class MultiInterfaceStateService : IFirstInterface, ISecondInterface");        
+            serviceText.Should().Contain("public class MultiInterfaceStateService : IFirstInterface, ISecondInterface");
         }
 
         [Test]

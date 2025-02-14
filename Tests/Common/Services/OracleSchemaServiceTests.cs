@@ -1,14 +1,10 @@
 using Common.Models;
+using Common.Repositories.TCP.Interfaces;
 using Common.Services;
-using Common.Services.Interfaces;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.Services.Common;
-using Common.Repositories.TCP.Interfaces;
 using Moq;
-using System.Threading;
 
 namespace Tests.Common.Services
 {
@@ -64,8 +60,8 @@ namespace Tests.Common.Services
         public async Task GetViewDefinitionsAsync_ReturnsAllViews()
         {
             // Arrange
-             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+               .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
 
             // Act
             var results = await _service.GetViewDefinitionsAsync("any", "MOCK_SCHEMA");
@@ -291,7 +287,7 @@ namespace Tests.Common.Services
 
             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>("mock-dev-conn", It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM DEV_VIEW_DEFINITION") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
-            
+
             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>("mock-qa-conn", It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM QA_VIEW_DEFINITION") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
 

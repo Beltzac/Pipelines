@@ -4,7 +4,6 @@ using Common.Services.Interfaces;
 using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SQL.Formatter.Language;
 using static SQL.Formatter.SqlFormatter;

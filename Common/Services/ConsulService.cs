@@ -324,7 +324,7 @@ namespace Common.Services
                 .WithHeader("X-Consul-Token", consulEnv.ConsulToken)
                 .GetStringAsync();
 
-            foreach(var keyDetail in JArray.Parse(responseBody))
+            foreach (var keyDetail in JArray.Parse(responseBody))
             {
                 string keyy = keyDetail["Key"].ToString();
                 string value = keyDetail["Value"]?.ToString() ?? string.Empty;
@@ -478,7 +478,7 @@ namespace Common.Services
                 // Parse once, then serialize again with indentation
                 using var doc = JsonDocument.Parse(value);
                 // Re-serialize with indentation
-            
+
                 return System.Text.Json.JsonSerializer.Serialize(doc.RootElement, _jsonSerializerOptions);
             }
             catch

@@ -1,12 +1,9 @@
 using Common.Models;
+using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
-using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
-using System.Data;
-using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
-using Common.Repositories.TCP.Interfaces;
 
 namespace Common.Services
 {
