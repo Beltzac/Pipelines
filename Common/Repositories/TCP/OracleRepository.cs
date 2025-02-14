@@ -14,21 +14,21 @@ namespace Common.Repositories.TCP
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<List<T>> GetFromSqlAsync<T>(string connectionString, string sql, CancellationToken cancellationToken)
+        public async Task<List<T>> GetFromSqlAsync<T>(string connectionString, FormattableString sql, CancellationToken cancellationToken)
         {
             using var context = _connectionFactory.CreateContext(connectionString);
 
             return await context.Database
-                .SqlQuery<T>(FormattableStringFactory.Create(sql))
+                .SqlQuery<T>(sql)
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<T> GetSingleFromSqlAsync<T>(string connectionString, string sql, CancellationToken cancellationToken)
+        public async Task<T> GetSingleFromSqlAsync<T>(string connectionString, FormattableString sql, CancellationToken cancellationToken)
         {
             using var context = _connectionFactory.CreateContext(connectionString);
 
             return await context.Database
-                .SqlQuery<T>(FormattableStringFactory.Create(sql))
+                .SqlQuery<T>(sql)
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }

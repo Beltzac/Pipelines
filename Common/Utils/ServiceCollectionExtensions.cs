@@ -1,6 +1,7 @@
 using Blazored.Toast;
 using Common.ExternalApis;
 using Common.ExternalApis.Interfaces;
+using Common.Repositories.TCP.Interfaces;
 using Common.Repositories;
 using Common.Repositories.Interno.Interfaces;
 using Common.Services;
@@ -80,6 +81,7 @@ namespace Common.Utils
             services.AddScoped<ICadastroService, CadastroService>();
 
             services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
+            services.AddScoped<IOracleRepository, Common.Repositories.TCP.OracleRepository>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 

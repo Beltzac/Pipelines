@@ -43,6 +43,17 @@
           "Microsoft.AspNetCore.Components.Web": "6.0.3"
         }
       },
+      "EFCore.NamingConventions": {
+        "type": "Direct",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "heKIYzPdEWx+Ba4xuG6jfEssW9rEi7I0lX38eoN7wo7qgg9uw7nn8UEmDQfwGEYPzSDpetCVANnDr5tqt2Asjg==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "[9.0.0, 10.0.0)",
+          "Microsoft.EntityFrameworkCore.Relational": "[9.0.0, 10.0.0)",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
+        }
+      },
       "FuzzySharp": {
         "type": "Direct",
         "requested": "[2.0.2, )",
@@ -2802,6 +2813,7 @@
           "ClosedXML": "[0.104.2, )",
           "CompareNETObjects": "[4.83.0, )",
           "DiffPlex": "[1.7.2, )",
+          "EFCore.NamingConventions": "[9.0.0, )",
           "FlexLabs.EntityFrameworkCore.Upsert": "[8.1.2, )",
           "Flurl": "[4.0.0, )",
           "Flurl.Http": "[4.0.2, )",

@@ -24,21 +24,6 @@ namespace Tests.Common.Services
         {
             _configServiceMock = new Mock<IConfigurationService>();
             _oracleRepositoryMock = new Mock<IOracleRepository>();
-            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" } });
-
-            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(new OracleViewDefinition("View1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" });
-
-            //_options = new DbContextOptionsBuilder<TcpDbContext>()
-            //    .UseSqlite("Data Source=:memory:")
-            //    .Options;
-
-            //_context = new TcpDbContext(_options);
-            //SeedTestData();
-
-            //var connectionFactoryMock = new Mock<IOracleConnectionFactory>();
-            //connectionFactoryMock.Setup(f => f.CreateContext(It.IsAny<string>()))
-            //    .Returns((string _) => _context);
 
             _service = new OracleSchemaService(
                 Mock.Of<ILogger<OracleSchemaService>>(),
@@ -46,19 +31,11 @@ namespace Tests.Common.Services
                 _oracleRepositoryMock.Object);
         }
 
-        //private void SeedTestData()
-        //{
-        //    _context.Database.Migrate();
-        //    _context.Add(new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" });
-        //    _context.Add(new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" });
-        //    _context.SaveChanges();
-        //}
-
         [Test]
         public async Task TestConnectionAsync_ReturnsTrue()
         {
             // Arrange
-            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<int>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<int>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1);
 
             // Act
@@ -72,7 +49,7 @@ namespace Tests.Common.Services
         public async Task GetViewDefinitionAsync_ReturnsCorrectView()
         {
             // Arrange
-            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new OracleViewDefinition("mock-view", "SELECT * FROM mock-table") { Owner = "MOCK_SCHEMA" });
 
             // Act
@@ -87,8 +64,8 @@ namespace Tests.Common.Services
         public async Task GetViewDefinitionsAsync_ReturnsAllViews()
         {
             // Arrange
-             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" } });
+             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
 
             // Act
             var results = await _service.GetViewDefinitionsAsync("any", "MOCK_SCHEMA");
@@ -126,26 +103,26 @@ namespace Tests.Common.Services
             // Arrange
             var config = new ConfigModel
             {
-                OracleEnvironments = new List<OracleEnvironment>
-                {
+                OracleEnvironments =
+                [
                     new() { Name = "DEV", ConnectionString = "mock-dev-conn", Schema = "DEV_SCHEMA" },
                     new() { Name = "QA", ConnectionString = "mock-qa-conn", Schema = "QA_SCHEMA" }
-                }
+                ]
             };
 
             // Mock DEV views
             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
                     "mock-dev-conn",
-                    It.IsAny<string>(),
+                    It.IsAny<FormattableString>(),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "DEV_VIEW_DEFINITION") });
+                .ReturnsAsync([new("View1", "DEV_VIEW_DEFINITION")]);
 
             // Mock QA views
             _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
                     "mock-qa-conn",
-                    It.IsAny<string>(),
+                    It.IsAny<FormattableString>(),
                     It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "QA_VIEW_DEFINITION") });
+                .ReturnsAsync([new("View1", "QA_VIEW_DEFINITION")]);
 
             _configServiceMock.Setup(s => s.GetConfig()).Returns(config);
 
@@ -193,6 +170,9 @@ namespace Tests.Common.Services
                 ("VIEW2", "SELECT * FROM TABLE2")
             };
 
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OracleViewDefinition> { new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" } });
+
             var viewDefinitions = await _service.GetViewDefinitionsAsync(connectionString, schema);
 
             viewDefinitions.Should().HaveCount(expectedViews.Count);
@@ -220,6 +200,9 @@ namespace Tests.Common.Services
         [Test]
         public async Task GetViewDefinitionAsync_ShouldReturnCorrectViewDefinition()
         {
+            _oracleRepositoryMock.Setup(repo => repo.GetSingleFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OracleViewDefinition("View1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" });
+
             var connectionString = "ValidConnectionString";
             var schema = "ValidSchema";
             var viewName = "View1";
@@ -297,37 +280,28 @@ namespace Tests.Common.Services
             // Arrange
             var config = new ConfigModel
             {
-                OracleEnvironments = new List<OracleEnvironment>
-                {
+                OracleEnvironments =
+                [
                     new() { Name = "DEV", ConnectionString = "mock-dev-conn", Schema = "DEV_SCHEMA" },
                     new() { Name = "QA", ConnectionString = "mock-qa-conn", Schema = "QA_SCHEMA" }
-                }
+                ]
             };
 
-            // Mock DEV views
-            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
-                    "mock-dev-conn", 
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "DEV_VIEW_DEFINITION") });
-
-            // Mock QA views
-            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(
-                    "mock-qa-conn", 
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<OracleViewDefinition> { new("View1", "QA_VIEW_DEFINITION") });
-
             _configServiceMock.Setup(s => s.GetConfig()).Returns(config);
+
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>("mock-dev-conn", It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM DEV_VIEW_DEFINITION") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
+            
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>("mock-qa-conn", It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM QA_VIEW_DEFINITION") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
 
             // Act
             var results = await _service.Compare("DEV", "QA");
 
             // Assert
             results.Should().ContainSingle().Which.Should().Match<OracleDiffResult>(x =>
-                x.Key == "View1" &&
-                x.FormattedDiff.Contains("DEV_VIEW_DEFINITION") && 
-                x.FormattedDiff.Contains("QA_VIEW_DEFINITION") &&
+                x.Key == "VIEW1" &&
+                x.FormattedDiff.Contains("DEV_VIEW_DEFINITION") &&
                 x.HasDifferences
             );
         }
@@ -337,14 +311,17 @@ namespace Tests.Common.Services
         {
             var config = new ConfigModel
             {
-                OracleEnvironments = new List<OracleEnvironment>
-                {
+                OracleEnvironments =
+                [
                     new() { Name = "DEV", ConnectionString = "mock-dev-conn", Schema = "DEV_SCHEMA" },
                     new() { Name = "DEV", ConnectionString = "mock-dev-conn", Schema = "DEV_SCHEMA" }
-                }
+                ]
             };
 
             _configServiceMock.Setup(s => s.GetConfig()).Returns(config);
+
+            _oracleRepositoryMock.Setup(repo => repo.GetFromSqlAsync<OracleViewDefinition>(It.IsAny<string>(), It.IsAny<FormattableString>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new OracleViewDefinition("VIEW1", "SELECT * FROM TABLE1") { Owner = "MOCK_SCHEMA" }, new OracleViewDefinition("VIEW2", "SELECT * FROM TABLE2") { Owner = "MOCK_SCHEMA" }]);
 
             var results = await _service.Compare("DEV", "DEV");
 

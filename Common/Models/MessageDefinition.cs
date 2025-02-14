@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Common.Models
 {
     public class MessageDefinition
@@ -7,20 +9,24 @@ namespace Common.Models
         public long IdDestinoMensagem { get; set; }
         public long IdGrupoMensagem { get; set; }
         public bool Verificado { get; set; }
-        public string Modulo { get; set; }
-        public string Codigo { get; set; }
-        public string Prefixo { get; set; }
-        public string Elemento { get; set; }
-        public string Observacao { get; set; }
+        public string? Modulo { get; set; }
+        public string? Codigo { get; set; }
+        public string? Prefixo { get; set; }
+        public string? Elemento { get; set; }
+        public string? Observacao { get; set; }
+
+        [NotMapped]
         public Dictionary<int, MessageLanguageDefinition> Languages { get; set; } = new();
+        
+        [NotMapped]
         public string Key { get; set; }
     }
 
     public class MessageLanguageDefinition
     {
-        public string Titulo { get; set; }
-        public string Descricao { get; set; }
-        public string Ajuda { get; set; }
+        public string? Titulo { get; set; }
+        public string? Descricao { get; set; }
+        public string? Ajuda { get; set; }
         public int Idioma { get; set; }
         public long IdMensagem { get; set; }
     }

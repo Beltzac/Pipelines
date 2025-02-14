@@ -49,11 +49,9 @@ namespace Common.Services
         {
             try
             {
-                var sql = $"SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = {schema}";
-
                 await _repo.GetSingleFromSqlAsync<int>(
                     connectionString,
-                    sql,
+                    $"SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = {schema}",
                     default);
 
                 return true;
@@ -67,11 +65,9 @@ namespace Common.Services
 
         public async Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName)
         {
-            var sql = $"SELECT VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} ";
-
             return await _repo.GetSingleFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                sql,
+                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} ",
                 default);
         }
 
@@ -86,11 +82,9 @@ namespace Common.Services
 
         public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)
         {
-            var sql = $"SELECT VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema}";
-
             return await _repo.GetFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                sql,
+                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema}",
                 default);
         }
 

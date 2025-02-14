@@ -37,15 +37,11 @@ namespace Common.Services
             int pageNumber = 1,
             CancellationToken cancellationToken = default)
         {
-            var config = _configService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
-                ?? throw new ArgumentException($"Ambiente {environment} não encontrado");
-
             var sql = BuildQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
 
             var results = await _repo.GetFromSqlAsync<LtdbLtvcRecord>(
                 environment,
-                sql,
+                FormattableStringFactory.Create(sql),
                 cancellationToken);
 
             return (
@@ -107,7 +103,7 @@ MainQuery AS (
         LTVC.CREATED_AT AS DATA_LTVC,
         LTDB.REQUEST_ID,
         LTVC.ID_AGENDAMENTO,
-        NVL(MOVETYPE, 'INVALID_XML') AS MOVETYPE,
+        NVL(MOVETYPE, 'INVALID_XML') AS MOVE_TYPE,
         NVL(PLACA, 'INVALID_XML') AS PLACA,
         NVL(MOTORISTA, 'INVALID_XML') AS MOTORISTA,
         LTDB.XML AS LTDB_XML,
@@ -178,7 +174,7 @@ MainQuery AS (
         {whereClause}
 ),
 CountQuery AS (
-    SELECT COUNT(*) as TotalCount
+    SELECT COUNT(*) as TOTAL_COUNT
     FROM MainQuery
 ),
 PagedQuery AS (
@@ -187,7 +183,7 @@ PagedQuery AS (
     ORDER BY DATA_LTDB DESC
     OFFSET {(pageNumber - 1) * pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY
 )
-SELECT q.*, c.TotalCount
+SELECT q.*, c.TOTAL_COUNT
 FROM PagedQuery q
 CROSS JOIN CountQuery c";
 
@@ -206,15 +202,11 @@ CROSS JOIN CountQuery c";
             string? status = null,
             CancellationToken cancellationToken = default)
         {
-            var config = _configService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(x => x.Name == environment)
-                ?? throw new ArgumentException($"Environment {environment} not found");
-
             var sql = BuildDelayMetricsQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status);
 
             var results = await _repo.GetFromSqlAsync<DelayMetric>(
                 environment,
-                sql,
+                FormattableStringFactory.Create(sql),
                 cancellationToken);
 
             return results;
@@ -262,7 +254,7 @@ CROSS JOIN CountQuery c";
 
             return $@"
 SELECT
-    TO_CHAR(TRUNC(LTDB.CREATED_AT, 'HH'), 'YYYY-MM-DD HH24:MI:SS') as TIMESTAMP,
+    TO_CHAR(TRUNC(LTDB.CREATED_AT, 'HH'), 'dd/MM HH:mm') as TIMESTAMP,
     CAST(AVG(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
     CAST(MAX(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
     COUNT(*) as REQUEST_COUNT

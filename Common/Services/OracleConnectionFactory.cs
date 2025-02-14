@@ -11,7 +11,9 @@ namespace Common.Services
         public DbContext CreateContext(string connectionString)
         {
             var optionsBuilder = new DbContextOptionsBuilder<TcpDbContext>();
-            optionsBuilder.UseOracle(connectionString, options => {});
+            optionsBuilder.UseOracle(connectionString, options => {
+            
+            }).UseUpperSnakeCaseNamingConvention();
 
             return new TcpDbContext(optionsBuilder.Options);
         }

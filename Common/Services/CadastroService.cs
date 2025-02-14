@@ -18,7 +18,7 @@ namespace Common.Services
             return await _repo.GetFromSqlAsync<Usuario>(
                 environment,
                 @$"
-                SELECT id_usuario, login
+                SELECT ID_USUARIO, LOGIN, login as NOME
                 FROM TCPCAD.login
                 WHERE UPPER(login) LIKE '%' || UPPER({searchText ?? string.Empty}) || '%'
                 FETCH FIRST 10 ROWS ONLY",

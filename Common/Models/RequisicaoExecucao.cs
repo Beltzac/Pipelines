@@ -9,7 +9,7 @@ namespace Common.Models
         public string? Requisicao { get; set; }
         public string? Resposta { get; set; }
         public string? Erro { get; set; }
-        public string NomeFluxo { get; set; }
+        public string? NomeFluxo { get; set; }
         public string? EndPoint { get; set; }
         public string? Url { get; set; }
         public TimeSpan? Duration { get; set; }
