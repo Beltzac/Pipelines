@@ -37,7 +37,7 @@ namespace Common.Services
             var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, genericText, userId,
                 execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
 
-            var results = await _repo.GetFromSqlAsync<RequisicaoExecucao>(environment, sql, cancellationToken);
+            var results = await _repo.GetFromSqlAsync<RequisicaoExecucao>(environment, FormattableStringFactory.Create(sql), cancellationToken);
 
             return (
                 Results: results,
@@ -112,7 +112,7 @@ namespace Common.Services
 WITH RequisicaoExecucao AS (
     SELECT 'Requisição' AS SOURCE, E.ID_EXECUCAO, e.HTTP_METHOD, e.HTTP_STATUS_CODE,
            REQ.CONTEUDO AS REQUISICAO, RESP.CONTEUDO AS RESPOSTA, NULL as ERRO,
-           E.NOME_FLUXO, E.END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
+           E.NOME_FLUXO, E.END_POINT, E.URL, (e.data_fim - e.data_inicio) as DURATION,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.REQUISICAO E
     LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
@@ -124,7 +124,7 @@ WITH RequisicaoExecucao AS (
     SELECT 'Execução' AS SOURCE, E.ID_EXECUCAO, null as HTTP_METHOD,
            null as HTTP_STATUS_CODE, REQ.CONTEUDO AS REQUISICAO,
            RESP.CONTEUDO AS RESPOSTA, ERRO.CONTEUDO AS ERRO,
-           E.NOME_FLUXO, null as END_POINT, E.URL, (e.data_fim - e.data_inicio) as DELAY,
+           E.NOME_FLUXO, null as END_POINT, E.URL, (e.data_fim - e.data_inicio) as DURATION,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.EXECUCAO E
     LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
@@ -133,7 +133,7 @@ WITH RequisicaoExecucao AS (
     LEFT JOIN TCPESB.MENSAGEM ERRO ON E.ID_MSG_ERRO = ERRO.ID_MENSAGEM
 ),
 CountQuery AS (
-    SELECT COUNT(*) as TotalCount
+    SELECT COUNT(*) as TOTAL_COUNT
     FROM RequisicaoExecucao RE
     {whereClause}
 ),
@@ -144,7 +144,7 @@ PagedQuery AS (
     ORDER BY RE.DATA_INICIO DESC
     OFFSET {(pageNumber - 1) * pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY
 )
-SELECT q.*, c.TotalCount
+SELECT q.*, c.TOTAL_COUNT
 FROM PagedQuery q
 CROSS JOIN CountQuery c";
 

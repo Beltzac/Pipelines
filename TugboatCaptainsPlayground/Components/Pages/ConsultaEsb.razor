@@ -32,15 +32,15 @@
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
             </div>
             <DateRangePicker
-                Culture="@CultureInfo.GetCultureInfo("pt-BR")"
-                TimePicker="true"
-                TimePicker24Hour="true"
-                TimePickerSeconds="true"
-                AutoApply="true"
-                DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
-                @bind-StartDate="ConsultaEsbStateService.StartDate"
-                @bind-EndDate="ConsultaEsbStateService.EndDate"
-                class="form-control" />
+            Culture="@CultureInfo.GetCultureInfo("pt-BR")"
+            TimePicker="true"
+            TimePicker24Hour="true"
+            TimePickerSeconds="true"
+            AutoApply="true"
+            DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
+            @bind-StartDate="ConsultaEsbStateService.StartDate"
+            @bind-EndDate="ConsultaEsbStateService.EndDate"
+            class="form-control" />
         </div>
 
         <div class="col-md-3">
@@ -67,13 +67,13 @@
         <div class="col-md-3">
             <label class="form-label">Usuário</label>
             <BlazoredTypeahead TItem="KeyValuePair<long, string>"
-                              TValue="KeyValuePair<long, string>?"
-                              ConvertMethod="x => x"
-                              SearchMethod="async x => await SearchUsers(x)"
-                              @bind-Value="@ConsultaEsbStateService.User"
-                              EnableDropDown="true"
-                              placeholder="Buscar usuário..."
-                              class="form-control">
+            TValue="KeyValuePair<long, string>?"
+            ConvertMethod="x => x"
+            SearchMethod="async x => await SearchUsers(x)"
+            @bind-Value="@ConsultaEsbStateService.User"
+            EnableDropDown="true"
+            placeholder="Buscar usuário..."
+            class="form-control">
                 <SelectedTemplate Context="user">
                     @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
                 </SelectedTemplate>
@@ -288,13 +288,23 @@
 
     private async Task<List<KeyValuePair<long, string>>> SearchUsers(string searchText)
     {
-        if (string.IsNullOrEmpty(ConsultaEsbStateService.SelectedEnvironment))
+        try
         {
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == ConsultaEsbStateService.SelectedEnvironment);
+            if (oracleEnv == null)
+            {
+                toastService.ShowError("Por favor, selecione um ambiente Oracle.");
+                return new List<KeyValuePair<long, string>>();
+            }
+
+            var userLogins = await CadastroService.GetUsersAsync(oracleEnv.ConnectionString, searchText);
+            return userLogins.Select(kvp => new KeyValuePair<long, string>(kvp.IdUsuario, kvp.Nome)).ToList();
+        }
+        catch(Exception ex)
+        {
+            toastService.ShowError(ex.Message);
             return new List<KeyValuePair<long, string>>();
         }
-
-        var userLogins = await CadastroService.GetUsersAsync(ConsultaEsbStateService.SelectedEnvironment, searchText);
-        return userLogins.Select(kvp => new KeyValuePair<long, string>(kvp.IdUsuario, kvp.Nome)).ToList();
     }
 
     protected override async Task OnInitializedAsync()
@@ -378,6 +388,13 @@
 
     private async Task ExecuteQuery(bool updateState = true)
     {
+        var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == ConsultaEsbStateService.SelectedEnvironment);
+        if (oracleEnv == null)
+        {
+            toastService.ShowError("Por favor, selecione um ambiente Oracle.");
+            return;
+        }
+
         try
         {
             cts?.Cancel();
@@ -388,7 +405,7 @@
             StateHasChanged();
 
             var (queryResults, total) = await RequisicaoService.ExecuteQueryAsync(
-                ConsultaEsbStateService.SelectedEnvironment,
+                oracleEnv.ConnectionString,
                 ConsultaEsbStateService.StartDate,
                 ConsultaEsbStateService.EndDate,
                 ConsultaEsbStateService.UrlFilter,

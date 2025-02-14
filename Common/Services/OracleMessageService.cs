@@ -40,7 +40,7 @@ namespace Common.Services
 
             var messageResults = await _repo.GetFromSqlAsync<MessageDefinition>(
                 connectionString,
-                messageQuery,
+                FormattableStringFactory.Create(messageQuery),
                 default);
 
             foreach (var message in messageResults)
@@ -57,7 +57,7 @@ namespace Common.Services
 
             var languageResults = await _repo.GetFromSqlAsync<MessageLanguageDefinition>(
                 connectionString,
-                languageQuery,
+                FormattableStringFactory.Create(languageQuery),
                 default);
 
             foreach (var lang in languageResults)

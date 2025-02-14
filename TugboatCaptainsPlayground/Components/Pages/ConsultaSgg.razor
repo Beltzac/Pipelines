@@ -308,13 +308,20 @@
             cts?.Cancel();
             cts = new CancellationTokenSource();
 
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == ConsultaSggStateService.SelectedEnvironment);
+            if (oracleEnv == null)
+            {
+                toastService.ShowError("Por favor, selecione um ambiente Oracle.");
+                return;
+            }
+
             ConsultaSggStateService.ProgressValue = 0;
             ConsultaSggStateService.IsLoading = true;
 
             StateHasChanged();
 
             var queryTask = LtdbService.ExecuteQueryAsync(
-                ConsultaSggStateService.SelectedEnvironment,
+                oracleEnv.ConnectionString,
                 ConsultaSggStateService.StartDate,
                 ConsultaSggStateService.EndDate,
                 ConsultaSggStateService.GenericText,
@@ -332,7 +339,7 @@
             if (!paginate)
             {
                 delayTask = LtdbService.GetDelayMetricsAsync(
-                    ConsultaSggStateService.SelectedEnvironment,
+                    oracleEnv.ConnectionString,
                     ConsultaSggStateService.StartDate,
                     ConsultaSggStateService.EndDate,
                     ConsultaSggStateService.GenericText,
@@ -374,7 +381,7 @@
     {
         if (ConsultaSggStateService.DelayData == null) return;
 
-        var labels = ConsultaSggStateService.DelayData.Select(d => d.Timestamp.ToString("dd/MM HH:mm")).ToArray();
+        var labels = ConsultaSggStateService.DelayData.Select(d => d.Timestamp).ToArray();
         var dataAvg = ConsultaSggStateService.DelayData.Select(d => d.AvgDelaySeconds).ToArray();
         var dataMax = ConsultaSggStateService.DelayData.Select(d => d.MaxDelaySeconds).ToArray();
         var dataCount = ConsultaSggStateService.DelayData.Select(d => d.RequestCount).ToArray();
