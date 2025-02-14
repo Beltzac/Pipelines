@@ -129,7 +129,7 @@ namespace TugboatCaptainsPlayground.Services
                 var getTargetTask = _getTargetItemsAsync();
 
                 var tasksWithProgress = new[]
-                { 
+                {
                     new { Task = getSourceTask, Label = "Carregado valores fonte..." },
                     new { Task = getTargetTask, Label = "Carregado valores alvo..." }
                 };

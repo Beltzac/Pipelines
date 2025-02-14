@@ -1,8 +1,6 @@
-using Common.Services.Interfaces;
-using Oracle.ManagedDataAccess.Client;
-using Microsoft.EntityFrameworkCore;
-using System.Data;
 using Common.Models;
+using Common.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Common.Services
 {
@@ -11,8 +9,9 @@ namespace Common.Services
         public DbContext CreateContext(string connectionString)
         {
             var optionsBuilder = new DbContextOptionsBuilder<TcpDbContext>();
-            optionsBuilder.UseOracle(connectionString, options => {
-            
+            optionsBuilder.UseOracle(connectionString, options =>
+            {
+
             }).UseUpperSnakeCaseNamingConvention();
 
             return new TcpDbContext(optionsBuilder.Options);
@@ -23,7 +22,7 @@ namespace Common.Services
     {
         public virtual DbSet<OracleViewDefinition> OracleViewDefinition { get; set; }
 
-        public TcpDbContext(DbContextOptions<TcpDbContext> options): base(options)
+        public TcpDbContext(DbContextOptions<TcpDbContext> options) : base(options)
         {
         }
     }

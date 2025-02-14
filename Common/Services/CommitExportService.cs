@@ -96,11 +96,11 @@ namespace Common.Services
                                     // 4. List commits by the user from the configuration in the last 30 days
                                     // 4. List commits by the user from the configuration within the date filter
                                     var commits = await _gitClient.GetCommitsAsync(
-                                        project.Id, 
-                                        repo.Id, 
-                                        branchName, 
-                                        _configService.GetConfig().Username, 
-                                        dateFilter ?? DateTime.UtcNow.AddDays(-30), 
+                                        project.Id,
+                                        repo.Id,
+                                        branchName,
+                                        _configService.GetConfig().Username,
+                                        dateFilter ?? DateTime.UtcNow.AddDays(-30),
                                         DateTime.UtcNow);
 
                                     foreach (var commit in commits)
@@ -233,7 +233,8 @@ namespace Common.Services
 
         public async Task ExportCommitDataAsync()
         {
-            try { 
+            try
+            {
                 var config = _configService.GetConfig();
                 var twoMonthsAgo = DateTime.UtcNow.AddMonths(-2);
 
@@ -254,7 +255,7 @@ namespace Common.Services
                     _logger.LogInformation($"Dados do commit exportados para {filePath}");
                 }
                 else
-                _logger.LogInformation("Nenhum dado de commit disponível para exportação.");
+                    _logger.LogInformation("Nenhum dado de commit disponível para exportação.");
             }
             catch (OperationCanceledException)
             {

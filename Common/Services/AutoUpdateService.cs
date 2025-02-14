@@ -3,8 +3,6 @@ using Common.Utils;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace Common.Services

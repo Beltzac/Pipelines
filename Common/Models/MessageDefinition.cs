@@ -17,7 +17,7 @@ namespace Common.Models
 
         [NotMapped]
         public Dictionary<int, MessageLanguageDefinition> Languages { get; set; } = new();
-        
+
         [NotMapped]
         public string Key { get; set; }
     }

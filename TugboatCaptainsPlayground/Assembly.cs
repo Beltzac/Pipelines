@@ -1,3 +1,1 @@
-﻿using Common.AOP;
-
-//[assembly: LogTimingAspect]
+﻿//[assembly: LogTimingAspect]

@@ -169,7 +169,7 @@ namespace Common.Services
 
             foreach (var repo in repos)
             {
-                if(repo.Embedding == null)
+                if (repo.Embedding == null)
                 {
                     repo.Embedding = _embedder.Embed(repo.Path);
                     // TODO: melhorar eficiencia

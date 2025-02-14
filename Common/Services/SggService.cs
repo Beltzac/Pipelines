@@ -1,12 +1,9 @@
 using Common.Models;
+using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System.Runtime.CompilerServices;
-using Oracle.ManagedDataAccess.Client;
 using SQL.Formatter;
 using SQL.Formatter.Language;
-using System.Data;
-using Common.Repositories.TCP.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace Common.Services
 {
@@ -49,47 +46,47 @@ namespace Common.Services
                 TotalCount: results.FirstOrDefault()?.TotalCount ?? 0
             );
         }
-public string BuildQuery(
-    DateTimeOffset? startDate,
-    DateTimeOffset? endDate,
-    string? genericText = null,
-    string? placa = null,
-    string? motorista = null,
-    string? moveType = null,
-    long? idAgendamento = null,
-    string? status = null,
-    double? minDelay = null,
-    int pageSize = 10,
-    int pageNumber = 1)
-{
-    var conditions = new List<string>();
+        public string BuildQuery(
+            DateTimeOffset? startDate,
+            DateTimeOffset? endDate,
+            string? genericText = null,
+            string? placa = null,
+            string? motorista = null,
+            string? moveType = null,
+            long? idAgendamento = null,
+            string? status = null,
+            double? minDelay = null,
+            int pageSize = 10,
+            int pageNumber = 1)
+        {
+            var conditions = new List<string>();
 
-    if (startDate.HasValue)
-        conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (startDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-    if (endDate.HasValue)
-        conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (endDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-    if (!string.IsNullOrEmpty(genericText))
-        conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
+            if (!string.IsNullOrEmpty(genericText))
+                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
 
-    if (!string.IsNullOrEmpty(placa))
-        conditions.Add($"PLACA LIKE '%{placa}%'");
+            if (!string.IsNullOrEmpty(placa))
+                conditions.Add($"PLACA LIKE '%{placa}%'");
 
-    if (!string.IsNullOrEmpty(motorista))
-        conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
+            if (!string.IsNullOrEmpty(motorista))
+                conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
 
-    if (!string.IsNullOrEmpty(moveType))
-        conditions.Add($"MOVETYPE = '{moveType}'");
+            if (!string.IsNullOrEmpty(moveType))
+                conditions.Add($"MOVETYPE = '{moveType}'");
 
-    if (idAgendamento.HasValue)
-        conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
+            if (idAgendamento.HasValue)
+                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
 
-    if (!string.IsNullOrEmpty(status))
-        conditions.Add($"LTVC_STATUS = '{status}'");
+            if (!string.IsNullOrEmpty(status))
+                conditions.Add($"LTVC_STATUS = '{status}'");
 
-    if (minDelay.HasValue)
-        conditions.Add($"extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400) >= {minDelay.Value}");
+            if (minDelay.HasValue)
+                conditions.Add($"extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400) >= {minDelay.Value}");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"

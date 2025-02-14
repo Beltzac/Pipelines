@@ -1,6 +1,6 @@
 namespace Common.Models
 {
-    public class OracleDiffResult: IDiffResult
+    public class OracleDiffResult : IDiffResult
     {
         public string Key { get; set; }
         public string FormattedDiff { get; set; }

@@ -1,7 +1,6 @@
 ﻿using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Runtime.CompilerServices;
 
 namespace Common.Repositories.TCP
 {
