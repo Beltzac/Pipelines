@@ -97,7 +97,7 @@
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
                 <td>
                     <button class="btn btn-sm @(buildInfo.IsPinned ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
-                        <i class="oi oi-pin"></i> @(buildInfo.IsPinned ? "Unpin" : "Pin")
+                        <i class="bi bi-pin-angle"></i>
                     </button>
                 </td>
             </ContextMenuTrigger>
