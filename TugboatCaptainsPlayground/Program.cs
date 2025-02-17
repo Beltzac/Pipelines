@@ -90,6 +90,8 @@ internal class Program
                 o.DetailedErrors = true;
             });
 
+
+
         builder.Services.AddCustomServices();
 
         builder.Services.AddHttpClient("Github").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler

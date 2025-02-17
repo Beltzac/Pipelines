@@ -6,6 +6,7 @@ using Common.Repositories.Interno.Interfaces;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services;
 using Common.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -21,7 +22,23 @@ namespace Common.Utils
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddEntityFrameworkSqlite();
-            services.AddDbContextFactory<RepositoryDbContext>();
+            //services.AddDbContextFactory<RepositoryDbContext>();
+
+            //services.AddDbContext<RepositoryDbContext>(options =>
+            //{
+            //    var databasePath = DBUtils.MainDBPath;
+            //    var connectionString = $"Data Source={databasePath}";
+            //    options.UseSqlite(connectionString)
+            //        .EnableSensitiveDataLogging();
+            //});
+
+            services.AddDbContextFactory<RepositoryDbContext>(options =>
+            {
+                var databasePath = DBUtils.MainDBPath;
+                var connectionString = $"Data Source={databasePath}";
+                options.UseSqlite(connectionString)
+                    .EnableSensitiveDataLogging();
+            });
 
             services.AddScoped<IRepositoryDatabase, SqliteRepositoryDatabase>();
 

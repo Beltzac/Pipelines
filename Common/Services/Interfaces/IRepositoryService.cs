@@ -21,5 +21,6 @@ namespace Common.Services.Interfaces
         void OpenCloneFolderInVsCode();
         void NavigateToPRCreation(Repository repo);
         Task<List<Guid>> FetchProjectsRepos();
+        Task UpdateRepositoryAsync(Repository repository);
     }
 }
