@@ -319,6 +319,7 @@ namespace {namespaceName}
     {{
         private {className} _state = new();
         private bool _isInitialized = false;
+        private bool _isDisposed = false;
 
         /// <summary>
         /// Event that is raised when the state changes.
@@ -419,7 +420,25 @@ namespace {namespaceName}
                 return false;
             }}
             return true;
-        }}{propertyAccessors}{collectionMethods}
+        }}
+
+        {propertyAccessors}
+
+        {collectionMethods}
+
+        public void Dispose()
+        {{
+            if (_isDisposed) return;
+
+            Save();
+            _isDisposed = true;
+        }}
+
+        ~{serviceName}()
+        {{
+            // Finalizer calls Dispose to ensure state is saved on application exit
+            Dispose();
+        }}
     }}
 }}";
         }

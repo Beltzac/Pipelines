@@ -108,12 +108,12 @@
     <PackageReference Include="Json.More.Net" Version="2.1.1" />
     <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="Markdig" Version="0.40.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.2" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Photino.NET" Version="4.0.16" />
     <PackageReference Include="Quartz" Version="3.13.1" />
@@ -128,9 +128,9 @@
     <PackageReference Include="SQLite" Version="3.13.0" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <PackageReference Include="System.Resources.Extensions" Version="9.0.1" />
-    <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.4" />
-    <PackageReference Include="Vanara.Windows.Shell" Version="4.0.4" />
+    <PackageReference Include="System.Resources.Extensions" Version="9.0.2" />
+    <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.5" />
+    <PackageReference Include="Vanara.Windows.Shell" Version="4.0.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
