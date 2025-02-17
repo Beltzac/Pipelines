@@ -491,5 +491,10 @@ namespace Common.Services
 
             return commands.ToString();
         }
+
+        public async Task UpdateRepositoryAsync(Repository repository)
+        {
+            await _repositoryDatabase.UpsertAsync(repository);
+        }
     }
 }

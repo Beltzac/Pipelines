@@ -79,10 +79,11 @@
             <th>Projeto</th>
             <th>Pessoa</th>
             <th>Commit</th>
+            <th>Pin</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var buildInfo in BuildInfoStateService.BuildInfos?.ToList() ?? new())
+        @foreach (var buildInfo in GetBuildInfos())
         {
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                 <td>
@@ -94,6 +95,11 @@
                 </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
+                <td>
+                    <button class="btn btn-sm @(buildInfo.IsPinned ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
+                        <i class="oi oi-pin"></i> @(buildInfo.IsPinned ? "Unpin" : "Pin")
+                    </button>
+                </td>
             </ContextMenuTrigger>
         }
     </tbody>
@@ -294,6 +300,21 @@
             _ when repo.Pipeline.Last.Result == "Failed" => StatusIndicator.Status.Error,
             _ => StatusIndicator.Status.Unknown,
         };
+    }
+
+    private async Task TogglePin(Repository repo)
+    {
+        repo.IsPinned = !repo.IsPinned;
+        await BuildInfoService.UpdateRepositoryAsync(repo);
+    }
+
+    private IEnumerable<Repository> GetBuildInfos()
+    {
+        if (string.IsNullOrEmpty(BuildInfoStateService.Filter))
+        {
+            return BuildInfoStateService.BuildInfos?.OrderByDescending(x => x.IsPinned).ToList() ?? new List<Repository>();
+        }
+        return BuildInfoStateService.BuildInfos ?? new List<Repository>();
     }
 
     public void Dispose()

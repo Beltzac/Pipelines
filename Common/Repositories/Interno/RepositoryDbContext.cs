@@ -10,7 +10,7 @@ namespace Common.Repositories
 {
     //dotnet ef migrations add MapearCampos --project Common
     //Add-Migration MapearEmbbeding
-    //EntityFrameworkCore\Add-Migration AddProjectTypeToRepository
+    //EntityFrameworkCore\Add-Migration Pin -Context RepositoryDbContext
     public class RepositoryDbContext : DbContext
     {
         public RepositoryDbContext(DbContextOptions<RepositoryDbContext> options)
@@ -25,13 +25,13 @@ namespace Common.Repositories
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                var databasePath = DBUtils.MainDBPath;
-                var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
-                optionsBuilder.UseSqlite(connectionString)
-                    .EnableSensitiveDataLogging();
-            }
+            // if (!optionsBuilder.IsConfigured)
+            // {
+            //     var databasePath = DBUtils.MainDBPath;
+            //     var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
+            //     optionsBuilder.UseSqlite(connectionString)
+            //         .EnableSensitiveDataLogging();
+            // }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
