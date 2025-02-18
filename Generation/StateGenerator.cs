@@ -296,6 +296,7 @@ namespace Generation
             var usingsBuilder = new StringBuilder();
             usingsBuilder.AppendLine("using System;");
             usingsBuilder.AppendLine("using System.Collections.Generic;");
+            usingsBuilder.AppendLine("using System.Diagnostics;");
             usingsBuilder.AppendLine("using System.Text.Json;");
             usingsBuilder.AppendLine("using System.IO;");
             usingsBuilder.AppendLine("using Common.Models;");
@@ -371,22 +372,27 @@ namespace {namespaceName}
         /// </summary>
         public void Save()
         {{
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                ""TugboatCaptainsPlayground""
+            );
+
             try
             {{
-                var folder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    ""TugboatCaptainsPlayground""
-                );
-
+                Console.WriteLine($""Creating state directory: {{folder}}"");
                 Directory.CreateDirectory(folder);
 
                 var path = Path.Combine(folder, $""{className}.json"");
+                Console.WriteLine($""Saving state to: {{path}}"");
+                var stopwatch = Stopwatch.StartNew();
                 var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions {{ IncludeFields = true, WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
                 File.WriteAllText(path, json);
+                stopwatch.Stop();
+                Console.WriteLine($""Saved state in {{stopwatch.ElapsedMilliseconds}}ms"");
             }}
             catch (Exception ex)
             {{
-                Console.WriteLine($""Failed to save state: {className} - {{ex.Message}}"");
+                Console.WriteLine($""Failed to save state {className} to {{folder}}: {{ex.Message}}"");
             }}
         }}
 
@@ -396,29 +402,39 @@ namespace {namespaceName}
         /// <returns>True if state was loaded, false if no saved state exists.</returns>
         public bool Load()
         {{
+            var path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                ""TugboatCaptainsPlayground"",
+                $""{className}.json""
+            );
+
             try
             {{
-                var path = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    ""TugboatCaptainsPlayground"",
-                    $""{className}.json""
-                );
+                Console.WriteLine($""Attempting to load state from: {{path}}"");
 
                 if (!File.Exists(path))
+                {{
+                    Console.WriteLine($""No saved state found at: {{path}}"");
                     return false;
+                }}
 
+                Console.WriteLine($""Loading state from: {{path}}"");
+                var stopwatch = Stopwatch.StartNew();
                 var json = File.ReadAllText(path);
                 _state = JsonSerializer.Deserialize<{className}>(json, new JsonSerializerOptions {{ IncludeFields = true, WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
+                stopwatch.Stop();
+                Console.WriteLine($""Loaded state in {{stopwatch.ElapsedMilliseconds}}ms"");
                 NotifyStateChanged();
             }}
             catch (Exception ex)
             {{
-                Console.WriteLine($""Failed to load state: {className} - {{ex.Message}}"");
+                Console.WriteLine($""Failed to load state {className} from {{path}}: {{ex.Message}}"");
                 // Create a new default state
                 _state = new {className}();
                 NotifyStateChanged();
                 return false;
             }}
+
             return true;
         }}
 
