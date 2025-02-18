@@ -66,8 +66,8 @@
 
         <div class="col-md-3">
             <label class="form-label">Usuário</label>
-            <BlazoredTypeahead TItem="KeyValuePair<long, string>"
-            TValue="KeyValuePair<long, string>?"
+            <BlazoredTypeahead TItem="Usuario"
+                               TValue="Usuario"
             ConvertMethod="x => x"
             SearchMethod="async x => await SearchUsers(x)"
             @bind-Value="@ConsultaEsbStateService.User"
@@ -75,10 +75,10 @@
             placeholder="Buscar usuário..."
             class="form-control">
                 <SelectedTemplate Context="user">
-                    @(user == null ? "Todos" : $"{user.Value.Value} ({user.Value.Key})")
+                    @(user == null ? "Todos" : $"{user?.Nome} ({user?.IdUsuario})")
                 </SelectedTemplate>
-                <ResultTemplate Context="kvp">
-                    @($"{kvp.Value} ({kvp.Key})")
+                <ResultTemplate Context="user">
+                    @($"{user?.Nome} ({user?.IdUsuario})")
                 </ResultTemplate>
                 <NotFoundTemplate>
                     Nenhum usuário encontrado
@@ -286,7 +286,7 @@
         ConsultaEsbStateService.Save();
     }
 
-    private async Task<List<KeyValuePair<long, string>>> SearchUsers(string searchText)
+    private async Task<List<Usuario>> SearchUsers(string searchText)
     {
         try
         {
@@ -294,16 +294,15 @@
             if (oracleEnv == null)
             {
                 toastService.ShowError("Por favor, selecione um ambiente Oracle.");
-                return new List<KeyValuePair<long, string>>();
+                return new List<Usuario>();
             }
 
-            var userLogins = await CadastroService.GetUsersAsync(oracleEnv.ConnectionString, searchText);
-            return userLogins.Select(kvp => new KeyValuePair<long, string>(kvp.IdUsuario, kvp.Nome)).ToList();
+            return await CadastroService.GetUsersAsync(oracleEnv.ConnectionString, searchText);
         }
         catch(Exception ex)
         {
             toastService.ShowError(ex.Message);
-            return new List<KeyValuePair<long, string>>();
+            return new List<Usuario>();
         }
     }
 
@@ -411,7 +410,7 @@
                 ConsultaEsbStateService.UrlFilter,
                 ConsultaEsbStateService.HttpMethod,
                 ConsultaEsbStateService.GenericText,
-                ConsultaEsbStateService.User?.Key,
+                ConsultaEsbStateService.User?.IdUsuario,
                 ConsultaEsbStateService.ExecucaoId,
                 ConsultaEsbStateService.PageSize,
                 ConsultaEsbStateService.CurrentPage,
@@ -466,7 +465,7 @@
             ConsultaEsbStateService.UrlFilter,
             ConsultaEsbStateService.HttpMethod,
             ConsultaEsbStateService.GenericText,
-            ConsultaEsbStateService.User?.Key,
+            ConsultaEsbStateService.User?.IdUsuario,
             ConsultaEsbStateService.ExecucaoId,
             ConsultaEsbStateService.PageSize,
             ConsultaEsbStateService.CurrentPage,

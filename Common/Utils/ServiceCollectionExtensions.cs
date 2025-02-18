@@ -22,15 +22,6 @@ namespace Common.Utils
         {
             services.AddSingleton<IConfigurationService, ConfigurationService>();
             services.AddEntityFrameworkSqlite();
-            //services.AddDbContextFactory<RepositoryDbContext>();
-
-            //services.AddDbContext<RepositoryDbContext>(options =>
-            //{
-            //    var databasePath = DBUtils.MainDBPath;
-            //    var connectionString = $"Data Source={databasePath}";
-            //    options.UseSqlite(connectionString)
-            //        .EnableSensitiveDataLogging();
-            //});
 
             services.AddDbContextFactory<RepositoryDbContext>(options =>
             {

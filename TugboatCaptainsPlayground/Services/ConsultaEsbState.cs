@@ -8,7 +8,7 @@ namespace TugboatCaptainsPlayground.Services
         public string SelectedEnvironment { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? EndDate { get; set; }
-        public KeyValuePair<long, string>? User { get; set; }
+        public Usuario? User { get; set; }
         public RequisicaoExecucao SelectedItem { get; set; }
         public string UrlFilter { get; set; }
         public string HttpMethod { get; set; }
