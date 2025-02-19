@@ -276,13 +276,13 @@
 
     protected override void OnInitialized()
     {
-        ConsultaEsbStateService.OnChange += StateHasChanged;
+        ConsultaEsbStateService.OnChange += () => InvokeAsync(StateHasChanged);
         ConsultaEsbStateService.Load();
     }
 
     public void Dispose()
     {
-        ConsultaEsbStateService.OnChange -= StateHasChanged;
+        ConsultaEsbStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         ConsultaEsbStateService.Save();
     }
 

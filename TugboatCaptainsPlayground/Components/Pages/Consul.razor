@@ -198,7 +198,7 @@
 
     protected override void OnInitialized()
     {
-        ConsulStateService.OnChange += StateHasChanged;
+        ConsulStateService.OnChange += () => InvokeAsync(StateHasChanged);
         ConsulStateService.Load();
 
         config = ConfigService.GetConfig();
@@ -360,7 +360,7 @@
 
     public void Dispose()
     {
-        ConsulStateService.OnChange -= StateHasChanged;
+        ConsulStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         ConsulStateService.Save();
     }
 }

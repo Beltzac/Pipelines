@@ -473,6 +473,8 @@ namespace Common.Services
             if (!json.IsValidJson)
                 return value.Trim();
 
+            return value.Trim();
+
             try
             {
                 // Parse once, then serialize again with indentation

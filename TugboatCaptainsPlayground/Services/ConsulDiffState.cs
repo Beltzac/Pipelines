@@ -1,4 +1,5 @@
 using Common.Models;
+using System.Collections.Concurrent;
 using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
@@ -8,7 +9,7 @@ namespace TugboatCaptainsPlayground.Services
         public string SelectedSourceEnv { get; set; }
         public string SelectedTargetEnv { get; set; }
 
-        public Dictionary<string, ConsulDiffResult> DiffCache { get; set; } = new();
+        public ConcurrentDictionary<string, ConsulDiffResult> DiffCache { get; set; } = new();
         public List<ConsulDiffResult> PageItems { get; set; } = new();
         public HashSet<string> AllKeys { get; set; } = new();
         public Dictionary<string, ConsulKeyValue> SourceValues { get; set; } = new();

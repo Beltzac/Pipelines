@@ -1,4 +1,5 @@
 using Common.Models;
+using System.Collections.Concurrent;
 using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
@@ -11,7 +12,7 @@ namespace TugboatCaptainsPlayground.Services
         public Dictionary<string, OracleViewDefinition> SourceValues { get; set; } = new();
         public Dictionary<string, OracleViewDefinition> TargetValues { get; set; } = new();
         public HashSet<string> AllKeys { get; set; } = new();
-        public Dictionary<string, OracleDiffResult> DiffCache { get; set; } = new();
+        public ConcurrentDictionary<string, OracleDiffResult> DiffCache { get; set; } = new();
 
         public bool ShowOnlyChanged { get; set; }
         public string SearchKey { get; set; }

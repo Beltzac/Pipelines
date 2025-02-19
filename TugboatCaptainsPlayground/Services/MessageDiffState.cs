@@ -1,4 +1,5 @@
 using Common.Models;
+using System.Collections.Concurrent;
 using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
@@ -11,7 +12,7 @@ namespace TugboatCaptainsPlayground.Services
         public Dictionary<string, MessageDefinition> SourceValues { get; set; } = new();
         public Dictionary<string, MessageDefinition> TargetValues { get; set; } = new();
         public HashSet<string> AllKeys { get; set; } = new();
-        public Dictionary<string, MessageDiffResult> DiffCache { get; set; } = new();
+        public ConcurrentDictionary<string, MessageDiffResult> DiffCache { get; set; } = new();
 
         public string SearchKey { get; set; }
         public string SearchDescription { get; set; }

@@ -281,7 +281,7 @@
 
     protected override void OnInitialized()
     {
-        MessageDiffStateService.OnChange += StateHasChanged;
+        MessageDiffStateService.OnChange += () => InvokeAsync(StateHasChanged);
         MessageDiffStateService.Load();
 
         paginationService = new PaginationService<string, MessageDefinition, MessageDiffResult>(
@@ -326,7 +326,7 @@
 
     public void Dispose()
     {
-        MessageDiffStateService.OnChange -= StateHasChanged;
+        MessageDiffStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         MessageDiffStateService.Save();
     }
 

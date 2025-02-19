@@ -1,5 +1,9 @@
 ﻿using Common.Models;
 using TugboatCaptainsPlayground.Services.Interfaces;
+using System.Collections.Concurrent;
+ 
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace TugboatCaptainsPlayground.Services
 {
@@ -37,38 +41,38 @@ namespace TugboatCaptainsPlayground.Services
             }
 
             var keys = _state.AllKeys.ToList();
-            var filteredDiffs = new List<TDiffResult>(keys.Count);
+            var filteredDiffs = new ConcurrentBag<TDiffResult>();
+            int totalKeys = keys.Count;
+            int processedCount = 0;
 
-            for (int i = 0; i < keys.Count; i++)
-            {
-                var key = keys[i];
-                var sourceItem = _state.SourceValues.TryGetValue(key, out var s) ? s : default;
-                var targetItem = _state.TargetValues.TryGetValue(key, out var t) ? t : default;
-
-                // Atualiza o progresso em português
-                if (_loading != null && keys.Count > 0)
+            await Parallel.ForEachAsync(
+                keys,
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                async (key, cancellationToken) =>
                 {
-                    double fraction = (double)(i + 1) / keys.Count;
-                    _loading.ProgressValue = (int)(fraction * 100);
-                    _loading.ProgressLabel = $"Calculando diferenças... {key} ({i + 1}/{keys.Count})";
-                }
+                    var sourceItem = _state.SourceValues.TryGetValue(key, out var s) ? s : default;
+                    var targetItem = _state.TargetValues.TryGetValue(key, out var t) ? t : default;
 
-                // Tenta obter do cache
-                if (!_state.DiffCache.TryGetValue(key, out var diffResult))
-                {
-                    // Se não estava no cache, calcula e guarda
-                    diffResult = await Task.Run(() => _getDiffAsync(key, sourceItem, targetItem));
-                    _state.DiffCache[key] = diffResult;
-                }
+                    // Calculate or retrieve cached diff using concurrent dictionary
+                    var diffResult = _state.DiffCache.GetOrAdd(
+                        key, 
+                        k => _getDiffAsync(k, sourceItem, targetItem));
 
-                // Aplica o filtro
-                if (_filter(key, sourceItem, targetItem, diffResult))
-                {
-                    filteredDiffs.Add(diffResult);
-                }
-            }
+                    if (_filter(key, sourceItem, targetItem, diffResult))
+                    {
+                        filteredDiffs.Add(diffResult);
+                    }
 
-            // Concluído
+                    // Update progress atomically
+                    var currentCount = Interlocked.Increment(ref processedCount);
+                    if (_loading != null)
+                    {
+                        double fraction = (double)currentCount / totalKeys;
+                        _loading.ProgressValue = (int)(fraction * 100);
+                        _loading.ProgressLabel = $"Processando diffs ({currentCount}/{totalKeys})";
+                    }
+                });
+
             if (_loading != null)
             {
                 _loading.ProgressValue = 100;
@@ -76,7 +80,7 @@ namespace TugboatCaptainsPlayground.Services
                 _loading.IsLoading = false;
             }
 
-            return filteredDiffs;
+            return filteredDiffs.ToList();
         }
 
         public async Task GetPageAsync()

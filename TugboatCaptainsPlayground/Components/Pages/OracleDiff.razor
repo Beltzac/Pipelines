@@ -173,7 +173,7 @@
 
     protected override void OnInitialized()
     {
-        OracleDiffStateService.OnChange += StateHasChanged;
+        OracleDiffStateService.OnChange += () => InvokeAsync(StateHasChanged);
         OracleDiffStateService.Load();
 
         paginationService = new PaginationService<string, OracleViewDefinition, OracleDiffResult>(
@@ -206,7 +206,7 @@
 
     public void Dispose()
     {
-        OracleDiffStateService.OnChange -= StateHasChanged;
+        OracleDiffStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         OracleDiffStateService.Save();
     }
 

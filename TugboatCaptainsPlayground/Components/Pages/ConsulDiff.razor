@@ -183,7 +183,7 @@
 
     protected override void OnInitialized()
     {
-        ConsulDiffStateService.OnChange += StateHasChanged;
+        ConsulDiffStateService.OnChange += () => InvokeAsync(StateHasChanged);
         ConsulDiffStateService.Load();
 
         paginationService = new PaginationService<string, ConsulKeyValue, ConsulDiffResult>(
@@ -197,7 +197,7 @@
 
     public void Dispose()
     {
-        ConsulDiffStateService.OnChange -= StateHasChanged;
+        ConsulDiffStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         ConsulDiffStateService.Save();
     }
 
