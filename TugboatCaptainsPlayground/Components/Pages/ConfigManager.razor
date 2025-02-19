@@ -34,11 +34,6 @@
                             </button>
                             <InputFile hidden OnChange="LoadFiles" id="importFile" accept=".json" />
                         </div>
-                        <div class="mb-3">
-                            <label for="tcpUserName" class="form-label">Nome de Usuário TCP</label>
-                            <InputText id="tcpUserName" @bind-Value="config.TcpUserName" class="form-control" />
-                            <ValidationMessage For="@(() => config.TcpUserName)" />
-                        </div>
                     </div>
                 </div>
 
@@ -50,7 +45,12 @@
                     <div class="card-body">
                         <h6 class="card-subtitle mb-3">Configuração do Usuário</h6>
                         <div class="mb-3">
-                            <label for="username" class="form-label">Nome de Usuário</label>
+                            <label for="tcpUserName" class="form-label">Nome de Usuário TCP</label>
+                            <InputText id="tcpUserName" @bind-Value="config.TcpUserName" class="form-control" />
+                            <ValidationMessage For="@(() => config.TcpUserName)" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nome de Usuário Azure</label>
                             <InputText id="username" @bind-Value="config.Username" class="form-control"/>
                             <ValidationMessage For="@(() => config.Username)" />
                         </div>
@@ -68,6 +68,9 @@
                             <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control"/>
                             <ValidationMessage For="@(() => config.OrganizationUrl)" />
                         </div>
+
+                        <hr class="my-4" />
+                        <h6 class="card-subtitle mb-3">Configurações Locais</h6>
                         <div class="mb-3">
                             <label for="cloneFolder" class="form-label">Pasta Local para Clones</label>
                             <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
@@ -92,7 +95,7 @@
                 </div>
 
                 <!-- GitHub Settings -->
-                <div class="card mb-4">
+@*                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">Configuração do GitHub</h5>
                     </div>
@@ -103,7 +106,7 @@
                             <ValidationMessage For="@(() => config.AccessToken)" />
                         </div>
                     </div>
-                </div>
+                </div> *@
 
                 <!-- Repository Ignore Rules -->
                 <div class="card mb-4">
