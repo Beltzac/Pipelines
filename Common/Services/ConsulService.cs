@@ -615,9 +615,6 @@ namespace Common.Services
             var value1 = Normalize(oldValue, recursive);
             var value2 = Normalize(newValue, recursive);
 
-            if (value1 == value2)
-                return new ConsulDiffResult(key, string.Empty, false);
-
             var ps = new Patch(new PatchOptions(), new DiffOptions());
 
             var patchResult = ps.createPatchResult(
@@ -629,11 +626,10 @@ namespace Common.Services
                 null
             );
 
-            if (!patchResult.Hunks.Any())
-                return new ConsulDiffResult(key, string.Empty, false);
+            var hasDifferences = patchResult.Hunks.Any();
+            var diffString = "diff --git" + "\r\n" + ps.formatPatch(patchResult);
 
-            var diffString = ps.formatPatch(patchResult);
-            return new ConsulDiffResult(key, diffString, true);
+            return new ConsulDiffResult(key, diffString, hasDifferences);
         }
 
         public void Dispose()

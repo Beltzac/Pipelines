@@ -103,8 +103,9 @@ namespace Common.Services
                     if (diff.HasDifferences)
                     {
                         _logger.LogInformation($"Diferença na view: {viewName}");
-                        differences.Add(diff);
                     }
+
+                    differences.Add(diff);
                 }
                 else
                 {
@@ -143,10 +144,10 @@ namespace Common.Services
                 null
             );
 
-            var formattedDiff = ps.formatPatch(patch);
             var hasDifferences = patch.Hunks.Any();
+            var diffString = "diff --git" + "\r\n" + ps.formatPatch(patch);
 
-            return new OracleDiffResult(viewName, formattedDiff, hasDifferences);
+            return new OracleDiffResult(viewName, diffString, hasDifferences);
         }
 
         private string NormalizeLineBreaks(string text)
