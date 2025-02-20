@@ -9,20 +9,18 @@ using Flurl.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Common.Services
 {
-    public class ConsulService : IConsulService, IDisposable
+    public class ConsulService : IConsulService
     {
         private const string RegexPatternKey = @"{{\s*key\s*'([^']+)'\s*}}";
         private readonly ILogger<ConsulService> _logger;
 
         private readonly IConfigurationService _configService;
-        private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
 
         public ConsulService(ILogger<ConsulService> logger, IConfigurationService configService)
         {
@@ -630,12 +628,6 @@ namespace Common.Services
             var diffString = "diff --git" + "\r\n" + ps.formatPatch(patchResult);
 
             return new ConsulDiffResult(key, diffString, hasDifferences);
-        }
-
-        public void Dispose()
-        {
-            _memoryStream.Value?.Dispose();
-            _memoryStream.Dispose();
         }
     }
 }
