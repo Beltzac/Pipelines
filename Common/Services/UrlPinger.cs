@@ -82,7 +82,7 @@ namespace Common.Services
 
         private static IEnumerable<string> ExtractUrls(string text)
         {
-            const string pattern = @"(https?://[^\s]+)";
+            const string pattern = @"\b(?:[a-z]+:)?//(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3}|(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}))(?::\d+)?(?:/\S*)?\b";
             return Regex.Matches(text, pattern)
                         .Select(m => m.Value)
                         .Where(url => Uri.TryCreate(url, UriKind.Absolute, out _));

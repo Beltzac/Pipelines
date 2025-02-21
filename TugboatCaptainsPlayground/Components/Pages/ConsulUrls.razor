@@ -168,20 +168,26 @@ else
                 try
                 {
                     UrlStatuses[url] = "Testing...";
+                    await InvokeAsync(StateHasChanged);
 
                     var result = await UrlPinger.PingUrlAsync(url, ct);
                     UrlStatuses[url] = result ? "Online" : "Offline";
+                    await InvokeAsync(StateHasChanged);
+
                 }
                 catch (OperationCanceledException)
                 {
                     UrlStatuses[url] = "Canceled";
+                    await InvokeAsync(StateHasChanged);
+
                 }
                 catch (Exception ex)
                 {
                     UrlStatuses[url] = $"Error: {ex.Message}";
+                    await InvokeAsync(StateHasChanged);
+
                 }
 
-                await InvokeAsync(StateHasChanged);
             });
         }
         catch (OperationCanceledException)
