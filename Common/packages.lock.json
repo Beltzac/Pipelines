@@ -94,6 +94,16 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
         }
       },
+      "eladaus.urldetector": {
+        "type": "Direct",
+        "requested": "[1.4.0, )",
+        "resolved": "1.4.0",
+        "contentHash": "Hu9BhfcyDJbMRU/i9XA/W4XJsmMUenlvIyul0L8f22P4SJawxuabyhBJPX1fT0+y63Xyq3+sVEpNHY3QkGpLlw==",
+        "dependencies": {
+          "System.Collections.Immutable": "1.3.0",
+          "System.Memory": "4.5.3"
+        }
+      },
       "FlexLabs.EntityFrameworkCore.Upsert": {
         "type": "Direct",
         "requested": "[8.1.2, )",

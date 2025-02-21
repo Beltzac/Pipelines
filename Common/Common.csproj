@@ -19,6 +19,7 @@
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
+    <PackageReference Include="eladaus.urldetector" Version="1.4.0" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.1.2" />
     <PackageReference Include="Flurl" Version="4.0.0" />
     <PackageReference Include="Flurl.Http" Version="4.0.2" />

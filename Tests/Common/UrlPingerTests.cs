@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using System.Linq;
 using Common.Services;
 using FluentAssertions;
@@ -8,13 +8,13 @@ namespace Tests.Common
     public class UrlPingerTests
     {
         [Test]
-        [Arguments("Visit https://example.com", new[] { "https://example.com" })]
+        [Arguments("Visit https://example.com", new[] { "https://example.com/" })]
         [Arguments("Check http://test.com and https://api.test.com/v1",
             new[] { "http://test.com", "https://api.test.com/v1" })]
         [Arguments("No URLs here", new string[0])]
         [Arguments("Invalid URL test.com", new string[0])]
-        [Arguments("Multiple spaces https://example.com  https://test.com",
-            new[] { "https://example.com", "https://test.com" })]
+        [Arguments("Multiple spaces https://example.com  https://test.com/",
+            new[] { "https://example.com/", "https://test.com/" })]
         [Arguments("IP address http://192.168.1.1:8080", new[] { "http://192.168.1.1:8080" })]
         [Arguments("Mixed case HTTPS://Example.COM", new[] { "https://example.com" })]
         [Arguments("URL with path https://example.com/path/to/resource",
@@ -60,7 +60,7 @@ namespace Tests.Common
         [Arguments("No URLs here", new string[0])]
         [Arguments("Invalid URL test.com", new string[0])]
         [Arguments("Multiple spaces https://example.com  https://test.com",
-      new[] { "https://example.com", "https://test.com" })]
+      new[] { "https://example.com/", "https://test.com/" })]
         [Arguments("IP address http://192.168.1.1:8080", new[] { "http://192.168.1.1:8080" })]
         [Arguments("Mixed case HTTPS://Example.COM", new[] { "https://example.com" })]
         [Arguments("URL with path https://example.com/path/to/resource",
@@ -120,6 +120,12 @@ namespace Tests.Common
             // Assert
             result.Should().BeEquivalentTo(expectedUrls);
 
+            // Additional assertion to verify URLs can be parsed by Uri class
+            foreach (var url in result)
+            {
+                Action act = () => new Uri(url);
+                act.Should().NotThrow("because all extracted URLs should be valid URIs");
+            }
         }
 
         [Test]

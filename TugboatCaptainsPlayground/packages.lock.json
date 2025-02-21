@@ -436,6 +436,15 @@
           "System.IO.Packaging": "8.0.1"
         }
       },
+      "eladaus.urldetector": {
+        "type": "Transitive",
+        "resolved": "1.4.0",
+        "contentHash": "Hu9BhfcyDJbMRU/i9XA/W4XJsmMUenlvIyul0L8f22P4SJawxuabyhBJPX1fT0+y63Xyq3+sVEpNHY3QkGpLlw==",
+        "dependencies": {
+          "System.Collections.Immutable": "1.3.0",
+          "System.Memory": "4.5.3"
+        }
+      },
       "EntityFramework": {
         "type": "Transitive",
         "resolved": "6.4.4",
@@ -2838,7 +2847,8 @@
           "SmartComponents.LocalEmbeddings": "[0.1.0-preview10148, )",
           "System.Linq.Async": "[6.0.1, )",
           "Vanara.PInvoke.User32": "[4.0.5, )",
-          "Z.EntityFramework.Extensions.EFCore": "[9.103.7.1, )"
+          "Z.EntityFramework.Extensions.EFCore": "[9.103.7.1, )",
+          "eladaus.urldetector": "[1.4.0, )"
         }
       }
     },
