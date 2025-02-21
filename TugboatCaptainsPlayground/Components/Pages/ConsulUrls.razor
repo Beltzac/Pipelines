@@ -189,8 +189,10 @@ else
     {
         return keyValues.Values
             .SelectMany(kv => kv.Value.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
-                .Where(s => Uri.TryCreate(s, UriKind.Absolute, out _)))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(s => s.Trim())
+                .Where(s => string.IsNullOrWhiteSpace(s)))
+            .SelectMany(s => UrlPinger.ExtractUrls(s))
+            .Distinct()
             .ToList();
     }
 
@@ -214,6 +216,10 @@ else
                     await InvokeAsync(StateHasChanged);
 
                     var result = await UrlPinger.PingUrlAsync(url, ct);
+
+                    UrlStatuses[url] = result ? "Online" : "Offline";
+                    await InvokeAsync(StateHasChanged);
+
 
                     UrlStatuses[url] = result ? "Online" : "Offline";
                     await InvokeAsync(StateHasChanged);
