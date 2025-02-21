@@ -10,6 +10,7 @@
 @inject IJSRuntime JS
 @using System.Text.RegularExpressions
 @using System.Threading
+@using System.Collections.Concurrent
 
 <div class="floating-controls">
     <div class="form-group">
@@ -87,7 +88,7 @@ else
     private bool isProcessing = false;
     private string LogMessage = "Select a Consul environment and click Start Pinging";
     private List<ConsulEnvironment> ConsulEnvironments { get; set; } = new();
-    private Dictionary<string, string> UrlStatuses { get; set; } = new();
+    private ConcurrentDictionary<string, string> UrlStatuses { get; set; } = new();
     private CancellationTokenSource _cancellationTokenSource = new();
 
     private IEnumerable<KeyValuePair<string, string>> filteredUrls =>
@@ -143,10 +144,10 @@ else
 
     private List<string> ExtractUrlsFromKeyValues(Dictionary<string, ConsulKeyValue> keyValues)
     {
-        var regex = new Regex(@"(https?://[^\s]+)");
         return keyValues.Values
-            .SelectMany(kv => regex.Matches(kv.Value).Select(m => m.Value))
-            .Distinct()
+            .SelectMany(kv => kv.Value.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(s => Uri.TryCreate(s, UriKind.Absolute, out _)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
@@ -166,9 +167,7 @@ else
             {
                 try
                 {
-                    LogMessage = $"Testing URL: {url}";
                     UrlStatuses[url] = "Testing...";
-                    await InvokeAsync(StateHasChanged);
 
                     var result = await UrlPinger.PingUrlAsync(url, ct);
                     UrlStatuses[url] = result ? "Online" : "Offline";
