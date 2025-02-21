@@ -1,116 +1,208 @@
 @page "/consulurls"
-
 @using Common.Models
 @using Common.Services
 @using Common.Services.Interfaces
+@using Common.Utils
 @inject IConsulService ConsulService
 @inject IConfigurationService ConfigService
 @inject UrlPinger UrlPinger
+@inject IToastService ToastService
+@inject IJSRuntime JS
 @using System.Text.RegularExpressions
+@using System.Threading
 
-<h3>Consul URLs</h3>
+<div class="floating-controls">
+    <div class="form-group">
+        <label for="consulEnvSelect">Select Consul Environment</label>
+        <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
+            @foreach (var env in ConsulEnvironments)
+            {
+                <option value="@env.Name">@env.Name</option>
+            }
+        </select>
+    </div>
 
-<div class="form-group">
-    <label for="consulEnvSelect">Select Consul Environment</label>
-    <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
-        @foreach (var env in ConsulEnvironments)
-        {
-            <option value="@env.Name">@env.Name</option>
-        }
-    </select>
+    <div class="buttons">
+        <button class="btn btn-primary" @onclick="StartPinging" :disabled="isProcessing">
+            <span class="bi bi-play-circle"></span> @(isProcessing ? "Processing..." : "Start Pinging")
+        </button>
+        <button class="btn btn-secondary" @onclick="OnCancel" :disabled="!isProcessing">
+            Cancel
+        </button>
+    </div>
+
+    <div class="search-container">
+        <input type="text" class="form-control" placeholder="Search URLs" @bind="searchFilter" />
+    </div>
 </div>
 
-<button class="btn btn-primary" @onclick="StartPinging">Start Pinging</button>
-
-@if (UrlStatuses != null)
+@if (UrlStatuses.Any())
 {
-    <ul>
-        @foreach (var kvp in UrlStatuses)
-        {
-            <li>
-                @kvp.Key - @kvp.Value
-            </li>
-        }
-    </ul>
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>URL</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in filteredUrls)
+                {
+                    <tr>
+                        <td>@item.Key</td>
+                        <td>
+                            @if (item.Value == "Online")
+                            {
+                                <span class="text-success"><i class="bi bi-check-circle-fill"></i> Online</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Offline</span>
+                            }
+                        </td>
+                        <td>
+                            <CopyButton FetchText="@(() => item.Key)" />
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenUrl(item.Key)">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        @LogMessage
+    </div>
 }
 
-<p>@LogMessage</p>
-
 @code {
-    private string SelectedConsulEnv { get; set; }
-    private List<ConsulEnvironment> ConsulEnvironments { get; set; } = new List<ConsulEnvironment>();
-    private Dictionary<string, string> UrlStatuses { get; set; } = new Dictionary<string, string>();
-    private string LogMessage { get; set; } = "Ready to start pinging.";
+    private string SelectedConsulEnv { get; set; } = "";
+    private string searchFilter = "";
+    private bool isProcessing = false;
+    private string LogMessage = "Select a Consul environment and click Start Pinging";
+    private List<ConsulEnvironment> ConsulEnvironments { get; set; } = new();
+    private Dictionary<string, string> UrlStatuses { get; set; } = new();
+    private CancellationTokenSource _cancellationTokenSource = new();
+
+    private IEnumerable<KeyValuePair<string, string>> filteredUrls =>
+        UrlStatuses.Where(u => u.Key.Contains(searchFilter, StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
         ConsulEnvironments = ConfigService.GetConfig().ConsulEnvironments;
+        if (ConsulEnvironments.Any())
+        {
+            SelectedConsulEnv = ConsulEnvironments.First().Name;
+        }
     }
 
     private async Task StartPinging()
     {
-        LogMessage = "Starting the pinging process...";
+        isProcessing = true;
+        _cancellationTokenSource = new CancellationTokenSource();
+        LogMessage = "Starting URL discovery...";
         await InvokeAsync(StateHasChanged);
-        await LoadUrls();
-    }
 
-    private async Task LoadUrls()
-    {
-        UrlStatuses.Clear();
-        List<string> extractedUrls = new List<string>();
-
-        var consulEnv = ConsulEnvironments.FirstOrDefault(env => env.Name == SelectedConsulEnv);
-        if (consulEnv != null)
+        try
         {
-            LogMessage = $"Fetching key values from Consul environment: {consulEnv.Name}";
-            await InvokeAsync(StateHasChanged);
+            var consulEnv = ConsulEnvironments.FirstOrDefault(e => e.Name == SelectedConsulEnv);
+            if (consulEnv == null)
+            {
+                ToastService.ShowError("Invalid Consul environment selected");
+                return;
+            }
 
             var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+            var urls = ExtractUrlsFromKeyValues(keyValues);
 
-            // Regex to find URLs in a string
-            string urlRegex = @"(https?://[^\s]+)";
-            Regex regex = new Regex(urlRegex, RegexOptions.IgnoreCase);
-
-            LogMessage = "Extracting URLs from Consul values...";
+            LogMessage = $"Found {urls.Count} unique URLs. Starting ping tests...";
             await InvokeAsync(StateHasChanged);
 
-            foreach (var kv in keyValues.Values)
-            {
-                MatchCollection matches = regex.Matches(kv.Value);
-                foreach (Match match in matches)
-                {
-                    extractedUrls.Add(match.Value);
-                }
-            }
-
-            // Remove duplicate URLs
-            extractedUrls = extractedUrls.Distinct().ToList();
-
-            LogMessage = $"Found {extractedUrls.Count} unique URLs. Starting pinging...";
-            await InvokeAsync(StateHasChanged);
-
-            // Concatenate all extracted URLs for pinging
-            string allUrlsText = string.Join(" ", extractedUrls);
-
-            // Ping all URLs in the concatenated text
-            var pingResults = await UrlPinger.PingUrlsInTextAsync(allUrlsText);
-
-            LogMessage = "Pinging completed. Updating UI...";
-            await InvokeAsync(StateHasChanged);
-
-            // Populate UrlStatuses dictionary
-            foreach (var result in pingResults)
-            {
-                UrlStatuses[result.Key] = result.Value ? "Online" : "Offline";
-            }
-
-            LogMessage = "UI updated with ping results.";
-            await InvokeAsync(StateHasChanged);
+            await ProcessUrlsAsync(urls, _cancellationTokenSource.Token);
         }
-        else
+        catch (OperationCanceledException)
         {
-            LogMessage = "Please select a Consul environment.";
+            LogMessage = "Operation canceled by user";
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private List<string> ExtractUrlsFromKeyValues(Dictionary<string, ConsulKeyValue> keyValues)
+    {
+        var regex = new Regex(@"(https?://[^\s]+)");
+        return keyValues.Values
+            .SelectMany(kv => regex.Matches(kv.Value).Select(m => m.Value))
+            .Distinct()
+            .ToList();
+    }
+
+    private async Task ProcessUrlsAsync(List<string> urls, CancellationToken cancellationToken)
+    {
+        UrlStatuses.Clear();
+        var total = urls.Count;
+        var options = new ParallelOptions
+        {
+            CancellationToken = cancellationToken,
+            MaxDegreeOfParallelism = Environment.ProcessorCount
+        };
+
+        try
+        {
+            await Parallel.ForEachAsync(urls, options, async (url, ct) =>
+            {
+                try
+                {
+                    LogMessage = $"Testing URL: {url}";
+                    UrlStatuses[url] = "Testing...";
+                    await InvokeAsync(StateHasChanged);
+
+                    var result = await UrlPinger.PingUrlAsync(url, ct);
+                    UrlStatuses[url] = result ? "Online" : "Offline";
+                }
+                catch (OperationCanceledException)
+                {
+                    UrlStatuses[url] = "Canceled";
+                }
+                catch (Exception ex)
+                {
+                    UrlStatuses[url] = $"Error: {ex.Message}";
+                }
+
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            LogMessage = "Processing canceled";
+        }
+    }
+
+    private void OpenUrl(string url)
+    {
+        OpenFolderUtils.OpenUrl(url);
+    }
+
+    private void OnCancel()
+    {
+        _cancellationTokenSource.Cancel();
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource?.Dispose();
     }
 }
