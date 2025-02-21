@@ -40,6 +40,11 @@ namespace Common.Services
 
         public static IEnumerable<string> ExtractUrls(string text)
         {
+            if (text == null)
+            {
+                return [];
+            }
+
             const string pattern = @"\b(?:https?://)(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3}|(?:[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}))(?::\d+)?(?:/\S*)?\b";
             return Regex.Matches(text, pattern)
                         .Select(m => m.Value)
