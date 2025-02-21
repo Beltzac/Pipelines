@@ -54,13 +54,17 @@
                     <tr>
                         <td>@item.Key</td>
                         <td>
-                            @if (item.Value == "Online")
+                            @if (item.Value == "Testing...")
+                            {
+                                <span class="text-info"><i class="bi bi-hourglass-split"></i> Testing...</span>
+                            }
+                            else if (item.Value == "Online")
                             {
                                 <span class="text-success"><i class="bi bi-check-circle-fill"></i> Online</span>
                             }
                             else
                             {
-                                <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Offline</span>
+                                <span class="text-danger"><i class="bi bi-x-circle-fill"></i> @item.Value</span>
                             }
                         </td>
                         <td>
@@ -171,6 +175,7 @@ else
                     await InvokeAsync(StateHasChanged);
 
                     var result = await UrlPinger.PingUrlAsync(url, ct);
+
                     UrlStatuses[url] = result ? "Online" : "Offline";
                     await InvokeAsync(StateHasChanged);
 
