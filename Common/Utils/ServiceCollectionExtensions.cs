@@ -87,6 +87,7 @@ namespace Common.Utils
             services.AddScoped<ISggService, SggService>();
             services.AddScoped<IOracleMessageService, OracleMessageService>();
             services.AddScoped<ICadastroService, CadastroService>();
+            services.AddScoped<UrlPinger>();
 
             services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
             services.AddScoped<IOracleRepository, Common.Repositories.TCP.OracleRepository>();

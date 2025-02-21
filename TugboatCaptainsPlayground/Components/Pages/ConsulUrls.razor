@@ -1,0 +1,116 @@
+@page "/consulurls"
+
+@using Common.Models
+@using Common.Services
+@using Common.Services.Interfaces
+@inject IConsulService ConsulService
+@inject IConfigurationService ConfigService
+@inject UrlPinger UrlPinger
+@using System.Text.RegularExpressions
+
+<h3>Consul URLs</h3>
+
+<div class="form-group">
+    <label for="consulEnvSelect">Select Consul Environment</label>
+    <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
+        @foreach (var env in ConsulEnvironments)
+        {
+            <option value="@env.Name">@env.Name</option>
+        }
+    </select>
+</div>
+
+<button class="btn btn-primary" @onclick="StartPinging">Start Pinging</button>
+
+@if (UrlStatuses != null)
+{
+    <ul>
+        @foreach (var kvp in UrlStatuses)
+        {
+            <li>
+                @kvp.Key - @kvp.Value
+            </li>
+        }
+    </ul>
+}
+
+<p>@LogMessage</p>
+
+@code {
+    private string SelectedConsulEnv { get; set; }
+    private List<ConsulEnvironment> ConsulEnvironments { get; set; } = new List<ConsulEnvironment>();
+    private Dictionary<string, string> UrlStatuses { get; set; } = new Dictionary<string, string>();
+    private string LogMessage { get; set; } = "Ready to start pinging.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        ConsulEnvironments = ConfigService.GetConfig().ConsulEnvironments;
+    }
+
+    private async Task StartPinging()
+    {
+        LogMessage = "Starting the pinging process...";
+        await InvokeAsync(StateHasChanged);
+        await LoadUrls();
+    }
+
+    private async Task LoadUrls()
+    {
+        UrlStatuses.Clear();
+        List<string> extractedUrls = new List<string>();
+
+        var consulEnv = ConsulEnvironments.FirstOrDefault(env => env.Name == SelectedConsulEnv);
+        if (consulEnv != null)
+        {
+            LogMessage = $"Fetching key values from Consul environment: {consulEnv.Name}";
+            await InvokeAsync(StateHasChanged);
+
+            var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
+
+            // Regex to find URLs in a string
+            string urlRegex = @"(https?://[^\s]+)";
+            Regex regex = new Regex(urlRegex, RegexOptions.IgnoreCase);
+
+            LogMessage = "Extracting URLs from Consul values...";
+            await InvokeAsync(StateHasChanged);
+
+            foreach (var kv in keyValues.Values)
+            {
+                MatchCollection matches = regex.Matches(kv.Value);
+                foreach (Match match in matches)
+                {
+                    extractedUrls.Add(match.Value);
+                }
+            }
+
+            // Remove duplicate URLs
+            extractedUrls = extractedUrls.Distinct().ToList();
+
+            LogMessage = $"Found {extractedUrls.Count} unique URLs. Starting pinging...";
+            await InvokeAsync(StateHasChanged);
+
+            // Concatenate all extracted URLs for pinging
+            string allUrlsText = string.Join(" ", extractedUrls);
+
+            // Ping all URLs in the concatenated text
+            var pingResults = await UrlPinger.PingUrlsInTextAsync(allUrlsText);
+
+            LogMessage = "Pinging completed. Updating UI...";
+            await InvokeAsync(StateHasChanged);
+
+            // Populate UrlStatuses dictionary
+            foreach (var result in pingResults)
+            {
+                UrlStatuses[result.Key] = result.Value ? "Online" : "Offline";
+            }
+
+            LogMessage = "UI updated with ping results.";
+            await InvokeAsync(StateHasChanged);
+        }
+        else
+        {
+            LogMessage = "Please select a Consul environment.";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+}
