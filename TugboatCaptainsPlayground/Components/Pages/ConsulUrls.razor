@@ -37,8 +37,29 @@
     </div>
 </div>
 
+<div class="status-filters mb-3 p-3 bg-light rounded">
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="filterOnline" @bind="showOnline" />
+        <label class="form-check-label" for="filterOnline">Online</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="filterOffline" @bind="showOffline" />
+        <label class="form-check-label" for="filterOffline">Offline</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="filterTesting" @bind="showTesting" />
+        <label class="form-check-label" for="filterTesting">Testing</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="filterErrors" @bind="showErrors" />
+        <label class="form-check-label" for="filterErrors">Errors</label>
+    </div>
+</div>
+
 @if (UrlStatuses.Any())
 {
+    <div class="status-summary mb-3 p-2 bg-info text-white rounded">Showing @filteredUrls.Count() of @UrlStatuses.Count URLs</div>
+
     <div class="table-responsive">
         <table class="table table-hover table-striped">
             <thead>
@@ -94,9 +115,27 @@ else
     private List<ConsulEnvironment> ConsulEnvironments { get; set; } = new();
     private ConcurrentDictionary<string, string> UrlStatuses { get; set; } = new();
     private CancellationTokenSource _cancellationTokenSource = new();
+    private bool showOnline = true;
+    private bool showOffline = true;
+    private bool showTesting = true;
+    private bool showErrors = true;
 
     private IEnumerable<KeyValuePair<string, string>> filteredUrls =>
-        UrlStatuses.Where(u => u.Key.Contains(searchFilter, StringComparison.OrdinalIgnoreCase));
+        UrlStatuses.Where(u =>
+            u.Key.Contains(searchFilter, StringComparison.OrdinalIgnoreCase) &&
+            (u.Value == "Online" && showOnline ||
+             u.Value == "Offline" && showOffline ||
+             u.Value == "Testing..." && showTesting ||
+             u.Value.StartsWith("Error") && showErrors ||
+             u.Value == "Canceled" && showErrors));
+
+    private void UpdateFilters()
+    {
+        if (UrlStatuses.Any())
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
