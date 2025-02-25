@@ -89,27 +89,27 @@ namespace Common.Services
             var buildDefinitions = await _buildClient.GetDefinitionsAsync(existingRepo.Project, repositoryId: existingRepo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
             var buildDefinition = buildDefinitions.FirstOrDefault();
 
-            if (buildDefinition?.LatestBuild != null)
-            {
-                var existingDate = existingRepo?.Pipeline?.Last?.Changed;
-                var latestDate = buildDefinition.LatestBuild.LastChangedDate;
+            //if (buildDefinition?.LatestBuild != null)
+            //{
+            //    var existingDate = existingRepo?.Pipeline?.Last?.Changed;
+            //    var latestDate = buildDefinition.LatestBuild.LastChangedDate;
 
-                // Check if the difference is within a reasonable tolerance (e.g., 1 second)
-                bool areDatesEqual = existingDate.HasValue &&
-                                        Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
+            //    // Check if the difference is within a reasonable tolerance (e.g., 1 second)
+            //    bool areDatesEqual = existingDate.HasValue &&
+            //                            Math.Abs((existingDate.Value - latestDate).TotalSeconds) < 1;
 
-                if (areDatesEqual && !force)
-                {
-                    _logger.LogInformation($"Pipeline {buildDefinition.Name} não alterado. Pulando.");
-                    return existingRepo;
-                }
+            //    if (areDatesEqual && !force)
+            //    {
+            //        _logger.LogInformation($"Pipeline {buildDefinition.Name} não alterado. Pulando.");
+            //        return existingRepo;
+            //    }
 
-                _logger.LogInformation($"Pipeline {buildDefinition.Name} alterado. Atualizando informações de build.");
-            }
-            else
-            {
-                _logger.LogInformation($"Repositório {existingRepo.Name} não tem pipeline/build. Criando informações de build.");
-            }
+            //    _logger.LogInformation($"Pipeline {buildDefinition.Name} alterado. Atualizando informações de build.");
+            //}
+            //else
+            //{
+            //    _logger.LogInformation($"Repositório {existingRepo.Name} não tem pipeline/build. Criando informações de build.");
+            //}
 
             GitRepository repo = null;
 

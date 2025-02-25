@@ -136,14 +136,14 @@ namespace Common.Services
                                 catch (Exception ex)
                                 {
                                     _logger.LogError(ex, $"Ocorreu um erro ao processar a branch: {branch.Name} no repositório: {repo.Name}");
-                                    throw;
+                                   //throw;
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, $"Ocorreu um erro ao processar o repositório: {repo.Name}");
-                            throw;
+                            //throw;
                         }
                     }
                 }

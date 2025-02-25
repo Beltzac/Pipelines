@@ -1,4 +1,4 @@
-@page "/consulurls"
+Ajustes@page "/consulurls"
 @using Common.Models
 @using Common.Services
 @using Common.Services.Interfaces
@@ -12,7 +12,9 @@
 @using System.Threading
 @using System.Collections.Concurrent
 
-<div class="floating-controls">
+<StickyFilter>
+    <div class="row g-3">
+        <div class="col-md-4">
     <div class="form-group">
         <label for="consulEnvSelect">Select Consul Environment</label>
         <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
@@ -23,6 +25,9 @@
         </select>
     </div>
 
+        </div>
+
+        <div class="col-md-4">
     <div class="buttons">
         <button class="btn btn-primary" @onclick="StartPinging" :disabled="isProcessing">
             <span class="bi bi-play-circle"></span> @(isProcessing ? "Processing..." : "Start Pinging")
@@ -32,10 +37,15 @@
         </button>
     </div>
 
+        </div>
+
+        <div class="col-md-4">
     <div class="search-container">
         <input type="text" class="form-control" placeholder="Search URLs" @bind="searchFilter" />
     </div>
-</div>
+        </div>
+    </div>
+</StickyFilter>
 
 <div class="status-filters mb-3 p-3 bg-light rounded">
     <div class="form-check form-check-inline">
@@ -60,11 +70,11 @@
 {
     <div class="status-summary mb-3 p-2 bg-info text-white rounded">Showing @filteredUrls.Count() of @UrlStatuses.Count URLs</div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" style="table-layout: fixed;">
         <table class="table table-hover table-striped">
             <thead>
                 <tr>
-                    <th>URL</th>
+                    <th style="width: 60%;">URL</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -73,7 +83,7 @@
                 @foreach (var item in filteredUrls)
                 {
                     <tr>
-                        <td>@item.Key</td>
+                        <td style="word-break: break-all;">@item.Key</td>
                         <td>
                             @if (item.Value == "Testing...")
                             {
