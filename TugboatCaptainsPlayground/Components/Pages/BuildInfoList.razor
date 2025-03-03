@@ -96,7 +96,7 @@
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
                 <td>
-                    <button class="btn btn-sm @(buildInfo.IsPinned ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
+                    <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
                         <i class="bi bi-pin-angle"></i>
                     </button>
                 </td>
@@ -304,15 +304,14 @@
 
     private async Task TogglePin(Repository repo)
     {
-        repo.IsPinned = !repo.IsPinned;
-        await BuildInfoService.UpdateRepositoryAsync(repo);
+        await BuildInfoService.TogglePin(repo);
     }
 
     private IEnumerable<Repository> GetBuildInfos()
     {
         if (string.IsNullOrEmpty(BuildInfoStateService.Filter))
         {
-            return BuildInfoStateService.BuildInfos?.OrderByDescending(x => x.IsPinned).ToList() ?? new List<Repository>();
+            return BuildInfoStateService.BuildInfos?.OrderByDescending(x => BuildInfoService.IsPinned(x)).ToList() ?? new List<Repository>();
         }
         return BuildInfoStateService.BuildInfos ?? new List<Repository>();
     }

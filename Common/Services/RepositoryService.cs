@@ -496,5 +496,27 @@ namespace Common.Services
         {
             await _repositoryDatabase.UpsertAsync(repository);
         }
+
+        public async Task TogglePin(Repository repo)
+        {
+            var config = _configService.GetConfig();
+
+            if (config.PinnedRepositories.Contains(repo.Id))
+            {
+                config.PinnedRepositories.Remove(repo.Id);
+            }
+            else
+            {
+                config.PinnedRepositories.Add(repo.Id);
+            }
+
+            await _configService.SaveConfigAsync(config);
+        }
+
+        public bool IsPinned(Repository repo)
+        {
+            var config = _configService.GetConfig();
+            return config.PinnedRepositories.Contains(repo.Id);
+        }
     }
 }

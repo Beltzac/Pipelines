@@ -22,5 +22,7 @@ namespace Common.Services.Interfaces
         void NavigateToPRCreation(Repository repo);
         Task<List<Guid>> FetchProjectsRepos();
         Task UpdateRepositoryAsync(Repository repository);
+        Task TogglePin(Repository repo);
+        bool IsPinned(Repository repo);
     }
 }

@@ -22,6 +22,7 @@
         public string VisualStudioPath { get; set; } = "devenv.exe";
         public string VSCodePath { get; set; } = "code-insiders.cmd";
         public string TcpUserName { get; set; }
+        public HashSet<Guid> PinnedRepositories { get; set; } = new HashSet<Guid>();
     }
 
     public class OracleEnvironment

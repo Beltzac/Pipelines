@@ -44,6 +44,4 @@ public class Repository
     public EmbeddingF32? Embedding { get; set; }
 
     public string ProjectType { get; set; }
-
-    public bool IsPinned { get; set; }
 }
