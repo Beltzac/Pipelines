@@ -188,7 +188,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content" @onclick:stopPropagation>
                 <div class="modal-header">
-                    <h5 class="modal-title">Detalhes da Execução</h5>
+                    <h5 class="modal-title">Detalhes da Execução - @(ConsultaEsbStateService.SelectedItem.Url ?? ConsultaEsbStateService.SelectedItem.NomeFluxo)</h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
