@@ -2,6 +2,7 @@ using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services;
 using FluentAssertions;
+using KellermanSoftware.CompareNetObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -150,8 +151,8 @@ namespace Tests.Common.Services
 
             var differences = await _service.CompareViewDefinitions(sourceViews, targetViews);
 
-            differences.Should().ContainSingle();
-            differences.First().Key.Should().Be("View2");
+            differences.Where(x => x.HasDifferences).Should().ContainSingle();
+            differences.First(x => x.HasDifferences).Key.Should().Be("View2");
         }
 
         [Test]
@@ -226,7 +227,7 @@ namespace Tests.Common.Services
 
             var differences = await _service.CompareViewDefinitions(sourceViews, targetViews);
 
-            differences.Should().BeEmpty();
+            differences.Where(x => x.HasDifferences).Should().BeEmpty();
         }
 
         [Test]
@@ -246,8 +247,8 @@ namespace Tests.Common.Services
 
             var differences = await _service.CompareViewDefinitions(sourceViews, targetViews);
 
-            differences.Should().ContainSingle();
-            differences.First().Key.Should().Be("View2");
+            differences.Where(x => x.HasDifferences).Should().ContainSingle();
+            differences.First(x => x.HasDifferences).Key.Should().Be("View2");
         }
 
         [Test]
@@ -267,7 +268,7 @@ namespace Tests.Common.Services
 
             var differences = await _service.CompareViewDefinitions(sourceViews, targetViews);
 
-            differences.Should().BeEmpty();
+            differences.Where(x => x.HasDifferences).Should().BeEmpty();
         }
 
         [Test]
@@ -295,7 +296,7 @@ namespace Tests.Common.Services
             var results = await _service.Compare("DEV", "QA");
 
             // Assert
-            results.Should().ContainSingle().Which.Should().Match<OracleDiffResult>(x =>
+            results.Where(x => x.HasDifferences).Should().ContainSingle().Which.Should().Match<OracleDiffResult>(x =>
                 x.Key == "VIEW1" &&
                 x.FormattedDiff.Contains("DEV_VIEW_DEFINITION") &&
                 x.HasDifferences
@@ -321,7 +322,7 @@ namespace Tests.Common.Services
 
             var results = await _service.Compare("DEV", "DEV");
 
-            results.Should().BeEmpty();
+            results.Where(x => x.HasDifferences).Should().BeEmpty();
         }
     }
 }

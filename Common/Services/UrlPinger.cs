@@ -42,9 +42,17 @@ namespace Common.Services
 
         public static IEnumerable<string> ExtractUrls(string text)
         {
-            UrlDetector parser = new UrlDetector(text, UrlDetectorOptions.JSON);
+            if (text == null)
+            {
+                return [];
+            }
+
+            UrlDetector parser = new UrlDetector(text, UrlDetectorOptions.JSON, new HashSet<string>
+            {
+                "http", "https", "ftp", "ftps", "sftp", "ws", "wss", "telnet"
+            });
             List<Url> found = parser.Detect();
-            return found.Select(x => x.GetOriginalUrl());
+            return found.Select(x => x.GetFullUrl().TrimEnd('.'));
         }
     }
 }
