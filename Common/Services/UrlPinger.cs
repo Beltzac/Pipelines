@@ -53,7 +53,7 @@ namespace Common.Services
                 return [];
             }
 
-            var assemblies = await _repositoryDatabase.GetAllAssemblies();
+            var assemblies = await _repositoryDatabase.GetAllAssemblies() ?? new List<string>();
 
             var assembliesClean = assemblies
                 .Select(x => x.Replace(".Consumer", "").Replace(".Api", "").Replace(".Domain", "").Replace(".Tests", "").Replace(".Test", "").Replace(".Events", "").Replace(".Infrastructure", "").Replace(".Infraestrutura", ""))
