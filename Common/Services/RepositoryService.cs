@@ -86,6 +86,14 @@ namespace Common.Services
                 return null;
             }
 
+            if (_repoRegexFilters.Any(pattern => Regex.IsMatch(existingRepo.Project, pattern))
+                || _repoRegexFilters.Any(pattern => Regex.IsMatch(existingRepo.Name, pattern)))
+            {
+                _logger.LogInformation($"Repositório {existingRepo.Path} caiu no filtro. Excluindo.");
+                await Delete(existingRepo.Id);
+                return null;
+            }
+
             var buildDefinitions = await _buildClient.GetDefinitionsAsync(existingRepo.Project, repositoryId: existingRepo.Id.ToString(), repositoryType: RepositoryTypes.TfsGit, includeLatestBuilds: true);
             var buildDefinition = buildDefinitions.FirstOrDefault();
 
@@ -249,6 +257,8 @@ namespace Common.Services
             var localPath = Path.Combine(_localCloneFolder, projectName, repo.Name);
             var projectType = OpenFolderUtils.DetermineProjectType(localPath);
 
+            var projectNames = OpenFolderUtils.GetCSharpProjectNames(localPath);
+
             var buildInfo = new Repository
             {
                 Id = repo.Id,
@@ -258,7 +268,8 @@ namespace Common.Services
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
                 Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null,
-                ProjectType = projectType
+                ProjectType = projectType,
+                ProjectNames = projectNames
             };
 
             if (buildDefinition?.LatestBuild != null)

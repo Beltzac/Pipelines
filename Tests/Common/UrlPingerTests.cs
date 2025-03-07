@@ -1,7 +1,10 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Common.Repositories.Interno.Interfaces;
 using Common.Services;
 using FluentAssertions;
+using Moq;
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Tests.Common
 {
@@ -80,13 +83,13 @@ namespace Tests.Common
         [Arguments("URL with equals sign https://example.com?param=a=b", new[] { "https://example.com/?param=a=b/" })]
         [Arguments("Edge case: Empty input", new string[0])]
         [Arguments("Edge case: Only whitespace", new string[0])]
-        public void ExtractUrls_ReturnsCorrectUrls(string input, string[] expected)
+        public async Task ExtractUrls_ReturnsCorrectUrls(string input, string[] expected)
         {
             // Arrange
             var expectedUrls = expected.ToList();
 
             // Act
-            var result = UrlPinger.ExtractUrls(input).ToList();
+            var result = (await (new UrlPinger(Mock.Of<IRepositoryDatabase>())).ExtractUrls(input)).ToList();
 
             // Assert
             result.Select(url => url.TrimEnd('/').TrimEnd('?').ToLowerInvariant())
@@ -102,26 +105,26 @@ namespace Tests.Common
         }
 
         [Test]
-        public void ExtractUrls_EmptyString_ReturnsEmpty()
+        public async Task ExtractUrls_EmptyString_ReturnsEmpty()
         {
             // Arrange
             var input = string.Empty;
 
             // Act
-            var result = UrlPinger.ExtractUrls(input);
+            var result = (await (new UrlPinger(Mock.Of<IRepositoryDatabase>())).ExtractUrls(input));
 
             // Assert
             result.Should().BeEmpty();
         }
 
         [Test]
-        public void ExtractUrls_NullString_ReturnsEmpty()
+        public async Task ExtractUrls_NullString_ReturnsEmpty()
         {
             // Arrange
             string input = null;
 
             // Act
-            var result = UrlPinger.ExtractUrls(input);
+            var result = (await (new UrlPinger(Mock.Of<IRepositoryDatabase>())).ExtractUrls(input));
 
             // Assert
             result.Should().BeEmpty();

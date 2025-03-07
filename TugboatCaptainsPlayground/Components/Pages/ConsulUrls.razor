@@ -15,34 +15,34 @@
 <StickyFilter>
     <div class="row g-3">
         <div class="col-md-4">
-    <div class="form-group">
-        <label for="consulEnvSelect">Select Consul Environment</label>
-        <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
-            @foreach (var env in ConsulEnvironments)
-            {
-                <option value="@env.Name">@env.Name</option>
-            }
-        </select>
-    </div>
+            <div class="form-group">
+                <label for="consulEnvSelect">Select Consul Environment</label>
+                <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
+                    @foreach (var env in ConsulEnvironments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
 
         </div>
 
         <div class="col-md-4">
-    <div class="buttons">
-        <button class="btn btn-primary" @onclick="StartPinging" :disabled="isProcessing">
-            <span class="bi bi-play-circle"></span> @(isProcessing ? "Processing..." : "Start Pinging")
-        </button>
-        <button class="btn btn-secondary" @onclick="OnCancel" :disabled="!isProcessing">
-            Cancel
-        </button>
-    </div>
+            <div class="buttons">
+                <button class="btn btn-primary" @onclick="StartPinging" :disabled="isProcessing">
+                    <span class="bi bi-play-circle"></span> @(isProcessing ? "Processing..." : "Start Pinging")
+                </button>
+                <button class="btn btn-secondary" @onclick="OnCancel" :disabled="!isProcessing">
+                    Cancel
+                </button>
+            </div>
 
         </div>
 
         <div class="col-md-4">
-    <div class="search-container">
-        <input type="text" class="form-control" placeholder="Search URLs" @bind="searchFilter" />
-    </div>
+            <div class="search-container">
+                <input type="text" class="form-control" placeholder="Search URLs" @bind="searchFilter" />
+            </div>
         </div>
     </div>
 </StickyFilter>
@@ -173,7 +173,7 @@ else
             }
 
             var keyValues = await ConsulService.GetConsulKeyValues(consulEnv);
-            var urls = ExtractUrlsFromKeyValues(keyValues);
+            var urls = await ExtractUrlsFromKeyValues(keyValues);
 
             LogMessage = $"Found {urls.Count} unique URLs. Starting ping tests...";
             await InvokeAsync(StateHasChanged);
@@ -195,10 +195,16 @@ else
         }
     }
 
-    private List<string> ExtractUrlsFromKeyValues(Dictionary<string, ConsulKeyValue> keyValues)
+    private async Task<List<string>> ExtractUrlsFromKeyValues(Dictionary<string, ConsulKeyValue> keyValues)
     {
-        return keyValues.Values
-            .SelectMany(x => UrlPinger.ExtractUrls(x.ValueRecursive))
+        var values = new List<string>();
+
+        foreach(var value in keyValues.Values)
+        {
+            values.AddRange(await UrlPinger.ExtractUrls(value.ValueRecursive));
+        }
+
+        return values
             .Distinct()
             .ToList();
     }

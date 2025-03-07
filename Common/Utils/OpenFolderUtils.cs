@@ -199,5 +199,38 @@ namespace Common.Utils
 
             return Repository.PROJECT_TYPE_FOLDER;
         }
+
+        public static List<string> GetCSharpProjectNames(string folderPath)
+        {
+            var projectNames = new List<string>();
+            var csprojFiles = Directory.GetFiles(folderPath, "*.csproj", SearchOption.AllDirectories);
+            foreach (var csproj in csprojFiles)
+            {
+                string projectName = GetProjectNameFromCsproj(csproj);
+                projectNames.Add(projectName);
+            }
+            return projectNames;
+        }
+
+        private static string GetProjectNameFromCsproj(string csprojPath)
+        {
+            try
+            {
+                var xmlDoc = new XmlDocument();
+                xmlDoc.Load(csprojPath);
+
+                var assemblyNameNode = xmlDoc.SelectSingleNode("//PropertyGroup/AssemblyName");
+                if (assemblyNameNode != null)
+                {
+                    return assemblyNameNode.InnerText;
+                }
+            }
+            catch
+            {
+                // Fallback to using filename if XML parsing fails
+            }
+
+            return Path.GetFileNameWithoutExtension(csprojPath);
+        }
     }
 }

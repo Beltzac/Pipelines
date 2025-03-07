@@ -212,6 +212,9 @@ namespace Common.Repositories
 
             builder.Property(r => r.Embedding)
                 .HasConversion(x => x.HasValue ? x.Value.Buffer.ToArray() : null, x => x != null ? new EmbeddingF32(x) : null);
+
+            builder.Property(r => r.ProjectNames)
+                .HasConversion(x => string.Join(',', x), x => x.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList());
         }
     }
 

@@ -44,4 +44,6 @@ public class Repository
     public EmbeddingF32? Embedding { get; set; }
 
     public string ProjectType { get; set; }
+
+    public List<string> ProjectNames { get; set; } = new List<string>();
 }

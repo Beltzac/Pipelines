@@ -8,5 +8,6 @@ namespace Common.Repositories.Interno.Interfaces
         Task DeleteAsync(Guid id);
         IQueryable<Repository> Query();
         Task<bool> ExistsByIdAsync(Guid id);
+        Task<List<string>> GetAllAssemblies();
     }
 }

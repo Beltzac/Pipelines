@@ -1,5 +1,8 @@
 using Common.Repositories.Interno.Interfaces;
+using DocumentFormat.OpenXml.Drawing;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using static Vanara.PInvoke.User32;
 
 namespace Common.Repositories
 {
@@ -56,6 +59,13 @@ namespace Common.Repositories
         {
             var context = _contextFactory.CreateDbContext();
             return context.Repositories.AsQueryable();
+        }
+
+        public async Task<List<string>> GetAllAssemblies()
+        {
+            await using var context = _contextFactory.CreateDbContext();
+            var listas = await context.Repositories.Select(x => x.ProjectNames).ToListAsync();
+            return listas.SelectMany(x => x).Distinct().ToList();
         }
     }
 }
