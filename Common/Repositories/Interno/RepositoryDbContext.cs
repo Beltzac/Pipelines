@@ -1,6 +1,7 @@
 using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite;
 using Common.Models;
+using Common.Services;
 using Common.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -22,6 +23,7 @@ namespace Common.Repositories
         public DbSet<Build> Builds { get; set; }
         public DbSet<Pipeline> Pipelines { get; set; }
         public DbSet<Repository> Repositories { get; set; }
+        public DbSet<FileChunkRecord> FileChunks { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -42,6 +44,7 @@ namespace Common.Repositories
             modelBuilder.ApplyConfiguration(new BuildConfiguration());
             modelBuilder.ApplyConfiguration(new PipelineConfiguration());
             modelBuilder.ApplyConfiguration(new RepositoryConfiguration());
+            modelBuilder.ApplyConfiguration(new FileChunkRecordConfiguration());
 
             // Loop through all entity types in the model
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -218,4 +221,16 @@ namespace Common.Repositories
         }
     }
 
+    public class FileChunkRecordConfiguration : IEntityTypeConfiguration<FileChunkRecord>
+    {
+        public void Configure(EntityTypeBuilder<FileChunkRecord> builder)
+        {
+            builder.ToTable("FileChunkRecords");
+
+            builder.HasKey(r => r.Id);
+
+            builder.Property(r => r.Embedding)
+                .HasConversion(x => x.HasValue ? x.Value.Buffer.ToArray() : null, x => x != null ? new EmbeddingF32(x) : null);
+        }
+    }
 }
