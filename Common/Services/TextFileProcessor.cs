@@ -17,7 +17,7 @@ namespace Common.Services
 
         public void ProcessFolder(string folderPath)
         {
-            foreach (var filePath in Directory.EnumerateFiles(folderPath, "*.cs"))
+            foreach (var filePath in Directory.EnumerateFiles(folderPath, "*.cs", SearchOption.AllDirectories))
             {
                 try
                 {

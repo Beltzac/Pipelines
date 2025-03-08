@@ -1,0 +1,198 @@
+@page "/codesearch"
+@using System.Reactive.Linq
+@using System.Reactive.Subjects
+@using Common.Services
+@using Common.Services.Interfaces
+@using Common.Utils
+@inject IRepositoryService RepositoryService
+@inject IToastService toastService
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject IConfigurationService ConfigService
+@inject ILogger<CodeSearch> _logger
+@inject CodeSearchStateService CodeSearchStateService
+@inject TextFileProcessor TextFileProcessor
+@implements IDisposable
+
+<h3>Code Search</h3>
+
+<ProgressBar IsLoading="@CodeSearchStateService.IsLoading" Label="@CodeSearchStateService.ProgressLabel" />
+
+<StickyFilter>
+    <div class="mb-3 d-flex align-items-center">
+        <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="CodeSearchStateService.Filter" @oninput="OnFilterChange" placeholder="Filter repositories..." />
+        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
+    </div>
+</StickyFilter>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Repositories</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var repo in GetRepositories())
+                            {
+                                <tr @onclick="() => SelectRepository(repo)">
+                                    <td>@repo.Project</td>
+                                    <td>@repo.Name</td>
+                                    <td>@repo.ProjectType</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" @onclick="() => IndexRepository(repo)">Index</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Code Search</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Search code..." @bind="CodeSearchStateService.SearchQuery" />
+                    <button class="btn btn-primary" @onclick="SearchCode">Search</button>
+                </div>
+                <div class="alert alert-info">
+                    <p>Search functionality will be implemented in a future update.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Subject<string> _searchEvents;
+    private IDisposable _subscription;
+    private ElementReference filterInputElement;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CodeSearchStateService.OnChange += () => InvokeAsync(StateHasChanged);
+        CodeSearchStateService.Load();
+
+        _searchEvents = new Subject<string>();
+
+        _subscription = _searchEvents
+            .Throttle(TimeSpan.FromMilliseconds(500))
+            .Subscribe(async x =>
+            {
+                try
+                {
+                    CodeSearchStateService.IsLoading = true;
+                    var repos = await RepositoryService.GetBuildInfoAsync(x);
+                    CodeSearchStateService.Repositories = repos;
+                }
+                finally
+                {
+                    CodeSearchStateService.IsLoading = false;
+                }
+            });
+
+        CodeSearchStateService.InitializeState(x =>
+        {
+            _searchEvents.OnNext(CodeSearchStateService.Filter);
+        }, !CodeSearchStateService.Repositories.Any());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await filterInputElement.FocusAsync();
+        }
+    }
+
+    private async Task OnFilterChange(ChangeEventArgs e)
+    {
+        CodeSearchStateService.Filter = e.Value.ToString();
+        _searchEvents.OnNext(CodeSearchStateService.Filter);
+    }
+
+    private async Task ClearFilter()
+    {
+        CodeSearchStateService.Filter = string.Empty;
+        await OnFilterChange(new ChangeEventArgs { Value = CodeSearchStateService.Filter });
+        await filterInputElement.FocusAsync();
+    }
+
+    private IEnumerable<Repository> GetRepositories()
+    {
+        return CodeSearchStateService.Repositories ?? new List<Repository>();
+    }
+
+    private void SelectRepository(Repository repo)
+    {
+        CodeSearchStateService.SelectedRepositoryId = repo.Id.ToString();
+        toastService.ShowInfo($"Selected repository: {repo.Path}");
+    }
+
+    private async Task IndexRepository(Repository repo)
+    {
+        try
+        {
+            CodeSearchStateService.IsLoading = true;
+            CodeSearchStateService.ProgressLabel = $"Indexing {repo.Path}...";
+
+            var localPath = Path.Combine(ConfigService.GetConfig().LocalCloneFolder, repo.Project, repo.Name);
+
+            if (!Directory.Exists(localPath))
+            {
+                toastService.ShowWarning($"Repository not cloned. Cloning {repo.Path}...");
+                await RepositoryService.CloneRepositoryByBuildInfoAsync(repo);
+            }
+
+            if (Directory.Exists(localPath))
+            {
+                TextFileProcessor.ProcessFolder(localPath);
+                toastService.ShowSuccess($"Repository {repo.Path} indexed successfully");
+            }
+            else
+            {
+                toastService.ShowError($"Failed to clone or find repository at {localPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error indexing repository {repo.Path}");
+            toastService.ShowError($"Error indexing repository: {ex.Message}");
+        }
+        finally
+        {
+            CodeSearchStateService.IsLoading = false;
+            CodeSearchStateService.ProgressLabel = string.Empty;
+        }
+    }
+
+    private void SearchCode()
+    {
+        toastService.ShowInfo("Search functionality will be implemented in a future update.");
+    }
+
+    public void Dispose()
+    {
+        CodeSearchStateService.OnChange -= () => InvokeAsync(StateHasChanged);
+        CodeSearchStateService.Save();
+        _subscription?.Dispose();
+    }
+}
