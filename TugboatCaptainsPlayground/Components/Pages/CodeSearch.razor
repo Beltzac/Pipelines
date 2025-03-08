@@ -12,6 +12,7 @@
 @inject ILogger<CodeSearch> _logger
 @inject CodeSearchStateService CodeSearchStateService
 @inject TextFileProcessor TextFileProcessor
+@inject CodeSearchService CodeSearchService
 @implements IDisposable
 
 <h3>Code Search</h3>
@@ -73,9 +74,37 @@
                     <input type="text" class="form-control" placeholder="Search code..." @bind="CodeSearchStateService.SearchQuery" />
                     <button class="btn btn-primary" @onclick="SearchCode">Search</button>
                 </div>
-                <div class="alert alert-info">
-                    <p>Search functionality will be implemented in a future update.</p>
-                </div>
+
+                @if (searchResults != null && searchResults.Any())
+                {
+                    <div class="search-results mt-3">
+                        <h5>Search Results (@searchResults.Count)</h5>
+
+                        @foreach (var result in searchResults)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>@result.FileName</strong>
+                                        <small class="text-muted">@result.ShortenedPath</small>
+                                    </div>
+                                    <span class="badge bg-primary">@(result.Similarity.ToString("P1"))</span>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="code-snippet"><code>@result.ChunkText</code></pre>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (searchResults != null)
+                {
+                    <div class="alert alert-warning mt-3">No results found. Try a different search query or index more repositories.</div>
+                }
+                else if (isSearching)
+                {
+                    <div class="alert alert-info mt-3">Searching...</div>
+                }
             </div>
         </div>
     </div>
@@ -85,6 +114,8 @@
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
     private ElementReference filterInputElement;
+    private List<SearchResult> searchResults;
+    private bool isSearching = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -184,9 +215,24 @@
         }
     }
 
-    private void SearchCode()
+    private async Task SearchCode()
     {
-        toastService.ShowInfo("Search functionality will be implemented in a future update.");
+        if (string.IsNullOrWhiteSpace(CodeSearchStateService.SearchQuery))
+        {
+            toastService.ShowWarning("Please enter a search query");
+            return;
+        }
+
+        try
+        {
+            isSearching = true;
+            searchResults = await CodeSearchService.SearchCodeAsync(CodeSearchStateService.SearchQuery);
+            toastService.ShowSuccess($"Found {searchResults.Count} results");
+        }
+        finally
+        {
+            isSearching = false;
+        }
     }
 
     public void Dispose()

@@ -132,3 +132,26 @@ span.unchanged {
     padding: 0.2em 0.4em;
     line-height: 1;
 }
+
+/* Code Search Styles */
+.code-snippet {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    max-height: 300px;
+}
+
+.search-results .card-header {
+    background-color: #f1f5f9;
+}
+
+.search-results .card-header small {
+    margin-left: 0.5rem;
+}

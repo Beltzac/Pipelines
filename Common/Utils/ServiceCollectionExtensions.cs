@@ -90,6 +90,7 @@ namespace Common.Utils
             services.AddScoped<UrlPinger>();
 
             services.AddScoped<TextFileProcessor>();
+            services.AddScoped<CodeSearchService>();
             services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
             services.AddScoped<IOracleRepository, Common.Repositories.TCP.OracleRepository>();
 
