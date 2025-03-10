@@ -129,8 +129,8 @@
     <PackageReference Include="System.Data.SQLite" Version="1.0.119" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="System.Resources.Extensions" Version="9.0.2" />
-    <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.5" />
-    <PackageReference Include="Vanara.Windows.Shell" Version="4.0.5" />
+    <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.1" />
+    <PackageReference Include="Vanara.Windows.Shell" Version="4.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
