@@ -1,0 +1,25 @@
+<div class="submenu @(IsExpanded ? "expanded" : "collapsed")">
+    <div class="submenu-header" @onclick="ToggleExpand">
+        <span class="bi @(IsExpanded ? "bi-chevron-down" : "bi-chevron-right")" aria-hidden="true"></span>
+        <span class="submenu-title">WIP</span>
+    </div>
+
+    @if (IsExpanded)
+    {
+        <div class="submenu-items">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private bool IsExpanded { get; set; } = true;
+
+    private void ToggleExpand()
+    {
+        IsExpanded = !IsExpanded;
+    }
+}
