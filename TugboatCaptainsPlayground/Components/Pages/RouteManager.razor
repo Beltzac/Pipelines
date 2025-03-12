@@ -136,9 +136,14 @@
 
     <div class="row mb-4">
         <div class="col-md-12">
-            <button class="btn btn-primary" @onclick="AddRoutes" disabled="@(!CanAddRoutes)">
-                <i class="bi bi-plus-circle"></i> Add Routes
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" @onclick="AddRoutes" disabled="@(!CanAddRoutes)">
+                    <i class="bi bi-plus-circle"></i> Add Routes
+                </button>
+                <button type="button" class="btn btn-danger" @onclick="ClearRoutes" disabled="@(!CanAddRoutes)">
+                    <i class="bi bi-trash"></i> Clear Routes
+                </button>
+            </div>
         </div>
     </div>
 
@@ -171,6 +176,10 @@
                                         @if (status == "Success")
                                         {
                                             <span class="text-success"><i class="bi bi-check-circle-fill"></i> Added</span>
+                                        }
+                                        else if (status == "Removed")
+                                        {
+                                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> Removed</span>
                                         }
                                         else if (status == "Processing")
                                         {
@@ -345,6 +354,86 @@
         return -1;
     }
 
+    private async Task ClearRoutes()
+    {
+        if (SelectedDomains.Count == 0)
+        {
+            ToastService.ShowError("Please select at least one domain");
+            return;
+        }
+
+        StatusMessage = "Resolving domain names to clear routes...";
+        StatusAlertClass = "alert-info";
+        ResolvedAddresses.Clear();
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            StatusMessage = $"Processing {SelectedDomains.Count} domains for route removal...";
+            StatusAlertClass = "alert-info";
+            await InvokeAsync(StateHasChanged);
+
+            int totalAddresses = 0;
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var domain in SelectedDomains)
+            {
+                try
+                {
+                    IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(domain));
+
+                    if (addresses.Length == 0)
+                    {
+                        StatusMessage = $"Could not resolve any IP addresses for {domain}";
+                        StatusAlertClass = "alert-warning";
+                        continue;
+                    }
+
+                    StatusMessage = $"Found {addresses.Length} IP addresses for {domain}. Removing routes...";
+                    StatusAlertClass = "alert-info";
+                    await InvokeAsync(StateHasChanged);
+
+                    foreach (IPAddress ip in addresses)
+                    {
+                        if (ip.AddressFamily == AddressFamily.InterNetwork) // Only IPv4
+                        {
+                            totalAddresses++;
+                            var ipString = ip.ToString();
+                            ResolvedAddresses.Add((ipString, "Processing"));
+                            await InvokeAsync(StateHasChanged);
+
+                            try
+                            {
+                                await DeleteRoute(ipString);
+                                UpdateAddressStatus(ipString, "Removed");
+                                successCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                UpdateAddressStatus(ipString, $"Error: {ex.Message}");
+                                errorCount++;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error processing domain {domain}: {ex.Message}";
+                    StatusAlertClass = "alert-danger";
+                }
+            }
+
+            StatusMessage = $"Processed {SelectedDomains.Count} domains. Removed {successCount} routes, {errorCount} errors.";
+            StatusAlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            StatusAlertClass = "alert-danger";
+        }
+    }
+
     private async Task AddRoutes()
     {
         if (SelectedDomains.Count == 0)
@@ -458,6 +547,29 @@
             ResolvedAddresses[index] = (ip, status);
             InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task DeleteRoute(string ip)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/C route delete {ip}",
+            Verb = "runas", // Requires admin privileges
+            WindowStyle = ProcessWindowStyle.Hidden,
+            CreateNoWindow = true,
+            UseShellExecute = true
+        };
+
+        await Task.Run(() => {
+            var process = Process.Start(psi);
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new Exception($"Route delete command failed with exit code {process.ExitCode}");
+            }
+        });
     }
 
     private async Task AddRoute(string ip, int interfaceIndex, string gateway)
