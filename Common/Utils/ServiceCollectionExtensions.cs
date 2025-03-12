@@ -1,7 +1,7 @@
 using Blazored.Toast;
 using Common.ExternalApis;
 using Common.ExternalApis.Interfaces;
-using Common.Repositories;
+using Common.Repositories.Interno;
 using Common.Repositories.Interno.Interfaces;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services;

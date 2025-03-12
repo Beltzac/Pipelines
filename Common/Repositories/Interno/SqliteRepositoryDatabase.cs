@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using static Vanara.PInvoke.User32;
 
-namespace Common.Repositories
+namespace Common.Repositories.Interno
 {
     public class SqliteRepositoryDatabase : IRepositoryDatabase
     {

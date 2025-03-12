@@ -1,4 +1,4 @@
-﻿using Common.Repositories;
+﻿using Common.Repositories.Interno;
 using SmartComponents.LocalEmbeddings;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,7 +19,7 @@ namespace Common.Services
 
         public void ProcessFolder(string folderPath)
         {
-            foreach (var filePath in Directory.EnumerateFiles(folderPath, "*.cs", SearchOption.AllDirectories))
+            foreach (var filePath in MyDirectory.GetFiles(folderPath, "\\.cs|\\.js|\\.html", SearchOption.AllDirectories))
             {
                 try
                 {

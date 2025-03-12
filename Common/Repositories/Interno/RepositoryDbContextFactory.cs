@@ -1,4 +1,4 @@
-﻿using Common.Repositories;
+﻿using Common.Repositories.Interno;
 using Common.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;

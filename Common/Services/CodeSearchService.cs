@@ -1,4 +1,4 @@
-using Common.Repositories;
+using Common.Repositories.Interno;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SmartComponents.LocalEmbeddings;

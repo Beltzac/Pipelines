@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmartComponents.LocalEmbeddings;
 
-namespace Common.Repositories
+namespace Common.Repositories.Interno
 {
     //dotnet ef migrations add MapearCampos --project Common
     //Add-Migration MapearEmbbeding

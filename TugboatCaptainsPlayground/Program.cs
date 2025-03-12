@@ -1,5 +1,5 @@
 ﻿using Common.Jobs;
-using Common.Repositories;
+using Common.Repositories.Interno;
 using Common.Utils;
 using Generation;
 using GlobalHotKey;

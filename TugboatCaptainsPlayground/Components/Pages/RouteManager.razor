@@ -1,0 +1,343 @@
+@page "/routemanager"
+@using System;
+@using System.Diagnostics;
+@using System.Net;
+@using System.Net.Sockets;
+@using System.Net.NetworkInformation;
+@using System.Linq;
+@using Blazored.Toast;
+@using Blazored.Toast.Services;
+@using System.Collections.Generic;
+@using System.Threading.Tasks;
+@inject IJSRuntime JS
+@inject IToastService ToastService
+
+<PageTitle>Route Manager</PageTitle>
+
+<div class="container">
+    <h1>Route Manager</h1>
+    <p class="lead">Add specific routes for domains through selected network interfaces</p>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="domainInput">Domain Name</label>
+                <input id="domainInput" type="text" class="form-control" @bind="Domain" placeholder="example.com" />
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4>Available Network Interfaces</h4>
+            @if (NetworkInterfaces.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Name</th>
+                                <th>ID</th>
+                                <th>Status</th>
+                                <th>IP Addresses</th>
+                                <th>Default Gateway</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (iface, index) in NetworkInterfaces.Select((iface, index) => (iface, index)))
+                            {
+                                <tr class="@(SelectedInterfaceIndex == index ? "table-primary" : "")">
+                                    <td>
+                                        <button class="btn btn-sm @(SelectedInterfaceIndex == index ? "btn-primary" : "btn-outline-primary")"
+                                                @onclick="() => SelectInterface(index)">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                        </button>
+                                    </td>
+                                    <td>@iface.Name</td>
+                                    <td>@iface.Id</td>
+                                    <td>
+                                        <span class="@(iface.OperationalStatus == OperationalStatus.Up ? "text-success" : "text-danger")">
+                                            @iface.OperationalStatus
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @foreach (var ip in GetIPAddresses(iface))
+                                        {
+                                            <div>@ip</div>
+                                        }
+                                    </td>
+                                    <td>@GetDefaultGateway(iface)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">No network interfaces found</div>
+            }
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <button class="btn btn-primary" @onclick="AddRoutes" disabled="@(!CanAddRoutes)">
+                <i class="bi bi-plus-circle"></i> Add Routes
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(StatusMessage))
+    {
+        <div class="alert @StatusAlertClass">
+            @((MarkupString)StatusMessage)
+        </div>
+    }
+
+    @if (ResolvedAddresses.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h4>Resolved IP Addresses</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (ip, status) in ResolvedAddresses)
+                            {
+                                <tr>
+                                    <td>@ip</td>
+                                    <td>
+                                        @if (status == "Success")
+                                        {
+                                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> Added</span>
+                                        }
+                                        else if (status == "Processing")
+                                        {
+                                            <span class="text-info"><i class="bi bi-hourglass-split"></i> Processing...</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger"><i class="bi bi-x-circle-fill"></i> @status</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string Domain { get; set; } = "";
+    private List<NetworkInterface> NetworkInterfaces { get; set; } = new();
+    private int SelectedInterfaceIndex { get; set; } = -1;
+    private string StatusMessage { get; set; } = "";
+    private string StatusAlertClass { get; set; } = "alert-info";
+    private List<(string ip, string status)> ResolvedAddresses { get; set; } = new();
+
+    private bool CanAddRoutes => !string.IsNullOrWhiteSpace(Domain) && SelectedInterfaceIndex >= 0;
+
+    protected override void OnInitialized()
+    {
+        LoadNetworkInterfaces();
+    }
+
+    private void LoadNetworkInterfaces()
+    {
+        try
+        {
+            // Only get IPv4 interfaces that are up and have IPv4 addresses
+            NetworkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(n => n.OperationalStatus == OperationalStatus.Up)
+                .Where(n => n.GetIPProperties().UnicastAddresses
+                    .Any(a => a.Address.AddressFamily == AddressFamily.InterNetwork))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading network interfaces: {ex.Message}";
+            StatusAlertClass = "alert-danger";
+        }
+    }
+
+    private void SelectInterface(int index)
+    {
+        SelectedInterfaceIndex = index;
+    }
+
+    private List<string> GetIPAddresses(NetworkInterface ni)
+    {
+        var addresses = new List<string>();
+        foreach (var ip in ni.GetIPProperties().UnicastAddresses)
+        {
+            if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                addresses.Add(ip.Address.ToString());
+            }
+        }
+        return addresses;
+    }
+
+    private string GetDefaultGateway(NetworkInterface ni)
+    {
+        try
+        {
+            var ipProps = ni.GetIPProperties();
+            var gateways = ipProps.GatewayAddresses
+                .Where(g => g.Address != null && g.Address.AddressFamily == AddressFamily.InterNetwork)
+                .Select(g => g.Address.ToString())
+                .ToList();
+
+            return gateways.FirstOrDefault() ?? "Not available";
+        }
+        catch
+        {
+            return "Not available";
+        }
+    }
+
+    private int GetInterfaceIndex(string interfaceId)
+    {
+        foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (ni.Id == interfaceId)
+            {
+                foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                {
+                    if (ip.Address.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        return ni.GetIPProperties().GetIPv4Properties().Index;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    private async Task AddRoutes()
+    {
+        if (string.IsNullOrWhiteSpace(Domain))
+        {
+            ToastService.ShowError("Please enter a domain name");
+            return;
+        }
+
+        if (SelectedInterfaceIndex < 0 || SelectedInterfaceIndex >= NetworkInterfaces.Count)
+        {
+            ToastService.ShowError("Please select a network interface");
+            return;
+        }
+
+        StatusMessage = "Resolving domain name...";
+        StatusAlertClass = "alert-info";
+        ResolvedAddresses.Clear();
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var selectedInterface = NetworkInterfaces[SelectedInterfaceIndex];
+            int interfaceMetric = GetInterfaceIndex(selectedInterface.Id);
+
+            if (interfaceMetric == -1)
+            {
+                StatusMessage = "Failed to retrieve interface index.";
+                StatusAlertClass = "alert-danger";
+                return;
+            }
+
+            // Get the default gateway for the selected interface
+            string gateway = GetDefaultGateway(selectedInterface);
+            if (gateway == "Not available")
+            {
+                StatusMessage = "No default gateway available for this interface. Please select a different interface.";
+                StatusAlertClass = "alert-warning";
+                return;
+            }
+
+            IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(Domain));
+
+            if (addresses.Length == 0)
+            {
+                StatusMessage = $"Could not resolve any IP addresses for {Domain}";
+                StatusAlertClass = "alert-warning";
+                return;
+            }
+
+            StatusMessage = $"Found {addresses.Length} IP addresses for {Domain}. Adding routes...";
+            StatusAlertClass = "alert-info";
+            await InvokeAsync(StateHasChanged);
+
+            foreach (IPAddress ip in addresses)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork) // Only IPv4
+                {
+                    var ipString = ip.ToString();
+                    ResolvedAddresses.Add((ipString, "Processing"));
+                    await InvokeAsync(StateHasChanged);
+
+                    try
+                    {
+                        await AddRoute(ipString, interfaceMetric, gateway);
+                        UpdateAddressStatus(ipString, "Success");
+                    }
+                    catch (Exception ex)
+                    {
+                        UpdateAddressStatus(ipString, $"Error: {ex.Message}");
+                    }
+                }
+            }
+
+            StatusMessage = $"Routes added for {Domain} via interface {selectedInterface.Name} using gateway {gateway}";
+            StatusAlertClass = "alert-success";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            StatusAlertClass = "alert-danger";
+        }
+    }
+
+    private void UpdateAddressStatus(string ip, string status)
+    {
+        var index = ResolvedAddresses.FindIndex(a => a.ip == ip);
+        if (index >= 0)
+        {
+            ResolvedAddresses[index] = (ip, status);
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task AddRoute(string ip, int interfaceIndex, string gateway)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/C route add {ip} mask 255.255.255.255 {gateway} IF {interfaceIndex} -p",
+            Verb = "runas", // Requires admin privileges
+            WindowStyle = ProcessWindowStyle.Hidden,
+            CreateNoWindow = true,
+            UseShellExecute = true
+        };
+
+        await Task.Run(() => {
+            var process = Process.Start(psi);
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new Exception($"Route command failed with exit code {process.ExitCode}");
+            }
+        });
+    }
+}
