@@ -6,11 +6,14 @@
 @using System.Net.NetworkInformation;
 @using System.Linq;
 @using Blazored.Toast;
+@using Common.Models;
+@using Common.Services.Interfaces;
 @using Blazored.Toast.Services;
 @using System.Collections.Generic;
 @using System.Threading.Tasks;
 @inject IJSRuntime JS
 @inject IToastService ToastService
+@inject IConfigurationService ConfigService
 
 <PageTitle>Route Manager</PageTitle>
 
@@ -21,11 +24,61 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="form-group mb-3">
-                <label for="domainInput">Domain Name</label>
-                <input id="domainInput" type="text" class="form-control" @bind="Domain" placeholder="example.com" />
+                <label>Domain Names</label>
+                <div class="mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllDomains"
+                               checked="@AreAllDomainsSelected" @onchange="ToggleAllDomains" />
+                        <label class="form-check-label" for="selectAllDomains">
+                            <strong>Select All Domains</strong>
+                        </label>
+                    </div>
+                </div>
+                <div class="domain-list border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                    @foreach (var domain in Config.RouteDomains)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="domain-@domain"
+                                   checked="@SelectedDomains.Contains(domain)"
+                                   @onchange="e => ToggleDomain(domain, e.Value is bool b && b)" />
+                            <label class="form-check-label" for="domain-@domain">
+                                @domain
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => ShowAddDomainModal = true">
+                        <i class="bi bi-plus"></i> Add New Domain
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    @if (ShowAddDomainModal)
+    {
+        <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Domain</h5>
+                        <button type="button" class="btn-close" @onclick="() => ShowAddDomainModal = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="newDomainInput" class="form-label">Domain Name</label>
+                            <input type="text" class="form-control" id="newDomainInput" @bind="NewDomain" placeholder="example.com" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="() => ShowAddDomainModal = false">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="AddDomain">Add Domain</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="row mb-4">
         <div class="col-md-12">
@@ -140,17 +193,84 @@
 
 @code {
     private string Domain { get; set; } = "";
+    private HashSet<string> SelectedDomains { get; set; } = new();
+    private string NewDomain { get; set; } = "";
+    private bool ShowAddDomainModal { get; set; } = false;
     private List<NetworkInterface> NetworkInterfaces { get; set; } = new();
     private int SelectedInterfaceIndex { get; set; } = -1;
     private string StatusMessage { get; set; } = "";
     private string StatusAlertClass { get; set; } = "alert-info";
     private List<(string ip, string status)> ResolvedAddresses { get; set; } = new();
+    private ConfigModel Config { get; set; } = new();
 
-    private bool CanAddRoutes => !string.IsNullOrWhiteSpace(Domain) && SelectedInterfaceIndex >= 0;
+    private bool CanAddRoutes => SelectedDomains.Count > 0 && SelectedInterfaceIndex >= 0;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        Config = ConfigService.GetConfig();
         LoadNetworkInterfaces();
+    }
+
+    private bool AreAllDomainsSelected => Config.RouteDomains.Count > 0 &&
+                                         SelectedDomains.Count == Config.RouteDomains.Count;
+
+    private void ToggleAllDomains(ChangeEventArgs e)
+    {
+        bool isChecked = e.Value is bool b && b;
+
+        if (isChecked)
+        {
+            // Select all domains
+            SelectedDomains = new HashSet<string>(Config.RouteDomains);
+        }
+        else
+        {
+            // Deselect all domains
+            SelectedDomains.Clear();
+        }
+    }
+
+    private void ToggleDomain(string domain, bool isChecked)
+    {
+        if (isChecked) SelectedDomains.Add(domain);
+        else SelectedDomains.Remove(domain);
+    }
+
+    private async Task AddDomain()
+    {
+        if (string.IsNullOrWhiteSpace(NewDomain))
+        {
+            ToastService.ShowError("Please enter a domain name");
+            return;
+        }
+
+        if (!Config.RouteDomains.Contains(NewDomain))
+        {
+            Config.RouteDomains.Add(NewDomain);
+            await ConfigService.SaveConfigAsync(Config);
+            Domain = NewDomain;
+            NewDomain = "";
+            ShowAddDomainModal = false;
+            ToastService.ShowSuccess("Domain added successfully");
+        }
+        else
+        {
+            ToastService.ShowWarning("Domain already exists");
+        }
+    }
+
+    private async Task RemoveDomain(string domain)
+    {
+        if (Config.RouteDomains.Contains(domain))
+        {
+            Config.RouteDomains.Remove(domain);
+            await ConfigService.SaveConfigAsync(Config);
+            if (Domain == domain)
+            {
+                Domain = "";
+            }
+            ToastService.ShowSuccess("Domain removed successfully");
+        }
     }
 
     private void LoadNetworkInterfaces()
@@ -227,9 +347,9 @@
 
     private async Task AddRoutes()
     {
-        if (string.IsNullOrWhiteSpace(Domain))
+        if (SelectedDomains.Count == 0)
         {
-            ToastService.ShowError("Please enter a domain name");
+            ToastService.ShowError("Please select at least one domain");
             return;
         }
 
@@ -265,40 +385,62 @@
                 return;
             }
 
-            IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(Domain));
-
-            if (addresses.Length == 0)
-            {
-                StatusMessage = $"Could not resolve any IP addresses for {Domain}";
-                StatusAlertClass = "alert-warning";
-                return;
-            }
-
-            StatusMessage = $"Found {addresses.Length} IP addresses for {Domain}. Adding routes...";
+            StatusMessage = $"Processing {SelectedDomains.Count} domains...";
             StatusAlertClass = "alert-info";
             await InvokeAsync(StateHasChanged);
 
-            foreach (IPAddress ip in addresses)
+            int totalAddresses = 0;
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var domain in SelectedDomains)
             {
-                if (ip.AddressFamily == AddressFamily.InterNetwork) // Only IPv4
+                try
                 {
-                    var ipString = ip.ToString();
-                    ResolvedAddresses.Add((ipString, "Processing"));
+                    IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(domain));
+
+                    if (addresses.Length == 0)
+                    {
+                        StatusMessage = $"Could not resolve any IP addresses for {domain}";
+                        StatusAlertClass = "alert-warning";
+                        continue;
+                    }
+
+                    StatusMessage = $"Found {addresses.Length} IP addresses for {domain}. Adding routes...";
+                    StatusAlertClass = "alert-info";
                     await InvokeAsync(StateHasChanged);
 
-                    try
+                    foreach (IPAddress ip in addresses)
                     {
-                        await AddRoute(ipString, interfaceMetric, gateway);
-                        UpdateAddressStatus(ipString, "Success");
+                        if (ip.AddressFamily == AddressFamily.InterNetwork) // Only IPv4
+                        {
+                            totalAddresses++;
+                            var ipString = ip.ToString();
+                            ResolvedAddresses.Add((ipString, "Processing"));
+                            await InvokeAsync(StateHasChanged);
+
+                            try
+                            {
+                                await AddRoute(ipString, interfaceMetric, gateway);
+                                UpdateAddressStatus(ipString, "Success");
+                                successCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                UpdateAddressStatus(ipString, $"Error: {ex.Message}");
+                                errorCount++;
+                            }
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        UpdateAddressStatus(ipString, $"Error: {ex.Message}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error processing domain {domain}: {ex.Message}";
+                    StatusAlertClass = "alert-danger";
                 }
             }
 
-            StatusMessage = $"Routes added for {Domain} via interface {selectedInterface.Name} using gateway {gateway}";
+            StatusMessage = $"Processed {SelectedDomains.Count} domains. Added {successCount} routes, {errorCount} errors.";
             StatusAlertClass = "alert-success";
         }
         catch (Exception ex)

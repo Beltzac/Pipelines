@@ -1,0 +1,60 @@
+@using Common.Models
+@using Common.Services.Interfaces
+@using Blazored.Toast.Services
+@inject IConfigurationService ConfigService
+@inject IToastService ToastService
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Domínios para Rotas</h5>
+    </div>
+    <div class="card-body">
+        @for (int i = 0; i < Config.RouteDomains.Count; i++)
+        {
+            var index = i;
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" value="@Config.RouteDomains[index]"
+                       @onchange="(e) => UpdateDomain(index, e.Value?.ToString() ?? string.Empty)"
+                       placeholder="Digite o nome do domínio"/>
+                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveDomain(index)">
+                    <i class="bi bi-trash"></i> Remover
+                </button>
+            </div>
+        }
+        <button type="button" class="btn btn-outline-secondary" @onclick="AddDomain">
+            <i class="bi bi-plus"></i> Adicionar Domínio
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ConfigModel Config { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfigChanged { get; set; }
+
+    private async Task AddDomain()
+    {
+        Config.RouteDomains.Add(string.Empty);
+        await OnConfigChanged.InvokeAsync();
+    }
+
+    private async Task RemoveDomain(int index)
+    {
+        if (index >= 0 && index < Config.RouteDomains.Count)
+        {
+            Config.RouteDomains.RemoveAt(index);
+            await OnConfigChanged.InvokeAsync();
+        }
+    }
+
+    private async Task UpdateDomain(int index, string value)
+    {
+        if (index >= 0 && index < Config.RouteDomains.Count)
+        {
+            Config.RouteDomains[index] = value;
+            await OnConfigChanged.InvokeAsync();
+        }
+    }
+}

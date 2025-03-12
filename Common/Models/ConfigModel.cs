@@ -23,6 +23,7 @@
         public string VSCodePath { get; set; } = "code-insiders.cmd";
         public string TcpUserName { get; set; }
         public HashSet<Guid> PinnedRepositories { get; set; } = new HashSet<Guid>();
+        public List<string> RouteDomains { get; set; } = new List<string>();
     }
 
     public class OracleEnvironment
