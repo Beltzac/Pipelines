@@ -17,130 +17,139 @@
 
 <PageTitle>Route Manager</PageTitle>
 
-<div class="container">
-    <h1>Route Manager</h1>
-    <p class="lead">Add specific routes for domains through selected network interfaces</p>
+<div class="container-fluid pb-5">
+    <h3 class="mb-4">Route Manager</h3>
+    <p>Add specific routes for domains through selected network interfaces</p>
 
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label>Domain Names</label>
-                <div class="mb-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="selectAllDomains"
-                               checked="@AreAllDomainsSelected" @onchange="ToggleAllDomains" />
-                        <label class="form-check-label" for="selectAllDomains">
-                            <strong>Select All Domains</strong>
-                        </label>
-                    </div>
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Domain Names</h5>
                 </div>
-                <div class="domain-list border rounded p-2" style="max-height: 200px; overflow-y: auto;">
-                    @foreach (var domain in Config.RouteDomains)
-                    {
+                <div class="card-body">
+                    <label>Domain Names</label>
+                    <div class="mb-2">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="domain-@domain"
-                                   checked="@SelectedDomains.Contains(domain)"
-                                   @onchange="e => ToggleDomain(domain, e.Value is bool b && b)" />
-                            <label class="form-check-label" for="domain-@domain">
-                                @domain
+                            <input class="form-check-input" type="checkbox" id="selectAllDomains"
+                                   checked="@AreAllDomainsSelected" @onchange="ToggleAllDomains" />
+                            <label class="form-check-label" for="selectAllDomains">
+                                <strong>Select All Domains</strong>
                             </label>
                         </div>
-                    }
-                </div>
-                <div class="mt-2">
-                    <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => ShowAddDomainModal = true">
-                        <i class="bi bi-plus"></i> Add New Domain
-                    </button>
+                    </div>
+                    <div class="domain-list border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        @foreach (var domain in Config.RouteDomains)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="domain-@domain"
+                                       checked="@SelectedDomains.Contains(domain)"
+                                       @onchange="e => ToggleDomain(domain, e.Value is bool b && b)" />
+                                <label class="form-check-label" for="domain-@domain">
+                                    @domain
+                                </label>
+                            </div>
+                        }
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => ShowAddDomainModal = true">
+                            <i class="bi bi-plus"></i> Add New Domain
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Available Network Interfaces</h5>
+                </div>
+                <div class="card-body">
+                    @if (NetworkInterfaces.Any())
+                    {
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Select</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>IP Addresses</th>
+                                    <th>Default Gateway</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var (iface, index) in NetworkInterfaces.Select((iface, index) => (iface, index)))
+                                {
+                                    <tr class="@(SelectedInterfaceIndex == index ? "table-primary" : "")">
+                                        <td class="text-center">
+                                            <button class="btn btn-sm @(SelectedInterfaceIndex == index ? "btn-primary" : "btn-outline-primary")"
+                                                    @onclick="() => SelectInterface(index)">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </button>
+                                        </td>
+                                        <td>@iface.Name</td>
+                                        <td>
+                                            <span class="badge @(iface.OperationalStatus == OperationalStatus.Up ? "bg-success" : "bg-danger")">
+                                                @iface.OperationalStatus
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @foreach (var ip in GetIPAddresses(iface))
+                                            {
+                                                <div>@ip</div>
+                                            }
+                                        </td>
+                                        <td>@GetDefaultGateway(iface)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">No network interfaces found</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+
     </div>
 
     @if (ShowAddDomainModal)
     {
-        <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal fade show" style="display: block" tabindex="-1" @onclick="() => ShowAddDomainModal = false">
             <div class="modal-dialog">
-                <div class="modal-content">
+                <div class="modal-content" @onclick:stopPropagation>
                     <div class="modal-header">
                         <h5 class="modal-title">Add New Domain</h5>
                         <button type="button" class="btn-close" @onclick="() => ShowAddDomainModal = false"></button>
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="newDomainInput" class="form-label">Domain Name</label>
-                            <input type="text" class="form-control" id="newDomainInput" @bind="NewDomain" placeholder="example.com" />
+                            <label for="newDomainInput" class="form-label">Domain Name:</label>
+                            <input type="text" class="form-control" id="newDomainInput" @bind="NewDomain"
+                                   placeholder="example.com" @onkeypress="@(e => { if (e.Key == "Enter") { AddDomain(); } })" />
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @onclick="() => ShowAddDomainModal = false">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="AddDomain">Add Domain</button>
+                        <button type="button" class="btn btn-primary" @onclick="AddDomain"><i class="bi bi-plus-circle"></i> Add Domain</button>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="modal-backdrop fade show"></div>
     }
 
     <div class="row mb-4">
         <div class="col-md-12">
-            <h4>Available Network Interfaces</h4>
-            @if (NetworkInterfaces.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Select</th>
-                                <th>Name</th>
-                                <th>ID</th>
-                                <th>Status</th>
-                                <th>IP Addresses</th>
-                                <th>Default Gateway</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var (iface, index) in NetworkInterfaces.Select((iface, index) => (iface, index)))
-                            {
-                                <tr class="@(SelectedInterfaceIndex == index ? "table-primary" : "")">
-                                    <td>
-                                        <button class="btn btn-sm @(SelectedInterfaceIndex == index ? "btn-primary" : "btn-outline-primary")"
-                                                @onclick="() => SelectInterface(index)">
-                                            <i class="bi bi-check-circle-fill"></i>
-                                        </button>
-                                    </td>
-                                    <td>@iface.Name</td>
-                                    <td>@iface.Id</td>
-                                    <td>
-                                        <span class="@(iface.OperationalStatus == OperationalStatus.Up ? "text-success" : "text-danger")">
-                                            @iface.OperationalStatus
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @foreach (var ip in GetIPAddresses(iface))
-                                        {
-                                            <div>@ip</div>
-                                        }
-                                    </td>
-                                    <td>@GetDefaultGateway(iface)</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-warning">No network interfaces found</div>
-            }
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary" @onclick="AddRoutes" disabled="@(!CanAddRoutes)">
+            <div class="d-flex gap-3">
+                <button type="button" class="btn btn-primary btn-lg" @onclick="AddRoutes" disabled="@(!CanAddRoutes)">
                     <i class="bi bi-plus-circle"></i> Add Routes
                 </button>
-                <button type="button" class="btn btn-danger" @onclick="ClearRoutes" disabled="@(!CanAddRoutes)">
+                <button type="button" class="btn btn-danger btn-lg" @onclick="ClearRoutes" disabled="@(!CanAddRoutes)">
                     <i class="bi bi-trash"></i> Clear Routes
                 </button>
             </div>
@@ -158,42 +167,46 @@
     {
         <div class="row mt-4">
             <div class="col-md-12">
-                <h4>Resolved IP Addresses</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>IP Address</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var (ip, status) in ResolvedAddresses)
-                            {
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Resolved IP Addresses</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
                                 <tr>
-                                    <td>@ip</td>
-                                    <td>
-                                        @if (status == "Success")
-                                        {
-                                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> Added</span>
-                                        }
-                                        else if (status == "Removed")
-                                        {
-                                            <span class="text-success"><i class="bi bi-check-circle-fill"></i> Removed</span>
-                                        }
-                                        else if (status == "Processing")
-                                        {
-                                            <span class="text-info"><i class="bi bi-hourglass-split"></i> Processing...</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-danger"><i class="bi bi-x-circle-fill"></i> @status</span>
-                                        }
-                                    </td>
+                                    <th>IP Address</th>
+                                    <th>Status</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var (ip, status) in ResolvedAddresses)
+                                {
+                                    <tr>
+                                        <td>@ip</td>
+                                        <td>
+                                            @if (status == "Success")
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Added</span>
+                                            }
+                                            else if (status == "Removed")
+                                            {
+                                                <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Removed</span>
+                                            }
+                                            else if (status == "Processing")
+                                            {
+                                                <span class="badge bg-info"><i class="bi bi-hourglass-split"></i> Processing...</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> @status</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -364,7 +377,7 @@
 
         StatusMessage = "Resolving domain names to clear routes...";
         StatusAlertClass = "alert-info";
-        ResolvedAddresses.Clear();
+        ResolvedAddresses = new List<(string ip, string status)>();
         await InvokeAsync(StateHasChanged);
 
         try
@@ -450,7 +463,7 @@
 
         StatusMessage = "Resolving domain name...";
         StatusAlertClass = "alert-info";
-        ResolvedAddresses.Clear();
+        ResolvedAddresses = new List<(string ip, string status)>();
         await InvokeAsync(StateHasChanged);
 
         try
@@ -563,7 +576,8 @@
             UseShellExecute = true
         };
 
-        await Task.Run(() => {
+        await Task.Run(() =>
+        {
             var process = Process.Start(psi);
             process.WaitForExit();
 
@@ -586,7 +600,8 @@
             UseShellExecute = true
         };
 
-        await Task.Run(() => {
+        await Task.Run(() =>
+        {
             var process = Process.Start(psi);
             process.WaitForExit();
 
