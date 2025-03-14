@@ -537,6 +537,8 @@
             StatusMessage = $"Error: {ex.Message}";
             StatusAlertClass = "alert-danger";
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void UpdateAddressStatus(string ip, string status)
@@ -577,7 +579,7 @@
         var psi = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            Arguments = $"/C route add {ip} mask 255.255.255.255 {gateway} IF {interfaceIndex} -p",
+            Arguments = $"/C route add {ip} mask 255.255.255.255 {gateway} METRIC 1 IF {interfaceIndex} -p",
             Verb = "runas", // Requires admin privileges
             WindowStyle = ProcessWindowStyle.Hidden,
             CreateNoWindow = true,
