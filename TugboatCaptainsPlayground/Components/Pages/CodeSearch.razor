@@ -18,19 +18,78 @@
 <h3>Code Search</h3>
 
 <ProgressBar IsLoading="@CodeSearchStateService.IsLoading" Label="@CodeSearchStateService.ProgressLabel" />
-
-<StickyFilter>
-    <div class="mb-3 d-flex align-items-center">
-        <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="CodeSearchStateService.Filter" @oninput="OnFilterChange" placeholder="Filter repositories..." />
-        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
+<div class="row mb-3">
+    <div class="col-md-12">
+        <StickyFilter>
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Search code..."
+                       @bind-value="CodeSearchStateService.SearchQuery"
+                       @bind-value:event="oninput"
+                       @onkeyup="OnSearchQueryChange" />
+                <button class="btn btn-primary" @onclick="SearchCode">Search</button>
+            </div>
+        </StickyFilter>
     </div>
-</StickyFilter>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Code Search</h5>
+            </div>
+            <div class="card-body">
+                @if (searchResults != null && searchResults.Any())
+                {
+                    <div class="search-results mt-3">
+                        <h5>Search Results (@searchResults.Count)</h5>
 
-<div class="row mb-4">
+                        @foreach (var result in searchResults)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                    <div>
+                                        <strong class="text-primary">@result.FileName</strong>
+                                        <small class="text-muted ms-2">@result.ShortenedPath</small>
+                                    </div>
+                                    <span class="badge bg-primary">@(result.Similarity.ToString("P1"))</span>
+                                </div>
+                                <div class="card-body">
+                                    <pre class="code-snippet p-3 bg-light rounded"><code>@result.ChunkText</code></pre>
+                                    <div class="mt-2 text-end">
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                @onclick="() => CopyToClipboard(result.ChunkText)">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (searchResults != null)
+                {
+                    <div class="alert alert-warning mt-3">
+                        No results found. Try a different search query or index more
+                        repositories.
+                    </div>
+                }
+                else if (isSearching)
+                {
+                    <div class="alert alert-info mt-3">Searching...</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 mt-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h5>Repositories</h5>
+            </div>
+            <div class="mb-3 d-flex align-items-center">
+                <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2"
+                       @oninput="OnFilterChange" placeholder="Filter repositories..." />
+                <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Clear</button>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -46,12 +105,15 @@
                         <tbody>
                             @foreach (var repo in GetRepositories())
                             {
-                                <tr @onclick="() => SelectRepository(repo)">
+                                <tr @onclick="() => SelectRepository(repo)" class="cursor-pointer">
                                     <td>@repo.Project</td>
                                     <td>@repo.Name</td>
                                     <td>@repo.ProjectType</td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm" @onclick="() => IndexRepository(repo)">Index</button>
+                                        <button class="btn btn-primary btn-sm"
+                                                @onclick="() => IndexRepository(repo)">
+                                            Index
+                                        </button>
                                     </td>
                                 </tr>
                             }
@@ -63,58 +125,13 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>Code Search</h5>
-            </div>
-            <div class="card-body">
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="Search code..." @bind="CodeSearchStateService.SearchQuery" />
-                    <button class="btn btn-primary" @onclick="SearchCode">Search</button>
-                </div>
-
-                @if (searchResults != null && searchResults.Any())
-                {
-                    <div class="search-results mt-3">
-                        <h5>Search Results (@searchResults.Count)</h5>
-
-                        @foreach (var result in searchResults)
-                        {
-                            <div class="card mb-3">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>@result.FileName</strong>
-                                        <small class="text-muted">@result.ShortenedPath</small>
-                                    </div>
-                                    <span class="badge bg-primary">@(result.Similarity.ToString("P1"))</span>
-                                </div>
-                                <div class="card-body">
-                                    <pre class="code-snippet"><code>@result.ChunkText</code></pre>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else if (searchResults != null)
-                {
-                    <div class="alert alert-warning mt-3">No results found. Try a different search query or index more repositories.</div>
-                }
-                else if (isSearching)
-                {
-                    <div class="alert alert-info mt-3">Searching...</div>
-                }
-            </div>
-        </div>
-    </div>
-</div>
-
 @code {
-    private Subject<string> _searchEvents;
+    private Subject<string> _filterEvents;
+    private Subject<string> _searchQueryEvents;
     private IDisposable _subscription;
+    private IDisposable _searchSubscription;
     private ElementReference filterInputElement;
-    private List<SearchResult> searchResults;
+    private List<SearchResult> searchResults = null;
     private bool isSearching = false;
 
     protected override async Task OnInitializedAsync()
@@ -122,27 +139,43 @@
         CodeSearchStateService.OnChange += () => InvokeAsync(StateHasChanged);
         CodeSearchStateService.Load();
 
-        _searchEvents = new Subject<string>();
+        _filterEvents = new Subject<string>();
 
-        _subscription = _searchEvents
-            .Throttle(TimeSpan.FromMilliseconds(500))
-            .Subscribe(async x =>
+        _subscription = _filterEvents
+        .Throttle(TimeSpan.FromMilliseconds(500))
+        .Subscribe(async x =>
+        {
+            try
             {
-                try
+                CodeSearchStateService.IsLoading = true;
+                var repos = await RepositoryService.GetBuildInfoAsync(x);
+                CodeSearchStateService.Repositories = repos;
+            }
+            finally
+            {
+                CodeSearchStateService.IsLoading = false;
+            }
+        });
+
+        _searchQueryEvents = new Subject<string>();
+        _searchSubscription = _searchQueryEvents
+        .Throttle(TimeSpan.FromMilliseconds(800))
+        .Subscribe(async query =>
+        {
+            if (!string.IsNullOrWhiteSpace(query) && query.Length >= 3)
+            {
+                await InvokeAsync(() =>
                 {
-                    CodeSearchStateService.IsLoading = true;
-                    var repos = await RepositoryService.GetBuildInfoAsync(x);
-                    CodeSearchStateService.Repositories = repos;
-                }
-                finally
-                {
-                    CodeSearchStateService.IsLoading = false;
-                }
-            });
+                    isSearching = true;
+                    StateHasChanged();
+                });
+                await SearchCode();
+            }
+        });
 
         CodeSearchStateService.InitializeState(x =>
         {
-            _searchEvents.OnNext(CodeSearchStateService.Filter);
+            _filterEvents.OnNext(CodeSearchStateService.Filter);
         }, !CodeSearchStateService.Repositories.Any());
     }
 
@@ -157,13 +190,19 @@
     private async Task OnFilterChange(ChangeEventArgs e)
     {
         CodeSearchStateService.Filter = e.Value.ToString();
-        _searchEvents.OnNext(CodeSearchStateService.Filter);
+        _filterEvents.OnNext(CodeSearchStateService.Filter);
+    }
+
+    private void OnSearchQueryChange(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape")
+            _searchQueryEvents.OnNext(CodeSearchStateService.SearchQuery);
     }
 
     private async Task ClearFilter()
     {
         CodeSearchStateService.Filter = string.Empty;
-        await OnFilterChange(new ChangeEventArgs { Value = CodeSearchStateService.Filter });
+        _filterEvents.OnNext(CodeSearchStateService.Filter);
         await filterInputElement.FocusAsync();
     }
 
@@ -215,7 +254,7 @@
         }
     }
 
-    private async Task SearchCode()
+    public async Task SearchCode()
     {
         if (string.IsNullOrWhiteSpace(CodeSearchStateService.SearchQuery))
         {
@@ -235,10 +274,19 @@
         }
     }
 
+    private async Task CopyToClipboard(string text)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        toastService.ShowInfo("Code copied to clipboard");
+    }
+
     public void Dispose()
     {
         CodeSearchStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         CodeSearchStateService.Save();
         _subscription?.Dispose();
+        _searchSubscription?.Dispose();
     }
 }
+
+<style>.cursor-pointer { cursor: pointer; }</style>

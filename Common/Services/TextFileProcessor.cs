@@ -19,12 +19,12 @@ namespace Common.Services
 
         public void ProcessFolder(string folderPath)
         {
-            foreach (var filePath in MyDirectory.GetFiles(folderPath, "\\.cs|\\.js|\\.html", SearchOption.AllDirectories))
+            foreach (var filePath in MyDirectory.GetFiles(folderPath, "\\.cs|\\.js|\\.html|\\.xml", SearchOption.AllDirectories))
             {
                 try
                 {
                     string fileHash = ComputeFileHash(filePath);
-                    if (_dbContext.FileChunks.FirstOrDefault(x => x.FileHash == fileHash) != null)
+                    if (_dbContext.FileChunks.Any(x => x.FileHash == fileHash))
                     {
                         Console.WriteLine($"Skipping already processed file: {filePath}");
                         continue;
@@ -48,8 +48,9 @@ namespace Common.Services
                         };
 
                         _dbContext.FileChunks.Add(fileChunk);
-                        _dbContext.SaveChanges();
                     }
+
+                    _dbContext.SaveChanges();
                 }
                 catch (Exception ex)
                 {
