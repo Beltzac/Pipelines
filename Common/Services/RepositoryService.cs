@@ -287,10 +287,11 @@ namespace Common.Services
 
                 await FetchCommitInfoAsync(buildInfo, projectName, buildDetails.SourceBranch, buildInfo.Id, buildDetails.SourceVersion);
 
-                if (buildDetails.Result == BuildResult.Failed)
-                {
-                    buildInfo.Pipeline.Last.ErrorLogs = await FetchBuildLogsAsync(projectName, buildDetails.Id);
-                }
+                // TODO: REVER
+                //if (buildDetails.Result == BuildResult.Failed)
+                //{
+                //    buildInfo.Pipeline.Last.ErrorLogs = await FetchBuildLogsAsync(projectName, buildDetails.Id);
+                //}
 
                 _logger.LogInformation($"Pipeline: {buildDefinition.Name}, Latest Build: {buildDetails.FinishTime}, Status: {buildDetails.Status}, Result: {buildDetails.Result}, Commit: {buildDetails.SourceVersion}");
             }
