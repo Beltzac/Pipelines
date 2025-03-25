@@ -79,6 +79,7 @@ namespace Common.Services
         {
             var diff = new MessageDiffResult
             {
+                Key = key,
                 HasDifferences = false,
                 FormattedDiff = string.Empty,
                 Source = source,
@@ -141,9 +142,11 @@ namespace Common.Services
             var userName = config.TcpUserName;
             var cacheKey = $"{environment}_{userName}";
 
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == environment);
+
             if (!_userCodeCache.TryGetValue(cacheKey, out var userCode))
             {
-                userCode = (await _cadastroService.GetUsersAsync(environment, userName)).FirstOrDefault().IdUsuario;
+                userCode = (await _cadastroService.GetUsersAsync(oracleEnv.ConnectionString, userName)).FirstOrDefault().IdUsuario;
                 _userCodeCache[cacheKey] = userCode;
             }
 
