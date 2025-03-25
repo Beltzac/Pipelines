@@ -97,7 +97,7 @@ namespace Common.Services
                     (
                         (REGEXP_LIKE(RE.RESPOSTA, '<Status>' || '" + responseStatus + @"'  || '</Status>'))
                         OR
-                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*""?' || '" + responseStatus + @"' || '""?[\s,}]'))
+                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*' || '" + responseStatus + @"'))
                     )");
             }
 
