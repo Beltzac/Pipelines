@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -51,7 +51,7 @@
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.60" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.7.0" />
     <PackageReference Include="Polly" Version="8.5.2" />
-    <PackageReference Include="Quartz" Version="3.13.1" />
+    <PackageReference Include="Quartz" Version="3.14.0" />
     <PackageReference Include="Quartz.AspNetCore" Version="3.13.1" />
     <PackageReference Include="SmartComponents.LocalEmbeddings" Version="0.1.0-preview10148" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />

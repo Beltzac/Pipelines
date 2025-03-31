@@ -349,9 +349,9 @@
       },
       "Quartz": {
         "type": "Direct",
-        "requested": "[3.13.1, )",
-        "resolved": "3.13.1",
-        "contentHash": "0S4/gYb/FRQfek65OPAmszbdEmtc4Fq/jSeA5XFnvMIjYL9Zr8g9jWoKneEFzAFJGlESjFULtaUFzValHvqu4A==",
+        "requested": "[3.14.0, )",
+        "resolved": "3.14.0",
+        "contentHash": "j8mY6S0FWbtuEFbStUEZAkkGpZLbSuTT0us1w0DUQqhi+vwg/7XXS36TeH3o34zZoqYGyXvk6jrKnW/p6kS8sg==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "2.1.1"
         }
