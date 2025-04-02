@@ -422,6 +422,7 @@ namespace {namespaceName}
                 var stopwatch = Stopwatch.StartNew();
                 var json = File.ReadAllText(path);
                 _state = JsonSerializer.Deserialize<{className}>(json, new JsonSerializerOptions {{ IncludeFields = true, WriteIndented = true, Converters = {{ new Json.More.JsonArrayTupleConverter() }} }});
+                _isInitialized = true;
                 stopwatch.Stop();
                 Console.WriteLine($""Loaded state in {{stopwatch.ElapsedMilliseconds}}ms"");
                 NotifyStateChanged();
