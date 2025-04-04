@@ -237,22 +237,15 @@ internal class Program
             shortcut.WriteToFile(shortcutPath);
         }
 
-        // Apply migrations at startup
+        // Apply migrations se o banco existir
+        Directory.CreateDirectory(Path.GetDirectoryName(DBUtils.MainDBPath));
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
-            try
-            {
-                var context = services.GetRequiredService<RepositoryDbContext>();
-                context.Database.Migrate();
-            }
-            catch (Exception ex)
-            {
-                // Log the error
-                Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
-                throw;
-            }
-        }
+            var context = services.GetRequiredService<RepositoryDbContext>();
+            context.Database.Migrate();
+        }           
+      
 
         using var iconStream = new MemoryStream();
         TugboatCaptainsPlayground.Resource.halloween53_109170.Save(iconStream);

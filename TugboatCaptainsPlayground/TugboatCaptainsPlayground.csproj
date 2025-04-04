@@ -14,7 +14,7 @@
     <!--<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\SourceGeneratorFiles</CompilerGeneratedFilesOutputPath>-->
 
 
-	  
+
 
 	  <!-- Bundle .NET runtime -->
 	  <SelfContained>true</SelfContained>
@@ -45,8 +45,12 @@
 
 	  <NoWarn>SPELL,NU1902,NU1903,TA100</NoWarn>
 
-	  
+
 	  <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EmbedAllSources>true</EmbedAllSources>
   </PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -56,7 +60,7 @@
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
 		<OutputType>WinExe</OutputType>
 	</PropertyGroup>
-		
+
   <!--<ItemGroup>
     <Compile Remove="wwwroot\**" />
     <Content Remove="wwwroot\**" />
@@ -67,13 +71,13 @@
 	<ItemGroup>
 		<!--<Content Remove="wwwroot\**" />-->
 		<!--<Content Update="wwwroot\**" CopyToPublishDirectory="Never" />-->
-		<EmbeddedResource Include="wwwroot\**" />
+		<EmbeddedResource Include="wwwroot\**" LogicalName="wwwroot.%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
-	
+
 	<ItemGroup>
         <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
     </ItemGroup>
-	
+
 	<!--<ItemGroup>
 		<None Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>-->
@@ -88,7 +92,7 @@
 			<EmbeddedResource Include="$(IntermediateOutputPath)wwwroot\$(AssemblyName).styles.css" LogicalName="$(AssemblyName).styles.css" />
 		</ItemGroup>
 	</Target>-->
-	
+
   <ItemGroup>
     <Content Include="Assets\app.ico" />
   </ItemGroup>
