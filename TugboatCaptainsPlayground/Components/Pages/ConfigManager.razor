@@ -431,18 +431,8 @@
         if (!string.IsNullOrEmpty(config.PAT))
         {
             var scheduler = await SchedulerFactory.GetScheduler();
-
-            var triggerAgora = TriggerBuilder.Create()
-                .WithIdentity("BuildInfoJob-trigger-agora")
-                .StartNow()
-                .ForJob("BuildInfoJob")
-                .Build();
-
-            // Check if the trigger already exists
-            if (!await scheduler. CheckExists(triggerAgora.Key))
-            {
-                await scheduler.ScheduleJob(triggerAgora);
-            }
+            var jobKey = new JobKey("BuildInfoJob");
+            await scheduler.TriggerJob(jobKey);
         }
     }
 
