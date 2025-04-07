@@ -180,6 +180,11 @@ namespace Common.Utils
 
         public static string DetermineProjectType(string folderPath)
         {
+            if (!Directory.Exists(folderPath))
+            {
+                return Repository.PROJECT_TYPE_FOLDER;
+            }
+
             if (Directory.GetFiles(folderPath, "build.gradle", SearchOption.AllDirectories).Any() ||
                 Directory.GetFiles(folderPath, "settings.gradle", SearchOption.AllDirectories).Any() ||
                 Directory.GetFiles(folderPath, "AndroidManifest.xml", SearchOption.AllDirectories).Any())
@@ -203,6 +208,12 @@ namespace Common.Utils
         public static List<string> GetCSharpProjectNames(string folderPath)
         {
             var projectNames = new List<string>();
+
+            if (!Directory.Exists(folderPath))
+            {
+                return projectNames;
+            }
+
             var csprojFiles = Directory.GetFiles(folderPath, "*.csproj", SearchOption.AllDirectories);
             foreach (var csproj in csprojFiles)
             {

@@ -130,7 +130,12 @@ namespace Common.Services
                 _logger.LogError(ex, $"Erro ao buscar repositório git {repoId}");
             }
 
-            if (repo?.IsDisabled ?? false)
+            if(repo == null)
+            {
+                return null;
+            }
+
+            if (repo.IsDisabled ?? false)
             {
                 await Delete(repo.Id);
                 _logger.LogInformation($"Repositório {repo.Name} está desabilitado. Excluindo.");
