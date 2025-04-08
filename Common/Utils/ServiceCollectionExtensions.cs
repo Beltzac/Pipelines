@@ -13,6 +13,7 @@ using Microsoft.TeamFoundation.Core.WebApi;
 using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using TugboatCaptainsPlayground.Services;
 
 namespace Common.Utils
 {
@@ -93,6 +94,8 @@ namespace Common.Utils
             services.AddScoped<CodeSearchService>();
             services.AddScoped<IOracleConnectionFactory, OracleConnectionFactory>();
             services.AddScoped<IOracleRepository, Common.Repositories.TCP.OracleRepository>();
+
+            services.AddScoped<IMongoMessageService, MongoMessageService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 

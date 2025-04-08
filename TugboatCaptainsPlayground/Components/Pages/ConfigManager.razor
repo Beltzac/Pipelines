@@ -51,21 +51,21 @@
                         </div>
                         <div class="mb-3">
                             <label for="username" class="form-label">Nome de Usuário Azure</label>
-                            <InputText id="username" @bind-Value="config.Username" class="form-control"/>
+                            <InputText id="username" @bind-Value="config.Username" class="form-control" />
                             <ValidationMessage For="@(() => config.Username)" />
                         </div>
                         <div class="mb-3">
                             <label for="pat" class="form-label">Token de Acesso Pessoal (PAT)</label>
-                            <InputText id="pat" @bind-Value="config.PAT" class="form-control"/>
+                            <InputText id="pat" @bind-Value="config.PAT" class="form-control" />
                             <ValidationMessage For="@(() => config.PAT)" />
                         </div>
 
-                        <hr class="my-4"/>
+                        <hr class="my-4" />
 
                         <h6 class="card-subtitle mb-3">Configuração da Organização</h6>
                         <div class="mb-3">
                             <label for="orgUrl" class="form-label">URL da Organização</label>
-                            <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control"/>
+                            <InputText id="orgUrl" @bind-Value="config.OrganizationUrl" class="form-control" />
                             <ValidationMessage For="@(() => config.OrganizationUrl)" />
                         </div>
 
@@ -73,17 +73,19 @@
                         <h6 class="card-subtitle mb-3">Configurações Locais</h6>
                         <div class="mb-3">
                             <label for="cloneFolder" class="form-label">Pasta Local para Clones</label>
-                            <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control"/>
+                            <InputText id="cloneFolder" @bind-Value="config.LocalCloneFolder" class="form-control" />
                             <ValidationMessage For="@(() => config.LocalCloneFolder)" />
                         </div>
                         <div class="mb-3">
                             <label for="androidStudioPath" class="form-label">Caminho do Android Studio</label>
-                            <InputText id="androidStudioPath" @bind-Value="config.AndroidStudioPath" class="form-control"/>
+                            <InputText id="androidStudioPath" @bind-Value="config.AndroidStudioPath"
+                                class="form-control" />
                             <ValidationMessage For="@(() => config.AndroidStudioPath)" />
                         </div>
                         <div class="mb-3">
                             <label for="visualStudioPath" class="form-label">Caminho do Visual Studio</label>
-                            <InputText id="visualStudioPath" @bind-Value="config.VisualStudioPath" class="form-control" />
+                            <InputText id="visualStudioPath" @bind-Value="config.VisualStudioPath"
+                                class="form-control" />
                             <ValidationMessage For="@(() => config.VisualStudioPath)" />
                         </div>
                         <div class="mb-3">
@@ -95,7 +97,7 @@
                 </div>
 
                 <!-- GitHub Settings -->
-@*                 <div class="card mb-4">
+                @*                 <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">Configuração do GitHub</h5>
                     </div>
@@ -118,7 +120,8 @@
                         {
                             var index = i;
                             <div class="input-group mb-2">
-                                <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control" placeholder="Enter regex pattern"/>
+                                <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control"
+                                    placeholder="Enter regex pattern" />
                                 <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveRegex(index)">
                                     <i class="fas fa-trash"></i> Remover
                                 </button>
@@ -129,8 +132,8 @@
                         </button>
                     </div>
 
-                <!-- Route Domains Manager -->
-                <RouteDomainManager Config="config" OnConfigChanged="StateHasChanged" />
+                    <!-- Route Domains Manager -->
+                    <RouteDomainManager Config="config" OnConfigChanged="StateHasChanged" />
                 </div>
 
                 <!-- Backup Jobs Configuration -->
@@ -144,19 +147,22 @@
                             <h6 class="card-subtitle mb-3">Repositórios de Backup</h6>
                             <div class="mb-3">
                                 <label for="oracleBackupRepo" class="form-label">Caminho do Backup Oracle</label>
-                                <InputText id="oracleBackupRepo" @bind-Value="config.OracleViewsBackupRepo" class="form-control"/>
+                                <InputText id="oracleBackupRepo" @bind-Value="config.OracleViewsBackupRepo"
+                                    class="form-control" />
                                 <ValidationMessage For="@(() => config.OracleViewsBackupRepo)" />
                             </div>
                             <div class="mb-3">
                                 <label for="consulBackupRepo" class="form-label">Caminho do Backup Consul</label>
-                                <InputText id="consulBackupRepo" @bind-Value="config.ConsulBackupRepo" class="form-control"/>
+                                <InputText id="consulBackupRepo" @bind-Value="config.ConsulBackupRepo"
+                                    class="form-control" />
                                 <ValidationMessage For="@(() => config.ConsulBackupRepo)" />
                             </div>
                         </div>
                         <!-- Oracle Backup Job -->
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="form-check form-switch">
-                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableOracleBackupJob" id="oracleBackupToggle" />
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableOracleBackupJob"
+                                    id="oracleBackupToggle" />
                                 <label class="form-check-label" for="oracleBackupToggle">
                                     Ativar Backup Automático de Views Oracle
                                 </label>
@@ -169,7 +175,8 @@
                         <!-- Consul Backup Job -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="form-check form-switch">
-                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableConsulBackupJob" id="consulBackupToggle" />
+                                <InputCheckbox class="form-check-input" @bind-Value="config.EnableConsulBackupJob"
+                                    id="consulBackupToggle" />
                                 <label class="form-check-label" for="consulBackupToggle">
                                     Ativar Backup Automático do Consul
                                 </label>
@@ -199,25 +206,26 @@
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <label class="form-label">Nome do Ambiente</label>
-                                        <InputText @bind-Value="env.Name" class="form-control"/>
+                                        <InputText @bind-Value="env.Name" class="form-control" />
                                         <ValidationMessage For="@(() => env.Name)" />
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Consul URL</label>
-                                        <InputText @bind-Value="env.ConsulUrl" class="form-control"/>
+                                        <InputText @bind-Value="env.ConsulUrl" class="form-control" />
                                         <ValidationMessage For="@(() => env.ConsulUrl)" />
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Consul Folder</label>
-                                        <InputText @bind-Value="env.ConsulFolder" class="form-control"/>
+                                        <InputText @bind-Value="env.ConsulFolder" class="form-control" />
                                         <ValidationMessage For="@(() => env.ConsulFolder)" />
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Consul Token</label>
-                                        <InputText @bind-Value="env.ConsulToken" class="form-control"/>
+                                        <InputText @bind-Value="env.ConsulToken" class="form-control" />
                                         <ValidationMessage For="@(() => env.ConsulToken)" />
                                     </div>
-                                    <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveConsulEnvironment(env)">
+                                    <button type="button" class="btn btn-outline-danger"
+                                        @onclick="() => RemoveConsulEnvironment(env)">
                                         <i class="fas fa-trash"></i> Remover
                                     </button>
                                 </div>
@@ -241,27 +249,68 @@
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <label class="form-label">Nome</label>
-                                        <InputText @bind-Value="env.Name" class="form-control"/>
+                                        <InputText @bind-Value="env.Name" class="form-control" />
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">String de Conexão</label>
-                                        <InputText @bind-Value="env.ConnectionString" class="form-control"/>
+                                        <InputText @bind-Value="env.ConnectionString" class="form-control" />
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Esquema</label>
-                                        <InputText @bind-Value="env.Schema" class="form-control"/>
+                                        <InputText @bind-Value="env.Schema" class="form-control" />
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveOracleEnvironment(env)">
+                                        <button type="button" class="btn btn-outline-danger"
+                                            @onclick="() => RemoveOracleEnvironment(env)">
                                             <i class="fas fa-trash"></i> Remover
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary" @onclick="() => TestOracleConnection(env)">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            @onclick="() => TestOracleConnection(env)">
                                             <i class="fas fa-plug"></i> Testar Conexão
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         }
+                    </div>
+
+                    <!-- MongoDB Environments -->
+                    <div class="card mb-4">
+                        <div
+                            class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Ambientes MongoDB</h5>
+                            <button type="button" class="btn btn-light btn-sm" @onclick="AddMongoEnvironment">
+                                <i class="fas fa-plus"></i> Adicionar Ambiente
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            @foreach (var env in config.MongoEnvironments)
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome do Ambiente</label>
+                                            <InputText @bind-Value="env.Name" class="form-control" />
+                                            <ValidationMessage For="@(() => env.Name)" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Connection String</label>
+                                            <InputText @bind-Value="env.ConnectionString" class="form-control" />
+                                            <ValidationMessage For="@(() => env.ConnectionString)" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome do Banco de Dados</label>
+                                            <InputText @bind-Value="env.DatabaseName" class="form-control" />
+                                            <ValidationMessage For="@(() => env.DatabaseName)" />
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger"
+                                            @onclick="() => RemoveMongoEnvironment(env)">
+                                            <i class="fas fa-trash"></i> Remover
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
@@ -316,6 +365,16 @@
     private void RemoveOracleEnvironment(OracleEnvironment env)
     {
         config.OracleEnvironments.Remove(env);
+    }
+
+    private void AddMongoEnvironment()
+    {
+        config.MongoEnvironments.Add(new MongoEnvironment());
+    }
+
+    private void RemoveMongoEnvironment(MongoEnvironment env)
+    {
+        config.MongoEnvironments.Remove(env);
     }
 
     private async Task TestOracleConnection(OracleEnvironment env)
@@ -397,9 +456,9 @@
         {
             // Validate Oracle environments
             var invalidOracleEnvs = config.OracleEnvironments.Where(e =>
-                string.IsNullOrWhiteSpace(e.Name) ||
-                string.IsNullOrWhiteSpace(e.ConnectionString) ||
-                string.IsNullOrWhiteSpace(e.Schema)).ToList();
+            string.IsNullOrWhiteSpace(e.Name) ||
+            string.IsNullOrWhiteSpace(e.ConnectionString) ||
+            string.IsNullOrWhiteSpace(e.Schema)).ToList();
 
             if (invalidOracleEnvs.Any())
             {
@@ -415,7 +474,6 @@
             }
 
             await ConfigService.SaveConfigAsync(config);
-
             await AfterSaveAsync();
 
             ToastService.ShowSuccess("Configuração salva com sucesso!");

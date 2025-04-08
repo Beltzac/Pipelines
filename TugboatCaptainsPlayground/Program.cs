@@ -244,8 +244,8 @@ internal class Program
             var services = scope.ServiceProvider;
             var context = services.GetRequiredService<RepositoryDbContext>();
             context.Database.Migrate();
-        }           
-      
+        }
+
 
         using var iconStream = new MemoryStream();
         TugboatCaptainsPlayground.Resource.halloween53_109170.Save(iconStream);

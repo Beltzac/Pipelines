@@ -1,0 +1,422 @@
+@page "/mongo-message-diff"
+@using Common
+@using Common.Models
+@using Common.Services
+@using Common.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@inject IMongoMessageService MongoMessageService
+@inject IToastService toastService
+@inject IJSRuntime JS
+@inject IConfigurationService ConfigService
+@inject MongoMessageDiffStateService MongoMessageDiffStateService
+@implements IDisposable
+
+<ProgressBar ProgressValue="@MongoMessageDiffStateService.ProgressValue" Label="@MongoMessageDiffStateService.ProgressLabel" IsLoading="@MongoMessageDiffStateService.IsLoading" />
+
+<StickyFilter>
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="form-group">
+                <label class="form-label" title="Ambiente de origem para comparação">Ambiente Origem:</label>
+                <select class="form-select" @bind="MongoMessageDiffStateService.SelectedSourceEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="form-group">
+                <label class="form-label" title="Ambiente de destino para comparação">Ambiente Destino:</label>
+                <select class="form-select" @bind="MongoMessageDiffStateService.SelectedTargetEnv">
+                    @foreach (var env in environments)
+                    {
+                        <option value="@env.Name">@env.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Comparar</button>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Pesquisar por path, key ou idioma..."
+                @bind="MongoMessageDiffStateService.SearchKey"
+                @bind:event="oninput"
+                @onkeyup="HandleSearch"
+                title="Filtrar por path, key ou idioma da mensagem" />
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Pesquisar por título ou texto..."
+                @bind="MongoMessageDiffStateService.SearchText"
+                @bind:event="oninput"
+                @onkeyup="HandleSearch"
+                title="Filtrar pelo texto da mensagem" />
+            </div>
+        </div>
+        <div class="col-md-1">
+            <div class="form-check form-switch mt-3">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="showOnlyChanged" @bind="MongoMessageDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
+                <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
+            </div>
+        </div>
+    </div>
+</StickyFilter>
+
+<div class="diff-container">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="sticky-top bg-light">
+                <tr>
+                    <th style="width: 15%">ID</th>
+                    <th style="width: 15%">Path</th>
+                    <th style="width: 15%">Key</th>
+                    <th style="width: 15%">Idioma</th>
+                    <th style="width: 15%">
+                        Título Origem (@MongoMessageDiffStateService.SelectedSourceEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2"
+                        @onclick="CopyAllSourceInserts"
+                        title="Copiar todos os comandos INSERT do ambiente origem">
+                            <i class="bi bi-clipboard"></i> Copiar Todos INSERTs Origem
+                        </button>
+                    </th>
+                    <th style="width: 15%">
+                        Texto Origem (@MongoMessageDiffStateService.SelectedSourceEnv)
+                    </th>
+                    <th style="width: 15%">
+                        Título Destino (@MongoMessageDiffStateService.SelectedTargetEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2"
+                        @onclick="CopyAllTargetInserts"
+                        title="Copiar todos os comandos INSERT do ambiente destino">
+                            <i class="bi bi-clipboard"></i> Copiar Todos INSERTs Destino
+                        </button>
+                    </th>
+                    <th style="width: 15%">
+                        Texto Destino (@MongoMessageDiffStateService.SelectedTargetEnv)
+                    </th>
+                    <th style="width: 10%">Campos Alterados</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var diff in MongoMessageDiffStateService.PageItems)
+                {
+                    <tr class="@(diff.HasDifferences ? "table-warning" : "")">
+                        <td class="font-weight-bold">@diff.Id</td>
+                        <td>@diff.Path</td>
+                        <td>@diff.Key</td>
+                        <td>@diff.Idioma</td>
+                        <td>@diff.Source?.Titulo</td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-wrap">@diff.Source?.Texto</div>
+                                @if (diff.Source != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary ms-2"
+                                    @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedSourceEnv, diff.Source)"
+                                    title="Copiar comando para inserir esta mensagem no ambiente source">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        <td>@diff.Target?.Titulo</td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="text-wrap">@diff.Target?.Texto</div>
+                                @if (diff.Target != null)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary ms-2"
+                                    @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedTargetEnv, diff.Target)"
+                                    title="Copiar comando para inserir esta mensagem no ambiente target">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            @if (diff.ChangedFields.Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var field in diff.ChangedFields)
+                                    {
+                                        <li class="badge bg-warning text-dark">@field</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<Pagination State="@MongoMessageDiffStateService" OnPageChange="@ChangePage" />
+
+<style>
+    .diff-container {
+        max-width: 95vw;
+        margin: 0 auto;
+        overflow-x: auto;
+    }
+
+    .table-responsive {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .sticky-top {
+        top: 0;
+        z-index: 1;
+    }
+
+    .text-wrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .badge {
+        margin: 2px;
+        white-space: normal;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+</style>
+
+@code {
+    private List<MongoEnvironment> environments = new();
+    private PaginationService<string, MongoMessage, MongoMessageDiffResult> paginationService;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var config = ConfigService.GetConfig();
+        environments = config.MongoEnvironments;
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+    }
+
+    private async Task CopyInsertStatement(string environment, MongoMessage message)
+    {
+        try
+        {
+            var insertStatement = await MongoMessageService.GenerateInsertStatementAsync(environment, message);
+            await CopyToClipboard(insertStatement);
+            toastService.ShowSuccess("Comando INSERT copiado para a área de transferência");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao gerar comando INSERT: {ex.Message}");
+        }
+    }
+
+    private async Task CopyAllSourceInserts()
+    {
+        try
+        {
+            var diffs = MongoMessageDiffStateService.DiffCache;
+            var inserts = new List<string>();
+
+            foreach (var diff in diffs)
+            {
+                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(MongoMessageDiffStateService.SelectedSourceEnv, diff.Value.Source));
+            }
+
+            if (inserts.Any())
+            {
+                var allInserts = string.Join("\n\n", inserts);
+                await CopyToClipboard(allInserts);
+                toastService.ShowSuccess($"Copiados {inserts.Count} comandos INSERT para a área de transferência");
+            }
+            else
+            {
+                toastService.ShowWarning("Nenhuma mensagem de origem encontrada para gerar comandos INSERT");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao gerar comandos INSERT: {ex.Message}");
+        }
+    }
+
+    private async Task CopyAllTargetInserts()
+    {
+        try
+        {
+            var diffs = MongoMessageDiffStateService.DiffCache;
+            var inserts = new List<string>();
+
+            foreach (var diff in diffs)
+            {
+                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(MongoMessageDiffStateService.SelectedTargetEnv, diff.Value.Target));
+            }
+
+            if (inserts.Any())
+            {
+                var allInserts = string.Join("\n\n", inserts);
+                await CopyToClipboard(allInserts);
+                toastService.ShowSuccess($"Copiados {inserts.Count} comandos INSERT para a área de transferência");
+            }
+            else
+            {
+                toastService.ShowWarning("Nenhuma mensagem de destino encontrada para gerar comandos INSERT");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao gerar comandos INSERT: {ex.Message}");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        MongoMessageDiffStateService.OnChange += () => InvokeAsync(StateHasChanged);
+        MongoMessageDiffStateService.Load();
+
+        paginationService = new PaginationService<string, MongoMessage, MongoMessageDiffResult>(
+            MongoMessageDiffStateService,
+            async () =>
+            {
+                var sourceEnv = environments.First(e => e.Name == MongoMessageDiffStateService.SelectedSourceEnv);
+                return await MongoMessageService.GetMessagesAsync(sourceEnv.ConnectionString);
+            },
+            async () =>
+            {
+                var targetEnv = environments.First(e => e.Name == MongoMessageDiffStateService.SelectedTargetEnv);
+                return await MongoMessageService.GetMessagesAsync(targetEnv.ConnectionString);
+            },
+            (id, source, target) => MongoMessageService.GetMessageDiff(id, source, target),
+            (id, source, target, diff) =>
+            {
+                var matchesSearch = true;
+                if (!string.IsNullOrWhiteSpace(MongoMessageDiffStateService.SearchKey))
+                {
+                    matchesSearch = (source?.Path?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (source?.Key?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (source?.Idioma?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Path?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Key?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                  (target?.Idioma?.Contains(MongoMessageDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase) ?? false);
+                }
+
+                var matchesText = true;
+                if (!string.IsNullOrWhiteSpace(MongoMessageDiffStateService.SearchText))
+                {
+                    matchesText = (source?.Titulo?.Contains(MongoMessageDiffStateService.SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (source?.Texto?.Contains(MongoMessageDiffStateService.SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (target?.Titulo?.Contains(MongoMessageDiffStateService.SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (target?.Texto?.Contains(MongoMessageDiffStateService.SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
+                }
+
+                return matchesSearch && matchesText && (!MongoMessageDiffStateService.ShowOnlyChanged || diff.HasDifferences);
+            }
+        );
+    }
+
+    public void Dispose()
+    {
+        MongoMessageDiffStateService.OnChange -= () => InvokeAsync(StateHasChanged);
+        MongoMessageDiffStateService.Save();
+    }
+
+    private async Task CompareEnvironments()
+    {
+        if (string.IsNullOrEmpty(MongoMessageDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(MongoMessageDiffStateService.SelectedTargetEnv))
+        {
+            toastService.ShowError("Por favor, selecione ambos os ambientes");
+            return;
+        }
+
+        try
+        {
+            // Initialize pagination service
+            await paginationService.InitializeAsync();
+
+            // Get differences for the current page
+            await LoadPageDifferences();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
+        }
+    }
+
+    private async Task LoadPageDifferences()
+    {
+        try
+        {
+            await paginationService.GetPageAsync();
+
+            await RunCompare();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
+        }
+    }
+
+    protected async Task RunCompare()
+    {
+        StateHasChanged();
+    }
+
+    private async Task HandleSearch()
+    {
+        MongoMessageDiffStateService.CurrentPage = 1;
+        await LoadPageDifferences();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        MongoMessageDiffStateService.CurrentPage = page;
+        await LoadPageDifferences();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("setDotNetReference", DotNetObjectReference.Create(this));
+
+            bool initialized = false;
+
+            MongoMessageDiffStateService.InitializeState(async x =>
+            {
+                if (environments.Count >= 2)
+                {
+                    x.SelectedSourceEnv = environments[0].Name;
+                    x.SelectedTargetEnv = environments.Count > 1 ? environments[1].Name : environments[0].Name;
+                    await CompareEnvironments();
+                }
+
+                initialized = true;
+            });
+
+            if (!initialized)
+            {
+                await RunCompare();
+            }
+        }
+    }
+}

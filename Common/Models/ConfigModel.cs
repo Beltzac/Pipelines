@@ -24,6 +24,7 @@
         public string TcpUserName { get; set; }
         public HashSet<Guid> PinnedRepositories { get; set; } = new HashSet<Guid>();
         public List<string> RouteDomains { get; set; } = new List<string>();
+        public List<MongoEnvironment> MongoEnvironments { get; set; } = new List<MongoEnvironment>();
     }
 
     public class OracleEnvironment
@@ -31,5 +32,11 @@
         public string Name { get; set; }
         public string ConnectionString { get; set; }
         public string Schema { get; set; }
+    }
+    public class MongoEnvironment
+    {
+        public string Name { get; set; }
+        public string ConnectionString { get; set; }
+        public string DatabaseName { get; set; }
     }
 }
