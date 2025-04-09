@@ -78,33 +78,27 @@
         <table class="table table-bordered table-hover">
             <thead class="sticky-top bg-light">
                 <tr>
-                    <th style="width: 15%">ID</th>
-                    <th style="width: 15%">Path</th>
-                    <th style="width: 15%">Key</th>
-                    <th style="width: 15%">Idioma</th>
-                    <th style="width: 15%">
-                        Título Origem (@MongoMessageDiffStateService.SelectedSourceEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2"
-                        @onclick="CopyAllSourceInserts"
-                        title="Copiar todos os comandos INSERT do ambiente origem">
-                            <i class="bi bi-clipboard"></i> Copiar Todos INSERTs Origem
+                    <th>ID</th>
+                    <th>Path</th>
+                    <th>Key</th>
+                    <th>Idioma</th>
+                    <th>
+                        Origem (@MongoMessageDiffStateService.SelectedSourceEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2 float-end"
+                                @onclick="CopyAllSourceInserts"
+                                title="Copiar todos os comandos UPSERT do ambiente origem">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs
                         </button>
                     </th>
-                    <th style="width: 15%">
-                        Texto Origem (@MongoMessageDiffStateService.SelectedSourceEnv)
-                    </th>
-                    <th style="width: 15%">
-                        Título Destino (@MongoMessageDiffStateService.SelectedTargetEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2"
-                        @onclick="CopyAllTargetInserts"
-                        title="Copiar todos os comandos INSERT do ambiente destino">
-                            <i class="bi bi-clipboard"></i> Copiar Todos INSERTs Destino
+                    <th>
+                        Destino (@MongoMessageDiffStateService.SelectedTargetEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2 float-end"
+                                @onclick="CopyAllTargetInserts"
+                                title="Copiar todos os comandos UPSERT do ambiente destino">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs
                         </button>
                     </th>
-                    <th style="width: 15%">
-                        Texto Destino (@MongoMessageDiffStateService.SelectedTargetEnv)
-                    </th>
-                    <th style="width: 10%">Campos Alterados</th>
+                    <th>Campos Alterados</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,29 +109,33 @@
                         <td>@diff.Path</td>
                         <td>@diff.Key</td>
                         <td>@diff.Idioma</td>
-                        <td>@diff.Source?.Titulo</td>
                         <td>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@diff.Source?.Texto</div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">@diff.Source?.Titulo</div>
+                                    <div class="text-wrap small">@diff.Source?.Texto</div>
+                                </div>
                                 @if (diff.Source != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2"
-                                    @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedSourceEnv, diff.Source)"
-                                    title="Copiar comando para inserir esta mensagem no ambiente source">
+                                    <button class="btn btn-sm btn-outline-primary ms-2 flex-shrink-0"
+                                            @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedSourceEnv, diff.Source)"
+                                            title="Copiar comando UPSERT (Origem)">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
                             </div>
                         </td>
-                        <td>@diff.Target?.Titulo</td>
                         <td>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@diff.Target?.Texto</div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">@diff.Target?.Titulo</div>
+                                    <div class="text-wrap small">@diff.Target?.Texto</div>
+                                </div>
                                 @if (diff.Target != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2"
-                                    @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedTargetEnv, diff.Target)"
-                                    title="Copiar comando para inserir esta mensagem no ambiente target">
+                                    <button class="btn btn-sm btn-outline-primary ms-2 flex-shrink-0"
+                                            @onclick="() => CopyInsertStatement(MongoMessageDiffStateService.SelectedTargetEnv, diff.Target)"
+                                            title="Copiar comando UPSERT (Destino)">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -223,11 +221,11 @@
         {
             var insertStatement = await MongoMessageService.GenerateInsertStatementAsync(message);
             await CopyToClipboard(insertStatement);
-            toastService.ShowSuccess("Comando INSERT copiado para a área de transferência");
+            toastService.ShowSuccess("Comando UPSERT copiado para a área de transferência");
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Erro ao gerar comando INSERT: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comando UPSERT: {ex.Message}");
         }
     }
 
@@ -247,16 +245,16 @@
             {
                 var allInserts = string.Join("\n\n", inserts);
                 await CopyToClipboard(allInserts);
-                toastService.ShowSuccess($"Copiados {inserts.Count} comandos INSERT para a área de transferência");
+                toastService.ShowSuccess($"Copiados {inserts.Count} comandos UPSERT para a área de transferência");
             }
             else
             {
-                toastService.ShowWarning("Nenhuma mensagem de origem encontrada para gerar comandos INSERT");
+                toastService.ShowWarning("Nenhuma mensagem de origem encontrada para gerar comandos UPSERT");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Erro ao gerar comandos INSERT: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comandos UPSERT: {ex.Message}");
         }
     }
 
@@ -276,16 +274,16 @@
             {
                 var allInserts = string.Join("\n\n", inserts);
                 await CopyToClipboard(allInserts);
-                toastService.ShowSuccess($"Copiados {inserts.Count} comandos INSERT para a área de transferência");
+                toastService.ShowSuccess($"Copiados {inserts.Count} comandos UPSERT para a área de transferência");
             }
             else
             {
-                toastService.ShowWarning("Nenhuma mensagem de destino encontrada para gerar comandos INSERT");
+                toastService.ShowWarning("Nenhuma mensagem de destino encontrada para gerar comandos UPSERT");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Erro ao gerar comandos INSERT: {ex.Message}");
+            toastService.ShowError($"Erro ao gerar comandos UPSERT: {ex.Message}");
         }
     }
 
