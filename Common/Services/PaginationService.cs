@@ -12,8 +12,40 @@ namespace Common.Services
         private Func<TKey, TValue, TValue, TDiffResult, bool> _filter;
 
         private IComparesItems<TKey, TValue, TDiffResult> _state;
+        private HashSet<TKey>? _previousAllKeys;
+        private int _previousPageSize;
 
         private ITracksLoading? _loading => _state as ITracksLoading;
+
+        private void CheckAndResetPageIfNeeded()
+        {
+            bool needsReset = false;
+            // Only check for changes if we have recorded a previous state
+            if (_previousAllKeys != null)
+            {
+                if (!_previousAllKeys.SetEquals(_state.AllKeys) || _previousPageSize != _state.PageSize)
+                {
+                    needsReset = true;
+                }
+            }
+
+            if (needsReset)
+            {
+                _state.CurrentPage = 1;
+            }
+
+            // Always update the 'previous' state to the current state for the next check
+            // Ensure AllKeys is not null before creating the HashSet
+            if (_state.AllKeys != null)
+            {
+                 _previousAllKeys = new HashSet<TKey>(_state.AllKeys);
+            }
+            else
+            {
+                 _previousAllKeys = null; // Or new HashSet<TKey>(); depending on desired behavior if AllKeys becomes null
+            }
+            _previousPageSize = _state.PageSize;
+        }
 
         public PaginationService(IComparesItems<TKey, TValue, TDiffResult> state,
             Func<Task<Dictionary<TKey, TValue>>> getSourceItemsAsync,
@@ -28,7 +60,7 @@ namespace Common.Services
             _filter = filter;
         }
 
-        private async Task<IList<TDiffResult>> GetAllFilteredDiffsAsync()
+        private async Task<IList<(TKey Key, TDiffResult Diff)>> GetAllFilteredDiffsAsync()
         {
             if (_loading != null)
             {
@@ -38,7 +70,7 @@ namespace Common.Services
             }
 
             var keys = _state.AllKeys.ToList();
-            var filteredDiffs = new ConcurrentBag<TDiffResult>();
+            var filteredDiffs = new ConcurrentBag<(TKey Key, TDiffResult Diff)>();
             int totalKeys = keys.Count;
             int processedCount = 0;
 
@@ -57,7 +89,7 @@ namespace Common.Services
 
                     if (_filter(key, sourceItem, targetItem, diffResult))
                     {
-                        filteredDiffs.Add(diffResult);
+                        filteredDiffs.Add((key, diffResult));
                     }
 
                     // Update progress atomically
@@ -82,6 +114,7 @@ namespace Common.Services
 
         public async Task GetPageAsync()
         {
+            CheckAndResetPageIfNeeded();
             if (_loading != null)
             {
                 _loading.IsLoading = true;
@@ -91,22 +124,18 @@ namespace Common.Services
 
             try
             {
-                var filteredDiffs = await GetAllFilteredDiffsAsync();
-                _state.TotalCount = filteredDiffs.Count;
+                var filteredDiffPairs = await GetAllFilteredDiffsAsync();
+                _state.TotalCount = filteredDiffPairs.Count;
 
-                // Create list of key-value pairs for sorting
-                var keyedDiffs = filteredDiffs
-                    .Select(d => new {
-                        _state.DiffCache.First(kvp => kvp.Value == d).Key,
-                        Diff = d
-                    })
-                    .OrderBy(x => x.Key)
-                    .Select(x => x.Diff)
+                // Sort the pairs by key and extract the diff results
+                var sortedDiffs = filteredDiffPairs
+                    .OrderBy(pair => pair.Key)
+                    .Select(pair => pair.Diff)
                     .ToList();
 
                 // Pagination
                 int skip = (_state.CurrentPage - 1) * _state.PageSize;
-                var pagedDiffs = keyedDiffs
+                var pagedDiffs = sortedDiffs
                     .Skip(skip)
                     .Take(_state.PageSize)
                     .ToList();
@@ -165,6 +194,7 @@ namespace Common.Services
 
                 _state.AllKeys = new HashSet<TKey>(_state.SourceValues.Keys.Union(_state.TargetValues.Keys));
                 _state.TotalCount = _state.AllKeys.Count;
+                CheckAndResetPageIfNeeded();
 
                 // Limpar cache
                 _state.DiffCache.Clear();

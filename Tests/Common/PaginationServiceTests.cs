@@ -348,5 +348,110 @@ namespace Tests.Common
             state.PageItems.Should().BeEmpty();
             state.TotalCount.Should().Be(0);
         }
+
+
+        [Test]
+        public async Task GetPageAsync_ResetsToFirstPage_WhenAllKeysChange()
+        {
+            // Arrange
+            var state = new TestState
+            {
+                CurrentPage = 1,
+                PageSize = 2,
+                AllKeys = new HashSet<string> { "1", "2", "3", "4" },
+                SourceValues = new Dictionary<string, MongoMessage>
+                {
+                    ["1"] = new() { Id = "1" },
+                    ["2"] = new() { Id = "2" },
+                    ["3"] = new() { Id = "3" },
+                    ["4"] = new() { Id = "4" }
+                },
+                TargetValues = new Dictionary<string, MongoMessage>
+                {
+                    ["1"] = new() { Id = "1" },
+                    ["2"] = new() { Id = "2" },
+                    ["3"] = new() { Id = "3" },
+                    ["4"] = new() { Id = "4" }
+                }
+            };
+
+            var service = new PaginationService<string, MongoMessage, MongoMessageDiffResult>(
+                state,
+                () => Task.FromResult(state.SourceValues),
+                () => Task.FromResult(state.TargetValues),
+                (id, source, target) => new MongoMessageDiffResult { Id = id },
+                (id, source, target, diff) => true
+            );
+
+            // First page load
+            await service.GetPageAsync();
+            state.CurrentPage.Should().Be(1);
+
+            // Move to page 2
+            state.CurrentPage = 2;
+            await service.GetPageAsync();
+            var initialPage = state.CurrentPage; // Capture page state *after* moving to page 2
+            initialPage.Should().Be(2); // Verify we are indeed on page 2 before the change
+
+            // Change AllKeys
+            state.AllKeys = new HashSet<string> { "1", "2", "3", "4", "5" };
+            state.SourceValues["5"] = new() { Id = "5" };
+            state.TargetValues["5"] = new() { Id = "5" };
+
+            // Verify reset to page 1 after getting the page again
+            await service.GetPageAsync();
+            state.CurrentPage.Should().Be(1); // Page should now be 1 due to reset
+        }
+
+        [Test]
+        public async Task GetPageAsync_ResetsToFirstPage_WhenPageSizeChanges()
+        {
+            // Arrange
+            var state = new TestState
+            {
+                CurrentPage = 1,
+                PageSize = 2,
+                AllKeys = new HashSet<string> { "1", "2", "3", "4" },
+                SourceValues = new Dictionary<string, MongoMessage>
+                {
+                    ["1"] = new() { Id = "1" },
+                    ["2"] = new() { Id = "2" },
+                    ["3"] = new() { Id = "3" },
+                    ["4"] = new() { Id = "4" }
+                },
+                TargetValues = new Dictionary<string, MongoMessage>
+                {
+                    ["1"] = new() { Id = "1" },
+                    ["2"] = new() { Id = "2" },
+                    ["3"] = new() { Id = "3" },
+                    ["4"] = new() { Id = "4" }
+                }
+            };
+
+            var service = new PaginationService<string, MongoMessage, MongoMessageDiffResult>(
+                state,
+                () => Task.FromResult(state.SourceValues),
+                () => Task.FromResult(state.TargetValues),
+                (id, source, target) => new MongoMessageDiffResult { Id = id },
+                (id, source, target, diff) => true
+            );
+
+            // First page load
+            await service.GetPageAsync();
+            state.CurrentPage.Should().Be(1);
+
+            // Move to page 2
+            state.CurrentPage = 2;
+            await service.GetPageAsync();
+            var initialPage = state.CurrentPage; // Capture page state *after* moving to page 2
+            initialPage.Should().Be(2); // Verify we are indeed on page 2 before the change
+
+            // Change PageSize
+            state.PageSize = 3;
+
+            // Verify reset to page 1 after getting the page again
+            await service.GetPageAsync();
+            state.CurrentPage.Should().Be(1); // Page should now be 1 due to reset
+        }
     }
 }
