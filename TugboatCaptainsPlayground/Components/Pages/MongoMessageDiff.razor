@@ -221,7 +221,7 @@
     {
         try
         {
-            var insertStatement = await MongoMessageService.GenerateInsertStatementAsync(environment, message);
+            var insertStatement = await MongoMessageService.GenerateInsertStatementAsync(message);
             await CopyToClipboard(insertStatement);
             toastService.ShowSuccess("Comando INSERT copiado para a área de transferência");
         }
@@ -240,7 +240,7 @@
 
             foreach (var diff in diffs)
             {
-                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(MongoMessageDiffStateService.SelectedSourceEnv, diff.Value.Source));
+                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(diff.Value.Source));
             }
 
             if (inserts.Any())
@@ -269,7 +269,7 @@
 
             foreach (var diff in diffs)
             {
-                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(MongoMessageDiffStateService.SelectedTargetEnv, diff.Value.Target));
+                inserts.Add(await MongoMessageService.GenerateInsertStatementAsync(diff.Value.Target));
             }
 
             if (inserts.Any())

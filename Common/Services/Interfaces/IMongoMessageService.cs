@@ -7,7 +7,7 @@ namespace Common.Services.Interfaces
     public interface IMongoMessageService
     {
         Task<Dictionary<string, MongoMessage>> GetMessagesAsync(string connectionString);
-        Task<string> GenerateInsertStatementAsync(string environment, MongoMessage message);
+        Task<string> GenerateInsertStatementAsync(MongoMessage message);
         MongoMessageDiffResult GetMessageDiff(string id, MongoMessage source, MongoMessage target);
     }
 }

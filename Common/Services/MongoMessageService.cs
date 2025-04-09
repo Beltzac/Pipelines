@@ -49,53 +49,64 @@ namespace TugboatCaptainsPlayground.Services
             return messages;
         }
 
-        public async Task<string> GenerateInsertStatementAsync(string environment, MongoMessage message)
+        public async Task<string> GenerateInsertStatementAsync(MongoMessage message)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"db.getCollection(\"Mensagem\").insert({{");
-            sb.AppendLine($"    _id: \"{message.Id}\",");
-            sb.AppendLine($"    Inclusao: {{");
-            sb.AppendLine($"        Data: ISODate(\"{message.Inclusao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
-            sb.AppendLine($"        UserId: \"{message.Inclusao.UserId}\",");
-            sb.AppendLine($"        UserName: \"{message.Inclusao.UserName}\",");
-            sb.AppendLine($"        UserLogin: {(message.Inclusao.UserLogin != null ? $"\"{message.Inclusao.UserLogin}\"" : "null")},");
-            sb.AppendLine($"        ProcurationId: {(message.Inclusao.ProcurationId != null ? $"\"{message.Inclusao.ProcurationId}\"" : "null")},");
-            sb.AppendLine($"        CompanyId: {(message.Inclusao.CompanyId != null ? $"\"{message.Inclusao.CompanyId}\"" : "null")},");
-            sb.AppendLine($"        CompanyName: {(message.Inclusao.CompanyName != null ? $"\"{message.Inclusao.CompanyName}\"" : "null")},");
-            sb.AppendLine($"        AggregationId: \"{message.Inclusao.AggregationId}\"");
-            sb.AppendLine($"    }},");
-            sb.AppendLine($"    Alteracao: {{");
-            sb.AppendLine($"        Data: ISODate(\"{message.Alteracao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
-            sb.AppendLine($"        UserId: \"{message.Alteracao.UserId}\",");
-            sb.AppendLine($"        UserName: \"{message.Alteracao.UserName}\",");
-            sb.AppendLine($"        UserLogin: {(message.Alteracao.UserLogin != null ? $"\"{message.Alteracao.UserLogin}\"" : "null")},");
-            sb.AppendLine($"        ProcurationId: {(message.Alteracao.ProcurationId != null ? $"\"{message.Alteracao.ProcurationId}\"" : "null")},");
-            sb.AppendLine($"        CompanyId: {(message.Alteracao.CompanyId != null ? $"\"{message.Alteracao.CompanyId}\"" : "null")},");
-            sb.AppendLine($"        CompanyName: {(message.Alteracao.CompanyName != null ? $"\"{message.Alteracao.CompanyName}\"" : "null")},");
-            sb.AppendLine($"        AggregationId: \"{message.Alteracao.AggregationId}\"");
-            sb.AppendLine($"    }},");
-            sb.AppendLine($"    UltimaInteracao: {{");
-            sb.AppendLine($"        Data: ISODate(\"{message.UltimaInteracao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
-            sb.AppendLine($"        UserId: \"{message.UltimaInteracao.UserId}\",");
-            sb.AppendLine($"        UserName: \"{message.UltimaInteracao.UserName}\",");
-            sb.AppendLine($"        UserLogin: {(message.UltimaInteracao.UserLogin != null ? $"\"{message.UltimaInteracao.UserLogin}\"" : "null")},");
-            sb.AppendLine($"        ProcurationId: {(message.UltimaInteracao.ProcurationId != null ? $"\"{message.UltimaInteracao.ProcurationId}\"" : "null")},");
-            sb.AppendLine($"        CompanyId: {(message.UltimaInteracao.CompanyId != null ? $"\"{message.UltimaInteracao.CompanyId}\"" : "null")},");
-            sb.AppendLine($"        CompanyName: {(message.UltimaInteracao.CompanyName != null ? $"\"{message.UltimaInteracao.CompanyName}\"" : "null")},");
-            sb.AppendLine($"        AggregationId: \"{message.UltimaInteracao.AggregationId}\"");
-            sb.AppendLine($"    }},");
-            sb.AppendLine($"    Path: \"{message.Path}\",");
-            sb.AppendLine($"    Key: \"{message.Key}\",");
-            sb.AppendLine($"    Idioma: \"{message.Idioma}\",");
-            sb.AppendLine($"    Nivel: NumberInt(\"{message.Nivel}\"),");
-            sb.AppendLine($"    Titulo: \"{message.Titulo}\",");
-            sb.AppendLine($"    Texto: \"{message.Texto}\",");
-            sb.AppendLine($"    Tags: [{(message.Tags.Any() ? string.Join(", ", message.Tags.Select(t => $"\"{t}\"")) : "")}],");
-            sb.AppendLine($"    RevisaoPendente: {message.RevisaoPendente.ToString().ToLower()}");
-            sb.AppendLine($"}});");
+            sb.AppendLine($"db.getCollection(\"Mensagem\").update({{");
+            sb.AppendLine($"    _id: \"{message.Id}\"");
+            sb.AppendLine($"}}, {{");
+            sb.AppendLine($"    $set: {{");
+            sb.AppendLine($"        Inclusao: {{");
+            sb.AppendLine($"            Data: ISODate(\"{message.Inclusao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
+            sb.AppendLine($"            UserId: \"{EscapeMongoString(message.Inclusao.UserId)}\",");
+            sb.AppendLine($"            UserName: \"{EscapeMongoString(message.Inclusao.UserName)}\",");
+            sb.AppendLine($"            UserLogin: {(message.Inclusao.UserLogin != null ? $"\"{EscapeMongoString(message.Inclusao.UserLogin)}\"" : "null")},");
+            sb.AppendLine($"            ProcurationId: {(message.Inclusao.ProcurationId != null ? $"\"{EscapeMongoString(message.Inclusao.ProcurationId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyId: {(message.Inclusao.CompanyId != null ? $"\"{EscapeMongoString(message.Inclusao.CompanyId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyName: {(message.Inclusao.CompanyName != null ? $"\"{EscapeMongoString(message.Inclusao.CompanyName)}\"" : "null")},");
+            sb.AppendLine($"            AggregationId: \"{EscapeMongoString(message.Inclusao.AggregationId)}\"");
+            sb.AppendLine($"        }},");
+            sb.AppendLine($"        Alteracao: {{");
+            sb.AppendLine($"            Data: ISODate(\"{message.Alteracao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
+            sb.AppendLine($"            UserId: \"{EscapeMongoString(message.Alteracao.UserId)}\",");
+            sb.AppendLine($"            UserName: \"{EscapeMongoString(message.Alteracao.UserName)}\",");
+            sb.AppendLine($"            UserLogin: {(message.Alteracao.UserLogin != null ? $"\"{EscapeMongoString(message.Alteracao.UserLogin)}\"" : "null")},");
+            sb.AppendLine($"            ProcurationId: {(message.Alteracao.ProcurationId != null ? $"\"{EscapeMongoString(message.Alteracao.ProcurationId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyId: {(message.Alteracao.CompanyId != null ? $"\"{EscapeMongoString(message.Alteracao.CompanyId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyName: {(message.Alteracao.CompanyName != null ? $"\"{EscapeMongoString(message.Alteracao.CompanyName)}\"" : "null")},");
+            sb.AppendLine($"            AggregationId: \"{EscapeMongoString(message.Alteracao.AggregationId)}\"");
+            sb.AppendLine($"        }},");
+            sb.AppendLine($"        UltimaInteracao: {{");
+            sb.AppendLine($"            Data: ISODate(\"{message.UltimaInteracao.Data:yyyy-MM-ddTHH:mm:ss.fffZ}\"),");
+            sb.AppendLine($"            UserId: \"{EscapeMongoString(message.UltimaInteracao.UserId)}\",");
+            sb.AppendLine($"            UserName: \"{EscapeMongoString(message.UltimaInteracao.UserName)}\",");
+            sb.AppendLine($"            UserLogin: {(message.UltimaInteracao.UserLogin != null ? $"\"{EscapeMongoString(message.UltimaInteracao.UserLogin)}\"" : "null")},");
+            sb.AppendLine($"            ProcurationId: {(message.UltimaInteracao.ProcurationId != null ? $"\"{EscapeMongoString(message.UltimaInteracao.ProcurationId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyId: {(message.UltimaInteracao.CompanyId != null ? $"\"{EscapeMongoString(message.UltimaInteracao.CompanyId)}\"" : "null")},");
+            sb.AppendLine($"            CompanyName: {(message.UltimaInteracao.CompanyName != null ? $"\"{EscapeMongoString(message.UltimaInteracao.CompanyName)}\"" : "null")},");
+            sb.AppendLine($"            AggregationId: \"{EscapeMongoString(message.UltimaInteracao.AggregationId)}\"");
+            sb.AppendLine($"        }},");
+            sb.AppendLine($"        Path: \"{EscapeMongoString(message.Path)}\",");
+            sb.AppendLine($"        Key: \"{EscapeMongoString(message.Key)}\",");
+            sb.AppendLine($"        Idioma: \"{EscapeMongoString(message.Idioma)}\",");
+            sb.AppendLine($"        Nivel: {(message.Nivel.HasValue ? $"NumberInt({message.Nivel.Value})" : "null")},");
+            sb.AppendLine($"        Titulo: \"{EscapeMongoString(message.Titulo)}\",");
+            sb.AppendLine($"        Texto: \"{EscapeMongoString(message.Texto)}\",");
+            sb.AppendLine($"        Tags: [{(message.Tags.Any() ? string.Join(", ", message.Tags.Select(t => $"\"{EscapeMongoString(t)}\"")) : "")}],");
+            sb.AppendLine($"        RevisaoPendente: {message.RevisaoPendente.ToString().ToLower()}");
+            sb.AppendLine($"    }}");
+            sb.AppendLine($"}}, {{ upsert: true }});");
 
             return sb.ToString();
         }
+
+        private static string EscapeMongoString(string value)
+        {
+            if (value == null) return null; // Or string.Empty depending on desired behavior
+            // Escape backslashes first, then quotes
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
 
         public MongoMessageDiffResult GetMessageDiff(string id, MongoMessage source, MongoMessage target)
         {
