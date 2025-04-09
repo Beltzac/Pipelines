@@ -1,5 +1,5 @@
 using Common.Models;
-using TugboatCaptainsPlayground.Services.Interfaces;
+using Common.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {

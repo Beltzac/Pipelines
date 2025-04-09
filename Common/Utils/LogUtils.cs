@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-
 namespace Common.Utils
 {
     public static class LogUtils

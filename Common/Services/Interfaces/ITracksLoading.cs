@@ -1,4 +1,4 @@
-﻿namespace TugboatCaptainsPlayground.Services.Interfaces
+﻿namespace Common.Services.Interfaces
 {
     public interface ITracksLoading
     {

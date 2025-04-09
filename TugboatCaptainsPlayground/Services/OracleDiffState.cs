@@ -1,6 +1,6 @@
 using Common.Models;
+using Common.Services.Interfaces;
 using System.Collections.Concurrent;
-using TugboatCaptainsPlayground.Services.Interfaces;
 
 namespace TugboatCaptainsPlayground.Services
 {

@@ -1,6 +1,4 @@
 using Common.Repositories.Interno.Interfaces;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using urldetector;
 using urldetector.detection;
 

@@ -1,11 +1,8 @@
 ﻿using Common.Models;
-using TugboatCaptainsPlayground.Services.Interfaces;
+using Common.Services.Interfaces;
 using System.Collections.Concurrent;
- 
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace TugboatCaptainsPlayground.Services
+namespace Common.Services
 {
     public class PaginationService<TKey, TValue, TDiffResult> where TDiffResult : class, IDiffResult
     {
@@ -55,7 +52,7 @@ namespace TugboatCaptainsPlayground.Services
 
                     // Calculate or retrieve cached diff using concurrent dictionary
                     var diffResult = _state.DiffCache.GetOrAdd(
-                        key, 
+                        key,
                         k => _getDiffAsync(k, sourceItem, targetItem));
 
                     if (_filter(key, sourceItem, targetItem, diffResult))
@@ -97,9 +94,19 @@ namespace TugboatCaptainsPlayground.Services
                 var filteredDiffs = await GetAllFilteredDiffsAsync();
                 _state.TotalCount = filteredDiffs.Count;
 
-                // Paginação
+                // Create list of key-value pairs for sorting
+                var keyedDiffs = filteredDiffs
+                    .Select(d => new {
+                        _state.DiffCache.First(kvp => kvp.Value == d).Key,
+                        Diff = d
+                    })
+                    .OrderBy(x => x.Key)
+                    .Select(x => x.Diff)
+                    .ToList();
+
+                // Pagination
                 int skip = (_state.CurrentPage - 1) * _state.PageSize;
-                var pagedDiffs = filteredDiffs
+                var pagedDiffs = keyedDiffs
                     .Skip(skip)
                     .Take(_state.PageSize)
                     .ToList();

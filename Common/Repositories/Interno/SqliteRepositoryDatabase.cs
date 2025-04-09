@@ -1,8 +1,5 @@
 using Common.Repositories.Interno.Interfaces;
-using DocumentFormat.OpenXml.Drawing;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using static Vanara.PInvoke.User32;
 
 namespace Common.Repositories.Interno
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace TugboatCaptainsPlayground.Services.Interfaces
+namespace Common.Services.Interfaces
 {
     public interface IComparesItems<TKey, T1, T> : IPaginates<T> where T : class
     {

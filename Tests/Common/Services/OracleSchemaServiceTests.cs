@@ -2,7 +2,6 @@ using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services;
 using FluentAssertions;
-using KellermanSoftware.CompareNetObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
