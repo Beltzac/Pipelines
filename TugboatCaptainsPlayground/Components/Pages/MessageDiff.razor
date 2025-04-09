@@ -78,26 +78,24 @@
         <table class="table table-bordered table-hover">
             <thead class="sticky-top bg-light">
                 <tr>
-                    <th style="width: 15%">Chave</th>
-                    <th style="width: 15%">Título Origem</th>
-                    <th style="width: 20%">
-                        Valor Origem (@MessageDiffStateService.SelectedSourceEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2"
-                        @onclick="CopyAllSourceUpserts"
-                        title="Copiar todos os comandos UPSERT do ambiente origem">
-                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Origem
+                    <th>Chave</th>
+                    <th>
+                        Origem (@MessageDiffStateService.SelectedSourceEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2 float-end"
+                                @onclick="CopyAllSourceUpserts"
+                                title="Copiar todos os comandos UPSERT do ambiente origem">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs
                         </button>
                     </th>
-                    <th style="width: 15%">Título Destino</th>
-                    <th style="width: 20%">
-                        Valor Destino (@MessageDiffStateService.SelectedTargetEnv)
-                        <button class="btn btn-sm btn-outline-primary ms-2"
-                        @onclick="CopyAllTargetUpserts"
-                        title="Copiar todos os comandos UPSERT do ambiente destino">
-                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs Destino
+                    <th>
+                        Destino (@MessageDiffStateService.SelectedTargetEnv)
+                        <button class="btn btn-sm btn-outline-primary ms-2 float-end"
+                                @onclick="CopyAllTargetUpserts"
+                                title="Copiar todos os comandos UPSERT do ambiente destino">
+                            <i class="bi bi-clipboard"></i> Copiar Todos UPSERTs
                         </button>
                     </th>
-                    <th style="width: 15%">Campos Alterados</th>
+                    <th>Campos Alterados</th>
                 </tr>
             </thead>
             <tbody>
@@ -105,29 +103,33 @@
                 {
                     <tr class="@(diff.HasDifferences ? "table-warning" : "")">
                         <td class="font-weight-bold">@diff.Key</td>
-                        <td>@(diff.Source?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                         <td>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@(diff.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">@(diff.Source?.Languages.Values.FirstOrDefault()?.Titulo)</div>
+                                    <div class="text-wrap small">@(diff.Source?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                </div>
                                 @if (diff.Source != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2"
-                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Source)"
-                                    title="Copiar comando SQL para atualizar esta mensagem no ambiente source">
+                                    <button class="btn btn-sm btn-outline-primary ms-2 flex-shrink-0"
+                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedSourceEnv, diff.Source)"
+                                            title="Copiar comando UPSERT (Origem)">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
                             </div>
                         </td>
-                        <td>@(diff.Target?.Languages.Values.FirstOrDefault()?.Titulo)</td>
                         <td>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="text-wrap">@(diff.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-bold">@(diff.Target?.Languages.Values.FirstOrDefault()?.Titulo)</div>
+                                    <div class="text-wrap small">@(diff.Target?.Languages.Values.FirstOrDefault()?.Descricao)</div>
+                                </div>
                                 @if (diff.Target != null)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary ms-2"
-                                    @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Target)"
-                                    title="Copiar comando SQL para atualizar esta mensagem no ambiente target">
+                                    <button class="btn btn-sm btn-outline-primary ms-2 flex-shrink-0"
+                                            @onclick="() => CopyUpsertStatement(MessageDiffStateService.SelectedTargetEnv, diff.Target)"
+                                            title="Copiar comando UPSERT (Destino)">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 }
@@ -259,7 +261,7 @@
 
             foreach (var diff in diffs)
             {
-                upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target));   
+                upserts.Add(await OracleMessageService.GenerateUpsertStatementAsync(MessageDiffStateService.SelectedTargetEnv, diff.Value.Target));
             }
 
             if (upserts.Any())
