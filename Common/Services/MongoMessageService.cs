@@ -52,7 +52,7 @@ namespace TugboatCaptainsPlayground.Services
         public async Task<string> GenerateInsertStatementAsync(MongoMessage message)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"db.getCollection(\"Mensagem\").update({{");
+            sb.AppendLine($"db.getSiblingDB(\"Core_Mensagens\").getCollection(\"Mensagem\").update({{");
             sb.AppendLine($"    _id: \"{message.Id}\"");
             sb.AppendLine($"}}, {{");
             sb.AppendLine($"    $set: {{");
