@@ -19,7 +19,7 @@ namespace Common.Services
             @"^(?<Timestamp>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3}\s[+-]\d{2}:\d{2})\s\[(?<Level>\w+)\]\s(?<Message>.*)",
             RegexOptions.Compiled);
 
-        public async Task<List<LogEntry>> GetLogEntriesAsync(string? levelFilter = null, string? searchTerm = null)
+        public async Task<List<LogEntry>> GetLogEntriesAsync(string? levelFilter = null, string? searchTerm = null, int minutesFilter = 10) // Added minutesFilter
         {
             var logEntries = new List<LogEntry>();
             var logDirPath = Common.Utils.LogUtils.LogDirectoryPath; // Use the utility property
@@ -39,67 +39,109 @@ namespace Common.Services
                 return logEntries; // Return empty list if no log file found
             }
 
-            try
-            {
-                // Read file asynchronously using FileStream with ReadWrite sharing
-                var lines = new List<string>();
-                using (var fileStream = new FileStream(latestLogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) // Added FileShare.Delete
-                using (var streamReader = new StreamReader(fileStream))
-                {
-                    string? line;
-                    while ((line = await streamReader.ReadLineAsync()) != null)
-                    {
-                        lines.Add(line);
-                    }
-                }
-                LogEntry? currentEntry = null;
+            var cutoffTime = DateTime.UtcNow.AddMinutes(-minutesFilter);
+            var rawLines = new List<string>(); // Store lines read from file
+            int maxRetries = 3;
+            int delayMilliseconds = 200;
 
-                foreach (var line in lines)
+            // --- File Reading with Retry ---
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
                 {
-                    var match = LogEntryRegex.Match(line);
-                    if (match.Success)
+                    rawLines.Clear(); // Clear lines for retry
+                    using (var fileStream = new FileStream(latestLogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    using (var streamReader = new StreamReader(fileStream))
                     {
-                        // If we were building a multi-line entry, add it before starting the new one
-                        if (currentEntry != null)
+                        string? line;
+                        while ((line = await streamReader.ReadLineAsync()) != null)
                         {
-                            logEntries.Add(currentEntry);
+                            rawLines.Add(line);
                         }
-
-                        currentEntry = new LogEntry
-                        {
-                            Timestamp = DateTime.ParseExact(match.Groups["Timestamp"].Value, "yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal),
-                            Level = match.Groups["Level"].Value,
-                            Message = match.Groups["Message"].Value.Trim()
-                        };
                     }
-                    else if (currentEntry != null && !string.IsNullOrWhiteSpace(line))
-                    {
-                        // Append multi-line messages or exception details
-                        // Simple approach: append to message. Could be refined to specifically capture exceptions.
-                        currentEntry.Message += Environment.NewLine + line.Trim();
-                        // Consider adding specific Exception property handling here if needed
-                    }
+                    break; // Success, exit retry loop
                 }
-                // Add the last entry if it exists
-                if (currentEntry != null)
+                catch (IOException ex)
                 {
-                    logEntries.Add(currentEntry);
+                    if (attempt == maxRetries)
+                    {
+                        Console.WriteLine($"Error reading log file '{latestLogFile}' after {maxRetries} attempts: {ex.Message}");
+                        logEntries.Add(new LogEntry { Timestamp = DateTime.UtcNow, Level = "ERR", Message = $"Error reading log file: {ex.Message}" });
+                        return logEntries; // Return early with error
+                    }
+                    await Task.Delay(delayMilliseconds);
+                }
+                catch (Exception ex) // Catch other potential errors during reading
+                {
+                     Console.WriteLine($"Error processing log file '{latestLogFile}': {ex.Message}");
+                     logEntries.Add(new LogEntry { Timestamp = DateTime.UtcNow, Level = "ERR", Message = $"Error processing log file: {ex.Message}" });
+                     return logEntries; // Return early with error
                 }
             }
-            catch (IOException ex)
+
+            // --- Parsing Logic (Optimized with Time Filter) ---
+            var tempEntries = new List<LogEntry>(); // Store parsed entries temporarily
+            LogEntry? currentEntry = null;
+
+            // Iterate backwards through the raw lines
+            for (int i = rawLines.Count - 1; i >= 0; i--)
             {
-                // Handle potential file access issues (e.g., file locked)
-                Console.WriteLine($"Error reading log file '{latestLogFile}': {ex.Message}");
-                // Optionally return a specific error entry or re-throw
-                logEntries.Add(new LogEntry { Timestamp = DateTime.UtcNow, Level = "ERR", Message = $"Error reading log file: {ex.Message}" });
+                var line = rawLines[i];
+                var match = LogEntryRegex.Match(line);
+
+                if (match.Success)
+                {
+                    // Finish the previous multi-line entry (if any) before starting new one
+                    if (currentEntry != null)
+                    {
+                        tempEntries.Add(currentEntry);
+                    }
+
+                    var timestamp = DateTime.ParseExact(match.Groups["Timestamp"].Value, "yyyy-MM-dd HH:mm:ss.fff zzz", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal);
+
+                    // Stop reading if we've gone past the cutoff time
+                    if (timestamp < cutoffTime)
+                    {
+                        currentEntry = null; // Discard any partial entry being built
+                        break; // Exit loop, we have enough data
+                    }
+
+                    currentEntry = new LogEntry
+                    {
+                        Timestamp = timestamp,
+                        Level = match.Groups["Level"].Value,
+                        Message = match.Groups["Message"].Value.Trim()
+                    };
+                }
+                else if (currentEntry != null && !string.IsNullOrWhiteSpace(line))
+                {
+                    // Prepend multi-line messages when reading backwards
+                    currentEntry.Message = line.Trim() + Environment.NewLine + currentEntry.Message;
+                }
+                else
+                {
+                    // If we encounter a non-matching line and aren't building an entry,
+                    // check if it *might* be the start of a timestamp older than cutoff.
+                    // This is a heuristic to potentially stop earlier on malformed/old files.
+                    if (line.Length > 20 && DateTime.TryParse(line.Substring(0, 19), out var potentialTimestamp))
+                    {
+                         if (potentialTimestamp.ToUniversalTime() < cutoffTime) break;
+                    }
+                     currentEntry = null; // Reset if line doesn't match and isn't part of multi-line
+                }
             }
-            catch (Exception ex) // Catch other potential errors during parsing
+            // Add the very last entry being built (if any)
+            if (currentEntry != null)
             {
-                Console.WriteLine($"Error processing log file '{latestLogFile}': {ex.Message}");
-                logEntries.Add(new LogEntry { Timestamp = DateTime.UtcNow, Level = "ERR", Message = $"Error processing log file: {ex.Message}" });
+                 tempEntries.Add(currentEntry);
             }
+
+            // Reverse the list to get chronological order and assign to logEntries
+            logEntries = tempEntries;
+            logEntries.Reverse();
 
             // Apply filters
+            // Apply level and search filters AFTER time filtering and parsing
             IEnumerable<LogEntry> filteredEntries = logEntries;
 
             if (!string.IsNullOrEmpty(levelFilter) && levelFilter != "All")
@@ -114,8 +156,8 @@ namespace Common.Services
                     (e.Exception?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false)); // Include exception in search if populated
             }
 
-            // Return filtered list, ordered by timestamp descending
-            return filteredEntries.OrderByDescending(e => e.Timestamp).ToList();
+            // Return the filtered list (already in chronological order)
+            return filteredEntries.ToList();
         }
     }
 }

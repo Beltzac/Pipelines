@@ -6,24 +6,28 @@
 
 <h3>Log Viewer</h3>
 
-<div class="row mb-3 g-2">
-    <div class="col-md-3">
-        <label for="levelFilter" class="form-label">Filter by Level:</label>
+<div class="row mb-3 g-3">
+    <div class="col-md-2">
+        <label for="levelFilter" class="form-label">Level:</label>
         <select id="levelFilter" class="form-select" @bind="selectedLevel">
             <option value="All">All</option>
-            <option value="INF">Information</option>
-            <option value="WRN">Warning</option>
+            <option value="INF">Info</option>
+            <option value="WRN">Warn</option>
             <option value="ERR">Error</option>
             <option value="DBG">Debug</option>
             <option value="FTL">Fatal</option>
         </select>
     </div>
-    <div class="col-md-7">
+    <div class="col-md-2">
+        <label for="timeFilter" class="form-label">Minutes Ago:</label>
+        <input type="number" id="timeFilter" class="form-control" min="1" @bind="minutesFilter" />
+    </div>
+    <div class="col-md-6">
         <label for="searchTerm" class="form-label">Search Term:</label>
         <input type="text" id="searchTerm" class="form-control" placeholder="Search logs..." @bind="searchTerm" @bind:event="oninput" />
     </div>
     <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-primary w-100" @onclick="LoadLogs">Filter / Refresh</button>
+        <button class="btn btn-primary w-100" @onclick="LoadLogs">Filter</button>
     </div>
 </div>
 
@@ -88,6 +92,7 @@ else
     private List<LogEntry>? logEntries;
     private string selectedLevel = "All";
     private string? searchTerm;
+    private int minutesFilter = 10; // Default to 10 minutes
     private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -101,7 +106,7 @@ else
         StateHasChanged(); // Update UI to show spinner
         try
         {
-            logEntries = await LogService.GetLogEntriesAsync(selectedLevel, searchTerm);
+            logEntries = await LogService.GetLogEntriesAsync(selectedLevel, searchTerm, minutesFilter);
         }
         catch (Exception ex)
         {
