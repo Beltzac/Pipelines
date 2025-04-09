@@ -1,0 +1,143 @@
+@page "/log-viewer"
+@using Common.Models
+@using Common.Services
+@inject LogViewerService LogService
+@inject IToastService ToastService
+
+<h3>Log Viewer</h3>
+
+<div class="row mb-3 g-2">
+    <div class="col-md-3">
+        <label for="levelFilter" class="form-label">Filter by Level:</label>
+        <select id="levelFilter" class="form-select" @bind="selectedLevel">
+            <option value="All">All</option>
+            <option value="INF">Information</option>
+            <option value="WRN">Warning</option>
+            <option value="ERR">Error</option>
+            <option value="DBG">Debug</option>
+            <option value="FTL">Fatal</option>
+        </select>
+    </div>
+    <div class="col-md-7">
+        <label for="searchTerm" class="form-label">Search Term:</label>
+        <input type="text" id="searchTerm" class="form-control" placeholder="Search logs..." @bind="searchTerm" @bind:event="oninput" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" @onclick="LoadLogs">Filter / Refresh</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (logEntries == null || !logEntries.Any())
+{
+    <div class="alert alert-info" role="alert">
+        No log entries found or log file could not be read. Check the Logs directory or application console output.
+    </div>
+}
+else
+{
+    <div class="table-responsive log-table-container">
+        <table class="table table-sm table-striped table-bordered table-hover">
+            <thead class="sticky-top bg-light">
+                <tr>
+                    <th style="width: 180px;">Timestamp (UTC)</th>
+                    <th style="width: 100px;">Level</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in logEntries)
+                {
+                    <tr class="@GetRowClass(entry.Level)">
+                        <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")</td>
+                        <td><span class="badge @GetBadgeClass(entry.Level)">@entry.Level</span></td>
+                        <td class="log-message">@((MarkupString)FormatMessage(entry.Message))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<style>
+    .log-table-container {
+        max-height: 75vh; /* Adjust as needed */
+        overflow-y: auto;
+    }
+
+    .log-message {
+        white-space: pre-wrap; /* Preserve whitespace and wrap */
+        word-break: break-word;
+        font-family: Consolas, monospace;
+        font-size: 0.9em;
+    }
+
+    .table thead th {
+        background-color: #f8f9fa; /* Light background for sticky header */
+    }
+</style>
+
+@code {
+    private List<LogEntry>? logEntries;
+    private string selectedLevel = "All";
+    private string? searchTerm;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLogs();
+    }
+
+    private async Task LoadLogs()
+    {
+        isLoading = true;
+        StateHasChanged(); // Update UI to show spinner
+        try
+        {
+            logEntries = await LogService.GetLogEntriesAsync(selectedLevel, searchTerm);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error loading logs: {ex.Message}");
+            logEntries = new List<LogEntry>(); // Ensure list is not null
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged(); // Update UI to hide spinner/show results
+        }
+    }
+
+    private string GetRowClass(string level) => level switch
+    {
+        "ERR" => "table-danger",
+        "FTL" => "table-danger fw-bold",
+        "WRN" => "table-warning",
+        _ => ""
+    };
+
+    private string GetBadgeClass(string level) => level switch
+    {
+        "ERR" => "bg-danger",
+        "FTL" => "bg-danger",
+        "WRN" => "bg-warning text-dark",
+        "INF" => "bg-info text-dark",
+        "DBG" => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+
+    // Basic formatting for display (could be expanded)
+    private string FormatMessage(string message)
+    {
+        // Simple HTML escaping for now
+        return System.Net.WebUtility.HtmlEncode(message);
+        // Future: Could add highlighting for JSON, etc.
+    }
+}

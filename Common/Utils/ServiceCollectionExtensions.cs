@@ -97,6 +97,8 @@ namespace Common.Utils
 
             services.AddScoped<IMongoMessageService, MongoMessageService>();
 
+            services.AddScoped<LogViewerService>();
+
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
             return services;

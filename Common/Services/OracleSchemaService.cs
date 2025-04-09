@@ -66,7 +66,7 @@ namespace Common.Services
         {
             return await _repo.GetSingleFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} ",
+                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} AND VIEW_NAME = {viewName} ",
                 default);
         }
 

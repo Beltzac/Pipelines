@@ -7,6 +7,7 @@ using H.NotifyIcon.Core;
 using Microsoft.EntityFrameworkCore;
 using Photino.NET;
 using Quartz;
+using Serilog;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
@@ -73,14 +74,14 @@ internal class Program
             options.ListenLocalhost(port);
         });
 
-        //builder.Host.UseSerilog((context, services, configuration) =>
-        //{
-        //    configuration
-        //        .MinimumLevel.Debug()
-        //        .Enrich.FromLogContext()
-        //        .WriteTo.Console()
-        //        .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day);
-        //});
+        builder.Host.UseSerilog((context, services, configuration) =>
+        {
+            configuration
+                .MinimumLevel.Information()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File(Path.Combine(LogUtils.LogDirectoryPath, "log-.txt"), rollingInterval: RollingInterval.Day, shared: true);
+        });
 
         builder.Services.AddAntiforgery();
         builder.Services.AddRazorComponents()
