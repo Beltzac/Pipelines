@@ -41,8 +41,17 @@ namespace Common.Services
 
             try
             {
-                // Read file asynchronously to avoid blocking
-                var lines = await File.ReadAllLinesAsync(latestLogFile);
+                // Read file asynchronously using FileStream with ReadWrite sharing
+                var lines = new List<string>();
+                using (var fileStream = new FileStream(latestLogFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete)) // Added FileShare.Delete
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    string? line;
+                    while ((line = await streamReader.ReadLineAsync()) != null)
+                    {
+                        lines.Add(line);
+                    }
+                }
                 LogEntry? currentEntry = null;
 
                 foreach (var line in lines)
