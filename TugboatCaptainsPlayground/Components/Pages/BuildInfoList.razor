@@ -5,6 +5,7 @@
 @using System.Text.RegularExpressions
 @using Common
 @using Common.AOP
+@using Common.Models
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
@@ -83,7 +84,7 @@
             <th>Status</th>
             <th>Projeto</th>
             <th>Pessoa</th>
-            <th>Commit</th>
+            <th>Commit Details</th>
             <th>Próxima Atualização</th>
             <th>Pin</th>
         </tr>
@@ -101,8 +102,30 @@
                 </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>
-                    <div class="d-flex flex-column gap-1">
-                        @((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="position-relative">
+                            <button class="btn btn-sm btn-outline-info"
+                                    @onclick="() => ShowCommitDetails(buildInfo)"
+                                    data-bs-toggle="tooltip"
+                                    title="View commit details">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
+
+                            @if (showModal && currentCommit == buildInfo.Pipeline?.Last?.Commit)
+                            {
+                                <div class="commit-modal position-absolute bg-white p-3 shadow rounded"
+                                     style="z-index: 1000; width: 600px; top: 30px; left: 0;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6>Commit Details</h6>
+                                        <button class="btn btn-sm btn-close" @onclick="() => CloseModal()"></button>
+                                    </div>
+                                    <div class="commit-message">
+                                        @((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
                         <div class="d-flex flex-wrap gap-1">
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
                             {
@@ -122,7 +145,7 @@
                         </div>
                     </div>
                 </td>
-                <td>@GetNextRunTime(buildInfo.Id).Result</td>
+                <td>@* @GetNextRunTime(buildInfo.Id).Result *@</td>
                 <td>
                     <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
                         <i class="bi bi-pin-angle"></i>
@@ -348,6 +371,23 @@
     {
         BuildInfoStateService.OnChange -= () => InvokeAsync(StateHasChanged);
         BuildInfoStateService.Save();
+
+
+    }
+    private bool showModal = false;
+    private Commit currentCommit;
+
+    private void ShowCommitDetails(Repository buildInfo)
+    {
+        currentCommit = buildInfo.Pipeline?.Last?.Commit;
+        showModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        StateHasChanged();
     }
 
     private async Task<string> GetNextRunTime(Guid repositoryId)
