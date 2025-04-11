@@ -29,7 +29,7 @@
 
 <style>
     .status-indicator {
-        display: inline-flex;
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -40,16 +40,15 @@
         font-size: 0.8rem;
         text-align: center;
         transition: background 0.5s ease-in-out, transform 0.5s ease-in-out;
-        width: 60px;
         cursor: pointer;
-        vertical-align: middle;
+        height: 100%;
+        margin: 0 auto;
     }
 
     .indicator-icon {
         width: 30px;
         height: 30px;
         border-radius: 50%;
-        margin-bottom: 0.5rem;
     }
 
     .working .indicator-icon {
