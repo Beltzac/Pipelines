@@ -78,6 +78,7 @@ internal class Program
         {
             configuration
                 .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .WriteTo.File(Path.Combine(LogUtils.LogDirectoryPath, "log-.txt"), rollingInterval: RollingInterval.Day, shared: true);
