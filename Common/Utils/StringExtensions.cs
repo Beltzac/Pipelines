@@ -74,5 +74,29 @@ namespace Common.Utils
 
             //return logs;
         }
+
+        public static List<string> ExtractJiraCards(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return new List<string>();
+
+            var pattern = @"([A-Z, \d]{1,10}-\d+)";
+            return Regex.Matches(text, pattern)
+                .Select(m => m.Groups[1].Value.Trim())
+                .Distinct()
+                .ToList();
+        }
+
+        public static List<string> ExtractPrNumbers(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return new List<string>();
+
+            var pattern = @"(?:Merge[d]? pull request|Merged PR) #?(\d+)";
+            return Regex.Matches(text, pattern)
+                .Select(m => m.Groups[1].Value)
+                .Distinct()
+                .ToList();
+        }
     }
 }

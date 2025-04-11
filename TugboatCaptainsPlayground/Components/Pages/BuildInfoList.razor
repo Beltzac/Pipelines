@@ -15,6 +15,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using Quartz
 @using System.Globalization
+@using static Common.Utils.StringExtensions
 @inject IRepositoryService BuildInfoService
 @inject IToastService toastService
 @inject IJSRuntime JS
@@ -99,7 +100,28 @@
                     @(buildInfo.Path)
                 </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
-                <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
+                <td>
+                    <div class="d-flex flex-column gap-1">
+                        @((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))
+                        <div class="d-flex flex-wrap gap-1">
+                            @if (buildInfo.Pipeline?.Last?.Commit != null)
+                            {
+                                @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
+                                {
+                                    <span class="badge bg-secondary clickable-badge" @onclick="() => OpenJiraCard(jiraCard)">@jiraCard</span>
+                                }
+
+                                @foreach (var prNumber in ExtractPrNumbers(buildInfo.Pipeline.Last.Commit.CommitMessage))
+                                {
+                                    @if (!string.IsNullOrEmpty(buildInfo.Project) && !string.IsNullOrEmpty(buildInfo.Name))
+                                    {
+                                        <span class="badge bg-info clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR #@prNumber</span>
+                                    }
+                                }
+                            }
+                        </div>
+                    </div>
+                </td>
                 <td>@GetNextRunTime(buildInfo.Id).Result</td>
                 <td>
                     <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
@@ -352,4 +374,27 @@
             return "Unknown";
         }
     }
+
+
+    private void OpenJiraCard(string jiraCardID)
+    {
+        if (!string.IsNullOrEmpty(jiraCardID))
+        {
+            var url = $"https://terminalcp.atlassian.net/browse/{jiraCardID}";
+            OpenFolderUtils.OpenUrl(url);
+            toastService.ShowSuccess($"Opening Jira card {jiraCardID}!");
+        }
+    }
+
+    private void OpenPr(string prNumber, string projectName, string repoName)
+    {
+        if (!string.IsNullOrEmpty(prNumber))
+        {
+            var config = ConfigService.GetConfig();
+            var url = $"{config.OrganizationUrl}/{projectName}/_git/{repoName}/pullrequest/{prNumber}";
+            OpenFolderUtils.OpenUrl(url);
+            toastService.ShowSuccess($"Opening PR #{prNumber}!");
+        }
+    }
 }
+
