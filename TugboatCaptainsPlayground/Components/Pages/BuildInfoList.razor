@@ -338,13 +338,13 @@
 
             if (triggers == null || !triggers.Any())
             {
-                return "None";
+                return String.Empty;
             }
 
             var nextRun = triggers.Min(t => t.GetNextFireTimeUtc());
 
             var culture = new CultureInfo("pt-BR");
-            return nextRun?.Humanize(culture: culture) ?? "None";
+            return nextRun?.Humanize(culture: culture) ?? String.Empty;
         }
         catch (Exception ex)
         {
