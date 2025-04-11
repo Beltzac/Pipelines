@@ -84,6 +84,73 @@
           "H.GeneratedIcons.System.Drawing": "2.3.0"
         }
       },
+      "Humanizer": {
+        "type": "Direct",
+        "requested": "[3.0.0-beta.54, )",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "4XxUcpPsT3jWs/3J4BsxoD6/Uzt8ZKNkhJZjC4OO2KsIpbuiziy+WPtsqdru01/bQVELCmdGXuAIwHVUgdPdng==",
+        "dependencies": {
+          "Humanizer.Core.af": "3.0.0-beta.54",
+          "Humanizer.Core.ar": "3.0.0-beta.54",
+          "Humanizer.Core.az": "3.0.0-beta.54",
+          "Humanizer.Core.bg": "3.0.0-beta.54",
+          "Humanizer.Core.bn-BD": "3.0.0-beta.54",
+          "Humanizer.Core.cs": "3.0.0-beta.54",
+          "Humanizer.Core.da": "3.0.0-beta.54",
+          "Humanizer.Core.de": "3.0.0-beta.54",
+          "Humanizer.Core.el": "3.0.0-beta.54",
+          "Humanizer.Core.es": "3.0.0-beta.54",
+          "Humanizer.Core.fa": "3.0.0-beta.54",
+          "Humanizer.Core.fi-FI": "3.0.0-beta.54",
+          "Humanizer.Core.fr": "3.0.0-beta.54",
+          "Humanizer.Core.fr-BE": "3.0.0-beta.54",
+          "Humanizer.Core.he": "3.0.0-beta.54",
+          "Humanizer.Core.hr": "3.0.0-beta.54",
+          "Humanizer.Core.hu": "3.0.0-beta.54",
+          "Humanizer.Core.hy": "3.0.0-beta.54",
+          "Humanizer.Core.id": "3.0.0-beta.54",
+          "Humanizer.Core.is": "3.0.0-beta.54",
+          "Humanizer.Core.it": "3.0.0-beta.54",
+          "Humanizer.Core.ja": "3.0.0-beta.54",
+          "Humanizer.Core.ko-KR": "3.0.0-beta.54",
+          "Humanizer.Core.ku": "3.0.0-beta.54",
+          "Humanizer.Core.lb": "3.0.0-beta.54",
+          "Humanizer.Core.lt": "3.0.0-beta.54",
+          "Humanizer.Core.lv": "3.0.0-beta.54",
+          "Humanizer.Core.ms-MY": "3.0.0-beta.54",
+          "Humanizer.Core.mt": "3.0.0-beta.54",
+          "Humanizer.Core.nb": "3.0.0-beta.54",
+          "Humanizer.Core.nb-NO": "3.0.0-beta.54",
+          "Humanizer.Core.nl": "3.0.0-beta.54",
+          "Humanizer.Core.pl": "3.0.0-beta.54",
+          "Humanizer.Core.pt": "3.0.0-beta.54",
+          "Humanizer.Core.ro": "3.0.0-beta.54",
+          "Humanizer.Core.ru": "3.0.0-beta.54",
+          "Humanizer.Core.sk": "3.0.0-beta.54",
+          "Humanizer.Core.sl": "3.0.0-beta.54",
+          "Humanizer.Core.sr": "3.0.0-beta.54",
+          "Humanizer.Core.sr-Latn": "3.0.0-beta.54",
+          "Humanizer.Core.sv": "3.0.0-beta.54",
+          "Humanizer.Core.th-TH": "3.0.0-beta.54",
+          "Humanizer.Core.tr": "3.0.0-beta.54",
+          "Humanizer.Core.uk": "3.0.0-beta.54",
+          "Humanizer.Core.uz-Cyrl-UZ": "3.0.0-beta.54",
+          "Humanizer.Core.uz-Latn-UZ": "3.0.0-beta.54",
+          "Humanizer.Core.vi": "3.0.0-beta.54",
+          "Humanizer.Core.zh-CN": "3.0.0-beta.54",
+          "Humanizer.Core.zh-Hans": "3.0.0-beta.54",
+          "Humanizer.Core.zh-Hant": "3.0.0-beta.54"
+        }
+      },
+      "Humanizer.Core.pt": {
+        "type": "Direct",
+        "requested": "[3.0.0-beta.54, )",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "1amzDtByedJqkUUIb2jcsBVfnIy9tTEfP3Nak07O1FWEI5wyRO0ghf1BPumcdj5Hb0CQyWpLJeMyyx4zALlN0w==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
       "Json.More.Net": {
         "type": "Direct",
         "requested": "[2.1.1, )",
@@ -510,8 +577,404 @@
       },
       "Humanizer.Core": {
         "type": "Transitive",
-        "resolved": "2.14.1",
-        "contentHash": "lQKvtaTDOXnoVJ20ibTuSIOf2i0uO0MPbDhd1jm238I+U/2ZnRENj0cktKZhtchBMtCUSRQ5v4xBCUbKNmyVMw=="
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "V1LqoHpfgEUoYJHiboaL6rZS/Wfr/K7xlsL0/SjwWtuFtV1d3bV8sTEPjURHmfxySND8KgQex5WuuuwMBraDog==",
+        "dependencies": {
+          "System.Memory": "4.5.5",
+          "System.ValueTuple": "4.5.0"
+        }
+      },
+      "Humanizer.Core.af": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "NHoTQrI7hKS0zzsiHwlUeP1ZWmKA71AC1L7y+W1A6fOeRb2n7Fwwtapz8AKsi9TZVtxCNM2gCqdsMN/u6pMZ1g==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ar": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "BXxFYZKNAXZsPpHKT/L+WbqMIktlmzrndBwMJOhajYVRIS8JFpFkiDAw0VhhJ0sPP528Ivs5WnjqrrtcYHklcg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.az": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "acJfaDiv5QkoftbKRBUl3FNWAw1uz6Z3WpU48EFR/sHyy3/bQFD6oHP5B+ewZegAW938/j7pWQYyJtRwJZwlOQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.bg": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "lzcSr8EzzzUHUWMWnNlw7oo7ZvLVa/V3YBLFSHPvv842h0qht13eYVBv//QHfFVQCwsL99GcwECU026Er3FFRA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.bn-BD": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "QbzuLmnmlngqlxbJMjjm7yv17ENabZ+XSVC3ATiC6nM2fauBqJLzSxpSKNx0Jr1LY8eChmCDmQJ50Y8Y9EA2Xw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.cs": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "lNx3SEDm5ZHzrlSxZwKLgd+xmAw4bIluzckEOws+WV6b3cD1H7eUCT+zsXceywitzLcTfHjRBAN/XQILPVm0Bg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.da": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "ljLPb2PpDHKbfsl0u+MkN9iJ/3AmLjTg2og16fY7IIokZaH5cl+uXsYp44CDuHnK0nxnuYloMMxfwBJe8nG+Mg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.de": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "ce4aDvzwp8APC3GygK2wPa1kIZK+AsNVqSfSWwATT13AmmDyXYJmBPRdZbUBo/iCcodueCSy1IKLkhoOd5056w==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.el": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "hVeHXWIRcoPEOLcNRq4EtWj4n14Z/2ETSAtR9OepUJhsuxskeuwH9vrb7OlAc+OkGzyUdiJZQNKelRzmRee5Lw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.es": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "74zWmT5LHFgwwQJW2Ycw7b91sIxUoQJ4wj6rAd4FSXIHqUUB43hOeWYLHjlDaUaYb4UcELq7TYzN4aqn84sHOg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.fa": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "bVcgpGYEEoGLbythJxvZ/QkV6gj1jYAU20bGSjhN4JGvfj+rn+6Ajj7/jf2z97cXC/tcxrYpjU01+RTAco3dVg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.fi-FI": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "GEmaznIjXmKEfTouW1gSRrU/J5k1QYp5nHkAOWXPxzsU0J6fAkuaIz+PoZ6sCBZB2EazaBlJlTu0Aqh3G9ZpPQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.fr": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "MZIH9UOicW8plJA31mVRwthF0QVMr6V/gfhSTqXCW1CYbqhnTPAixyqfPGiemX4CXGJL034b4MoRc7QtuyUZ3g==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.fr-BE": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "tgbLa3w6j1gZCIaKnmw+DvRCm/lX6w+tl3z5/a+egTX6n810vApa65fXWggPDJs/9glPXjXu+n/y3oelvGvAAQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.he": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "X3vPZaWn7PE1gC41XIkuDGAKbg+khD4M3aAlPVcsBB1R4rzkANy5iK/KFvWDF8c0YztMhVDq2VUI28KHvMbMUg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.hr": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "SCABQoW32oMQm8Ot3Gqx3WnEELEC1iVl8hmHk/DTwJgugid9tTtueQ5++/q2xAbzhXxZGtrV77Fba0kuR4cRCQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.hu": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "I25p2WQSB6P5e7qiZ+mS7jWES3QLQN/C0jC/Uo3r5EEQsPC6m/IhS909FwuH+875xHIbQ2VpgYJfdIzs5oMEiw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.hy": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "OCzdrX+5zmVbt0qwhpgZguz16CKp+0ZYDet1J+DZcyqUB2J0+aSCRNrTAFYmTfbEX/ShqPMvjmIdqR4wQPiLRA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.id": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "bgQb9HDH7fz/Hi2nwFcVVhSldK5/nKNih1dSlgG/1S/+FiSjra2lTGaIPGr9voUnmcjuHbyGKSnB+W462o3I4A==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.is": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "2+P3FpRrDb6ZRLcNv4ipX4l4FqB2KF0+oTeVTSEZvsFzLyIO7NnviEwTzwrJ0LmkQCuDB2ClvMMjadBNCoP2EQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.it": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "xhHqmO03mWH0Y2zPkW9HtWmSZWeaQPuuG3wjCSmWfivxbzY5S5p/hsh3WewAQahcu54F5kNrVH4AOIdUDmtIQw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ja": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "jkNbPS7S7tTXfOHuC/zlmk/3S5tH/ykV0M29QhE0CA3p2nYZpWescO1QI75QdKCtR1H3zHHp1mopIH09VF60PQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ko-KR": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "8uGnXlfu0xUDfxZG3fux+ipRs3zrPqDnXwa7V7u3C+bq6VZz/Wt1unKKpvL5ID8/shQpm5PLTX1XeD8eQSyj4Q==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ku": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "uWCrvBN9XCuYEhaQ6/3zTVc+sWE0eZjZRd9TXS6qdAurTpBZ0Hh4Do5BbhkElKfzEy7SPoFunH0axPFnHUahaA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.lb": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "RQ6efuxxi3BUZiS9ve+/U8Tu7N/RVnI2c4GKDdwO3JhoaMxGEVZrIq2H8DJovnRAdT5DbFY6nEAIzyCs60nHsA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.lt": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "zr61xnEX2/Wss26ZcbiyHEMfJyTSe0VOUPLgC+yp/FKrFoXuxFnWQ5Ja8Z4zF4bixqcak8jWl47wLRiJmX+bow==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.lv": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "iiCAFXJkXwd2ezryg4sfHgXXjcRi1ke8yMVGnRBknQIX2KlLGHTL3YEC+5G6ToKwmWWo4ocHSzyw/2eTIxx8/Q==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ms-MY": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "v8fgU93zsnk3+FnThj9o09wVvb2WNpOO+Rgp9ryjSlIvqRSoLTe6eAAcz2naK1CoEOXZQtfuLUAjtAuaNuoiPw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.mt": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "9HgFoa++6HuuH3RWmMiDKUfP2/iW1s3Okdk5dD5vVVT3sVbxif/fhgGInqHxX9din/CJt/rGhMvXacF+pyfylw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.nb": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "5/I+swJdrdj52LgQ/TX0cJtfLP5c2Jwpq4gO9qjafioS9mJSi+3Ak4B5U0LThyx9banqWq38YMNqhpg2gbIueQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.nb-NO": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "t79OsGPBnaqNzDqnc0piSKN/CckhMQ3Yv3rfJGFODBWg5k3uoPF0v2CuN/QwDhZzh3RQPTSWpjD5KBzvQzmr6Q==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.nl": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "8ew8Y+31i/jSgx445c94AkGK6NLkd8+ki6uXZU04nZGivGEn2shoAGaHYiOEOQYQP2wm/jD+6vwEvfs6woVK3g==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.pl": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "0VJOIT3cw78+i+sQir4Hn8U6MnCW3NL8g4qCP2nclm5tI6kmsUPnSiPXLbaPNMRt/60fpvfEcNvVCRfy29MVkA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ro": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "uayU7eCmf71PK0RkVXaq4whXp8sVuF31MDAN2LzXlAKlFGZxeljdBVhGnv7OrNrXoBFT5mykwW406EMWklyv5Q==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.ru": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "WFF8+NGUsbHk6jhMgf+pYRffwDx7fVMPRzitHwqnqblkkPWLswAVFRdeOuJWd/HFzojh5Q89gfy0OSdOsawFjg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.sk": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "9tlb7VAmKb4NYm/hxxNvW5OMKdw4iLk9nt0UwKXI9ybOExPjld92URR4nY6VqNUjLs0OQLe49Ce7Ksp9BNhqpg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.sl": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "OJisGT06AcsNHOVMZhZb61UBRIX5n6k7Yuko5VOiyL/lMjwNlCUgiVUjrdXcQt4sIYeJK1JJ25Kx4xYI9aAv6A==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.sr": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "f7Dv/XywdCs/oOyi0BgaMlOmr8n8kvEibtGQ6+/CSCDPAF/adpxlKrhVLNEYEdl7kXPWwq14Z61V64YsRBooVg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.sr-Latn": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "2vpzDUR6EXB7x+nCjHbpwUdd6JY4LvZoqmUCp3EsK1J5mvvLxXuKsdsR6ezZ8+A7+KWGqld2CBX7n2o1T2dI5A==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.sv": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "zV+SzaTpFp+wWLLoHbPyQsams7e5wy0rZVrW/61CBLeKrG9F0k3vbE7VQIPSK6bHUznNaKCiFuJz2LzZbtlY6w==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.th-TH": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "qcZjq15r5yvS/DxhQS3cKBhoX+MxJDU865TDvt/V+aJaTrNB6tOb/UA0EY/4a93WPubJXCzaArvc3UkuGmGMhw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.tr": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "dBgZaArKX8VYVfwEQLtuWMWkUt5k+c9zej16fAc6U9surQlxHQ3EQVPoXOK4jTMpG6rhOK4zd4fSLNrCEN8k/g==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.uk": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "Q5ESweLsTVWSmLXf5iHGrBzxjI9n/qmnrtLib+i7+6TrTBKi0p7JQWM7AC00YBia8KYpqIPzrqkjCcDChK8hnA==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.uz-Cyrl-UZ": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "9QP6OE8QGwFOiF9e30sP4knMJhBEu+v5Vo+1alsYsNy/YjqaKthI1ZQRtjebG2nYDTG7MpvA3euruMqMoEUbuQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.uz-Latn-UZ": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "BPVstod7L5/Dte6Ayac9wkbFA5XOZdaY+cMXXc+tBHMVNBAiuPcqDtgSHVBHJxFHAJQZyzfM7CGR0EiOHcKMzw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.vi": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "uyNV6ycNfsiQYPOJdl9JbcVg93sgwN8R7YK29eVf8+YXGEjzqYMpBhE2/5v7EYulAgCEQv2mKnDEqFc77YpOJg==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.zh-CN": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "MT2CujRscVTrxlPtk4bM/UMhkrGNWKFz8CoHT1nIIvDJEv+/Z4BnQEvNzpYdjRCWXYoSvr3DmJiVslJL5fJKTw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.zh-Hans": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "tjAQQxo+0Ge9OOyYlGAR7mIZMT7uTi7SCf/NRisFqPV2zCAyXHm5WgyJJ25z/DsOmB93oJptN7+SVTCM4ZMAPQ==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
+      },
+      "Humanizer.Core.zh-Hant": {
+        "type": "Transitive",
+        "resolved": "3.0.0-beta.54",
+        "contentHash": "DnaSMqZhP5z3izKhDLWfZazzdQcmyKDLOnZUj6I56DksovX2dhNpjpCoTS++8vSptJDOihpOi24sEYosPdL6Uw==",
+        "dependencies": {
+          "Humanizer.Core": "[3.0.0-beta.54]"
+        }
       },
       "LibGit2Sharp.NativeBinaries": {
         "type": "Transitive",
@@ -2580,6 +3043,11 @@
           "Microsoft.NETCore.Targets": "1.1.0",
           "System.Runtime": "4.3.0"
         }
+      },
+      "System.ValueTuple": {
+        "type": "Transitive",
+        "resolved": "4.5.0",
+        "contentHash": "okurQJO6NRE/apDIP23ajJ0hpiNmJ+f0BwOlB/cSqTLQlw5upkf+5+96+iG2Jw40G1fCVCyPz/FhIABUjMR+RQ=="
       },
       "System.Windows.Extensions": {
         "type": "Transitive",

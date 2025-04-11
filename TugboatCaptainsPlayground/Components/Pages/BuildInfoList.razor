@@ -9,10 +9,12 @@
 @using Common.Services.Interfaces
 @using Common.Utils
 @using FuzzySharp
+@using Humanizer
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.WebUtilities
 @using Quartz
+@using System.Globalization
 @inject IRepositoryService BuildInfoService
 @inject IToastService toastService
 @inject IJSRuntime JS
@@ -81,8 +83,7 @@
             <th>Projeto</th>
             <th>Pessoa</th>
             <th>Commit</th>
-            <th>Last Run</th>
-            <th>Next Run</th>
+            <th>Próxima Atualização</th>
             <th>Pin</th>
         </tr>
     </thead>
@@ -99,7 +100,6 @@
                 </td>
                 <td>@buildInfo.Pipeline?.Last?.Commit?.AuthorName</td>
                 <td>@((MarkupString)buildInfo.Pipeline?.Last?.Commit.ToHtml(ConfigService.GetConfig()))</td>
-                <td>@GetLastRunTime(buildInfo.Id).Result</td>
                 <td>@GetNextRunTime(buildInfo.Id).Result</td>
                 <td>
                     <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
@@ -328,30 +328,6 @@
         BuildInfoStateService.Save();
     }
 
-     private async Task<string> GetLastRunTime(Guid repositoryId)
-    {
-        try
-        {
-            var scheduler = await _schedulerFactory.GetScheduler();
-            var jobKey = new JobKey($"RepositoryUpdateJob-{repositoryId}");
-            var triggers = await scheduler.GetTriggersOfJob(jobKey);
-
-            if (triggers == null || !triggers.Any())
-            {
-                _logger.LogInformation("No triggers found for job {JobKey}", jobKey);
-                return "Never";
-            }
-
-            var lastRun = triggers.Max(t => t.GetPreviousFireTimeUtc());
-            return lastRun?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting last run time for repository {RepositoryId}", repositoryId);
-            return "Unknown";
-        }
-    }
-
     private async Task<string> GetNextRunTime(Guid repositoryId)
     {
         try
@@ -367,7 +343,9 @@
             }
 
             var nextRun = triggers.Min(t => t.GetNextFireTimeUtc());
-            return nextRun?.ToString("yyyy-MM-dd HH:mm") ?? "None";
+
+            var culture = new CultureInfo("pt-BR");
+            return nextRun?.Humanize(culture: culture) ?? "None";
         }
         catch (Exception ex)
         {
