@@ -95,7 +95,6 @@
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
-                    <span class="badge bg-secondary badge-small">@buildInfo.ProjectType</span>
                 </td>
                 <td class="truncate">
                     @(buildInfo.Path)
@@ -113,6 +112,7 @@
 
                             @if (showModal && currentCommit == buildInfo.Pipeline?.Last?.Commit)
                             {
+                                <div class="modal-backdrop" @onclick="HandleBackdropClick" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; background-color: transparent;"></div>
                                 <div class="commit-modal position-absolute bg-white p-3 shadow rounded"
                                      style="z-index: 1000; width: 600px; top: 30px; left: 0;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -127,6 +127,7 @@
                         </div>
 
                         <div class="d-flex flex-wrap gap-1">
+                            <span class="badge bg-secondary clickable-badge" @onclick="async () => await OpenClickAsync(buildInfo)">@buildInfo.ProjectType.Humanize().Transform(To.LowerCase, To.TitleCase)</span>
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
                             {
                                 @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
@@ -388,6 +389,11 @@
     {
         showModal = false;
         StateHasChanged();
+    }
+
+    private void HandleBackdropClick()
+    {
+        CloseModal();
     }
 
     private async Task<string> GetNextRunTime(Guid repositoryId)
