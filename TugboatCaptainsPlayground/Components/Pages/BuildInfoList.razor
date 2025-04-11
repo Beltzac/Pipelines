@@ -146,7 +146,7 @@
                         </div>
                     </div>
                 </td>
-                <td>@* @GetNextRunTime(buildInfo.Id).Result *@</td>
+                <td>@GetNextRunTime(buildInfo.Id)</td>
                 <td>
                     <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
                         <i class="bi bi-pin-angle"></i>
@@ -161,6 +161,7 @@
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
     private ElementReference filterInputElement;
+    private Dictionary<Guid, string> _nextRunTimes = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -178,6 +179,31 @@
                     BuildInfoStateService.IsLoading = true;
                     var infos = await BuildInfoService.GetBuildInfoAsync(x);
                     BuildInfoStateService.BuildInfos = infos;
+
+                    // Fetch all next run times at once
+                    _nextRunTimes = new();
+                    var scheduler = await _schedulerFactory.GetScheduler();
+                    var culture = new CultureInfo("pt-BR");
+
+                    foreach (var info in infos)
+                    {
+                        try
+                        {
+                            var jobKey = new JobKey($"RepositoryUpdateJob-{info.Id}");
+                            var triggers = await scheduler.GetTriggersOfJob(jobKey);
+
+                            if (triggers != null && triggers.Any())
+                            {
+                                var nextRun = triggers.Min(t => t.GetNextFireTimeUtc());
+                                _nextRunTimes[info.Id] = nextRun?.Humanize(culture: culture) ?? string.Empty;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error getting next run time for repository {RepositoryId}", info.Id);
+                            _nextRunTimes[info.Id] = "Unknown";
+                        }
+                    }
                 }
                 finally
                 {
@@ -396,29 +422,9 @@
         CloseModal();
     }
 
-    private async Task<string> GetNextRunTime(Guid repositoryId)
+    private string GetNextRunTime(Guid repositoryId)
     {
-        try
-        {
-            var scheduler = await _schedulerFactory.GetScheduler();
-            var jobKey = new JobKey($"RepositoryUpdateJob-{repositoryId}");
-            var triggers = await scheduler.GetTriggersOfJob(jobKey);
-
-            if (triggers == null || !triggers.Any())
-            {
-                return String.Empty;
-            }
-
-            var nextRun = triggers.Min(t => t.GetNextFireTimeUtc());
-
-            var culture = new CultureInfo("pt-BR");
-            return nextRun?.Humanize(culture: culture) ?? String.Empty;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting next run time for repository {RepositoryId}", repositoryId);
-            return "Unknown";
-        }
+        return _nextRunTimes.TryGetValue(repositoryId, out var time) ? time : string.Empty;
     }
 
 
