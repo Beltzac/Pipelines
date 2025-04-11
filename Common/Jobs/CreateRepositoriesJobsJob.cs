@@ -1,5 +1,6 @@
 ﻿using Common.Jobs;
 using Common.Services.Interfaces;
+using Common.Utils;
 using Microsoft.Extensions.Logging;
 using Quartz;
 
@@ -38,16 +39,26 @@ public class CreateRepositoriesJobsJob : IJob
                     .UsingJobData("RepositoryId", repoId.ToString())
                     .Build();
 
-                // Check if the trigger already exists
+                // If trigger exists, reschedule it with updated timing
                 if (await context.Scheduler.CheckExists(trigger.Key))
                 {
-                    _logger.LogInformation($"Trigger {trigger.Key} already exists, skipping job creation");
-                    continue;
+                    var existingTrigger = await context.Scheduler.GetTrigger(trigger.Key);
+                    var buildInfo = await _buildInfoService.GetBuildInfoByIdAsync(repoId);
+                    var nextRun = buildInfo.SecondsToNextUpdate();
+
+                    var newTrigger = TriggerBuilder.Create()
+                        .WithIdentity(trigger.Key)
+                        .StartAt(DateTime.UtcNow.AddSeconds(nextRun))
+                        .Build();
+
+                    await context.Scheduler.RescheduleJob(trigger.Key, newTrigger);
+                    _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repoId} in {nextRun} seconds");
                 }
-
-                await context.Scheduler.ScheduleJob(job, trigger);
-
-                _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repoId} now");
+                else
+                {
+                    await context.Scheduler.ScheduleJob(job, trigger);
+                    _logger.LogInformation($"Scheduled RepositoryUpdateJob for repository {repoId} now");
+                }
             }
         }
         catch (Exception ex)
