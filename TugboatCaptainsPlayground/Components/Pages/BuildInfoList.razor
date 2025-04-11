@@ -78,7 +78,7 @@
     </div>
 </StickyFilter>
 
-<table class="table">
+<table class="table" style="vertical-align: middle;">
     <thead>
         <tr>
             <th>Status</th>
@@ -92,7 +92,7 @@
     <tbody>
         @foreach (var buildInfo in GetBuildInfos())
         {
-            <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)">
+            <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)" style="vertical-align: middle;">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
                 </td>

@@ -15,7 +15,7 @@
     {
         Status.Working => "Em Execução",
         Status.Error => "Erro",
-        Status.Success => "Sucesso", 
+        Status.Success => "Sucesso",
         Status.Unknown => "Desconhecido",
         Status.None => "Inativo",
         _ => status.ToString()
@@ -29,7 +29,7 @@
 
 <style>
     .status-indicator {
-        display: flex;
+        display: inline-flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -41,8 +41,8 @@
         text-align: center;
         transition: background 0.5s ease-in-out, transform 0.5s ease-in-out;
         width: 60px;
-        height: 60px;
         cursor: pointer;
+        vertical-align: middle;
     }
 
     .indicator-icon {
@@ -127,7 +127,7 @@
     .indicator-text {
         display: none;
         position: absolute;
-        top: 50px;
+        top: 100%;
         left: 50%;
         transform: translateX(-50%);
         background-color: rgba(0, 0, 0, 0.75);
