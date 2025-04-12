@@ -155,15 +155,15 @@
                 {
                     <tr>
                         <td class="align-middle ">@item.Source</td>
-                        <td class="align-middle "><span class="badge bg-info align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.ExecucaoId = ConsultaEsbStateService.ExecucaoId == item.IdExecucao ? null : item.IdExecucao; ExecuteQuery(); }">@item.IdExecucao</span></td>
-                        <td class="align-middle "><span class="badge bg-secondary align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.HttpMethod = ConsultaEsbStateService.HttpMethod == item.HttpMethod ? null : item.HttpMethod; ExecuteQuery(); }">@item.HttpMethod</span></td>
+                        <td class="align-middle "><span class="badge bg-info align-middle" style="cursor: pointer;" @onclick="() => ToggleExecucaoIdFilter(item.IdExecucao)">@item.IdExecucao</span></td>
+                        <td class="align-middle "><span class="badge bg-secondary align-middle" style="cursor: pointer;" @onclick="() => ToggleHttpMethodFilter(item.HttpMethod)">@item.HttpMethod</span></td>
                         <td class="align-middle ">
                             <span class="@($"badge {GetStatusBadgeClass(item.HttpStatusCode)} align-middle")" style="cursor: pointer;" @onclick="() => HandleStatusClick(item.HttpStatusCode)">@item.HttpStatusCode</span>
                         </td>
                         <td class="align-middle ">@(GetResponseStatus(item.Resposta))</td>
-                        <td class="align-middle " title="@((item.Url ?? item.NomeFluxo))" style="max-width: 300px; white-space: break-spaces; word-break: break-word;"><span class="badge bg-primary align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.UrlFilter = ConsultaEsbStateService.UrlFilter == (item.Url ?? item.NomeFluxo) ? null : item.Url ?? item.NomeFluxo; ExecuteQuery(); }">@((item.Url ?? item.NomeFluxo)?.Truncate(30, "..."))</span></td>
+                        <td class="align-middle " title="@((item.Url ?? item.NomeFluxo))" style="max-width: 300px; white-space: break-spaces; word-break: break-word;"><span class="badge bg-primary align-middle" style="cursor: pointer;" @onclick="() => ToggleUrlFilter(item.Url ?? item.NomeFluxo)">@((item.Url ?? item.NomeFluxo)?.Truncate(30, "..."))</span></td>
                         <td class="align-middle ">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td class="align-middle "><span class="badge bg-success align-middle" style="cursor: pointer;" @onclick="() => { var currentUserId = ConsultaEsbStateService.User?.IdUsuario; var newUser = currentUserId == item.IdUsuarioInclusao ? null : new Usuario { IdUsuario = item.IdUsuarioInclusao, Nome = item.UserLogin }; ConsultaEsbStateService.User = newUser; ExecuteQuery(); }">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</span></td>
+                        <td class="align-middle "><span class="badge bg-success align-middle" style="cursor: pointer;" @onclick="() => ToggleUserFilter(item.IdUsuarioInclusao, item.UserLogin)">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</span></td>
                         <td class="align-middle ">@(item.Duration?.TotalSeconds.ToString("F3"))</td>
                         <td class="align-middle ">
                             <button class="btn btn-sm btn-info align-middle" @onclick="() => ShowDetails(item)">
@@ -270,6 +270,32 @@
 
 @code {
     private ConfigModel config;
+
+    private void ToggleExecucaoIdFilter(int? id)
+    {
+        ConsultaEsbStateService.ExecucaoId = ConsultaEsbStateService.ExecucaoId == id ? null : id;
+        ExecuteQuery();
+    }
+
+    private void ToggleHttpMethodFilter(string method)
+    {
+        ConsultaEsbStateService.HttpMethod = ConsultaEsbStateService.HttpMethod == method ? null : method;
+        ExecuteQuery();
+    }
+
+    private void ToggleUrlFilter(string url)
+    {
+        ConsultaEsbStateService.UrlFilter = ConsultaEsbStateService.UrlFilter == url ? null : url;
+        ExecuteQuery();
+    }
+
+    private void ToggleUserFilter(int userId, string userLogin)
+    {
+        var currentUserId = ConsultaEsbStateService.User?.IdUsuario;
+        var newUser = currentUserId == userId ? null : new Usuario { IdUsuario = userId, Nome = userLogin };
+        ConsultaEsbStateService.User = newUser;
+        ExecuteQuery();
+    }
 
     protected override void OnInitialized()
     {
