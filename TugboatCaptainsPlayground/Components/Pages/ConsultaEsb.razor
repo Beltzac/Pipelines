@@ -6,6 +6,7 @@
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
+@using Humanizer
 @inject IEsbService RequisicaoService
 @inject ICadastroService CadastroService
 @inject IConfigurationService ConfigService
@@ -153,20 +154,18 @@
                 @foreach (var item in ConsultaEsbStateService.Results)
                 {
                     <tr>
-                        <td class="align-middle">@item.Source</td>
-                        <td class="align-middle">@item.IdExecucao</td>
-                        <td class="align-middle">@item.HttpMethod</td>
-                        <td class="align-middle text-center">
-                            <span class="@($"badge {GetStatusBadgeClass(item.HttpStatusCode)} align-middle")">
-                                @item.HttpStatusCode
-                            </span>
+                        <td class="align-middle ">@item.Source</td>
+                        <td class="align-middle "><span class="badge bg-info align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.ExecucaoId = item.IdExecucao; ExecuteQuery(); }">@item.IdExecucao</span></td>
+                        <td class="align-middle "><span class="badge bg-secondary align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.HttpMethod = item.HttpMethod; ExecuteQuery(); }">@item.HttpMethod</span></td>
+                        <td class="align-middle ">
+                            <span class="@($"badge {GetStatusBadgeClass(item.HttpStatusCode)} align-middle")" style="cursor: pointer;" @onclick="() => HandleStatusClick(item.HttpStatusCode)">@item.HttpStatusCode</span>
                         </td>
-                        <td class="align-middle">@(GetResponseStatus(item.Resposta))</td>
-                        <td class="align-middle" title="@(item.Url ?? item.NomeFluxo)" style="max-width: 300px; white-space: break-spaces; word-break: break-word;">@(item.Url ?? item.NomeFluxo)</td>
-                        <td class="align-middle">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td class="align-middle">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</td>
-                        <td class="align-middle">@(item.Duration?.TotalSeconds.ToString("F3"))</td>
-                        <td class="align-middle text-center">
+                        <td class="align-middle ">@(GetResponseStatus(item.Resposta))</td>
+                        <td class="align-middle " title="@((item.Url ?? item.NomeFluxo))" style="max-width: 300px; white-space: break-spaces; word-break: break-word;"><span class="badge bg-primary align-middle" style="cursor: pointer;" @onclick="() => { ConsultaEsbStateService.UrlFilter = item.Url ?? item.NomeFluxo; ExecuteQuery(); }">@((item.Url ?? item.NomeFluxo)?.Truncate(30, "..."))</span></td>
+                        <td class="align-middle ">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="align-middle "><span class="badge bg-success align-middle" style="cursor: pointer;" @onclick="() => { /* Assuming item has User object, e.g., from context */ ConsultaEsbStateService.User = new Usuario { IdUsuario = item.IdUsuarioInclusao, Nome = item.UserLogin }; ExecuteQuery(); }">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</span></td>
+                        <td class="align-middle ">@(item.Duration?.TotalSeconds.ToString("F3"))</td>
+                        <td class="align-middle ">
                             <button class="btn btn-sm btn-info align-middle" @onclick="() => ShowDetails(item)">
                                 Detalhes
                             </button>
@@ -533,6 +532,27 @@
         {
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
         }
+    }
+
+    private void HandleStatusClick(string statusCode)
+    {
+        if (statusCode.StartsWith("2"))
+        {
+            ConsultaEsbStateService.HttpStatusRange = "2xx";
+        }
+        else if (statusCode.StartsWith("3"))
+        {
+            ConsultaEsbStateService.HttpStatusRange = "3xx";
+        }
+        else if (statusCode.StartsWith("4"))
+        {
+            ConsultaEsbStateService.HttpStatusRange = "4xx";
+        }
+        else if (statusCode.StartsWith("5"))
+        {
+            ConsultaEsbStateService.HttpStatusRange = "5xx";
+        }
+        ExecuteQuery();
     }
 
     private string GetResponseStatus(string? response)
