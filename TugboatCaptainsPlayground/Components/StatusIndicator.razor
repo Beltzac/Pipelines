@@ -30,12 +30,16 @@
     {
         return status switch
         {
-            Status.Working => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='yellow' /></svg>",
+            Status.Working => @"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>\
+  <circle cx='12' cy='12' r='10' fill='dodgerblue'/>\
+  <path fill='white' transform='translate(12,12) scale(0.75) translate(-12,-12)' d='M19.14,12.94c0.04,-0.3 0.06,-0.61 0.06,-0.94c0,-0.33 -0.02,-0.64 -0.06,-0.94l2.03,-1.58c0.18,-0.14 0.23,-0.41 0.12,-0.61l-1.92,-3.32c-0.11,-0.2 -0.35,-0.28 -0.56,-0.22l-2.39,0.96c-0.5,-0.38 -1.05,-0.7 -1.66,-0.94L14.5,2.81c-0.04,-0.23 -0.24,-0.4 -0.48,-0.4h-3.04c-0.24,0 -0.44,0.17 -0.48,0.4l-0.36,2.49c-0.61,0.24 -1.16,0.56 -1.66,0.94L5.65,5.22c-0.21,-0.09 -0.45,0.02 -0.56,0.22l-1.92,3.32c-0.11,0.2 -0.06,0.47 0.12,0.61l2.03,1.58c-0.04,0.3 -0.06,0.61 -0.06,0.94c0,0.33 0.02,0.64 0.06,0.94L3.3,14.52c-0.18,0.14 -0.23,0.41 -0.12,0.61l1.92,3.32c0.11,0.2 0.35,0.28 0.56,0.22l2.39,-0.96c0.5,0.38 1.05,0.7 1.66,0.94l0.36,2.49c0.04,0.23 0.24,0.4 0.48,0.4h3.04c0.24,0 0.44,-0.17 0.48,-0.4l0.36,-2.49c0.61,-0.24 1.16,-0.56 1.66,-0.94l2.39,0.96c0.21,0.09 0.45,-0.02 0.56,-0.22l1.92,-3.32c0.11,-0.2 0.06,-0.47 -0.12,-0.61l-2.03,-1.58ZM12,15.5c-1.93,0 -3.5,-1.57 -3.5,-3.5c0,-1.93 1.57,-3.5 3.5,-3.5c1.93,0 3.5,1.57 3.5,3.5c0,1.93 -1.57,3.5 -3.5,3.5Z'/>\
+</svg>",
             Status.Error => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z' fill='red' /></svg>",
             Status.Success => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' fill='green' /></svg>",
-            Status.Unknown => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='purple' /></svg>",
-            Status.None => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><rect width='24' height='24' fill='gray' /></svg>",
-            _ => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='gray' /></svg>"
+            _ => @"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'>\
+  <circle cx='12' cy='12' r='10' fill='gray'/>\
+  <rect x='7' y='11' width='10' height='2' fill='white'/>\
+</svg>"
         };
     }
 }
@@ -52,7 +56,6 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        font-family: 'Arial, sans-serif';
         text-transform: uppercase;
         color: #333;
         font-size: 0.8rem;

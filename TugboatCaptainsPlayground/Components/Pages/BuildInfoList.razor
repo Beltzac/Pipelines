@@ -381,11 +381,28 @@
         var repo = e.Data as Repository;
         BuildInfoService.NavigateToPRCreation(repo);
     }
-    
+
     private async Task OnStatusClickHandler(Repository repo, Status status)
     {
-        var url = repo.Pipeline.Last.Url;
-        OpenFolderUtils.OpenUrl(url);
+        if (repo == null)
+        {
+            toastService.ShowError("Repositório não encontrado.");
+            return;
+        }
+
+        if (repo.Pipeline != null && repo.Pipeline.Last != null && !string.IsNullOrEmpty(repo.Pipeline.Last.Url))
+        {
+            var url = repo.Pipeline.Last.Url;
+            OpenFolderUtils.OpenUrl(url);
+        }
+        else if (!string.IsNullOrEmpty(repo.Url))
+        {
+            OpenFolderUtils.OpenUrl(repo.Url);
+        }
+        else
+        {
+            toastService.ShowError("URL do repositório não encontrada.");
+        }
     }
 
     private StatusIndicator.Status GetStatusIndicator(Repository repo)
