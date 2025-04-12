@@ -4,6 +4,9 @@
     [Parameter]
     public Status CurrentStatus { get; set; }
 
+    [Parameter]
+    public EventCallback<Status> OnStatusClick { get; set; }
+
     public enum Status
     {
         Working,
@@ -37,7 +40,7 @@
     }
 }
 
-<div class="status-indicator @(CurrentStatus.ToString().ToLower())">
+<div class="status-indicator @(CurrentStatus.ToString().ToLower())" @onclick="() => OnStatusClick.InvokeAsync(CurrentStatus)">
     @((MarkupString)GetSvgIcon(CurrentStatus))
     <div class="indicator-text">@GetStatusText(CurrentStatus)</div>
 </div>
@@ -54,7 +57,7 @@
         color: #333;
         font-size: 0.8rem;
         text-align: center;
-        transition: all 0.3s ease;
+        transition: all 0.3s ease, box-shadow 0.3s ease;  /* Added box-shadow transition for visual improvement */
         cursor: pointer;
         height: 100%;
         margin: 0 auto;
@@ -67,7 +70,7 @@
     }
 
     .status-indicator:hover svg {
-        transform: scale(1.1);
+        transform: scale(1.3);
     }
 
     .working .status-indicator svg {
@@ -121,6 +124,10 @@
         50% { transform: translateX(5px); }
         75% { transform: translateX(-5px); }
         100% { transform: translateX(0); }
+    }
+
+    .status-indicator svg {
+        fill: currentColor;  /* Ensure SVG colors are inherited */
     }
 
     @@keyframes fadeIn {

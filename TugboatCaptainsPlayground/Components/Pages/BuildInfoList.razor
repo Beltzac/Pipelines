@@ -16,6 +16,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using Quartz
 @using System.Globalization
+@using static TugboatCaptainsPlayground.Components.StatusIndicator
 @using static Common.Utils.StringExtensions
 @inject IRepositoryService BuildInfoService
 @inject IToastService toastService
@@ -94,7 +95,7 @@
         {
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)" style="vertical-align: middle;">
                 <td>
-                    <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" />
+                    <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" OnStatusClick="@((status) => OnStatusClickHandler(buildInfo, status))" />
                 </td>
                 <td class="truncate">
                     @(buildInfo.Path)
@@ -379,6 +380,12 @@
     {
         var repo = e.Data as Repository;
         BuildInfoService.NavigateToPRCreation(repo);
+    }
+    
+    private async Task OnStatusClickHandler(Repository repo, Status status)
+    {
+        var url = repo.Pipeline.Last.Url;
+        OpenFolderUtils.OpenUrl(url);
     }
 
     private StatusIndicator.Status GetStatusIndicator(Repository repo)
