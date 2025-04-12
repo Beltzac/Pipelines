@@ -119,42 +119,41 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Data LTDB</th>
-                    <th>Data LTVC</th>
-                    <th>ID de Requisição</th>
-                    <th>Agendamento</th>
-                    <th>Código Barras</th>
-                    <th>Tipo de Movimento</th>
-                    <th>Placa</th>
-                    <th>Status</th>
-                    <th>Containers</th>
-                    <th>Atraso</th>
-                    <th>Ações</th>
+                    <th class="align-middle">Data LTDB</th>
+                    <th class="align-middle">Data LTVC</th>
+                    <th class="align-middle">ID de Requisição</th>
+                    <th class="align-middle">Agendamento</th>
+                    <th class="align-middle">Código Barras</th>
+                    <th class="align-middle">Tipo de Movimento</th>
+                    <th class="align-middle">Placa</th>
+                    <th class="align-middle">Status</th>
+                    <th class="align-middle">Containers</th>
+                    <th class="align-middle">Atraso</th>
+                    <th class="align-middle">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in ConsultaSggStateService.Results)
                 {
                     <tr>
-                        <td>@(item.DataLtdb?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
-                        <td>@(item.DataLtvc?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
-                        <td><span class="badge bg-info" style="cursor: pointer;" @onclick="() => ToggleRequestIdFilter(item.RequestId)">@item.RequestId</span></td>
-                        <td><span class="badge bg-warning text-dark" style="cursor: pointer;" @onclick="() => ToggleSchedulingFilter(item.IdAgendamento)">@item.IdAgendamento</span></td>
-                        <td><span class="badge bg-light text-dark" style="cursor: pointer;" @onclick="() => ToggleBarcodeFilter(item.CodigoBarras)">@item.CodigoBarras</span></td>
-                        <td><span class="badge bg-secondary" style="cursor: pointer;" @onclick="() => ToggleMoveTypeFilter(item.MoveType)">@item.MoveType</span></td>
-                        <td><span class="badge bg-primary" style="cursor: pointer;" @onclick="() => TogglePlateFilter(item.Placa)">@item.Placa</span></td>
-                        <td>
-                            <span class="badge @(item.Status == "OK" ? "bg-success" : "bg-danger")" style="cursor: pointer;" @onclick="() => ToggleStatusFilter(item.Status)">
+                        <td class="align-middle">@(item.DataLtdb?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                        <td class="align-middle">@(item.DataLtvc?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
+                        <td class="align-middle"><span class="badge bg-info" style="cursor: pointer;" @onclick="() => ToggleRequestIdFilter(item.RequestId)">@item.RequestId</span></td>
+                        <td class="align-middle"><span class="badge bg-warning text-dark" style="cursor: pointer;" @onclick="() => ToggleSchedulingFilter(item.IdAgendamento)">@item.IdAgendamento</span></td>
+                        <td class="align-middle"><span class="badge bg-light text-dark" style="cursor: pointer;" @onclick="() => ToggleBarcodeFilter(item.CodigoBarras)">@item.CodigoBarras</span></td>
+                        <td class="align-middle"><span class="badge bg-secondary" style="cursor: pointer;" @onclick="() => ToggleMoveTypeFilter(item.MoveType)">@item.MoveType</span></td>
+                        <td class="align-middle"><span class="badge bg-primary" style="cursor: pointer;" @onclick="() => TogglePlateFilter(item.Placa)">@item.Placa</span></td>
+                            <td class="align-middle"><span class="badge @(item.Status == "OK" ? "bg-success" : "bg-danger")" style="cursor: pointer;" @onclick="() => ToggleStatusFilter(item.Status)">
                                 @item.Status
                             </span>
-                        </td>
-                        <td><span class="badge bg-dark" style="cursor: pointer;" @onclick="() => ToggleContainerFilter(item.ContainerNumbers)">@item.ContainerNumbers</span></td>
-                        <td>@(item.Delay?.ToString("F3"))</td>
-                        <td>
+                         </td>
+                        <td class="align-middle"><span class="badge bg-dark" style="cursor: pointer;" @onclick="() => ToggleContainerFilter(item.ContainerNumbers)">@item.ContainerNumbers</span></td>
+                        <td class="align-middle">@(item.Delay?.ToString("F3"))</td>
+                        <td class="align-middle">
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
                                 Detalhes
                             </button>
-                        </td>
+                         </td>
                     </tr>
                 }
             </tbody>
