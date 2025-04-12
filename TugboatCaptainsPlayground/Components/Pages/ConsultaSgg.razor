@@ -246,8 +246,7 @@
 
     private void ToggleBarcodeFilter(string barcode)
     {
-        // Assuming GenericText is used for barcode filtering
-        ConsultaSggStateService.GenericText = ConsultaSggStateService.GenericText == barcode ? null : barcode;
+        ConsultaSggStateService.CodigoBarras = ConsultaSggStateService.CodigoBarras == barcode ? null : barcode;
         ExecuteQuery(false);
     }
 
@@ -364,35 +363,29 @@
 
             StateHasChanged();
 
-            var queryTask = LtdbService.ExecuteQueryAsync(
-                oracleEnv.ConnectionString,
-                ConsultaSggStateService.StartDate,
-                ConsultaSggStateService.EndDate,
-                ConsultaSggStateService.GenericText,
-                ConsultaSggStateService.Placa,
-                null,
-                ConsultaSggStateService.MoveType,
-                ConsultaSggStateService.IdAgendamento,
-                ConsultaSggStateService.Status,
-                ConsultaSggStateService.MinDelay,
-                ConsultaSggStateService.PageSize,
-                ConsultaSggStateService.CurrentPage,
-                cts.Token);
+            var filter = new SggQueryFilter
+            {
+                Environment = oracleEnv.ConnectionString,
+                StartDate = ConsultaSggStateService.StartDate,
+                EndDate = ConsultaSggStateService.EndDate,
+                GenericText = ConsultaSggStateService.GenericText,
+                Placa = ConsultaSggStateService.Placa,
+                RequestId = ConsultaSggStateService.RequestId, // Added RequestId
+                MoveType = ConsultaSggStateService.MoveType,
+                IdAgendamento = ConsultaSggStateService.IdAgendamento,
+                Status = ConsultaSggStateService.Status,
+                MinDelay = ConsultaSggStateService.MinDelay,
+                CodigoBarras = ConsultaSggStateService.CodigoBarras,
+                PageSize = ConsultaSggStateService.PageSize,
+                PageNumber = ConsultaSggStateService.CurrentPage
+            };
+
+            var queryTask = LtdbService.ExecuteQueryAsync(filter, cts.Token);
 
             var delayTask = Task.FromResult(new List<DelayMetric>());
             if (!paginate)
             {
-                delayTask = LtdbService.GetDelayMetricsAsync(
-                    oracleEnv.ConnectionString,
-                    ConsultaSggStateService.StartDate,
-                    ConsultaSggStateService.EndDate,
-                    ConsultaSggStateService.GenericText,
-                    ConsultaSggStateService.Placa,
-                    null,
-                    ConsultaSggStateService.MoveType,
-                    ConsultaSggStateService.IdAgendamento,
-                    ConsultaSggStateService.Status,
-                    cts.Token);
+                delayTask = LtdbService.GetDelayMetricsAsync(filter, cts.Token);
             }
 
             await Task.WhenAll(queryTask, delayTask);
@@ -541,19 +534,31 @@
 
     private async Task ExportSqlQuery()
     {
-        var sqlQuery = LtdbService.BuildQuery(
-            ConsultaSggStateService.StartDate,
-            ConsultaSggStateService.EndDate,
-            ConsultaSggStateService.Placa,
-            ConsultaSggStateService.RequestId,
-            ConsultaSggStateService.GenericText,
-            ConsultaSggStateService.MoveType,
-            ConsultaSggStateService.IdAgendamento,
-            ConsultaSggStateService.Status,
-            ConsultaSggStateService.MinDelay,
-            ConsultaSggStateService.PageSize,
-            ConsultaSggStateService.CurrentPage);
+        var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == ConsultaSggStateService.SelectedEnvironment);
+        if (oracleEnv == null)
+        {
+            toastService.ShowError("Por favor, selecione um ambiente Oracle.");
+            return;
+        }
 
+        var filter = new SggQueryFilter
+        {
+            Environment = oracleEnv.ConnectionString,
+            StartDate = ConsultaSggStateService.StartDate,
+            EndDate = ConsultaSggStateService.EndDate,
+            GenericText = ConsultaSggStateService.GenericText,
+            Placa = ConsultaSggStateService.Placa,
+            RequestId = ConsultaSggStateService.RequestId, // Added RequestId
+            MoveType = ConsultaSggStateService.MoveType,
+            IdAgendamento = ConsultaSggStateService.IdAgendamento,
+            Status = ConsultaSggStateService.Status,
+            MinDelay = ConsultaSggStateService.MinDelay,
+            CodigoBarras = ConsultaSggStateService.CodigoBarras,
+            PageSize = ConsultaSggStateService.PageSize,
+            PageNumber = ConsultaSggStateService.CurrentPage
+        };
+
+        var sqlQuery = LtdbService.BuildQuery(filter);
         await CopyToClipboard(sqlQuery);
         toastService.ShowSuccess("Consulta copiada para área de transferência");
     }

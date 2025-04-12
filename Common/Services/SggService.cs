@@ -20,24 +20,13 @@ namespace Common.Services
         }
 
         public async Task<(List<LtdbLtvcRecord> Results, int TotalCount)> ExecuteQueryAsync(
-            string environment,
-            DateTimeOffset? startDate = null,
-            DateTimeOffset? endDate = null,
-            string? genericText = null,
-            string? placa = null,
-            string? motorista = null,
-            string? moveType = null,
-            long? idAgendamento = null,
-            string? status = null,
-            double? minDelay = null,
-            int pageSize = 10,
-            int pageNumber = 1,
+            SggQueryFilter filter,
             CancellationToken cancellationToken = default)
         {
-            var sql = BuildQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status, minDelay, pageSize, pageNumber);
+            var sql = BuildQuery(filter);
 
             var results = await _repo.GetFromSqlAsync<LtdbLtvcRecord>(
-                environment,
+                filter.Environment,
                 FormattableStringFactory.Create(sql),
                 cancellationToken);
 
@@ -46,47 +35,42 @@ namespace Common.Services
                 TotalCount: results.FirstOrDefault()?.TotalCount ?? 0
             );
         }
-        public string BuildQuery(
-            DateTimeOffset? startDate,
-            DateTimeOffset? endDate,
-            string? genericText = null,
-            string? placa = null,
-            string? motorista = null,
-            string? moveType = null,
-            long? idAgendamento = null,
-            string? status = null,
-            double? minDelay = null,
-            int pageSize = 10,
-            int pageNumber = 1)
+        public string BuildQuery(SggQueryFilter filter)
         {
             var conditions = new List<string>();
 
-            if (startDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (filter.StartDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{filter.StartDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (endDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (filter.EndDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{filter.EndDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (!string.IsNullOrEmpty(genericText))
-                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
+            if (!string.IsNullOrEmpty(filter.GenericText))
+                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{filter.GenericText}') OR REGEXP_LIKE(LTVC.XML, '{filter.GenericText}'))");
 
-            if (!string.IsNullOrEmpty(placa))
-                conditions.Add($"PLACA LIKE '%{placa}%'");
+            if (!string.IsNullOrEmpty(filter.Placa))
+                conditions.Add($"PLACA LIKE '%{filter.Placa}%'");
 
-            if (!string.IsNullOrEmpty(motorista))
-                conditions.Add($"MOTORISTA LIKE '%{motorista}%'");
+            if (!string.IsNullOrEmpty(filter.Motorista))
+                conditions.Add($"MOTORISTA LIKE '%{filter.Motorista}%'");
 
-            if (!string.IsNullOrEmpty(moveType))
-                conditions.Add($"MOVETYPE = '{moveType}'");
+            if (!string.IsNullOrEmpty(filter.MoveType))
+                conditions.Add($"MOVETYPE = '{filter.MoveType}'");
 
-            if (idAgendamento.HasValue)
-                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
+            if (filter.IdAgendamento.HasValue)
+                conditions.Add($"LTVC.ID_AGENDAMENTO = {filter.IdAgendamento.Value}");
 
-            if (!string.IsNullOrEmpty(status))
-                conditions.Add($"LTVC_STATUS = '{status}'");
+            if (!string.IsNullOrEmpty(filter.Status))
+                conditions.Add($"LTVC_STATUS = '{filter.Status}'");
 
-            if (minDelay.HasValue)
-                conditions.Add($"extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400) >= {minDelay.Value}");
+            if (filter.MinDelay.HasValue)
+                conditions.Add($"extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400) >= {filter.MinDelay.Value}");
+
+            if (!string.IsNullOrEmpty(filter.CodigoBarras))
+                conditions.Add($"AGE.CODIGO_BARRAS LIKE '%{filter.CodigoBarras}%'");
+
+            if (!string.IsNullOrEmpty(filter.RequestId))
+                conditions.Add($"LTDB.REQUEST_ID = '{filter.RequestId}'");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
@@ -105,7 +89,7 @@ MainQuery AS (
         NVL(MOTORISTA, 'INVALID_XML') AS MOTORISTA,
         LTDB.XML AS LTDB_XML,
         LTVC.XML AS LTVC_XML,
-        extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT) *86400*1000) / 1000 AS DELAY,
+        extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400*1000) / 1000 AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
         COALESCE(
             TO_CHAR(LTVC_MESSAGE),
@@ -113,23 +97,23 @@ MainQuery AS (
             --TO_CHAR(LTVC.EXCEPTION),
             'MENSAGEM_NAO_ENCONTRADA'
         ) AS MESSAGE_TEXT,
-		(
-          SELECT
-             LISTAGG(NVL(X.container_num, 'UNKNOWN'), ', ')
-                WITHIN GROUP (ORDER BY X.container_seq)
-          FROM
-        XMLTABLE(
-          XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
-          '/ns:LTDB/ns:Chassis/ns:Container'
-					PASSING CASE
-						WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
-						ELSE NULL
-					END
-					COLUMNS
-					container_seq NUMBER PATH '@sequence',
-          container_num VARCHAR2(100) PATH '@number'
-        ) X
-        ) AS CONTAINER_NUMBERS,
+  (
+           SELECT
+              LISTAGG(NVL(X.container_num, 'UNKNOWN'), ', ')
+                 WITHIN GROUP (ORDER BY X.container_seq)
+           FROM
+         XMLTABLE(
+           XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
+           '/ns:LTDB/ns:Chassis/ns:Container'
+      PASSING CASE
+       WHEN LTDB.XML LIKE '<%</LTDB>' THEN XMLTYPE(LTDB.XML)
+       ELSE NULL
+      END
+      COLUMNS
+      container_seq NUMBER PATH '@sequence',
+           container_num VARCHAR2(100) PATH '@number'
+         ) X
+         ) AS CONTAINER_NUMBERS,
         AGE.CODIGO_BARRAS
     FROM
         TCPSGATE.TRACKING LTDB
@@ -151,7 +135,6 @@ MainQuery AS (
             MOTORISTA VARCHAR2(100) PATH 'ns:Driver/ns:ID'
     ) XML_EXTRACT_LTD
         ON 1=1
-
 
     LEFT JOIN XMLTABLE(
         XMLNAMESPACES('http://www.aps-technology.com' AS ""ns""),
@@ -178,72 +161,61 @@ PagedQuery AS (
     SELECT *
     FROM MainQuery
     ORDER BY DATA_LTDB DESC
-    OFFSET {(pageNumber - 1) * pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY
+    OFFSET {(filter.PageNumber - 1) * filter.PageSize} ROWS FETCH NEXT {filter.PageSize} ROWS ONLY
 )
 SELECT q.*, c.TOTAL_COUNT
 FROM PagedQuery q
 CROSS JOIN CountQuery c";
-
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
         public async Task<List<DelayMetric>> GetDelayMetricsAsync(
-            string environment,
-            DateTimeOffset? startDate = null,
-            DateTimeOffset? endDate = null,
-            string? genericText = null,
-            string? placa = null,
-            string? motorista = null,
-            string? moveType = null,
-            long? idAgendamento = null,
-            string? status = null,
+            SggQueryFilter filter,
             CancellationToken cancellationToken = default)
         {
-            var sql = BuildDelayMetricsQuery(startDate, endDate, genericText, placa, motorista, moveType, idAgendamento, status);
+            var sql = BuildDelayMetricsQuery(filter);
 
             var results = await _repo.GetFromSqlAsync<DelayMetric>(
-                environment,
+                filter.Environment,
                 FormattableStringFactory.Create(sql),
                 cancellationToken);
 
             return results;
         }
 
-        private string BuildDelayMetricsQuery(
-            DateTimeOffset? startDate,
-            DateTimeOffset? endDate,
-            string? genericText = null,
-            string? placa = null,
-            string? motorista = null,
-            string? moveType = null,
-            long? idAgendamento = null,
-            string? status = null)
+        private string BuildDelayMetricsQuery(SggQueryFilter filter)
         {
             var conditions = new List<string>();
 
-            if (startDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (filter.StartDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT >= TO_DATE('{filter.StartDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (endDate.HasValue)
-                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+            if (filter.EndDate.HasValue)
+                conditions.Add($"LTDB.CREATED_AT <= TO_DATE('{filter.EndDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
 
-            if (!string.IsNullOrEmpty(genericText))
-                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{genericText}') OR REGEXP_LIKE(LTVC.XML, '{genericText}'))");
+            if (!string.IsNullOrEmpty(filter.GenericText))
+                conditions.Add($"(REGEXP_LIKE(LTDB.XML, '{filter.GenericText}') OR REGEXP_LIKE(LTVC.XML, '{filter.GenericText}'))");
 
-            if (!string.IsNullOrEmpty(placa))
-                conditions.Add($"LTDB.XML LIKE '%{placa}%'");
+            if (!string.IsNullOrEmpty(filter.Placa))
+                conditions.Add($"LTDB.XML LIKE '%{filter.Placa}%'");
 
-            if (!string.IsNullOrEmpty(motorista))
-                conditions.Add($"LTDB.XML LIKE '%{motorista}%'");
+            if (!string.IsNullOrEmpty(filter.Motorista))
+                conditions.Add($"LTDB.XML LIKE '%{filter.Motorista}%'");
 
-            if (!string.IsNullOrEmpty(moveType))
-                conditions.Add($"LTDB.XML LIKE '%{moveType}%'");
+            if (!string.IsNullOrEmpty(filter.MoveType))
+                conditions.Add($"LTDB.XML LIKE '%{filter.MoveType}%'");
 
-            if (idAgendamento.HasValue)
-                conditions.Add($"LTVC.ID_AGENDAMENTO = {idAgendamento.Value}");
+            if (filter.IdAgendamento.HasValue)
+                conditions.Add($"LTVC.ID_AGENDAMENTO = {filter.IdAgendamento.Value}");
 
-            if (!string.IsNullOrEmpty(status))
-                conditions.Add($"LTVC.XML LIKE '%{status}%'");
+            if (!string.IsNullOrEmpty(filter.Status))
+                conditions.Add($"LTVC.XML LIKE '%{filter.Status}%'");
+if (!string.IsNullOrEmpty(filter.CodigoBarras))
+    conditions.Add($"AGE.CODIGO_BARRAS LIKE '%{filter.CodigoBarras}%'");
+
+if (!string.IsNullOrEmpty(filter.RequestId))
+    conditions.Add($"LTDB.REQUEST_ID = '{filter.RequestId}'");
+                conditions.Add($"AGE.CODIGO_BARRAS LIKE '%{filter.CodigoBarras}%'");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
@@ -260,6 +232,8 @@ FROM
 INNER JOIN TCPSGATE.TRACKING LTVC
     ON LTDB.REQUEST_ID = LTVC.REQUEST_ID
     AND LTVC.TYPE = 'LTVC'
+LEFT JOIN TCPAGEND.AGENDAMENTO AGE
+    ON LTVC.ID_AGENDAMENTO = AGE.ID_AGENDAMENTO
 WHERE 1 = 1
     AND LTDB.TYPE = 'LTDB'
     {whereClause}

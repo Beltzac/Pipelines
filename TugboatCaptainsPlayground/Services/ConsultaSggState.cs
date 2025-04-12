@@ -15,6 +15,7 @@ namespace TugboatCaptainsPlayground.Services
         public string MoveType { get; set; }
         public string Status { get; set; }
         public double? MinDelay { get; set; }
+        public string CodigoBarras { get; set; }
         public List<LtdbLtvcRecord> Results { get; set; } = new();
 
         public int TotalCount { get; set; }
