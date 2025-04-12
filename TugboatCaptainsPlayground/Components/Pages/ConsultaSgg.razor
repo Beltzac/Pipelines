@@ -331,6 +331,8 @@
 
     private async Task ClearFilters()
     {
+        ConsultaSggStateService.RequestId = null;  // Added to clear ID de Requisição filter
+        ConsultaSggStateService.CodigoBarras = null;  // Added to clear CODIGO_BARRAS filter
         ConsultaSggStateService.GenericText = null;
         ConsultaSggStateService.Placa = null;
         ConsultaSggStateService.MoveType = null;
