@@ -138,17 +138,17 @@
                     <tr>
                         <td>@(item.DataLtdb?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
                         <td>@(item.DataLtvc?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
-                        <td>@item.RequestId</td>
-                        <td>@item.IdAgendamento</td>
-                        <td>@item.CodigoBarras</td>
-                        <td>@item.MoveType</td>
-                        <td>@item.Placa</td>
+                        <td><span class="badge bg-info" style="cursor: pointer;" @onclick="() => ToggleRequestIdFilter(item.RequestId)">@item.RequestId</span></td>
+                        <td><span class="badge bg-warning text-dark" style="cursor: pointer;" @onclick="() => ToggleSchedulingFilter(item.IdAgendamento)">@item.IdAgendamento</span></td>
+                        <td><span class="badge bg-light text-dark" style="cursor: pointer;" @onclick="() => ToggleBarcodeFilter(item.CodigoBarras)">@item.CodigoBarras</span></td>
+                        <td><span class="badge bg-secondary" style="cursor: pointer;" @onclick="() => ToggleMoveTypeFilter(item.MoveType)">@item.MoveType</span></td>
+                        <td><span class="badge bg-primary" style="cursor: pointer;" @onclick="() => TogglePlateFilter(item.Placa)">@item.Placa</span></td>
                         <td>
-                            <span class="badge @(item.Status == "OK" ? "bg-success" : "bg-danger")">
+                            <span class="badge @(item.Status == "OK" ? "bg-success" : "bg-danger")" style="cursor: pointer;" @onclick="() => ToggleStatusFilter(item.Status)">
                                 @item.Status
                             </span>
                         </td>
-                        <td>@item.ContainerNumbers</td>
+                        <td><span class="badge bg-dark" style="cursor: pointer;" @onclick="() => ToggleContainerFilter(item.ContainerNumbers)">@item.ContainerNumbers</span></td>
                         <td>@(item.Delay?.ToString("F3"))</td>
                         <td>
                             <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
@@ -213,6 +213,50 @@
 
 @code {
     private ConfigModel config;
+
+    private void ToggleRequestIdFilter(string requestId)
+    {
+        ConsultaSggStateService.RequestId = ConsultaSggStateService.RequestId == requestId ? null : requestId;
+        ExecuteQuery(false);
+    }
+
+    private void ToggleMoveTypeFilter(string moveType)
+    {
+        ConsultaSggStateService.MoveType = ConsultaSggStateService.MoveType == moveType ? null : moveType;
+        ExecuteQuery(false);
+    }
+
+    private void TogglePlateFilter(string plate)
+    {
+        ConsultaSggStateService.Placa = ConsultaSggStateService.Placa == plate ? null : plate;
+        ExecuteQuery(false);
+    }
+
+    private void ToggleStatusFilter(string status)
+    {
+        ConsultaSggStateService.Status = ConsultaSggStateService.Status == status ? null : status;
+        ExecuteQuery(false);
+    }
+
+    private void ToggleSchedulingFilter(long? schedulingId)
+    {
+        ConsultaSggStateService.IdAgendamento = ConsultaSggStateService.IdAgendamento == schedulingId ? null : schedulingId;
+        ExecuteQuery(false);
+    }
+
+    private void ToggleBarcodeFilter(string barcode)
+    {
+        // Assuming GenericText is used for barcode filtering
+        ConsultaSggStateService.GenericText = ConsultaSggStateService.GenericText == barcode ? null : barcode;
+        ExecuteQuery(false);
+    }
+
+    private void ToggleContainerFilter(string containerNumbers)
+    {
+        // Assuming GenericText is used for container filtering
+        ConsultaSggStateService.GenericText = ConsultaSggStateService.GenericText == containerNumbers ? null : containerNumbers;
+        ExecuteQuery(false);
+    }
     private CancellationTokenSource cts;
     private bool chartInitialized;
 
