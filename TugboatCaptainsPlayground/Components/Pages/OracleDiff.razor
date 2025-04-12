@@ -120,6 +120,9 @@
     <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.oldName}}', '${sourceEnv}')">
     <i class="bi bi-download"></i> Origem
     </button>
+    <button class="btn btn-sm btn-outline-secondary" onclick="dotNetReference.invokeMethodAsync('CopyDropSQL', '{{file.oldName}}', '${sourceEnv}')">
+    <i class="bi bi-clipboard"></i> Copy Drop SQL
+    </button>
     </div>
     <div class="d2h-code-wrapper">
     <table class="d2h-diff-table">
@@ -133,6 +136,9 @@
     <div class="d-flex justify-content-end mb-2">
     <button class="btn btn-sm btn-outline-primary" onclick="dotNetReference.invokeMethodAsync('ExportViewDDL', '{{file.newName}}', '${targetEnv}')">
     <i class="bi bi-download"></i> Destino
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" onclick="dotNetReference.invokeMethodAsync('CopyDropSQL', '{{file.newName}}', '${targetEnv}')">
+    <i class="bi bi-clipboard"></i> Copy Drop SQL
     </button>
     </div>
     <div class="d2h-code-wrapper">
@@ -239,10 +245,37 @@
             {
                 toastService.ShowError($"View {viewName} not found in {envName}");
             }
+
         }
         catch (Exception ex)
         {
             toastService.ShowError($"Error exporting DDL: {ex.Message}");
+        }
+    }
+
+    [JSInvokable]
+    public async Task CopyDropSQL(string viewName, string envName)
+    {
+        viewName = viewName.Replace(".SQL", "");
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var env = config.OracleEnvironments.FirstOrDefault(e => e.Name == envName);
+            if (env == null)
+            {
+                toastService.ShowError($"Environment {envName} not found");
+                return;
+            }
+
+            var dropSQL = $"DROP VIEW {env.Schema}.{viewName};";
+
+            // Copy to clipboard
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", dropSQL);
+            toastService.ShowSuccess($"Copied DROP SQL for {viewName} in {envName}");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error copying DROP SQL: {ex.Message}");
         }
     }
 

@@ -137,39 +137,37 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Origem</th>
-                    <th>ID</th>
-                    <th>Método</th>
-                    <th>Status HTTP</th>
-                    <th>Status da Resposta</th>
-                    <th>URL / Fluxo</th>
-                    <th>Data de Início</th>
-                    <th>ID do Usuário</th>
-                    <th>Atraso (Segundos)</th>
-                    <th>Ações</th>
+                    <th class="align-middle">Origem</th>
+                    <th class="align-middle">ID</th>
+                    <th class="align-middle">Método</th>
+                    <th class="align-middle">Status HTTP</th>
+                    <th class="align-middle">Status da Resposta</th>
+                    <th class="align-middle">URL / Fluxo</th>
+                    <th class="align-middle">Data de Início</th>
+                    <th class="align-middle">ID do Usuário</th>
+                    <th class="align-middle">Atraso (Segundos)</th>
+                    <th class="align-middle">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in ConsultaEsbStateService.Results)
                 {
                     <tr>
-                        <td>@item.Source</td>
-                        <td>@item.IdExecucao</td>
-                        <td>@item.HttpMethod</td>
-                        <td>
-                            <span class="badge @GetStatusBadgeClass(item.HttpStatusCode)">
+                        <td class="align-middle">@item.Source</td>
+                        <td class="align-middle">@item.IdExecucao</td>
+                        <td class="align-middle">@item.HttpMethod</td>
+                        <td class="align-middle text-center">
+                            <span class="@($"badge {GetStatusBadgeClass(item.HttpStatusCode)} align-middle")">
                                 @item.HttpStatusCode
                             </span>
                         </td>
-                        <td>@(GetResponseStatus(item.Resposta))</td>
-                        <td title="@(item.Url ?? item.NomeFluxo)" style="max-width: 300px; white-space: break-spaces; word-break: break-word;">
-                            @(item.Url ?? item.NomeFluxo)
-                        </td>
-                        <td>@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                        <td>@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</td>
-                        <td>@(item.Duration?.TotalSeconds.ToString("F3"))</td>
-                        <td>
-                            <button class="btn btn-sm btn-info" @onclick="() => ShowDetails(item)">
+                        <td class="align-middle">@(GetResponseStatus(item.Resposta))</td>
+                        <td class="align-middle" title="@(item.Url ?? item.NomeFluxo)" style="max-width: 300px; white-space: break-spaces; word-break: break-word;">@(item.Url ?? item.NomeFluxo)</td>
+                        <td class="align-middle">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="align-middle">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</td>
+                        <td class="align-middle">@(item.Duration?.TotalSeconds.ToString("F3"))</td>
+                        <td class="align-middle text-center">
+                            <button class="btn btn-sm btn-info align-middle" @onclick="() => ShowDetails(item)">
                                 Detalhes
                             </button>
                         </td>
