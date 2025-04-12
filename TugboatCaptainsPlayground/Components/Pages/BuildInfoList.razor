@@ -127,7 +127,7 @@
                         </div>
 
                         <div class="d-flex flex-wrap gap-1">
-                            <span class="badge bg-secondary clickable-badge" @onclick="async () => await OpenClickAsync(buildInfo)">@buildInfo.ProjectType.Humanize().Transform(To.LowerCase, To.TitleCase)</span>
+                            <span class="badge bg-primary clickable-badge" @onclick="async () => await OpenClickAsync(buildInfo)">@buildInfo.ProjectType.Humanize().Transform(To.LowerCase, To.TitleCase)</span>
                             @if (!buildInfo.MasterClonned)
                             {
                                 <span class="badge bg-danger clickable-badge" @onclick="async () => await CloneRepoAsync(buildInfo)">Não Clonado</span>
@@ -136,14 +136,14 @@
                             {
                                 @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
                                 {
-                                    <span class="badge bg-secondary clickable-badge" @onclick="() => OpenJiraCard(jiraCard)">@jiraCard</span>
+                                    <span class="badge bg-success clickable-badge" @onclick="() => OpenJiraCard(jiraCard)">@jiraCard</span>
                                 }
 
                                 @foreach (var prNumber in ExtractPrNumbers(buildInfo.Pipeline.Last.Commit.CommitMessage))
                                 {
                                     @if (!string.IsNullOrEmpty(buildInfo.Project) && !string.IsNullOrEmpty(buildInfo.Name))
                                     {
-                                        <span class="badge bg-info clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR @prNumber</span>
+                                        <span class="badge bg-warning clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR @prNumber</span>
                                     }
                                 }
                             }
@@ -164,6 +164,10 @@
 <style>
     .btn .bi {
         margin-right: 0;
+    }
+
+    .clickable-badge {
+        cursor: pointer;
     }
 </style>
 

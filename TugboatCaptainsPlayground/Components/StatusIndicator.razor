@@ -1,4 +1,6 @@
-﻿@code {
+﻿@using Microsoft.AspNetCore.Components
+
+@code {
     [Parameter]
     public Status CurrentStatus { get; set; }
 
@@ -20,10 +22,23 @@
         Status.None => "Inativo",
         _ => status.ToString()
     };
+
+    private string GetSvgIcon(Status status)
+    {
+        return status switch
+        {
+            Status.Working => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='yellow' /></svg>",
+            Status.Error => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z' fill='red' /></svg>",
+            Status.Success => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' fill='green' /></svg>",
+            Status.Unknown => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='purple' /></svg>",
+            Status.None => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><rect width='24' height='24' fill='gray' /></svg>",
+            _ => "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='gray' /></svg>"
+        };
+    }
 }
 
 <div class="status-indicator @(CurrentStatus.ToString().ToLower())">
-    <div class="indicator-icon"></div>
+    @((MarkupString)GetSvgIcon(CurrentStatus))
     <div class="indicator-text">@GetStatusText(CurrentStatus)</div>
 </div>
 
@@ -34,93 +49,45 @@
         align-items: center;
         justify-content: center;
         position: relative;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: 'Arial, sans-serif';
         text-transform: uppercase;
-        color: #fff;
+        color: #333;
         font-size: 0.8rem;
         text-align: center;
-        transition: background 0.5s ease-in-out, transform 0.5s ease-in-out;
+        transition: all 0.3s ease;
         cursor: pointer;
         height: 100%;
         margin: 0 auto;
     }
 
-    .indicator-icon {
+    .status-indicator svg {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
+        transition: transform 0.3s ease;
     }
 
-    .working .indicator-icon {
-        background: #ffff00;
-        animation: bounce 300ms alternate infinite cubic-bezier(.2, .65, .6, 1);
+    .status-indicator:hover svg {
+        transform: scale(1.1);
     }
 
-    .error .indicator-icon {
-        background: linear-gradient(45deg, #ff4d4d, #cc0000);
-        animation: flash 700ms infinite ease-in-out;
+    .working .status-indicator svg {
+        animation: pulse 1s infinite;
     }
 
-    .success .indicator-icon {
-        background: linear-gradient(45deg, #00ff00, #006600);
-        animation: none;
+    .error .status-indicator svg {
+        animation: shake 0.5s infinite;
     }
 
-    .unknown .indicator-icon {
-        background: linear-gradient(45deg, #800080, #9932CC);
+    .success .status-indicator svg {
+        animation: fadeIn 1s;
+    }
+
+    .unknown .status-indicator svg {
         animation: spin 2s infinite linear;
     }
 
-    /* Implementing the 'None' status */
-    .none .indicator-icon {
-        background: #cccccc; /* Gray color to indicate 'None' */
-        animation: none;
-    }
-
-    @@keyframes bounce {
-        from {
-            transform: translateY(0px);
-        }
-        to {
-            transform: translateY(-10px);
-        }
-    }
-
-    @@keyframes pulse {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.2);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    @@keyframes flash {
-        0% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.3;
-        }
-        100% {
-            opacity: 1;
-        }
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-
-    .status-indicator:hover .indicator-text {
-        display: block;
+    .none .status-indicator svg {
+        opacity: 0.5;
     }
 
     .indicator-text {
@@ -135,5 +102,46 @@
         white-space: nowrap;
         color: #fff;
         z-index: 1;
+        font-size: 0.7rem;
+    }
+
+    .status-indicator:hover .indicator-text {
+        display: block;
+    }
+
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @@keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @@media (max-width: 768px) {
+        .status-indicator {
+            font-size: 0.6rem;
+            height: 80%;
+        }
+
+        .status-indicator svg {
+            width: 20px;
+            height: 20px;
+        }
     }
 </style>
