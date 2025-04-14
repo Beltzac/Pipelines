@@ -216,7 +216,16 @@ namespace Common.Repositories.Interno
                 .HasConversion(x => x.HasValue ? x.Value.Buffer.ToArray() : null, x => x != null ? new EmbeddingF32(x) : null);
 
             builder.Property(r => r.ProjectNames)
-                .HasConversion(x => string.Join(',', x), x => x.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList());
+                .HasConversion(
+                    x => string.Join(',', x),
+                    x => x.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(
+                    new Microsoft.EntityFrameworkCore.ChangeTracking.ValueComparer<List<string>>(
+                        (c1, c2) => c1.SequenceEqual(c2),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()
+                    )
+                );
         }
     }
 

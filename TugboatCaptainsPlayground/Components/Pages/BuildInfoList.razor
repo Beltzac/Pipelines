@@ -38,6 +38,7 @@
         else
         {
             <Item OnClick="@OpenClickAsync">Abrir</Item>
+            <Item OnClick="@OpenInVSCodeClickAsync">Abrir no VS Code</Item>
         }
 
         if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
@@ -487,5 +488,12 @@
             toastService.ShowSuccess($"Opening PR #{prNumber}!");
         }
     }
+
+    private async Task OpenInVSCodeClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        BuildInfoService.OpenRepoInVsCode(repo);
+    }
+
 }
 

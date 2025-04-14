@@ -440,6 +440,13 @@ namespace Common.Services
             OpenFolderUtils.OpenWithVSCode(_logger, _configService, _localCloneFolder, true);
         }
 
+        public void OpenRepoInVsCode(Repository repo)
+        {
+            // Determine the local path for the repository
+            var localPath = Path.Combine(_localCloneFolder, repo.Project, repo.Name);
+            OpenFolderUtils.OpenWithVSCode(_logger, _configService, localPath);
+        }
+
         private async Task UpsertAndPublish(Repository buildInfo, bool notify = true)
         {
             await _repositoryDatabase.UpsertAsync(buildInfo);
