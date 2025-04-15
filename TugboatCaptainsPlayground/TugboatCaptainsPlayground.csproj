@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -91,7 +91,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="9.0.4" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Photino.NET" Version="4.0.16" />
     <PackageReference Include="Quartz" Version="3.14.0" />
