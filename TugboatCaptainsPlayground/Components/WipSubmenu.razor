@@ -1,3 +1,50 @@
+<style>
+    /* Style header like a nav-link */
+    .submenu-header {
+        color: #d7d7d7;
+        background: none;
+        border: none;
+        border-radius: 4px; /* Match nav-link */
+        height: 3rem;      /* Match nav-link */
+        display: flex;
+        align-items: center;
+        line-height: 3rem; /* Match nav-link */
+        width: 100%;
+        padding: 0 0.75rem; /* Adjust padding to align text like nav-link (px-3 is 1rem, but icon takes space) */
+        cursor: pointer;
+        font-size: 0.9rem; /* Match nav-item */
+    }
+
+    .submenu-header:hover {
+        background-color: rgba(255,255,255,0.1); /* Match nav-link:hover */
+        color: white; /* Match nav-link:hover */
+    }
+
+    /* Style icon like nav-link icons */
+    .submenu-header .bi {
+        display: inline-block; /* Match nav-link .bi */
+        position: relative;    /* Match nav-link .bi */
+        margin-right: 0.75rem; /* Match nav-link .bi */
+        transition: transform 0.2s ease-in-out;
+        width: 1em; /* Ensure consistent width */
+        text-align: center; /* Center icon */
+    }
+
+    .submenu-title {
+        /* font-weight: bold; /* Keep or remove bold? Keeping for now */
+        flex-grow: 1; /* Allow title to take remaining space */
+    }
+
+    /* Style the container for child NavLinks */
+    .submenu-items {
+        /* Indent items visually under the header icon/text */
+        padding-left: 1em; /* header padding-left + icon width + icon margin-right */
+        /* Remove previous background/border */
+        background-color: transparent;
+        border: none;
+    }
+</style>
+
 <div class="submenu @(IsExpanded ? "expanded" : "collapsed")">
     <div class="submenu-header" @onclick="ToggleExpand">
         <span class="bi @(IsExpanded ? "bi-chevron-down" : "bi-chevron-right")" aria-hidden="true"></span>

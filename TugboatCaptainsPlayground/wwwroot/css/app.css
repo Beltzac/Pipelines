@@ -157,30 +157,3 @@ span.unchanged {
 .search-results .card-header small {
     margin-left: 0.5rem;
 }
-
-/* WIP Submenu Styles */
-.submenu {
-    margin-left: 0.5rem;
-}
-
-.submenu-header {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.25rem 0;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.submenu-title {
-    margin-left: 0.5rem;
-    font-weight: bold;
-}
-
-.submenu-items {
-    margin-left: 1rem;
-}
-
-.submenu-items .nav-link {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-}
