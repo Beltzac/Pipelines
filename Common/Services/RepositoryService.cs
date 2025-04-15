@@ -270,6 +270,7 @@ namespace Common.Services
                 Project = projectName,
                 Name = repo.Name,
                 MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, projectName, repo.Name)),
+                CurrentBranch = GetCurrentBranch(localPath),
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
                 Pipeline = buildDefinition != null ? new Pipeline { Id = buildDefinition.Id } : null,
@@ -392,6 +393,7 @@ namespace Common.Services
             {
                 _logger.LogInformation($"Repository {buildInfo.Name} already cloned to {localPath}");
                 buildInfo.MasterClonned = true;
+                buildInfo.CurrentBranch = GetCurrentBranch(localPath);
                 await UpsertAndPublish(buildInfo, false);
                 return;
             }
@@ -410,6 +412,7 @@ namespace Common.Services
                 LibGit2Sharp.Repository.Clone(buildInfo.CloneUrl, localPath, cloneOptions);
 
                 buildInfo.MasterClonned = true;
+                buildInfo.CurrentBranch = GetCurrentBranch(localPath);
                 await UpsertAndPublish(buildInfo, false);
 
                 _logger.LogInformation($"Repository {buildInfo.Name} cloned to {localPath}");
@@ -541,6 +544,20 @@ namespace Common.Services
         {
             var config = _configService.GetConfig();
             return config.PinnedRepositories.Contains(repo.Id);
+        }
+
+        private string GetCurrentBranch(string repoPath)
+        {
+            try
+            {
+                using var repo = new LibGit2Sharp.Repository(repoPath);
+                return repo.Head.FriendlyName;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting current branch for repository at {repoPath}");
+                return string.Empty;
+            }
         }
     }
 }

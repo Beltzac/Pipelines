@@ -204,6 +204,10 @@ namespace Common.Repositories.Interno
             builder.Property(r => r.MasterClonned)
                    .IsRequired();
 
+            builder.Property(r => r.CurrentBranch)
+                   .HasMaxLength(100)
+                   .IsRequired(false);
+
             builder.Ignore(r => r.Path);
 
             builder.HasOne(r => r.Pipeline)

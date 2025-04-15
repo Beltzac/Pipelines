@@ -134,6 +134,10 @@
                             {
                                 <span class="badge bg-danger clickable-badge" @onclick="async () => await CloneRepoAsync(buildInfo)">Não Clonado</span>
                             }
+                            @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
+                            {
+                                <span class="badge bg-info clickable-badge">@buildInfo.CurrentBranch</span>
+                            }
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
                             {
                                 @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
