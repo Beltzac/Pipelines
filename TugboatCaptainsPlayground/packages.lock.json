@@ -14,11 +14,10 @@
       },
       "BlazorDateRangePicker": {
         "type": "Direct",
-        "requested": "[5.4.0, )",
-        "resolved": "5.4.0",
-        "contentHash": "L87K2mnTrZfoFa1BUJNLkMZXlIk+7KLjii6Xmlt8NGwCM9qKwlO3sxasRCcLRpA0moT4nqhWbSZEbxOxzCTepA==",
+        "requested": "[6.1.0, )",
+        "resolved": "6.1.0",
+        "contentHash": "AfmD5ZWF/IQfos8CBSoX/l9IlTq6b2+5C53ltP/2hLdHKJsIacoEAETkRYkBnpAdOcns0Sc3ixYzZJicbuVVRQ==",
         "dependencies": {
-          "Microsoft.AspNetCore.Components": "9.0.0",
           "Microsoft.AspNetCore.Components.Web": "9.0.0"
         }
       },
