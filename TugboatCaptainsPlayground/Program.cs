@@ -157,40 +157,53 @@ internal class Program
 
         Console.WriteLine($"App running on {AppContext.BaseDirectory}");
 
-     
-        app.UseStaticFiles();
+
+        // app.UseStaticFiles();
 
 
 
         // https://github.com/dotnet/aspnetcore/issues/50894
 
+        var providers = new List<IFileProvider>();
 
-
-        var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "TugboatCaptainsPlayground.wwwroot");
-        if (embeddedFileProvider.GetDirectoryContents("/").Any())
+        // If there is a physical wwwroot folder
+        if (Directory.Exists("wwwroot"))
         {
-            // Serve the wwwroot files from embedded resources (see tricks in the csproj for embedding static assets instead of having a wwwroot directory on disk when publishing)
-            app.Environment.WebRootFileProvider = embeddedFileProvider;
+            providers.Add(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
         }
 
+        providers.Add(new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "wwwroot"));
+        providers.Add(new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "TugboatCaptainsPlayground.wwwroot"));
 
-        var embeddedProvider2 = new EmbeddedFileProvider(
-            Assembly.GetExecutingAssembly(), // your project's assembly
-            "wwwroot" // this must match your LogicalName prefix
-        );
+        app.Environment.WebRootFileProvider = new CompositeFileProvider(providers);
+        app.UseStaticFiles();
 
-        //var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "TugboatCaptainsPlayground.wwwroot");
 
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = embeddedProvider2,
-            RequestPath = ""
-        });
+        //var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "TugboatCaptainsPlayground.wwwroot");
+        //if (embeddedFileProvider.GetDirectoryContents("/").Any())
+        //{
+        //    // Serve the wwwroot files from embedded resources (see tricks in the csproj for embedding static assets instead of having a wwwroot directory on disk when publishing)
+        //    app.Environment.WebRootFileProvider = embeddedFileProvider;
+        //}
 
-        foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
-        {
-            Console.WriteLine(name);
-        }
+
+        //var embeddedProvider2 = new EmbeddedFileProvider(
+        //    Assembly.GetExecutingAssembly(), // your project's assembly
+        //    "wwwroot" // this must match your LogicalName prefix
+        //);
+
+        ////var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "TugboatCaptainsPlayground.wwwroot");
+
+        //app.UseStaticFiles(new StaticFileOptions
+        //{
+        //    FileProvider = embeddedProvider2,
+        //    RequestPath = ""
+        //});
+
+        //foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
+        //{
+        //    Console.WriteLine(name);
+        //}
 
 
         app.UseAntiforgery();
