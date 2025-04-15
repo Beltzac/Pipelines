@@ -166,7 +166,7 @@ internal class Program
 
 
 
-        var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "wwwroot");
+        var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "TugboatCaptainsPlayground.wwwroot");
         if (embeddedFileProvider.GetDirectoryContents("/").Any())
         {
             // Serve the wwwroot files from embedded resources (see tricks in the csproj for embedding static assets instead of having a wwwroot directory on disk when publishing)
@@ -178,6 +178,8 @@ internal class Program
             Assembly.GetExecutingAssembly(), // your project's assembly
             "wwwroot" // this must match your LogicalName prefix
         );
+
+        //var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "TugboatCaptainsPlayground.wwwroot");
 
         app.UseStaticFiles(new StaticFileOptions
         {

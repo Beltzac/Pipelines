@@ -131,22 +131,22 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <PropertyGroup>
-    <!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. -->
+  <!--<PropertyGroup>
+    --><!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. --><!--
     <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
     <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
     <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
-  </PropertyGroup>
+  </PropertyGroup>-->
 
   <!-- Force the above properties right before .NET does its static web asset computations. -->
-  <Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
+  <!--<Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
     <Message Text="Forcing all fingerprinting properties to 'false' right before ComputeStaticWebAssets." Importance="High" />
     <PropertyGroup>
       <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
       <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
       <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
     </PropertyGroup>
-  </Target>
+  </Target>-->
   <!-- Exclude Blazored.Toast bundle scp.css from fingerprinting/copied -->
   <ItemGroup>
     <Content Remove="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css" />
