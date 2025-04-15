@@ -34,6 +34,8 @@ namespace Common.Services
         private readonly IConfigurationService _configService;
         private readonly LocalEmbedder _embedder;
 
+        public string GetLocalCloneFolder() => _localCloneFolder;
+
         public RepositoryService(
             ILogger<RepositoryService> logger,
             IConfigurationService configService,
@@ -130,7 +132,7 @@ namespace Common.Services
                 _logger.LogError(ex, $"Erro ao buscar repositório git {repoId}");
             }
 
-            if(repo == null)
+            if (repo == null)
             {
                 return null;
             }
@@ -557,6 +559,63 @@ namespace Common.Services
             {
                 _logger.LogError(ex, $"Error getting current branch for repository at {repoPath}");
                 return string.Empty;
+            }
+        }
+
+        public async Task<List<string>> GetRemoteBranches(string repoPath)
+        {
+            try
+            {
+                using var repo = new LibGit2Sharp.Repository(repoPath);
+                return repo.Branches
+                    .Where(b => b.IsRemote)
+                    .Select(b => b.FriendlyName.Replace("origin/", ""))
+                    .Distinct()
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting remote branches for repository at {repoPath}");
+                return new List<string>();
+            }
+        }
+
+        public async Task<bool> CheckoutBranch(Repository buildInfo, string branchName)
+        {
+            var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
+
+            try
+            {
+                using var repo = new LibGit2Sharp.Repository(localPath);
+
+                // Fetch latest from remote
+                var remote = repo.Network.Remotes["origin"];
+                var refSpecs = remote.FetchRefSpecs.Select(x => x.Specification);
+                Commands.Fetch(repo, remote.Name, refSpecs, null, null);
+
+                // Checkout the branch
+                var branch = repo.Branches[$"origin/{branchName}"] ??
+                            repo.Branches[branchName];
+
+                if (branch == null)
+                {
+                    _logger.LogError($"Branch {branchName} not found in repository {buildInfo.Name}");
+                    return false;
+                }
+
+                var localBranch = repo.Branches[branchName] ??
+                                repo.CreateBranch(branchName, branch.Tip);
+
+                Commands.Checkout(repo, localBranch);
+                buildInfo.CurrentBranch = branchName;
+                await UpsertAndPublish(buildInfo);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error checking out branch {branchName} in repository {buildInfo.Name}");
+                return false;
             }
         }
     }

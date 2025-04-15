@@ -2,6 +2,15 @@
 {
     public class ConfigModel
     {
+        /// <summary>
+        /// Minimum time (in seconds) between repository updates.
+        /// </summary>
+        public int MinUpdateTime { get; set; } = 180; // 3 minutes
+
+        /// <summary>
+        /// Maximum time (in seconds) between repository updates.
+        /// </summary>
+        public int MaxUpdateTime { get; set; } = 14400; // 4 hours
         public bool IsDarkMode { get; set; }
         public string PAT { get; set; }
         public string OrganizationUrl { get; set; }

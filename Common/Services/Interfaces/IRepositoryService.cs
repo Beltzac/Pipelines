@@ -25,5 +25,8 @@ namespace Common.Services.Interfaces
         Task UpdateRepositoryAsync(Repository repository);
         Task TogglePin(Repository repo);
         bool IsPinned(Repository repo);
+        string GetLocalCloneFolder();
+        Task<List<string>> GetRemoteBranches(string repoPath);
+        Task<bool> CheckoutBranch(Repository buildInfo, string branchName);
     }
 }

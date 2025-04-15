@@ -93,6 +93,18 @@
                             <InputText id="vscodePath" @bind-Value="config.VSCodePath" class="form-control" />
                             <ValidationMessage For="@(() => config.VSCodePath)" />
                         </div>
+
+                        <div class="mb-3">
+                            <label for="minUpdateTime" class="form-label">Tempo Mínimo Entre Atualizações (segundos)</label>
+                            <InputNumber id="minUpdateTime" @bind-Value="config.MinUpdateTime" class="form-control" />
+                            <ValidationMessage For="@(() => config.MinUpdateTime)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="maxUpdateTime" class="form-label">Tempo Máximo Entre Atualizações (segundos)</label>
+                            <InputNumber id="maxUpdateTime" @bind-Value="config.MaxUpdateTime" class="form-control" />
+                            <ValidationMessage For="@(() => config.MaxUpdateTime)" />
+                        </div>
                     </div>
                 </div>
 
@@ -330,6 +342,8 @@
     protected override void OnInitialized()
     {
         config = ConfigService.GetConfig();
+        Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
+        Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
     }
 
     private string? selectedConsulEnv;
@@ -433,6 +447,9 @@
 
             await AfterSaveAsync();
 
+            Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
+            Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
+
             ToastService.ShowSuccess("Configuração importada com sucesso");
         }
         catch (ArgumentException ex)
@@ -486,6 +503,9 @@
 
     private async Task AfterSaveAsync()
     {
+        Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
+        Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
+
         if (!string.IsNullOrEmpty(config.PAT))
         {
             var scheduler = await SchedulerFactory.GetScheduler();

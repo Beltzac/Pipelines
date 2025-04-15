@@ -136,7 +136,39 @@
                             }
                             @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
                             {
-                                <span class="badge bg-info clickable-badge">@buildInfo.CurrentBranch</span>
+                                <span class="badge bg-info clickable-badge" @onclick="async () => await HandleBranchClick(buildInfo)">@buildInfo.CurrentBranch</span>
+                            }
+
+                            @if (showBranchDialog && currentBranchRepo?.Id == buildInfo.Id)
+                            {
+                                <div class="modal-backdrop" @onclick="HandleBackdropClick" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; background-color: transparent;"></div>
+                                <div class="branch-dialog position-absolute bg-white p-3 shadow rounded"
+                                    style="z-index: 1000; width: 400px; top: 30px; left: 0;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6>Switch Branch</h6>
+                                        <button class="btn btn-sm btn-close" @onclick="CloseBranchDialog"></button>
+                                    </div>
+                                    @if (loadingBranches)
+                                    {
+                                        <div class="text-center py-3">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var branch in remoteBranches)
+                                            {
+                                                <button class="list-group-item list-group-item-action @(branch == currentBranchRepo.CurrentBranch ? "active" : "")"
+                                                    @onclick="async () => await CheckoutBranch(branch)">
+                                                    @branch
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             }
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
                             {
@@ -461,9 +493,51 @@
         StateHasChanged();
     }
 
+    private bool showBranchDialog = false;
+    private string[] remoteBranches = Array.Empty<string>();
+    private Repository currentBranchRepo;
+    private bool loadingBranches = false;
+
+    private async Task HandleBranchClick(Repository repo)
+    {
+        if (!repo.MasterClonned) return;
+
+        loadingBranches = true;
+        currentBranchRepo = repo;
+        remoteBranches = (await BuildInfoService.GetRemoteBranches(
+            Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name)))
+            .ToArray();
+        showBranchDialog = true;
+        loadingBranches = false;
+        StateHasChanged();
+    }
+
+    private async Task CheckoutBranch(string branchName)
+    {
+        showBranchDialog = false;
+        toastService.ShowInfo($"Checking out branch {branchName}...");
+
+        var success = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
+        if (success)
+        {
+            toastService.ShowSuccess($"Switched to branch {branchName}");
+            await ReloadById(currentBranchRepo.Id);
+        }
+        else
+        {
+            toastService.ShowError($"Failed to checkout branch {branchName}");
+        }
+    }
+
+    private void CloseBranchDialog()
+    {
+        showBranchDialog = false;
+    }
+
     private void HandleBackdropClick()
     {
         CloseModal();
+        CloseBranchDialog();
     }
 
     private string GetNextRunTime(Guid repositoryId)
