@@ -42,23 +42,6 @@
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
-  <!--<PropertyGroup>
-  -->  <!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. -->  <!--
-  <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
-  <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
-  <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
-</PropertyGroup>-->
-
-  <!-- Force the above properties right before .NET does its static web asset computations. -->
-  <!--<Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
-  <Message Text="Forcing all fingerprinting properties to 'false' right before ComputeStaticWebAssets." Importance="High" />
-  <PropertyGroup>
-    <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
-    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
-    <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
-  </PropertyGroup>
-</Target>-->
-
   <ItemGroup>
     <!-- Example: we do not copy appsettings*.json by default. -->
     <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
@@ -131,26 +114,10 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <!--<PropertyGroup>
-    --><!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. --><!--
-    <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
-    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
-    <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
-  </PropertyGroup>-->
-
-  <!-- Force the above properties right before .NET does its static web asset computations. -->
-  <!--<Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
-    <Message Text="Forcing all fingerprinting properties to 'false' right before ComputeStaticWebAssets." Importance="High" />
-    <PropertyGroup>
-      <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
-      <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
-      <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
-    </PropertyGroup>
-  </Target>-->
   <!-- Exclude Blazored.Toast bundle scp.css from fingerprinting/copied -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css" />
+    <Content Remove="\**\Blazored.Toast.bundle.scp.css" />
+    <StaticWebAsset Remove="\**\Blazored.Toast.bundle.scp.css" />
   </ItemGroup>
 
   <!-- Manually embed it once with fixed LogicalName -->
@@ -165,8 +132,8 @@
 
   <!-- Exclude Blazor.ContextMenu CSS from fingerprinting/copied -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css" />
+    <Content Remove="\**\blazorContextMenu.css" />
+    <StaticWebAsset Remove="\**\blazorContextMenu.css" />
   </ItemGroup>
 
   <!-- Manually embed Blazor.ContextMenu CSS with fixed LogicalName -->
@@ -180,8 +147,8 @@
 
   <!-- Exclude Blazor.ContextMenu JS from fingerprinting/copied -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js" />
+    <Content Remove="\**\blazorContextMenu.js" />
+    <StaticWebAsset Remove="\**\blazorContextMenu.js" />
   </ItemGroup>
 
   <!-- Manually embed Blazor.ContextMenu JS with fixed LogicalName -->
@@ -195,8 +162,8 @@
 
   <!-- Exclude Blazor.ContextMenu minified CSS from fingerprinting/copied -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css" />
+    <Content Remove="\**\blazorContextMenu.min.css" />
+    <StaticWebAsset Remove="\**\blazorContextMenu.min.css" />
   </ItemGroup>
 
   <!-- Manually embed Blazor.ContextMenu minified CSS with fixed LogicalName -->
@@ -210,8 +177,8 @@
 
   <!-- Exclude Blazor.ContextMenu minified JS from fingerprinting/copied -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js" />
+    <Content Remove="\**\blazorContextMenu.min.js" />
+    <StaticWebAsset Remove="\**\blazorContextMenu.min.js" />
   </ItemGroup>
 
   <!-- Manually embed Blazor.ContextMenu minified JS with fixed LogicalName -->
@@ -225,8 +192,8 @@
 
   <!-- Exclude Blazored.Typeahead CSS from fingerprinting -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css" />
+    <Content Remove="\**\blazored-typeahead.css" />
+    <StaticWebAsset Remove="\**\blazored-typeahead.css" />
   </ItemGroup>
 
   <!-- Manually embed Blazored.Typeahead CSS with fixed LogicalName -->
@@ -240,8 +207,8 @@
 
   <!-- Exclude Blazored.Typeahead JS from fingerprinting -->
   <ItemGroup>
-    <Content Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js" />
-    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js" />
+    <Content Remove="\**\blazored-typeahead.js" />
+    <StaticWebAsset Remove="\**\blazored-typeahead.js" />
   </ItemGroup>
 
   <!-- Manually embed Blazored.Typeahead JS with fixed LogicalName -->
