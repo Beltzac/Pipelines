@@ -9,97 +9,69 @@
     <PublishTrimmed>False</PublishTrimmed>
     <PublishAot>False</PublishAot>
     <Platforms>AnyCPU;x64</Platforms>
-    <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
-    <!--<CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/generated</CompilerGeneratedFilesOutputPath>-->
-    <!--<CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\SourceGeneratorFiles</CompilerGeneratedFilesOutputPath>-->
 
+    <!-- Bundle .NET runtime -->
+    <SelfContained>true</SelfContained>
+    <!--<SelfContained>false</SelfContained>-->
 
+    <!-- Bundle all dependencies into a single executable -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 
+    <!-- Include debug symbols into the single-file -->
+    <DebugType>embedded</DebugType>
 
-	  <!-- Bundle .NET runtime -->
-	  <SelfContained>true</SelfContained>
-	  <!--<SelfContained>false</SelfContained>-->
+    <!-- Generate an embedded files manifest -->
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 
-	  <!-- Bundle all dependencies into a single executable -->
-	  <PublishSingleFile>true</PublishSingleFile>
-	  <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <!-- Turn off these warnings -->
+    <NoWarn>SPELL,NU1902,NU1903,TA100</NoWarn>
 
-	  <!-- Enable compression for the single executable -->
-	  <!--<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>-->
-
-	  <!--
-    Disable default content for better control of which files are bundled.
-    See https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#default-content-in-single-file-bundles
-    -->
-	  <!--<EnableDefaultContent>false</EnableDefaultContent>
-	  <EnableDefaultContentItems>false</EnableDefaultContentItems>-->
-
-	  <!-- Include debug symbols into the executable -->
-	  <DebugType>embedded</DebugType>
-
-	  <!--<ScopedCssEnabled>false</ScopedCssEnabled>-->
-
-	  <!--<DefaultItemExcludes>wwwroot\**</DefaultItemExcludes>-->
-
-	  <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
-
-	  <NoWarn>SPELL,NU1902,NU1903,TA100</NoWarn>
-
-
-	  <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
+    <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
   </PropertyGroup>
 
   <PropertyGroup>
     <EmbedAllSources>true</EmbedAllSources>
   </PropertyGroup>
 
-	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-		<OutputType>Exe</OutputType>
-	</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
 
-	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-		<OutputType>WinExe</OutputType>
-	</PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputType>WinExe</OutputType>
+  </PropertyGroup>
 
-  <!--<ItemGroup>
-    <Compile Remove="wwwroot\**" />
-    <Content Remove="wwwroot\**" />
-    <EmbeddedResource Remove="wwwroot\**" />
-    <None Remove="wwwroot\**" />
-  </ItemGroup>-->
+  <!--<PropertyGroup>
+  -->  <!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. -->  <!--
+  <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
+  <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
+  <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
+</PropertyGroup>-->
 
-	<ItemGroup>
-		<!--<Content Remove="wwwroot\**" />-->
-		<!--<Content Update="wwwroot\**" CopyToPublishDirectory="Never" />-->
-		<EmbeddedResource Include="wwwroot\**" LogicalName="wwwroot.%(RecursiveDir)%(Filename)%(Extension)" />
-	</ItemGroup>
+  <!-- Force the above properties right before .NET does its static web asset computations. -->
+  <!--<Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
+  <Message Text="Forcing all fingerprinting properties to 'false' right before ComputeStaticWebAssets." Importance="High" />
+  <PropertyGroup>
+    <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
+    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
+    <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
+  </PropertyGroup>
+</Target>-->
 
-	<ItemGroup>
-        <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
-    </ItemGroup>
-
-	<!--<ItemGroup>
-		<None Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
-	</ItemGroup>-->
-
-<!-- <PropertyGroup>
-	<LocalEmbeddingsModelUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx</LocalEmbeddingsModelUrl>
-	<LocalEmbeddingsVocabUrl>https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/vocab.txt</LocalEmbeddingsVocabUrl>
-</PropertyGroup> -->
-
-	<!--<Target Name="EmbedScopedCss" BeforeTargets="ResolveAssemblyReferences" DependsOnTargets="BundleScopedCssFiles">
-		<ItemGroup>
-			<EmbeddedResource Include="$(IntermediateOutputPath)wwwroot\$(AssemblyName).styles.css" LogicalName="$(AssemblyName).styles.css" />
-		</ItemGroup>
-	</Target>-->
+  <ItemGroup>
+    <!-- Example: we do not copy appsettings*.json by default. -->
+    <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\app.ico" />
   </ItemGroup>
+
+  <!-- Packages -->
   <ItemGroup>
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
     <PackageReference Include="BlazorDateRangePicker" Version="5.4.0" />
-    <PackageReference Include="Blazored.Toast" Version="4.2.1" />
     <PackageReference Include="Blazored.Typeahead" Version="4.7.0" />
     <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
@@ -138,10 +110,12 @@
     <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.1" />
     <PackageReference Include="Vanara.Windows.Shell" Version="4.1.1" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Generation\Generation.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Update="Resource.Designer.cs">
       <DependentUpon>Resource.resx</DependentUpon>
@@ -150,43 +124,278 @@
     </Compile>
   </ItemGroup>
 
-
-	<!--<ItemGroup>
-		<Content Include="wwwroot/**" CopyToOutputDirectory="PreserveNewest" />
-	</ItemGroup>-->
-	<!--<ItemGroup>
-		<Content Update="wwwroot\css\app.css">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</Content>
-		<Content Update="wwwroot\bootstrap\bootstrap.min.css">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-		<Content Update="wwwroot\favicon.ico">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</Content>
-
-
-	</ItemGroup>-->
   <ItemGroup>
     <EmbeddedResource Update="Resource.resx">
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
-  <!--<ItemGroup>
-    <None Update="Assets\app.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Assets\electron_32x32.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Properties\launchSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Turn off fingerprinting by default. Sometimes overridden later by the .NET 9 SDK. -->
+    <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
+    <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
+    <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
+  </PropertyGroup>
+
+  <!-- Force the above properties right before .NET does its static web asset computations. -->
+  <Target Name="ForceDisableFingerprinting" BeforeTargets="ComputeStaticWebAssets">
+    <Message Text="Forcing all fingerprinting properties to 'false' right before ComputeStaticWebAssets." Importance="High" />
+    <PropertyGroup>
+      <StaticWebAssetFingerprintingEnabled>false</StaticWebAssetFingerprintingEnabled>
+      <StaticWebAssetsFingerprintContent>false</StaticWebAssetsFingerprintContent>
+      <DisableStaticWebAssetFingerprinting>true</DisableStaticWebAssetFingerprinting>
+    </PropertyGroup>
+  </Target>
+  <!-- Exclude Blazored.Toast bundle scp.css from fingerprinting/copied -->
   <ItemGroup>
-    <Content Update="electron.manifest.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>-->
+    <Content Remove="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css" />
+  </ItemGroup>
+
+  <!-- Manually embed it once with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css">
+      <!-- Change slashes to dots -->
+      <LogicalName>wwwroot._content.Blazored.Toast.Blazored.Toast.bundle.scp.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu CSS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu JS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu minified CSS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu minified CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.min.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu minified JS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu minified JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.min.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazored.Typeahead CSS from fingerprinting -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazored.Typeahead CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css">
+      <LogicalName>wwwroot._content.Blazored.Typeahead.blazored-typeahead.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazored.Typeahead JS from fingerprinting -->
+  <ItemGroup>
+    <Content Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js" />
+    <StaticWebAsset Remove="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazored.Typeahead JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(UserProfile)\.nuget\packages\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js">
+      <LogicalName>wwwroot._content.Blazored.Typeahead.blazored-typeahead.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Enable embedding of the wwwroot folder -->
+  <PropertyGroup>
+    <EmbedWwwroot>true</EmbedWwwroot>
+    <!-- https://github.com/dotnet/aspnetcore/issues/50894 -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(EmbedWwwroot) == 'true'">
+    <!-- Make sure we bundle static files before preparing resources -->
+    <PrepareResourcesDependsOn>
+			$(PrepareResourcesDependsOn);
+			GetStaticWebAssetsProjectConfiguration;
+			_SplitPublishStaticWebAssetsByCopyOptions;
+			BundleScopedCssFiles
+    </PrepareResourcesDependsOn>
+  </PropertyGroup>
+
+  <!-- Embed all files under wwwroot as EmbeddedResource items. -->
+  <ItemGroup Condition="$(EmbedWwwroot) == 'true'">
+    <EmbeddedResource Include="wwwroot\**">
+      <LogicalName>
+				wwwroot.$([MSBuild]::ValueOrDefault('%(RecursiveDir)', '')
+				.Replace($([System.String]::new($([System.IO.Path]::DirectorySeparatorChar))), '.'))
+				%(Filename)%(Extension)
+      </LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Log out the value of $(EmbedWwwroot) before the build actually starts -->
+  <Target Name="DebugEmbedWwwrootValue" BeforeTargets="BeforeBuild">
+    <Message Text="EmbedWwwroot value: '$(EmbedWwwroot)'" Importance="High" />
+  </Target>
+
+  <!-- Show everything discovered by ComputeStaticWebAssets -->
+  <Target Name="DebugComputeStaticWebAssets" AfterTargets="ComputeStaticWebAssets" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== DebugComputeStaticWebAssets ===" Importance="High" />
+    <Message Text="_StaticWebAssetsToPublish:" Importance="High" />
+    <Message Text="@( _StaticWebAssetsToPublish )" Importance="High" />
+  </Target>
+
+  <!-- Show final items used for publishing after conflicts/fingerprinting -->
+  <Target Name="DebugPublishStaticWebAssets" AfterTargets="_ComputeStaticWebAssetsPublishManifest" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== DebugPublishStaticWebAssets ===" Importance="High" />
+    <Message Text="_PublishStaticWebAssetsPreserveNewest:" Importance="High" />
+    <Message Text="@( _PublishStaticWebAssetsPreserveNewest )" Importance="High" />
+    <Message Text="_PublishStaticWebAssetsCopyAlways:" Importance="High" />
+    <Message Text="@( _PublishStaticWebAssetsCopyAlways )" Importance="High" />
+  </Target>
+
+  <!-- If you want messages for the 'scp.css' outputs (scoped CSS), log them too -->
+  <Target Name="DebugScopedCss" AfterTargets="ProcessScopedCssFiles" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== DebugScopedCss ===" Importance="High" />
+    <Message Text="_ScopedCssFilesToBundle:" Importance="High" />
+    <Message Text="@(_ScopedCssFilesToBundle)" Importance="High" />
+    <Message Text="_ScopedCssBundleFile:" Importance="High" />
+    <Message Text="@(_ScopedCssBundleFile)" Importance="High" />
+  </Target>
+
+  <!-- Debug messages before/after custom 'EmbedStaticAssets' target -->
+  <Target Name="DebugBeforeEmbedStaticAssets" BeforeTargets="EmbedStaticAssets" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== DebugBeforeEmbedStaticAssets ===" Importance="High" />
+    <Message Text="EmbedWwwroot: $(EmbedWwwroot)" Importance="High" />
+    <Message Text="StaticWebAssetsBasePath: $(StaticWebAssetsBasePath)" Importance="High" />
+    <Message Text="PublishDir: $(PublishDir)" Importance="High" />
+    <Message Text="Items in _PublishStaticWebAssetsPreserveNewest:" Importance="High" />
+    <Message Text="@(EmbeddedPublishStaticWebAssetsPreserveNewest)" Importance="High" />
+    <Message Text="Items in _PublishStaticWebAssetsCopyAlways:" Importance="High" />
+    <Message Text="@(EmbeddedPublishStaticWebAssetsCopyAlways)" Importance="High" />
+  </Target>
+
+
+  <Target Name="EmbedStaticAssets" AfterTargets="PrepareResources" Condition="$(EmbedWwwroot) == 'true'">
+    <!-- Your existing logic here -->
+    <ItemGroup>
+
+      <EmbeddedResource Include="@(EmbeddedPublishStaticWebAssetsPreserveNewest)">
+        <LogicalName>
+					$([MSBuild]::ValueOrDefault('%(TargetPath)', '')
+					.Replace($([System.String]::new($([System.IO.Path]::DirectorySeparatorChar))), '.'))
+        </LogicalName>
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+
+      <EmbeddedResource Include="@(EmbeddedPublishStaticWebAssetsCopyAlways)">
+        <LogicalName>
+					$([MSBuild]::ValueOrDefault('%(TargetPath)', '')
+					.Replace($([System.String]::new($([System.IO.Path]::DirectorySeparatorChar))), '.'))
+        </LogicalName>
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+
+      <ScopedCssOutputFullPath Include="$(_ScopedCssOutputFullPath)" />
+      <EmbeddedResource Include="@(ScopedCssOutputFullPath)" Condition="Exists(@(ScopedCssOutputFullPath))">
+        <LogicalName>wwwroot.%(Filename)%(Extension)</LogicalName>
+        <Type>Non-Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <!-- Add debug messages inside this target -->
+    <Message Text="=== EmbedStaticAssets Completed ===" Importance="High" />
+    <Message Text="All EmbeddedResources after this target:" Importance="High" />
+    <Message Text="@(EmbeddedResource)" Importance="High" />
+  </Target>
+
+  <!-- Debug messages on your 'PreventCopy' targets to show what's removed -->
+  <Target Name="PreventCopyStaticWebAssetsPreserveNewest" BeforeTargets="_PublishCopyStaticWebAssetsPreserveNewest" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== PreventCopyStaticWebAssetsPreserveNewest ===" Importance="High" />
+    <Message Text="Original _PublishStaticWebAssetsPreserveNewest:" Importance="High" />
+    <Message Text="@(_PublishStaticWebAssetsPreserveNewest)" Importance="High" />
+
+    <ItemGroup>
+      <EmbeddedPublishStaticWebAssetsPreserveNewest Include="@(_PublishStaticWebAssetsPreserveNewest)" />
+      <_PublishStaticWebAssetsPreserveNewest Remove="@(_PublishStaticWebAssetsPreserveNewest)" />
+    </ItemGroup>
+
+    <Message Text="After removal, _PublishStaticWebAssetsPreserveNewest is now empty." Importance="High" />
+  </Target>
+
+  <Target Name="PreventCopyStaticWebAssetsAlways" BeforeTargets="_PublishCopyStaticWebAssetsAlways" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== PreventCopyStaticWebAssetsAlways ===" Importance="High" />
+    <Message Text="Original _PublishStaticWebAssetsCopyAlways:" Importance="High" />
+    <Message Text="@(_PublishStaticWebAssetsCopyAlways)" Importance="High" />
+
+    <ItemGroup>
+      <EmbeddedPublishStaticWebAssetsCopyAlways Include="@(_PublishStaticWebAssetsCopyAlways)" />
+      <_PublishStaticWebAssetsCopyAlways Remove="@(_PublishStaticWebAssetsCopyAlways)" />
+    </ItemGroup>
+
+    <Message Text="After removal, _PublishStaticWebAssetsCopyAlways is now empty." Importance="High" />
+  </Target>
+
+  <Target Name="PreventSourceItemsToCopyToPublishDirectory" AfterTargets="GetCopyToPublishDirectoryItems" Condition="$(EmbedWwwroot) == 'true'">
+    <Message Text="=== PreventSourceItemsToCopyToPublishDirectory ===" Importance="High" />
+    <Message Text="Items about to be removed from _SourceItemsToCopyToPublishDirectory (any that start with 'wwwroot'):" Importance="High" />
+    <Message Text="@(_SourceItemsToCopyToPublishDirectory->'%(TargetPath)')" Importance="High" />
+
+    <ItemGroup>
+      <_SourceItemsToCopyToPublishDirectory Remove="@(_SourceItemsToCopyToPublishDirectory)" Condition="$([MSBuild]::ValueOrDefault('%(TargetPath)','').StartsWith('wwwroot'))" />
+    </ItemGroup>
+
+    <Message Text="=== PreventSourceItemsToCopyToPublishDirectory Done ===" Importance="High" />
+  </Target>
+
 </Project>

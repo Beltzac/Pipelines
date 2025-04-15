@@ -5,12 +5,14 @@ using Generation;
 using GlobalHotKey;
 using H.NotifyIcon.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Photino.NET;
 using Quartz;
 using Serilog;
 using ShellLink;
 using SmartComponents.LocalEmbeddings;
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using Vanara.Windows.Shell;
@@ -79,6 +81,7 @@ internal class Program
             configuration
                 .MinimumLevel.Information()
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.SignalR", Serilog.Events.LogEventLevel.Debug)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .WriteTo.File(Path.Combine(LogUtils.LogDirectoryPath, "log-.txt"), rollingInterval: RollingInterval.Day, shared: true);
@@ -91,8 +94,6 @@ internal class Program
             {
                 o.DetailedErrors = true;
             });
-
-
 
         builder.Services.AddCustomServices();
 
@@ -154,21 +155,41 @@ internal class Program
             app.UseHsts();
         }
 
-        //app.MapStaticAssets();
+        Console.WriteLine($"App running on {AppContext.BaseDirectory}");
+
+     
         app.UseStaticFiles();
 
-        //app.UseStaticFiles(new StaticFileOptions
-        //{
-        //    FileProvider = new PhysicalFileProvider(Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "wwwroot")),
-        //    RequestPath = ""
-        //});
 
-        //var provider = new ManifestEmbeddedFileProvider(Assembly.GetAssembly(type: typeof(Program)), "wwwroot");
-        //app.UseStaticFiles(new StaticFileOptions
-        //{
-        //    FileProvider = provider,
-        //    RequestPath = "",
-        //});
+
+        // https://github.com/dotnet/aspnetcore/issues/50894
+
+
+
+        var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "wwwroot");
+        if (embeddedFileProvider.GetDirectoryContents("/").Any())
+        {
+            // Serve the wwwroot files from embedded resources (see tricks in the csproj for embedding static assets instead of having a wwwroot directory on disk when publishing)
+            app.Environment.WebRootFileProvider = embeddedFileProvider;
+        }
+
+
+        var embeddedProvider2 = new EmbeddedFileProvider(
+            Assembly.GetExecutingAssembly(), // your project's assembly
+            "wwwroot" // this must match your LogicalName prefix
+        );
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = embeddedProvider2,
+            RequestPath = ""
+        });
+
+        foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
+        {
+            Console.WriteLine(name);
+        }
+
 
         app.UseAntiforgery();
 
