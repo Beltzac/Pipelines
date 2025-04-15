@@ -58,6 +58,7 @@ else
 
     private async Task DownloadUpdateAsync()
     {
+        isLoading = true;
         try
         {
             downloadProgress = 0;
@@ -69,6 +70,10 @@ else
         catch (Exception ex)
         {
             toastService.ShowError($"Erro ao atualizar para a nova versão: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
