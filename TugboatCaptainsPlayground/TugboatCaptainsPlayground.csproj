@@ -28,6 +28,7 @@
     <NoWarn>SPELL,NU1902,NU1903,TA100</NoWarn>
 
     <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
+    <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -45,6 +46,15 @@
   <ItemGroup>
     <!-- Example: we do not copy appsettings*.json by default. -->
     <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
+    <Content Update="Common.pdb" CopyToPublishDirectory="Never">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="TugboatCaptainsPlayground.staticwebassets.endpoints.json" CopyToPublishDirectory="Never">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="web.config" CopyToPublishDirectory="Never">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -305,6 +315,17 @@
     </ItemGroup>
 
     <Message Text="=== PreventSourceItemsToCopyToPublishDirectory Done ===" Importance="High" />
+  </Target>
+
+
+  <Target Name="RemoveUnwantedFilesAfterPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <FilesToDelete Include="$(PublishDir)Common.pdb" />
+      <FilesToDelete Include="$(PublishDir)TugboatCaptainsPlayground.staticwebassets.endpoints.json" />
+      <FilesToDelete Include="$(PublishDir)web.config" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)" ContinueOnError="WarnAndContinue" />
+    <Message Text="Removed unwanted files after publish: @(FilesToDelete)" Importance="High" />
   </Target>
 
 </Project>
