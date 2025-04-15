@@ -106,11 +106,11 @@
       },
       "FlexLabs.EntityFrameworkCore.Upsert": {
         "type": "Direct",
-        "requested": "[8.1.2, )",
-        "resolved": "8.1.2",
-        "contentHash": "4bA/XRsIuY8Uf8qusSxQi0+2bxC2tvqRgy1wRxf/U2fUvMSCCKMmfHfjXmzBeu+0Ezz2VHrwGuKGw3QbxQ+/dg==",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "WYOPubVEpZeFJGvsYXhvmNBOkXXrZrHAhqfuNM/4237cPfdfVKuAweCKbyFKUba+oGM0P5kwRN5O+w95IHByDQ==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "8.0.0"
+          "Microsoft.EntityFrameworkCore.Relational": "[9.0.0, 10.0.0)"
         }
       },
       "Flurl": {
