@@ -585,7 +585,6 @@ namespace Common.Services
             var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
 
 
-
             try
             {
                 using var repo = new LibGit2Sharp.Repository(localPath);
@@ -593,7 +592,13 @@ namespace Common.Services
                 // Fetch latest from remote
                 var remote = repo.Network.Remotes["origin"];
                 var refSpecs = remote.FetchRefSpecs.Select(x => x.Specification);
-                Commands.Fetch(repo, remote.Name, refSpecs, null, null);
+                var fetchOptions = new FetchOptions()
+                {
+                    CertificateCheck = (cert, valid, host) => true,
+                    CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
+                };
+
+                Commands.Fetch(repo, remote.Name, refSpecs, fetchOptions, null);
 
                 // Checkout the branch
                 var branch = repo.Branches[$"origin/{branchName}"] ??
