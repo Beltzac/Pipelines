@@ -11,13 +11,13 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
 @inject IConsulService ConsulService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
 @implements IDisposable
 
-<ProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" IsLoading="@ConsulDiffStateService.IsLoading" />
+<CustomProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" IsLoading="@ConsulDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -78,7 +78,7 @@
     <div id="myDiffElement"></div>
 </div>
 
-<Pagination State="@ConsulDiffStateService" OnPageChange="@ChangePage"/>
+<CustomPagination State="@ConsulDiffStateService" OnPageChange="@ChangePage"/>
 
 <style>
     .diff-container {

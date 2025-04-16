@@ -5,14 +5,12 @@
 @using System.Net.Sockets;
 @using System.Net.NetworkInformation;
 @using System.Linq;
-@using Blazored.Toast;
 @using Common.Models;
 @using Common.Services.Interfaces;
-@using Blazored.Toast.Services;
 @using System.Collections.Generic;
 @using System.Threading.Tasks;
 @inject IJSRuntime JS
-@inject IToastService ToastService
+@inject ToastService ToastService
 @inject IConfigurationService ConfigService
 
 <PageTitle>Route Manager</PageTitle>

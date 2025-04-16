@@ -11,13 +11,13 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
 @inject IOracleSchemaService OracleSchemaService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
 @implements IDisposable
 
-<ProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" IsLoading="@OracleDiffStateService.IsLoading" />
+<CustomProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" IsLoading="@OracleDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -72,7 +72,7 @@
     <div id="myDiffElement"></div>
 </div>
 
-<Pagination State="@OracleDiffStateService" OnPageChange="@ChangePage"/>
+<CustomPagination State="@OracleDiffStateService" OnPageChange="@ChangePage"/>
 
 <style>
     .diff-container {

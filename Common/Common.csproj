@@ -12,8 +12,8 @@
     <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1" />
     <PackageReference Include="AspectInjector" Version="2.8.2" />
     <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="Blazor.Bootstrap" Version="3.3.1" />
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
-    <PackageReference Include="Blazored.Toast" Version="4.2.1" />
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="CompareNETObjects" Version="4.83.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />

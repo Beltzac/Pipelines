@@ -8,7 +8,7 @@
 @inject ISggService LtdbService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
-@inject IToastService toastService
+@inject ToastService toastService
 @inject ConsultaSggStateService ConsultaSggStateService
 @implements IDisposable
 
@@ -102,7 +102,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Carregando..." />
+<CustomProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Carregando..." />
 
 <div class="card mb-3">
     <div class="card-header">
@@ -161,7 +161,7 @@
     </div>
 }
 
-<Pagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
+<CustomPagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
 
 @if (ConsultaSggStateService.SelectedItem != null)
 {

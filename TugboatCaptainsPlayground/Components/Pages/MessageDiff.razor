@@ -7,13 +7,13 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @inject IOracleMessageService OracleMessageService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject MessageDiffStateService MessageDiffStateService
 @implements IDisposable
 
-<ProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />
+<CustomProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -153,7 +153,7 @@
     </div>
 </div>
 
-<Pagination State="@MessageDiffStateService" OnPageChange="@ChangePage" />
+<CustomPagination State="@MessageDiffStateService" OnPageChange="@ChangePage" />
 
 <style>
     .diff-container {

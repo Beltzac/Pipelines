@@ -3,7 +3,7 @@
 @using Common.Utils
 @using static Common.Services.AutoUpdateService
 @inject IAutoUpdateService AutoUpdateService
-@inject IToastService toastService
+@inject ToastService toastService
 
 @if (updateAvailable && downloadProgress == 0)
 {
@@ -14,7 +14,7 @@
 }
 else if (updateAvailable && downloadProgress > 0)
 {
-    <ProgressBar IsLoading="@isLoading" ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
+    <CustomProgressBar IsLoading="@isLoading" ProgressValue="@downloadProgress" TextColor="black" Height="25px"/>
 }
 else if (isLoading)
 {

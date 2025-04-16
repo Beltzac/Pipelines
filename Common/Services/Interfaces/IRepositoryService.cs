@@ -27,6 +27,6 @@ namespace Common.Services.Interfaces
         bool IsPinned(Repository repo);
         string GetLocalCloneFolder();
         Task<List<string>> GetRemoteBranches(string repoPath);
-        Task<bool> CheckoutBranch(Repository buildInfo, string branchName);
+        Task<(bool Success, string ErrorMessage)> CheckoutBranch(Repository buildInfo, string branchName);
     }
 }

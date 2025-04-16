@@ -580,9 +580,11 @@ namespace Common.Services
             }
         }
 
-        public async Task<bool> CheckoutBranch(Repository buildInfo, string branchName)
+        public async Task<(bool Success, string ErrorMessage)> CheckoutBranch(Repository buildInfo, string branchName)
         {
             var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
+
+
 
             try
             {
@@ -600,22 +602,22 @@ namespace Common.Services
                 if (branch == null)
                 {
                     _logger.LogError($"Branch {branchName} not found in repository {buildInfo.Name}");
-                    return false;
+                    return (false, $"Branch {branchName} not found");
                 }
 
                 var localBranch = repo.Branches[branchName] ??
                                 repo.CreateBranch(branchName, branch.Tip);
 
                 Commands.Checkout(repo, localBranch);
-                buildInfo.CurrentBranch = branchName;
+                buildInfo.CurrentBranch = branch.FriendlyName;
                 await UpsertAndPublish(buildInfo);
 
-                return true;
+                return (true, null);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error checking out branch {branchName} in repository {buildInfo.Name}");
-                return false;
+                return (false, ex.Message);
             }
         }
     }

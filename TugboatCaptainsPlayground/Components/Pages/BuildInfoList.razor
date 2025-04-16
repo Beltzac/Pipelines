@@ -19,7 +19,7 @@
 @using static TugboatCaptainsPlayground.Components.StatusIndicator
 @using static Common.Utils.StringExtensions
 @inject IRepositoryService BuildInfoService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigService
@@ -68,7 +68,21 @@
     <Item OnClick="@NavigateToPRCreation">Abrir PR</Item>
 </ContextMenu>
 
-<ProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Carregando..." />
+<ContextMenu Id="branchContextMenu">
+    @{if (loadingBranches)
+    {
+        <Item disabled="true">Carregando branches...</Item>
+    }
+    else
+    {
+        @foreach (var branch in remoteBranches)
+        {
+            <Item OnClick="@(async () => await CheckoutBranch(branch))">@branch</Item>
+        }
+    }}
+</ContextMenu>
+
+<CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Carregando..." />
 
 <StickyFilter>
     <div class="mb-3 d-flex align-items-center">
@@ -134,42 +148,12 @@
                             {
                                 <span class="badge bg-danger clickable-badge" @onclick="async () => await CloneRepoAsync(buildInfo)">Não Clonado</span>
                             }
+
                             @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
                             {
                                 <span class="badge bg-info clickable-badge" @onclick="async () => await HandleBranchClick(buildInfo)">@buildInfo.CurrentBranch</span>
                             }
 
-                            @if (showBranchDialog && currentBranchRepo?.Id == buildInfo.Id)
-                            {
-                                <div class="modal-backdrop" @onclick="HandleBackdropClick" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; background-color: transparent;"></div>
-                                <div class="branch-dialog position-absolute bg-white p-3 shadow rounded"
-                                    style="z-index: 1000; width: 400px; top: 30px; left: 0;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6>Switch Branch</h6>
-                                        <button class="btn btn-sm btn-close" @onclick="CloseBranchDialog"></button>
-                                    </div>
-                                    @if (loadingBranches)
-                                    {
-                                        <div class="text-center py-3">
-                                            <div class="spinner-border" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="list-group">
-                                            @foreach (var branch in remoteBranches)
-                                            {
-                                                <button class="list-group-item list-group-item-action @(branch == currentBranchRepo.CurrentBranch ? "active" : "")"
-                                                    @onclick="async () => await CheckoutBranch(branch)">
-                                                    @branch
-                                                </button>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
                             {
                                 @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
@@ -210,10 +194,39 @@
 </style>
 
 @code {
-    private Subject<string> _searchEvents;
-    private IDisposable _subscription;
-    private ElementReference filterInputElement;
-    private Dictionary<Guid, string> _nextRunTimes = new();
+private Subject<string> _searchEvents;
+private IDisposable _subscription;
+private ElementReference filterInputElement;
+private Dictionary<Guid, string> _nextRunTimes = new();
+private bool loadingBranches = false;
+private string[] remoteBranches = Array.Empty<string>();
+private Repository currentBranchRepo;
+
+private async Task LoadBranchesForRepo(Repository repo)
+{
+    loadingBranches = true;
+    currentBranchRepo = repo;
+    var localPath = Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name);
+    remoteBranches = (await BuildInfoService.GetRemoteBranches(localPath)).ToArray();
+    loadingBranches = false;
+    StateHasChanged();
+}
+
+private async Task CheckoutBranch(string branchName)
+{
+    toastService.ShowInfo($"Checking out branch {branchName}...");
+
+    var result = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
+    if (result.Success)
+    {
+        toastService.ShowSuccess($"Switched to branch {branchName}");
+        await ReloadById(currentBranchRepo.Id);
+    }
+    else
+    {
+        toastService.ShowError($"Failed to checkout branch {branchName}: {result.ErrorMessage}");
+    }
+}
 
     protected override async Task OnInitializedAsync()
     {
@@ -493,11 +506,6 @@
         StateHasChanged();
     }
 
-    private bool showBranchDialog = false;
-    private string[] remoteBranches = Array.Empty<string>();
-    private Repository currentBranchRepo;
-    private bool loadingBranches = false;
-
     private async Task HandleBranchClick(Repository repo)
     {
         if (!repo.MasterClonned) return;
@@ -507,37 +515,14 @@
         remoteBranches = (await BuildInfoService.GetRemoteBranches(
             Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name)))
             .ToArray();
-        showBranchDialog = true;
+
         loadingBranches = false;
         StateHasChanged();
-    }
-
-    private async Task CheckoutBranch(string branchName)
-    {
-        showBranchDialog = false;
-        toastService.ShowInfo($"Checking out branch {branchName}...");
-
-        var success = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
-        if (success)
-        {
-            toastService.ShowSuccess($"Switched to branch {branchName}");
-            await ReloadById(currentBranchRepo.Id);
-        }
-        else
-        {
-            toastService.ShowError($"Failed to checkout branch {branchName}");
-        }
-    }
-
-    private void CloseBranchDialog()
-    {
-        showBranchDialog = false;
     }
 
     private void HandleBackdropClick()
     {
         CloseModal();
-        CloseBranchDialog();
     }
 
     private string GetNextRunTime(Guid repositoryId)

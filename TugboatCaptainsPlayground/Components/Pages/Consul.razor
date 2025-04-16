@@ -12,7 +12,7 @@
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Linq
 @using TugboatCaptainsPlayground.Services
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
 @inject IConfigurationService ConfigService
@@ -20,7 +20,7 @@
 @inject ConsulStateService ConsulStateService
 @implements IDisposable
 
-<ProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" IsLoading="@ConsulStateService.IsLoading" />
+<CustomProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" IsLoading="@ConsulStateService.IsLoading" />
 
 <div class="options floating-controls">
     <div class="form-group">

@@ -12,7 +12,7 @@
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ConsultaEsbStateService ConsultaEsbStateService
-@inject IToastService toastService
+@inject ToastService toastService
 @implements IDisposable
 
 <StickyFilter>
@@ -130,7 +130,7 @@
     </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="Carregando..." />
+<CustomProgressBar IsLoading="@ConsultaEsbStateService.IsLoading" Label="Carregando..." />
 
 @if (ConsultaEsbStateService.Results != null)
 {
@@ -177,7 +177,7 @@
     </div>
 }
 
-<Pagination State="@ConsultaEsbStateService" OnPageChange="@(async (page) => { ConsultaEsbStateService.CurrentPage = page; await ExecuteQuery(); })" />
+<CustomPagination State="@ConsultaEsbStateService" OnPageChange="@(async (page) => { ConsultaEsbStateService.CurrentPage = page; await ExecuteQuery(); })" />
 
 @if (ConsultaEsbStateService.SelectedItem != null)
 {

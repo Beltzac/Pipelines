@@ -1,4 +1,3 @@
-using Blazored.Toast;
 using Common.ExternalApis;
 using Common.ExternalApis.Interfaces;
 using Common.Repositories.Interno;
@@ -81,7 +80,7 @@ namespace Common.Utils
             services.AddScoped<IOracleSchemaService, OracleSchemaService>();
             services.AddScoped<IRepositoryService, RepositoryService>();
             services.AddScoped<IConsulService, ConsulService>();
-            services.AddBlazoredToast();
+            services.AddBlazorBootstrap();
             services.AddBlazorContextMenu();
             services.AddScoped<IEsbService, EsbService>();
             services.AddScoped<ISggService, SggService>();

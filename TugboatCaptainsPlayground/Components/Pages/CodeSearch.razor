@@ -5,7 +5,7 @@
 @using Common.Services.Interfaces
 @using Common.Utils
 @inject IRepositoryService RepositoryService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 @inject IConfigurationService ConfigService
@@ -17,7 +17,7 @@
 
 <h3>Code Search</h3>
 
-<ProgressBar IsLoading="@CodeSearchStateService.IsLoading" Label="@CodeSearchStateService.ProgressLabel" />
+<CustomProgressBar IsLoading="@CodeSearchStateService.IsLoading" Label="@CodeSearchStateService.ProgressLabel" />
 <div class="row mb-3">
     <div class="col-md-12">
         <StickyFilter>

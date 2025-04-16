@@ -7,13 +7,13 @@
 @using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 @inject IMongoMessageService MongoMessageService
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject MongoMessageDiffStateService MongoMessageDiffStateService
 @implements IDisposable
 
-<ProgressBar ProgressValue="@MongoMessageDiffStateService.ProgressValue" Label="@MongoMessageDiffStateService.ProgressLabel" IsLoading="@MongoMessageDiffStateService.IsLoading" />
+<CustomProgressBar ProgressValue="@MongoMessageDiffStateService.ProgressValue" Label="@MongoMessageDiffStateService.ProgressLabel" IsLoading="@MongoMessageDiffStateService.IsLoading" />
 
 <StickyFilter>
     <div class="row g-3">
@@ -159,7 +159,7 @@
     </div>
 </div>
 
-<Pagination State="@MongoMessageDiffStateService" OnPageChange="@ChangePage" />
+<CustomPagination State="@MongoMessageDiffStateService" OnPageChange="@ChangePage" />
 
 <style>
     .diff-container {

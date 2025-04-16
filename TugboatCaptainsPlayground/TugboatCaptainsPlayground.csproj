@@ -65,6 +65,7 @@
 
   <!-- Packages -->
   <ItemGroup>
+    <PackageReference Include="Blazor.Bootstrap" Version="3.3.1" />
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
     <PackageReference Include="BlazorDateRangePicker" Version="6.1.0" />
     <PackageReference Include="Blazored.Typeahead" Version="4.7.0" />
@@ -132,15 +133,133 @@
     <Content Remove="Logs\**" />
     <EmbeddedResource Remove="Logs\**" />
     <None Remove="Logs\**" />
-    <StaticWebAsset Remove="$(NuGetPackageRoot)**" />
+    <!--<StaticWebAsset Remove="$(NuGetPackageRoot)**\staticwebassets\*.css" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\staticwebassets\*.js" />-->
   </ItemGroup>
 
+
+
+  <!-- Exclude Blazored.Toast bundle scp.css from fingerprinting/copied --><!--
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\Blazored.Toast.bundle.scp.css" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\Blazored.Toast.bundle.scp.css" />
+  </ItemGroup>
+
+  --><!-- Manually embed it once with fixed LogicalName --><!--
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazored.toast\4.2.1\staticwebassets\Blazored.Toast.bundle.scp.css">
+      --><!-- Change slashes to dots --><!--
+      <LogicalName>wwwroot._content.Blazored.Toast.Blazored.Toast.bundle.scp.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>-->
+
+  <!-- Exclude Blazor.ContextMenu CSS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazorContextMenu.css" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazorContextMenu.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.css">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu JS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazorContextMenu.js" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazorContextMenu.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.js">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu minified CSS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazorContextMenu.min.css" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazorContextMenu.min.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu minified CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.css">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.min.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazor.ContextMenu minified JS from fingerprinting/copied -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazorContextMenu.min.js" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazorContextMenu.min.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazor.ContextMenu minified JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazor.contextmenu\2.1.0\staticwebassets\blazorContextMenu.min.js">
+      <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.min.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazored.Typeahead CSS from fingerprinting -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazored-typeahead.css" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazored-typeahead.css" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazored.Typeahead CSS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.css">
+      <LogicalName>wwwroot._content.Blazored.Typeahead.blazored-typeahead.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Exclude Blazored.Typeahead JS from fingerprinting -->
+  <ItemGroup>
+    <Content Remove="$(NuGetPackageRoot)**\blazored-typeahead.js" />
+    <StaticWebAsset Remove="$(NuGetPackageRoot)**\blazored-typeahead.js" />
+  </ItemGroup>
+
+  <!-- Manually embed Blazored.Typeahead JS with fixed LogicalName -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\blazored.typeahead\4.7.0\staticwebassets\blazored-typeahead.js">
+      <LogicalName>wwwroot._content.Blazored.Typeahead.blazored-typeahead.js</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+  </ItemGroup>
+
+
+	<!--
   <ItemGroup>
     <EmbeddedResource Include="$(NuGetPackageRoot)**\Blazored.Toast.bundle.scp.css">
       <LogicalName>wwwroot._content.Blazored.Toast.Blazored.Toast.bundle.scp.css</LogicalName>
       <Type>Non-Resx</Type>
       <WithCulture>false</WithCulture>
     </EmbeddedResource>
+
+    <EmbeddedResource Include="$(NuGetPackageRoot)**\BlazorDateRangePicker.bundle.scp.css">
+      <LogicalName>wwwroot._content.BlazorDateRangePicker.BlazorDateRangePicker.bundle.scp.css</LogicalName>
+      <Type>Non-Resx</Type>
+      <WithCulture>false</WithCulture>
+    </EmbeddedResource>
+
     <EmbeddedResource Include="$(NuGetPackageRoot)**\blazorContextMenu.css">
       <LogicalName>wwwroot._content.Blazor.ContextMenu.blazorContextMenu.css</LogicalName>
       <Type>Non-Resx</Type>
@@ -172,7 +291,7 @@
       <WithCulture>false</WithCulture>
     </EmbeddedResource>
   </ItemGroup>
-
+ -->
 
   <!-- Enable embedding of the wwwroot folder -->
   <PropertyGroup>

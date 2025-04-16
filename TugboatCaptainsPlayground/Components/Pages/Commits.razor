@@ -9,7 +9,7 @@
 @using Common.Utils
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
-@inject IToastService toastService
+@inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
 @inject ICommitExportService CommitDataExportService
@@ -33,7 +33,7 @@
         </div>
 </StickyFilter>
 
-<ProgressBar IsLoading="@CommitsStateService.IsLoading" ProgressValue="@CommitsStateService.ProgressValue" TextColor="black" Height="25px" Label="Buscando commits..." />
+<CustomProgressBar IsLoading="@CommitsStateService.IsLoading" ProgressValue="@CommitsStateService.ProgressValue" TextColor="black" Height="25px" Label="Buscando commits..." />
 
 @if (commitDataList != null && commitDataList.Any())
 {
