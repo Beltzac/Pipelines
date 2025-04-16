@@ -68,18 +68,18 @@
     <Item OnClick="@NavigateToPRCreation">Abrir PR</Item>
 </ContextMenu>
 
-<ContextMenu Id="branchContextMenu">
+<ContextMenu Id="branchContextMenu" OnAppearing="HandleBranchClick">
     @{if (loadingBranches)
-    {
-        <Item disabled="true">Carregando branches...</Item>
-    }
-    else
-    {
-        @foreach (var branch in remoteBranches)
         {
-            <Item OnClick="@(async () => await CheckoutBranch(branch))">@branch</Item>
+            <Item disabled="true">Carregando branches...</Item>
         }
-    }}
+        else
+        {
+            @foreach (var branch in remoteBranches)
+            {
+                <Item OnClick="@(async () => await CheckoutBranch(branch))">@branch</Item>
+            }
+        }}
 </ContextMenu>
 
 <CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Carregando..." />
@@ -120,9 +120,9 @@
                     <div class="d-flex align-items-center gap-2">
                         <div class="position-relative">
                             <button class="btn btn-sm btn-outline-info"
-                                    @onclick="() => ShowCommitDetails(buildInfo)"
-                                    data-bs-toggle="tooltip"
-                                    title="View commit details">
+                            @onclick="() => ShowCommitDetails(buildInfo)"
+                            data-bs-toggle="tooltip"
+                            title="View commit details">
                                 <i class="bi bi-info-circle"></i>
                             </button>
 
@@ -130,7 +130,7 @@
                             {
                                 <div class="modal-backdrop" @onclick="HandleBackdropClick" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; background-color: transparent;"></div>
                                 <div class="commit-modal position-absolute bg-white p-3 shadow rounded"
-                                     style="z-index: 1000; width: 600px; top: 30px; left: 0;">
+                                style="z-index: 1000; width: 600px; top: 30px; left: 0;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6>Commit Details</h6>
                                         <button class="btn btn-sm btn-close" @onclick="() => CloseModal()"></button>
@@ -151,7 +151,9 @@
 
                             @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
                             {
-                                <span class="badge bg-info clickable-badge" @onclick="async () => await HandleBranchClick(buildInfo)">@buildInfo.CurrentBranch</span>
+                                <ContextMenuTrigger MenuId="branchContextMenu" Data="buildInfo" style="vertical-align: middle;" MouseButtonTrigger="MouseButtonTrigger.Left">
+                                    <span class="badge bg-info clickable-badge">@buildInfo.CurrentBranch</span>
+                                </ContextMenuTrigger>
                             }
 
                             @if (buildInfo.Pipeline?.Last?.Commit != null)
@@ -185,48 +187,48 @@
 
 <style>
     .btn .bi {
-        margin-right: 0;
+    margin-right: 0;
     }
 
     .clickable-badge {
-        cursor: pointer;
+    cursor: pointer;
     }
 </style>
 
 @code {
-private Subject<string> _searchEvents;
-private IDisposable _subscription;
-private ElementReference filterInputElement;
-private Dictionary<Guid, string> _nextRunTimes = new();
-private bool loadingBranches = false;
-private string[] remoteBranches = Array.Empty<string>();
-private Repository currentBranchRepo;
+    private Subject<string> _searchEvents;
+    private IDisposable _subscription;
+    private ElementReference filterInputElement;
+    private Dictionary<Guid, string> _nextRunTimes = new();
+    private bool loadingBranches = false;
+    private string[] remoteBranches = Array.Empty<string>();
+    private Repository currentBranchRepo;
 
-private async Task LoadBranchesForRepo(Repository repo)
-{
-    loadingBranches = true;
-    currentBranchRepo = repo;
-    var localPath = Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name);
-    remoteBranches = (await BuildInfoService.GetRemoteBranches(localPath)).ToArray();
-    loadingBranches = false;
-    StateHasChanged();
-}
-
-private async Task CheckoutBranch(string branchName)
-{
-    toastService.ShowInfo($"Checking out branch {branchName}...");
-
-    var result = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
-    if (result.Success)
+    private async Task LoadBranchesForRepo(Repository repo)
     {
-        toastService.ShowSuccess($"Switched to branch {branchName}");
-        await ReloadById(currentBranchRepo.Id);
+        loadingBranches = true;
+        currentBranchRepo = repo;
+        var localPath = Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name);
+        remoteBranches = (await BuildInfoService.GetRemoteBranches(localPath)).ToArray();
+        loadingBranches = false;
+        StateHasChanged();
     }
-    else
+
+    private async Task CheckoutBranch(string branchName)
     {
-        toastService.ShowError($"Failed to checkout branch {branchName}: {result.ErrorMessage}");
+        toastService.ShowInfo($"Checking out branch {branchName}...");
+
+        var result = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
+        if (result.Success)
+        {
+            toastService.ShowSuccess($"Switched to branch {branchName}");
+            await ReloadById(currentBranchRepo.Id);
+        }
+        else
+        {
+            toastService.ShowError($"Failed to checkout branch {branchName}: {result.ErrorMessage}");
+        }
     }
-}
 
     protected override async Task OnInitializedAsync()
     {
@@ -506,18 +508,27 @@ private async Task CheckoutBranch(string branchName)
         StateHasChanged();
     }
 
-    private async Task HandleBranchClick(Repository repo)
+    private async Task HandleBranchClick(MenuAppearingEventArgs e)
     {
-        if (!repo.MasterClonned) return;
-
-        loadingBranches = true;
-        currentBranchRepo = repo;
-        remoteBranches = (await BuildInfoService.GetRemoteBranches(
-            Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name)))
-            .ToArray();
-
-        loadingBranches = false;
-        StateHasChanged();
+        try
+        {
+            remoteBranches = [];
+            var repo = e.Data as Repository;
+            loadingBranches = true;
+            currentBranchRepo = repo;
+            remoteBranches = (await BuildInfoService.GetRemoteBranches(
+                Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name)))
+                .ToArray();
+        }
+        catch(Exception ex)
+        {
+            toastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            loadingBranches = false;
+            StateHasChanged();
+        }
     }
 
     private void HandleBackdropClick()
