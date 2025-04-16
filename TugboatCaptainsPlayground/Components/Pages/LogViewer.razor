@@ -86,6 +86,20 @@ else
     .table thead th {
         background-color: #f8f9fa; /* Light background for sticky header */
     }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    /* Prevent line breaks in the Timestamp column */
+    .table td:first-child {
+        white-space: nowrap;
+    }
+
+    /* Center the badge horizontally in the Level column */
+    .table td:nth-child(2) {
+        text-align: center;
+    }
 </style>
 
 @code {

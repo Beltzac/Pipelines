@@ -1,7 +1,9 @@
-
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 .content {
@@ -29,9 +31,9 @@ h1:focus {
     padding: 1rem 1rem 1rem 3.7rem;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 
 .log-error {
@@ -59,7 +61,8 @@ h1:focus {
 }
 
 .truncate {
-    max-width: 300px; /* Adjust the width as needed */
+    max-width: 300px;
+    /* Adjust the width as needed */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -85,12 +88,16 @@ h1:focus {
 }
 
 @keyframes changeColor {
-    0%, 100% {
+
+    0%,
+    100% {
         border-top-color: #3182ce;
     }
+
     33% {
         border-top-color: #38a169;
     }
+
     66% {
         border-top-color: #e53e3e;
     }
@@ -156,4 +163,12 @@ span.unchanged {
 
 .search-results .card-header small {
     margin-left: 0.5rem;
+}
+
+.btn .bi {
+    margin-right: 0;
+}
+
+.clickable-badge {
+    cursor: pointer;
 }
