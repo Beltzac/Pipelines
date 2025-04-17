@@ -33,7 +33,7 @@ public class ConfigurationService : IConfigurationService
         if (File.Exists(_configPath))
         {
             string jsonConfig = File.ReadAllText(_configPath);
-            _config = JsonSerializer.Deserialize<ConfigModel>(jsonConfig);
+            _config = JsonSerializer.Deserialize<ConfigModel>(jsonConfig) ?? new ConfigModel();
             return;
         }
 
