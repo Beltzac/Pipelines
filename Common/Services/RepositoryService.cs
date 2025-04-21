@@ -7,6 +7,7 @@ using Common.Utils;
 using Flurl;
 using LibGit2Sharp;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.TeamFoundation.Core.WebApi;
@@ -304,6 +305,28 @@ namespace Common.Services
                 _logger.LogInformation($"Pipeline: {buildDefinition.Name}, Latest Build: {buildDetails.FinishTime}, Status: {buildDetails.Status}, Result: {buildDetails.Result}, Commit: {buildDetails.SourceVersion}");
             }
 
+            // Fetch active pull requests
+            try
+            {
+                var pullRequests = await _gitClient.GetActivePullRequestsAsync(repo.ProjectReference.Id, repo.Id);
+                buildInfo.ActivePullRequests = pullRequests
+                    .Select(pr => new PullRequest
+                    {
+                        Id = pr.PullRequestId,
+                        Title = pr.Title,
+                        Url = $"{_organizationUrl}/{projectName}/_git/{buildInfo.Name}/pullrequest/{pr.PullRequestId}",
+                        SourceBranch = pr.SourceRefName,
+                        TargetBranch = pr.TargetRefName,
+                        ChangedFileCount = 0 // Needs separate API call to get changes
+                    })
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching active pull requests for repository {repo.Name}");
+                buildInfo.ActivePullRequests = new List<PullRequest>();
+            }
+
             return buildInfo;
         }
 
@@ -428,7 +451,6 @@ namespace Common.Services
         public async Task OpenProjectByBuildInfoIdAsync(Guid buildInfoId)
         {
             var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
-
             if (buildInfo != null)
             {
                 var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
@@ -577,6 +599,24 @@ namespace Common.Services
             {
                 _logger.LogError(ex, $"Error getting remote branches for repository at {repoPath}");
                 return new List<string>();
+            }
+        }
+
+        public async Task<int> GetActivePullRequestCountAsync(Guid repositoryId)
+        {
+            try
+            {
+                var repo = await _repositoryDatabase.FindByIdAsync(repositoryId);
+                if (repo == null || repo.ActivePullRequests == null)
+                {
+                    return 0;
+                }
+                return repo.ActivePullRequests.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting active PR count for repository {repositoryId}");
+                return 0;
             }
         }
 

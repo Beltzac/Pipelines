@@ -47,4 +47,16 @@ public class Repository
     public string ProjectType { get; set; }
 
     public List<string> ProjectNames { get; set; } = new List<string>();
+
+    public List<PullRequest> ActivePullRequests { get; set; } = new List<PullRequest>();
+}
+
+public class PullRequest
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Url { get; set; }
+    public string SourceBranch { get; set; }
+    public string TargetBranch { get; set; }
+    public int ChangedFileCount { get; set; }
 }

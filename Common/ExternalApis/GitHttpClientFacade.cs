@@ -90,5 +90,10 @@ namespace Common.ExternalApis
 
             return commits;
         }
+
+        public async Task<List<GitPullRequest>> GetActivePullRequestsAsync(Guid projectId, Guid repositoryId)
+        {
+            return await _gitHttpClient.GetPullRequestsAsync(projectId, repositoryId, new GitPullRequestSearchCriteria() { Status = PullRequestStatus.Active });
+        }
     }
 }

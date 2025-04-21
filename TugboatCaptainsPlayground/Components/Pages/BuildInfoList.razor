@@ -9,6 +9,7 @@
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
+@using OpenFolderUtils = Common.Utils.OpenFolderUtils
 @using FuzzySharp
 @using Humanizer
 @using Markdig
@@ -167,8 +168,21 @@
                                 {
                                     @if (!string.IsNullOrEmpty(buildInfo.Project) && !string.IsNullOrEmpty(buildInfo.Name))
                                     {
-                                        <span class="badge bg-warning clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR @prNumber</span>
+                                        <span class="badge bg-warning clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR Commit @prNumber</span>
                                     }
+                                }
+                            }
+
+                            @if (buildInfo.ActivePullRequests != null)
+                            {
+                                @foreach (var pr in buildInfo.ActivePullRequests)
+                                {
+                                    <span class="badge bg-secondary clickable-badge"
+                                          @onclick="() => OpenPr(pr.Id.ToString(), buildInfo.Project, buildInfo.Name)"
+                                          data-bs-toggle="tooltip"
+                                          title="@($"{pr.Title} ({pr.SourceBranch} → {pr.TargetBranch})")">
+                                        PR @pr.Id
+                                    </span>
                                 }
                             }
                         </div>
@@ -193,6 +207,7 @@
     private bool loadingBranches = false;
     private string[] remoteBranches = Array.Empty<string>();
     private Repository currentBranchRepo;
+    private Dictionary<Guid, int> _activePrCounts = new();
 
     private async Task LoadBranchesForRepo(Repository repo)
     {
@@ -237,8 +252,9 @@
                     var infos = await BuildInfoService.GetBuildInfoAsync(x);
                     BuildInfoStateService.BuildInfos = infos;
 
-                    // Fetch all next run times at once
+                    // Fetch all next run times and PR counts at once
                     _nextRunTimes = new();
+                    _activePrCounts = new();
                     var scheduler = await _schedulerFactory.GetScheduler();
                     var culture = new CultureInfo("pt-BR");
 
@@ -247,6 +263,7 @@
                         try
                         {
                             var jobKey = new JobKey($"RepositoryUpdateJob-{info.Id}");
+                            _activePrCounts[info.Id] = await BuildInfoService.GetActivePullRequestCountAsync(info.Id);
                             var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
                             if (triggers != null && triggers.Any())
@@ -485,6 +502,16 @@
     private bool showModal = false;
     private Commit currentCommit;
 
+    private string GetNextRunTime(Guid repositoryId)
+    {
+        return _nextRunTimes.TryGetValue(repositoryId, out var time) ? time : string.Empty;
+    }
+
+    private int GetActivePrCount(Guid repositoryId)
+    {
+        return _activePrCounts.TryGetValue(repositoryId, out var count) ? count : 0;
+    }
+
     private void ShowCommitDetails(Repository buildInfo)
     {
         currentCommit = buildInfo.Pipeline?.Last?.Commit;
@@ -525,12 +552,6 @@
     {
         CloseModal();
     }
-
-    private string GetNextRunTime(Guid repositoryId)
-    {
-        return _nextRunTimes.TryGetValue(repositoryId, out var time) ? time : string.Empty;
-    }
-
 
     private void OpenJiraCard(string jiraCardID)
     {

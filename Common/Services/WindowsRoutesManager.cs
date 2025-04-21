@@ -7,61 +7,46 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace TugboatCaptainsPlayground.Services
+namespace Common.Services
 {
     public class WindowsRoutesManager
     {
 
 
-        public HashSet<string> GetActiveRouteDomains()
+        public async Task<HashSet<string>> GetActiveRouteDomainsAsync()
         {
             var domains = new HashSet<string>();
+            var routes = await GetActiveRoutesAsync();
 
-            var psi = new ProcessStartInfo
+            foreach (var route in routes)
             {
-                FileName = "cmd.exe",
-                Arguments = $"/C route print",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (var process = Process.Start(psi))
-            {
-                if (process != null)
+                if (!IPAddress.TryParse(route.Destination, out _))
                 {
-                    process.WaitForExit();
-                    string output = process.StandardOutput.ReadToEnd();
-
-                    foreach (string line in output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        if (!line.StartsWith(" ") && line.Length > 20 && !line.Contains("Network"))
-                        {
-                            string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length > 3)
-                            {
-                                string destination = parts[0];
-                                if (!IPAddress.TryParse(destination, out _))
-                                {
-                                    domains.Add(destination);
-                                }
-                            }
-                        }
-                    }
+                    domains.Add(route.Destination);
                 }
             }
 
             return domains;
         }
 
-        public List<string> GetRoutesForDomain(string domain)
+        private static List<(string Destination, string Gateway)> _cachedRoutes;
+        private static DateTime _cacheTime;
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
+
+        public async Task<List<(string Destination, string Gateway)>> GetActiveRoutesAsync()
         {
-            var routes = new List<string>();
+            if (_cachedRoutes != null && DateTime.Now - _cacheTime < CacheDuration)
+            {
+                return _cachedRoutes;
+            }
+
+            var routes = new List<(string Destination, string Gateway)>();
 
             var psi = new ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 Arguments = $"/C route print",
+                Verb = "runas",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -71,20 +56,52 @@ namespace TugboatCaptainsPlayground.Services
             {
                 if (process != null)
                 {
-                    process.WaitForExit();
-                    string output = process.StandardOutput.ReadToEnd();
+                    string output = "";
+                    if (!process.WaitForExit(5000)) // Timeout after 5 seconds
+                    {
+                        Console.WriteLine("route print timed out");
+                        return routes;
+                    }
+                    output = await process.StandardOutput.ReadToEndAsync();
 
+                    bool startParsing = false;
                     foreach (string line in output.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                     {
-                        if (line.Contains($" {domain} ") && !line.StartsWith(" "))
+                        if (line.Trim().StartsWith("=========="))
+                        {
+                            startParsing = true;
+                            continue;
+                        }
+
+                        if (startParsing && !string.IsNullOrWhiteSpace(line) && !line.StartsWith(" ") && !line.StartsWith("Network"))
                         {
                             string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (parts.Length > 1)
+                            if (parts.Length >= 4)
                             {
-                                routes.Add(parts[1]);
+                                string destination = parts[0];
+                                string gateway = parts[2];
+                                routes.Add((destination, gateway));
                             }
                         }
                     }
+                }
+            }
+
+            _cachedRoutes = routes;
+            _cacheTime = DateTime.Now;
+            return routes;
+        }
+
+        public async Task<List<string>> GetRoutesForDomainAsync(string domain)
+        {
+            var routes = new List<string>();
+            var allRoutes = await GetActiveRoutesAsync();
+
+            foreach (var route in allRoutes)
+            {
+                if (route.Destination.Contains(domain))
+                {
+                    routes.Add(route.Gateway);
                 }
             }
 
@@ -112,10 +129,10 @@ namespace TugboatCaptainsPlayground.Services
                     {
                         throw new Exception($"Route delete command failed with exit code {process.ExitCode}");
                     }
-       
+
                     return true;
                 }
-   
+
                 return false;
             }
         }
@@ -195,9 +212,9 @@ namespace TugboatCaptainsPlayground.Services
             {
                 var ipProps = ni.GetIPProperties();
                 var gateways = ipProps.GatewayAddresses
-                    .Where(g => g.Address != null && g.Address.AddressFamily == AddressFamily.InterNetwork)
-                    .Select(g => g.Address.ToString())
-                    .ToList();
+                .Where(g => g.Address != null && g.Address.AddressFamily == AddressFamily.InterNetwork)
+                .Select(g => g.Address.ToString())
+                .ToList();
                 return gateways.FirstOrDefault() ?? "Not available";
             }
             catch

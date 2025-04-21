@@ -28,5 +28,6 @@ namespace Common.Services.Interfaces
         string GetLocalCloneFolder();
         Task<List<string>> GetRemoteBranches(string repoPath);
         Task<(bool Success, string ErrorMessage)> CheckoutBranch(Repository buildInfo, string branchName);
+        Task<int> GetActivePullRequestCountAsync(Guid repositoryId);
     }
 }
