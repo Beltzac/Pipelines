@@ -2,155 +2,150 @@
 @using CSharpDiff.Patches.Models
 @using CSharpDiff.Diffs.Models
 
-@typeparam TItem where TItem : IDiffResult
-
 @if (Diff?.Patch != null)
 {
-    <div class="blazor-diff-viewer">
-        <div class="d2h-file-wrapper">
-            <div class="d2h-file-header">
-                <span class="d2h-file-name-wrapper">
-                    <span class="d2h-file-name">@Diff.Patch.OldFileName ↔ @Diff.Patch.NewFileName</span>
-                </span>
-            </div>
-            <div class="d2h-files-diff">
-                <div class="d2h-file-side-diff">
-                    <div class="d-flex justify-content-end mb-2">
-                        @LeftButtons
+    <div class="diff-container">
+        <div class="diff-header">
+            @if (Diff.Patch.OldFileName == Diff.Patch.NewFileName)
+            {
+                <span>@Diff.Patch.OldFileName</span>
+            }
+            else
+            {
+                <span>@Diff.Patch.OldFileName ↔ @Diff.Patch.NewFileName</span>
+            }
+        </div>
+        <div class="diff-controls">
+            <div class="controls-left">@LeftButtons</div>
+            <div class="controls-right">@RightButtons</div>
+        </div>
+
+        @foreach (var hunk in Diff.Patch.Hunks)
+        {
+            <div class="hunk">
+                <div class="hunk-header">@@ -@hunk.oldStart,@hunk.oldLines +@hunk.newStart,@hunk.newLines @@</div>
+                @{
+                    var oldLines = hunk.lines.Where(l => l.StartsWith("-") || l.StartsWith(" ")).ToList();
+                    var newLines = hunk.lines.Where(l => l.StartsWith("+") || l.StartsWith(" ")).ToList();
+                    int max = Math.Max(oldLines.Count, newLines.Count);
+                }
+                <div class="panels">
+                    <div class="panel old-panel">
+                        @for (int i = 0; i < max; i++)
+                        {
+                            var oldLine = i < oldLines.Count ? oldLines[i] : null;
+                            bool isContext = oldLine?.StartsWith(" ") == true;
+                            string cls = oldLine?.StartsWith("-") == true ? "removed" : isContext ? "context" : "empty";
+                            int num = !string.IsNullOrWhiteSpace(oldLine) && !oldLine.StartsWith("+") ? hunk.oldStart + oldLines.Take(i).Count(l => !l.StartsWith("+")) : -1;
+                            <div class="line @cls">
+                                <span class="lineno">@(num > 0 ? num.ToString() : string.Empty)</span>
+                                <span class="code">@(oldLine != null ? oldLine.Substring(1) : string.Empty)</span>
+                            </div>
+                        }
                     </div>
-                    <div class="d2h-code-wrapper">
-                        <table class="d2h-diff-table">
-                            <tbody class="d2h-diff-tbody">
-                                @foreach (var hunk in Diff.Patch.Hunks)
-                                {
-                                    <tr class="d2h-info">
-                                        <td colspan="2">@@ -@hunk.oldStart,@hunk.oldLines +@hunk.newStart,@hunk.newLines @@</td>
-                                    </tr>
-                                    @foreach (var line in hunk.lines)
-                                    {
-                                        <tr class="@(line.StartsWith("+") ? "d2h-added" : line.StartsWith("-") ? "d2h-removed" : "d2h-cntx")">
-                                            <td class="d2h-code-side-linenumber d2h-cntx"></td>
-                                            <td class="d2h-cntx">
-                                                <div class="d2h-code-side-line">@line</div>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                        </table>
+                    <div class="panel new-panel">
+                        @for (int i = 0; i < max; i++)
+                        {
+                            var newLine = i < newLines.Count ? newLines[i] : null;
+                            bool isContext = newLine?.StartsWith(" ") == true;
+                            string cls = newLine?.StartsWith("+") == true ? "added" : isContext ? "context" : "empty";
+                            int num = !string.IsNullOrWhiteSpace(newLine) && !newLine.StartsWith("-") ? hunk.newStart + newLines.Take(i).Count(l => !l.StartsWith("-")) : -1;
+                            <div class="line @cls">
+                                <span class="lineno">@(num > 0 ? num.ToString() : string.Empty)</span>
+                                <span class="code">@(newLine != null ? newLine.Substring(1) : string.Empty)</span>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 }
 else
 {
-    <div>No diff content to display.</div>
+    <div class="no-diff"><p>No differences to display.</p></div>
 }
 
 @code {
-    [Parameter]
-    public IDiffResult Diff { get; set; }
-
-    [Parameter]
-    public string SourceEnv { get; set; }
-
-    [Parameter]
-    public string TargetEnv { get; set; }
-
-    [Parameter]
-    public RenderFragment<IDiffResult> LeftButtons { get; set; }
-
-    [Parameter]
-    public RenderFragment<IDiffResult> RightButtons { get; set; }
+    [Parameter] public IDiffResult Diff { get; set; }
+    [Parameter] public RenderFragment LeftButtons { get; set; }
+    [Parameter] public RenderFragment RightButtons { get; set; }
 }
 
 <style>
-    /* Basic styles to mimic diff2html side-by-side structure */
-    .blazor-diff-viewer {
-        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        font-size: 0.85em;
-        border: 1px solid #ddd;
-        margin-bottom: 20px;
-    }
+.diff-container {
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    border: 1px solid #ddd;
+    background: #fff;
+}
+.diff-header {
+    background: #f1f1f1;
+    padding: 8px;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+}
+.diff-controls {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+}
+.hunk { margin: 12px 0; }
+.hunk-header {
+    background: #eef;
+    padding: 4px 8px;
+    font-style: italic;
+    border-radius: 3px;
+}
+/*  TWO independent horizontal scrollbars  */
+.panels {
+    display: flex;
+    gap: 1px; /* thin divider */
+}
+.panel {
+    flex: 1 1 0;
+    overflow-x: auto;            /* each column scrolls horizontally */
+    white-space: pre;            /* prevent wrapping */
+    box-sizing: border-box;
+    padding: 4px 0;
+    border-left: 1px solid #e2e2e2;
+}
+.panel:first-child { border-left: none; }
 
-    .d2h-file-wrapper {
-        border-bottom: 1px solid #eee;
-        margin-bottom: 10px;
-        padding-bottom: 10px;
-    }
+.line {
+    display: flex;
+    align-items: flex-start;
+    padding: 0 8px;
+}
+.lineno {
+    width: 5ch;
+    text-align: right;
+    margin-right: 6px;
+    user-select: none;
+    background: #f0f0f0;
+    padding: 0 4px;
+    border-radius: 2px;
+    font-weight: 600;
+    color: #555;
+}
+.empty .lineno { visibility: hidden; }
+.code { flex: 1; }
 
-    .d2h-file-header {
-        background-color: #f8f8f8;
-        padding: 5px 10px;
-        border-bottom: 1px solid #ddd;
-        font-weight: bold;
-    }
+/* Highlighting */
+.added   { background: #eaffea; }
+.removed { background: #ffeaea; }
+.context { background: #f9f9f9; }
 
-    .d2h-files-diff {
-        display: flex;
-        width: 100%;
-    }
-
-    .d2h-file-side-diff {
-        width: 50%;
-        padding: 5px;
-        box-sizing: border-box;
-    }
-
-    .d2h-code-wrapper {
-        overflow-x: auto;
-    }
-
-    .d2h-diff-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .d2h-diff-tbody tr {
-        /* Add row styling if needed */
-    }
-
-    .d2h-code-side-linenumber {
-        background-color: #f0f0f0;
-        padding: 0 5px;
-        text-align: right;
-        width: 30px; /* Adjust as needed */
-        color: #999;
-        user-select: none;
-    }
-
-    .d2h-code-side-line {
-        padding: 0 5px;
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    /* Line type highlighting */
-    .d2h-added {
-        background-color: #eaffea;
-        color: #28a745;
-    }
-
-    .d2h-removed {
-        background-color: #ffeaea;
-        color: #dc3545;
-    }
-
-    .d2h-cntx {
-        background-color: #f8f8f8;
-        color: #333;
-    }
-
-     .d2h-info {
-        background-color: #eef;
-        color: #007bff;
-        font-style: italic;
-    }
-
-    .d2h-emptyline {
-        background-color: #f8f8f8; /* Match context background */
-        color: transparent; /* Hide text */
-    }
+/* No‑diff */
+.no-diff {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #777;
+    font-style: italic;
+}
+.no-diff p { margin: 0; }
 </style>
