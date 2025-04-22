@@ -1,0 +1,156 @@
+@using Common.Models
+@using CSharpDiff.Patches.Models
+@using CSharpDiff.Diffs.Models
+
+@typeparam TItem where TItem : IDiffResult
+
+@if (Diff?.Patch != null)
+{
+    <div class="blazor-diff-viewer">
+        <div class="d2h-file-wrapper">
+            <div class="d2h-file-header">
+                <span class="d2h-file-name-wrapper">
+                    <span class="d2h-file-name">@Diff.Patch.OldFileName ↔ @Diff.Patch.NewFileName</span>
+                </span>
+            </div>
+            <div class="d2h-files-diff">
+                <div class="d2h-file-side-diff">
+                    <div class="d-flex justify-content-end mb-2">
+                        @LeftButtons
+                    </div>
+                    <div class="d2h-code-wrapper">
+                        <table class="d2h-diff-table">
+                            <tbody class="d2h-diff-tbody">
+                                @foreach (var hunk in Diff.Patch.Hunks)
+                                {
+                                    <tr class="d2h-info">
+                                        <td colspan="2">@@ -@hunk.oldStart,@hunk.oldLines +@hunk.newStart,@hunk.newLines @@</td>
+                                    </tr>
+                                    @foreach (var line in hunk.lines)
+                                    {
+                                        <tr class="@(line.StartsWith("+") ? "d2h-added" : line.StartsWith("-") ? "d2h-removed" : "d2h-cntx")">
+                                            <td class="d2h-code-side-linenumber d2h-cntx"></td>
+                                            <td class="d2h-cntx">
+                                                <div class="d2h-code-side-line">@line</div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div>No diff content to display.</div>
+}
+
+@code {
+    [Parameter]
+    public IDiffResult Diff { get; set; }
+
+    [Parameter]
+    public string SourceEnv { get; set; }
+
+    [Parameter]
+    public string TargetEnv { get; set; }
+
+    [Parameter]
+    public RenderFragment<IDiffResult> LeftButtons { get; set; }
+
+    [Parameter]
+    public RenderFragment<IDiffResult> RightButtons { get; set; }
+}
+
+<style>
+    /* Basic styles to mimic diff2html side-by-side structure */
+    .blazor-diff-viewer {
+        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+        font-size: 0.85em;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+
+    .d2h-file-wrapper {
+        border-bottom: 1px solid #eee;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+    }
+
+    .d2h-file-header {
+        background-color: #f8f8f8;
+        padding: 5px 10px;
+        border-bottom: 1px solid #ddd;
+        font-weight: bold;
+    }
+
+    .d2h-files-diff {
+        display: flex;
+        width: 100%;
+    }
+
+    .d2h-file-side-diff {
+        width: 50%;
+        padding: 5px;
+        box-sizing: border-box;
+    }
+
+    .d2h-code-wrapper {
+        overflow-x: auto;
+    }
+
+    .d2h-diff-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .d2h-diff-tbody tr {
+        /* Add row styling if needed */
+    }
+
+    .d2h-code-side-linenumber {
+        background-color: #f0f0f0;
+        padding: 0 5px;
+        text-align: right;
+        width: 30px; /* Adjust as needed */
+        color: #999;
+        user-select: none;
+    }
+
+    .d2h-code-side-line {
+        padding: 0 5px;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    /* Line type highlighting */
+    .d2h-added {
+        background-color: #eaffea;
+        color: #28a745;
+    }
+
+    .d2h-removed {
+        background-color: #ffeaea;
+        color: #dc3545;
+    }
+
+    .d2h-cntx {
+        background-color: #f8f8f8;
+        color: #333;
+    }
+
+     .d2h-info {
+        background-color: #eef;
+        color: #007bff;
+        font-style: italic;
+    }
+
+    .d2h-emptyline {
+        background-color: #f8f8f8; /* Match context background */
+        color: transparent; /* Hide text */
+    }
+</style>
