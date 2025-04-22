@@ -231,16 +231,8 @@ namespace Common.Repositories.Interno
                     )
                 );
 
-            builder.OwnsMany(r => r.ActivePullRequests, b =>
-            {
-                b.ToTable("RepositoryPullRequests");
-                b.HasKey("Id");
-                b.Property(pr => pr.Id).ValueGeneratedNever();
-                b.Property(pr => pr.Title).HasMaxLength(200);
-                b.Property(pr => pr.Url).HasMaxLength(500);
-                b.Property(pr => pr.SourceBranch).HasMaxLength(100);
-                b.Property(pr => pr.TargetBranch).HasMaxLength(100);
-            });
+            builder.HasMany(r => r.ActivePullRequests)
+                .WithOne();
         }
     }
 

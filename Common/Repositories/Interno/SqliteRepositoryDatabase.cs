@@ -1,4 +1,5 @@
 using Common.Repositories.Interno.Interfaces;
+using Common.Utils;
 using Microsoft.EntityFrameworkCore;
 
 namespace Common.Repositories.Interno
@@ -33,12 +34,7 @@ namespace Common.Repositories.Interno
         public async Task UpsertAsync(Repository repository)
         {
             await using var context = _contextFactory.CreateDbContext();
-            await context.SingleMergeAsync(repository, options =>
-            {
-                options.IncludeGraph = true;
-                options.InsertKeepIdentity = true;
-                options.MergeKeepIdentity = true;
-            });
+            await context.UpsertGraphAsync(repository);
         }
 
         public async Task DeleteAsync(Guid id)

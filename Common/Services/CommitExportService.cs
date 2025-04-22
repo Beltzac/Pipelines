@@ -3,6 +3,7 @@ using Common.ExternalApis.Interfaces;
 using Common.Models;
 using Common.Repositories.Interno;
 using Common.Services.Interfaces;
+using Common.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -123,12 +124,7 @@ namespace Common.Services
                                             JiraCardID = jiraCardID
                                         };
 
-                                        await _dbContext.SingleMergeAsync(model, options =>
-                                        {
-                                            options.IncludeGraph = true;
-                                            options.InsertKeepIdentity = true;
-                                            options.MergeKeepIdentity = true;
-                                        });
+                                        await _dbContext.UpsertGraphAsync(model);
 
                                         _logger.LogInformation($"Commit adicionado ao banco de dados: {commitDate} - {commitMessage}");
                                     }
