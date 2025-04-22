@@ -147,7 +147,10 @@ namespace Common.Services
             var hasDifferences = patch.Hunks.Any();
             var diffString = "diff --git" + "\r\n" + ps.formatPatch(patch);
 
-            return new OracleDiffResult(viewName, diffString, hasDifferences);
+            return new OracleDiffResult(viewName, diffString, hasDifferences)
+            {
+                Patch = patch
+            };
         }
 
         private string NormalizeLineBreaks(string text)

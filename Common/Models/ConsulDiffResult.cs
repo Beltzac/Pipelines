@@ -1,4 +1,6 @@
-﻿namespace Common.Models
+﻿using CSharpDiff.Patches.Models;
+
+namespace Common.Models
 {
     public class ConsulDiffResult : IDiffResult
     {
@@ -12,5 +14,6 @@
         public string Key { get; set; }
         public string FormattedDiff { get; set; }
         public bool HasDifferences { get; set; }
+        public PatchResult Patch { get; set; }
     };
 }

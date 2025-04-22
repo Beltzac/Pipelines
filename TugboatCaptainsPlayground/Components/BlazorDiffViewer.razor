@@ -73,79 +73,113 @@ else
 }
 
 <style>
+:root {
+    --font-mono: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+
+    --c-border : #d0d7de;
+    --c-file   : #f6f8fa;
+    --c-ctrls  : #fafbfc;
+    --c-hunk   : #eef6ff;
+    --c-lineno : #f0f3f6;
+
+    --c-added  : #e6ffed;
+    --c-removed: #ffeef0;
+    --c-context: #f9f9f9;
+
+    --h-header : 36px;          /* tweak if you change paddings */
+    --h-ctrls  : 32px;
+}
+
+/* ───────── wrapper ───────── */
 .diff-container {
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-    font-size: 0.9em;
-    border: 1px solid #ddd;
+    font-family: var(--font-mono);
+    font-size: 14px;
     background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    overflow: hidden;           /* rounds the corners */
 }
-.diff-header {
-    background: #f1f1f1;
-    padding: 8px;
-    font-weight: bold;
-    border-bottom: 1px solid #ccc;
-}
+
+/* ───────── sticky header & toolbar ───────── */
+.diff-header,
 .diff-controls {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
-    background: #fafafa;
-    border-bottom: 1px solid #eee;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--c-border);
+    position: sticky;
+    z-index: 2;
 }
-.hunk { margin: 12px 0; }
-.hunk-header {
-    background: #eef;
-    padding: 4px 8px;
+.diff-header  { top: 0;           background: var(--c-file);   font-weight: 600; }
+.diff-controls{
+    top: var(--h-header);        background: var(--c-ctrls);
+    display: flex; justify-content: space-between; gap: 16px;
+}
+
+/* ───────── hunk banner ───────── */
+.hunk-header{
+    background: var(--c-hunk);
+    padding: 4px 12px;
     font-style: italic;
-    border-radius: 3px;
+    border-top: 1px solid var(--c-border);
+    border-bottom: 1px solid var(--c-border);
+    position: sticky;
+    top: calc(var(--h-header) + var(--h-ctrls));
+    z-index: 1;
 }
-/*  TWO independent horizontal scrollbars  */
-.panels {
-    display: flex;
-    gap: 1px; /* thin divider */
-}
-.panel {
+.hunk{ margin:0; }
+
+/* ───────── two side‑by‑side panels ───────── */
+.panels { display: flex; gap: 1px; }
+
+.panel{
     flex: 1 1 0;
-    overflow-x: auto;            /* each column scrolls horizontally */
-    white-space: pre;            /* prevent wrapping */
-    box-sizing: border-box;
-    padding: 4px 0;
-    border-left: 1px solid #e2e2e2;
+    overflow-x: auto;            /* independent horizontal scroll */
+    white-space: pre;
 }
-.panel:first-child { border-left: none; }
 
-.line {
-    display: flex;
-    align-items: flex-start;
-    padding: 0 8px;
-}
-.lineno {
-    width: 5ch;
-    text-align: right;
-    margin-right: 6px;
+/* ───────── individual lines ───────── */
+.line     { display: flex; min-height: 20px; width: max-content; min-width: 100%; } /* Ensure line expands */
+.lineno   {
+    width: 5ch; flex-shrink: 0; text-align: right;
+    padding: 0 6px; margin-right: 6px;
+    color: #6e7781; background: var(--c-lineno);
+    border-right: 1px solid var(--c-border);
+    position: sticky; left: 0;   /* sticks inside each panel */
     user-select: none;
-    background: #f0f0f0;
-    padding: 0 4px;
-    border-radius: 2px;
-    font-weight: 600;
-    color: #555;
 }
-.empty .lineno { visibility: hidden; }
-.code { flex: 1; }
+.empty .lineno{ visibility: hidden; }
 
-/* Highlighting */
-.added   { background: #eaffea; }
-.removed { background: #ffeaea; }
-.context { background: #f9f9f9; }
+.code { flex: 1; padding-right: 12px; }
 
-/* No‑diff */
-.no-diff {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px;
-    color: #777;
-    font-style: italic;
+/* ───────── highlighting ───────── */
+
+    /* Apply highlights directly to the line */
+    .added {
+        background: var(--c-added);
+    }
+    .removed {
+        background: var(--c-removed);
+    }
+    .context {
+        background: var(--c-context);
+    }
+
+    /* Ensure empty lines don't get backgrounds */
+    .empty {
+        background: transparent !important;
+    }
+
+    /* Remove background from code span */
+    .added > .code,
+    .removed > .code,
+    .context > .code {
+        background: transparent;
+    }
+
+
+/* ───────── “no diff” state ───────── */
+.no-diff{
+    display: flex; justify-content: center; align-items: center;
+    padding: 48px 0; color: #555; font-style: italic;
 }
-.no-diff p { margin: 0; }
+
 </style>

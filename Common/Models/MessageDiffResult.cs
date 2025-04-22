@@ -1,4 +1,6 @@
-﻿namespace Common.Models
+﻿using CSharpDiff.Patches.Models;
+
+namespace Common.Models
 {
     public class MessageDiffResult : IDiffResult
     {
@@ -8,5 +10,6 @@
         public MessageDefinition Target { get; set; }
         public MessageDefinition Source { get; set; }
         public List<string> ChangedFields { get; set; } = new();
+        public PatchResult Patch { get; set; }
     }
 }

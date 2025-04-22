@@ -6,6 +6,7 @@ using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Flurl;
 using Flurl.Http;
+using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -613,7 +614,7 @@ namespace Common.Services
             var value1 = Normalize(oldValue, recursive);
             var value2 = Normalize(newValue, recursive);
 
-            var ps = new Patch(new PatchOptions(), new DiffOptions());
+            var ps = new CSharpDiff.Patches.Patch(new PatchOptions(), new DiffOptions());
 
             var patchResult = ps.createPatchResult(
                 keyFormatted,
@@ -627,7 +628,10 @@ namespace Common.Services
             var hasDifferences = patchResult.Hunks.Any();
             var diffString = "diff --git" + "\r\n" + ps.formatPatch(patchResult);
 
-            return new ConsulDiffResult(key, diffString, hasDifferences);
+            return new ConsulDiffResult(key, diffString, hasDifferences)
+            {
+                Patch = patchResult
+            }; ;
         }
     }
 }
