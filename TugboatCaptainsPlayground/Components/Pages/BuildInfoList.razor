@@ -107,8 +107,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var buildInfo in GetBuildInfos())
-        {
+        <Virtualize Items="GetBuildInfos().ToList()" Context="buildInfo" TItem="Repository">
             <ContextMenuTrigger WrapperTag="tr" MenuId="tableContextMenu" Data="buildInfo" @ondblclick="async () => await OpenClickAsync(buildInfo)" style="vertical-align: middle;">
                 <td>
                     <StatusIndicator CurrentStatus="GetStatusIndicator(buildInfo)" OnStatusClick="@((status) => OnStatusClickHandler(buildInfo, status))" />
@@ -178,9 +177,9 @@
                                 @foreach (var pr in buildInfo.ActivePullRequests)
                                 {
                                     <span class="badge bg-secondary clickable-badge"
-                                          @onclick="() => OpenPr(pr.Id.ToString(), buildInfo.Project, buildInfo.Name)"
-                                          data-bs-toggle="tooltip"
-                                          title="@($"{pr.Title} ({pr.SourceBranch} → {pr.TargetBranch})")">
+                                            @onclick="() => OpenPr(pr.Id.ToString(), buildInfo.Project, buildInfo.Name)"
+                                            data-bs-toggle="tooltip"
+                                            title="@($"{pr.Title} ({pr.SourceBranch} → {pr.TargetBranch})")">
                                         PR Ativo @pr.Id
                                     </span>
                                 }
@@ -195,7 +194,7 @@
                     </button>
                 </td>
             </ContextMenuTrigger>
-        }
+        </Virtualize>
     </tbody>
 </table>
 

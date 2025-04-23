@@ -182,4 +182,24 @@ else
     padding: 48px 0; color: #555; font-style: italic;
 }
 
+    .lineno {
+        min-width: 5ch;
+        width: auto;
+    }
+
+    .no-diff {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%; /* Ensure it takes the full height of its container */
+    }
+
+    .panel {
+        border-right: 1px solid var(--c-border);
+    }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
 </style>
