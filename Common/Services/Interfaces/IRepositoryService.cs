@@ -29,5 +29,6 @@ namespace Common.Services.Interfaces
         Task<List<string>> GetRemoteBranches(string repoPath);
         Task<(bool Success, string ErrorMessage)> CheckoutBranch(Repository buildInfo, string branchName);
         Task<int> GetActivePullRequestCountAsync(Guid repositoryId);
+        Task<Guid> GetIdFromPathAsync(string? path);
     }
 }

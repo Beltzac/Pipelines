@@ -35,7 +35,21 @@ namespace Common.Jobs
             if (string.IsNullOrEmpty(_configurationService.GetConfig().PAT))
                 return;
 
-            var repositoryId = Guid.Parse(context.MergedJobDataMap.GetString("RepositoryId"));
+            Guid repositoryId = Guid.Empty;
+
+            if (context.MergedJobDataMap.TryGetString("RepositoryId", out var idString))
+                Guid.TryParse(idString, out repositoryId);
+
+            if(repositoryId == Guid.Empty)
+            {
+                if(context.MergedJobDataMap.TryGetString("Path", out var path))
+                    repositoryId = await _buildInfoService.GetIdFromPathAsync(path);
+            }
+
+            if (repositoryId == Guid.Empty)
+                return;
+
+            context.MergedJobDataMap.TryGetBooleanValue("Once", out var once);
 
             var nextRun = 60;
             Repository? repo = null;
@@ -59,19 +73,22 @@ namespace Common.Jobs
                 _logger.LogError(ex, $"Error updating repository {repositoryId}");
             }
 
-            context.JobDetail.JobDataMap["RepositoryId"] = repositoryId;
-
-            var trigger = TriggerBuilder.Create()
-                .WithIdentity(context.Trigger.Key)
-                .StartAt(DateTime.UtcNow.AddSeconds(nextRun))
-                .Build();
-
-            await _retryPolicy.ExecuteAsync(async () =>
+            if (!once)
             {
-                await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
-            });
+                context.JobDetail.JobDataMap["RepositoryId"] = repositoryId;
 
-            _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo?.Name ?? "MISSING"} in {nextRun} seconds");
+                var trigger = TriggerBuilder.Create()
+                    .WithIdentity(context.Trigger.Key)
+                    .StartAt(DateTime.UtcNow.AddSeconds(nextRun))
+                    .Build();
+
+                await _retryPolicy.ExecuteAsync(async () =>
+                {
+                    await context.Scheduler.RescheduleJob(context.Trigger.Key, trigger);
+                });
+
+                _logger.LogInformation($"Rescheduled RepositoryUpdateJob for repository {repo?.Name ?? "MISSING"} in {nextRun} seconds");
+            }
         }
     }
 }

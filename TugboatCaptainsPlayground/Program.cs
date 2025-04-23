@@ -322,6 +322,52 @@ internal class Program
 
         trayIcon.Create();
 
+
+        // FileWatcher
+
+        string path = @"C:\repos";
+
+        FileSystemWatcher watcher = new FileSystemWatcher
+        {
+            Path = path,
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName,
+            //Filter = "*.*"
+        };
+
+        watcher.Filters.Add("HEAD");
+
+        watcher.Changed += OnChanged;
+        watcher.Created += OnChanged;
+        watcher.Deleted += OnChanged;
+
+        watcher.EnableRaisingEvents = true;
+        watcher.IncludeSubdirectories = true;
+
+        void OnChanged(object source, FileSystemEventArgs e)
+        {
+            if (!e.FullPath.Contains("logs\\HEAD"))
+            {
+                return;
+            }
+
+            Console.WriteLine($"Change detected in .git: {e.FullPath}");
+            using var scope = app.Services.CreateScope();
+            var services = scope.ServiceProvider;
+            var factory = services.GetRequiredService<ISchedulerFactory>();
+            var scheduler = factory.GetScheduler().Result;
+
+            var job = JobBuilder.Create<UpdateRepositoryJob>()
+                .UsingJobData("Path", e.FullPath)
+                .UsingJobData("Once", true.ToString())
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+                .StartNow()
+                .Build();
+
+            scheduler.ScheduleJob(job, trigger).Wait();
+        }
+
         var task = app.RunAsync(token);
 
         mainWindow.WaitForClose();

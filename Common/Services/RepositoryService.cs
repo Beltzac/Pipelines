@@ -272,7 +272,7 @@ namespace Common.Services
                 Id = repo.Id,
                 Project = projectName,
                 Name = repo.Name,
-                MasterClonned = Directory.Exists(Path.Combine(_localCloneFolder, projectName, repo.Name)),
+                MasterClonned = Directory.Exists(localPath),
                 CurrentBranch = GetCurrentBranch(localPath),
                 Url = repo.WebUrl,
                 CloneUrl = repo.RemoteUrl,
@@ -574,6 +574,9 @@ namespace Common.Services
         {
             try
             {
+                if(!Directory.Exists(repoPath))
+                    return string.Empty;
+
                 using var repo = new LibGit2Sharp.Repository(repoPath);
                 return repo.Head.FriendlyName;
             }
@@ -665,5 +668,41 @@ namespace Common.Services
                 return (false, ex.Message);
             }
         }
+
+        public async Task<Guid> GetIdFromPathAsync(string? path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                _logger.LogWarning("GetIdFromPathAsync called with null or empty path.");
+                return Guid.Empty;
+            }
+
+            var pathParts = path.Replace(_localCloneFolder, string.Empty)
+                .Split('\\', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Take(2)
+                .ToArray();
+
+            if (pathParts.Length < 2)
+            {
+                _logger.LogWarning($"GetIdFromPathAsync called with invalid path format: {path}");
+                return Guid.Empty;
+            }
+
+            var projectName = pathParts[0];
+            var repoName = pathParts[1];
+
+            // Use the database context to find the repository
+            var repository = await _repositoryDatabase.Query()
+                .FirstOrDefaultAsync(r => r.Project == projectName && r.Name == repoName);
+
+            if (repository == null)
+            {
+                _logger.LogWarning($"Repository not found for path: {path}");
+                return Guid.Empty;
+            }
+
+            return repository.Id;
+        }
+
     }
 }
