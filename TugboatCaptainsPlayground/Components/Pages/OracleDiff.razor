@@ -98,14 +98,8 @@
 <CustomPagination State="@OracleDiffStateService" OnPageChange="@ChangePage"/>
 
 <style>
-    .diff-container {
-    max-width: 80vw;
-    margin: 0 auto;
-    overflow-x: auto;
-    }
-
     .form-group {
-    margin-bottom: 0;
+        margin-bottom: 0;
     }
 </style>
 
@@ -157,7 +151,6 @@
         OracleDiffStateService.Save();
     }
 
-    [JSInvokable]
     public async Task ExportViewDDL(string viewName, string envName)
     {
         viewName = viewName.Replace(".SQL", "");
@@ -175,8 +168,7 @@
             var viewDef = await OracleSchemaService.GetViewDefinitionAsync(env.ConnectionString, env.Schema, viewName);
             if (!string.IsNullOrEmpty(viewDef.Definition))
             {
-                var createView = $@"CREATE OR REPLACE FORCE EDITIONABLE VIEW {env.Schema}.{viewName} AS
-{viewDef.Definition}";
+                var createView = $@"CREATE OR REPLACE FORCE EDITIONABLE VIEW {env.Schema}.{viewName} AS {viewDef.Definition}";
 
                 var fileName = $"{viewDef.Name}_{envName}_{DateTime.Now:yyyyMMdd}.sql".Replace(" ", "_");
                 await DownloadFile(fileName, createView);
@@ -193,7 +185,6 @@
         }
     }
 
-    [JSInvokable]
     public async Task CopyDropSQL(string viewName, string envName)
     {
         viewName = viewName.Replace(".SQL", "");
@@ -236,67 +227,35 @@
 
         try
         {
-            OracleDiffStateService.ProgressValue = 0;
-            OracleDiffStateService.IsLoading = true;
-
             // Initialize pagination service
             await paginationService.InitializeAsync();
 
             // Get differences for the current page
-            await LoadPageDifferences();
+            await paginationService.GetPageAsync();
         }
         catch (Exception ex)
         {
             toastService.ShowError($"Error comparing environments: {ex.Message}");
-        }
-        finally
-        {
-            OracleDiffStateService.IsLoading = false;
-        }
-    }
-
-    private async Task LoadPageDifferences()
-    {
-        OracleDiffStateService.IsLoading = true;
-        try
-        {
-            OracleDiffStateService.ProgressValue = 80;
-            OracleDiffStateService.ProgressLabel = "Loading page differences...";
-
-            await paginationService.GetPageAsync();
-        }
-        finally
-        {
-            OracleDiffStateService.IsLoading = false;
         }
     }
 
     private async Task HandleSearch()
     {
         OracleDiffStateService.CurrentPage = 1;
-        await LoadPageDifferences();
+        await paginationService.GetPageAsync();
+
     }
 
     private async Task ChangePage(int page)
     {
         OracleDiffStateService.CurrentPage = page;
-        await LoadPageDifferences();
-    }
-
-    public int GetFilteredCount()
-    {
-        if (string.IsNullOrWhiteSpace(OracleDiffStateService.SearchKey))
-            return OracleDiffStateService.AllKeys.Count;
-
-        return OracleDiffStateService.AllKeys.Count(view =>
-            view.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase));
+        await paginationService.GetPageAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-
             OracleDiffStateService.InitializeState(async x =>
             {
                 if (environments.Count >= 2)

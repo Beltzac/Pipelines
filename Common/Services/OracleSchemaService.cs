@@ -97,9 +97,9 @@ namespace Common.Services
             foreach (var devView in devViews)
             {
                 var viewName = devView.Name;
-                if (qaViewDict.ContainsKey(viewName))
+                if (qaViewDict.TryGetValue(viewName, out string? value))
                 {
-                    var diff = GetViewDiff(viewName, devView.Definition, qaViewDict[viewName]);
+                    var diff = GetViewDiff(viewName, devView.Definition, value);
                     if (diff.HasDifferences)
                     {
                         _logger.LogInformation($"Diferença na view: {viewName}");
@@ -145,7 +145,7 @@ namespace Common.Services
             );
 
             var hasDifferences = patch.Hunks.Any();
-            var diffString = "diff --git" + "\r\n" + ps.formatPatch(patch);
+            var diffString = "";// "diff --git" + "\r\n" + ps.formatPatch(patch);
 
             return new OracleDiffResult(viewName, diffString, hasDifferences)
             {
