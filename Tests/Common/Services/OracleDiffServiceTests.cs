@@ -20,9 +20,9 @@ namespace Tests.Common.Services
             var result = (new OracleSchemaService(null, null, oracleRepositoryMock.Object)).GetViewDiffAsync(view, old, newString);
 
             result.Should().NotBeNull();
-            result.Key.Should().Be(view);
-            result.FormattedDiff.Should().NotBeNullOrEmpty();
-            result.HasDifferences.Should().BeTrue();
+            (await result).Key.Should().Be(view);
+            (await result).FormattedDiff.Should().NotBeNullOrEmpty();
+            (await result).HasDifferences.Should().BeTrue();
         }
     }
 }

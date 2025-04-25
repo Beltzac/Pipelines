@@ -38,7 +38,6 @@ namespace Tests.Common
                 {
                     ["1"] = new() { Id = "1" }
                 }),
-                }),
                 (id, source, target) => Task.FromResult(new MongoMessageDiffResult()),
                 (id, source, target, diff) => Task.FromResult(true)
             );

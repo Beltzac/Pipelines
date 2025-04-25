@@ -77,8 +77,6 @@ namespace Common.Services
 
         public async Task<MessageDiffResult> GetMessageDiffAsync(string key, MessageDefinition source, MessageDefinition target)
         {
-            // Note: This method does not contain operations that benefit from parallelization or async execution,
-            // but the signature is updated to match the user's request for consistency with GetViewDiff.
             var diff = new MessageDiffResult
             {
                 Key = key,
