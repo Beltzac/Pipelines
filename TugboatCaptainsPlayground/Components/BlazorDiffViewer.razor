@@ -15,6 +15,7 @@
                 <span>@Diff.Patch.OldFileName ↔ @Diff.Patch.NewFileName</span>
             }
         </div>
+
         <div class="diff-controls">
             <div class="controls-left">@LeftButtons</div>
             <div class="controls-right">@RightButtons</div>
@@ -73,133 +74,155 @@ else
 }
 
 <style>
-:root {
-    --font-mono: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-
-    --c-border : #d0d7de;
-    --c-file   : #f6f8fa;
-    --c-ctrls  : #fafbfc;
-    --c-hunk   : #eef6ff;
-    --c-lineno : #f0f3f6;
-
-    --c-added  : #e6ffed;
-    --c-removed: #ffeef0;
-    --c-context: #f9f9f9;
-
-    --h-header : 36px;          /* tweak if you change paddings */
-    --h-ctrls  : 32px;
-}
-
-/* ───────── wrapper ───────── */
-.diff-container {
-    font-family: var(--font-mono);
-    font-size: 14px;
-    background: #fff;
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    overflow: hidden;           /* rounds the corners */
-}
-
-/* ───────── sticky header & toolbar ───────── */
-.diff-header,
-.diff-controls {
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--c-border);
-    position: sticky;
-    z-index: 2;
-}
-.diff-header  { top: 0;           background: var(--c-file);   font-weight: 600; }
-.diff-controls{
-    top: var(--h-header);        background: var(--c-ctrls);
-    display: flex; justify-content: space-between; gap: 16px;
-}
-
-/* ───────── hunk banner ───────── */
-.hunk-header{
-    background: var(--c-hunk);
-    padding: 4px 12px;
-    font-style: italic;
-    border-top: 1px solid var(--c-border);
-    border-bottom: 1px solid var(--c-border);
-    position: sticky;
-    top: calc(var(--h-header) + var(--h-ctrls));
-    z-index: 1;
-}
-.hunk{ margin:0; }
-
-/* ───────── two side‑by‑side panels ───────── */
-.panels { display: flex; gap: 1px; }
-
-.panel{
-    flex: 1 1 0;
-    overflow-x: auto;            /* independent horizontal scroll */
-    white-space: pre;
-}
-
-/* ───────── individual lines ───────── */
-.line     { display: flex; min-height: 20px; width: max-content; min-width: 100%; } /* Ensure line expands */
-.lineno   {
-    width: 5ch; flex-shrink: 0; text-align: right;
-    padding: 0 6px; margin-right: 6px;
-    color: #6e7781; background: var(--c-lineno);
-    border-right: 1px solid var(--c-border);
-    position: sticky; left: 0;   /* sticks inside each panel */
-    user-select: none;
-}
-.empty .lineno{ visibility: hidden; }
-
-.code { flex: 1; padding-right: 12px; }
-
-/* ───────── highlighting ───────── */
-
-    /* Apply highlights directly to the line */
-    .added {
-        background: var(--c-added);
-    }
-    .removed {
-        background: var(--c-removed);
-    }
-    .context {
-        background: var(--c-context);
+    :root {
+        --font-mono: ui-monospace, 'SFMono-Regular', Consolas, Menlo, monospace;
+        --border: #d0d7de;
+        --bg-stage: #ffffff;
+        --bg-header: #f6f8fa;
+        --bg-toolbar: #fbfcfd;
+        --bg-hunk: #eef6ff;
+        --bg-lineno: #f0f3f6;
+        --bg-added: #e6ffed;
+        --bg-removed: #ffeef0;
+        --bg-context: transparent;
+        --line-height: 20px;
     }
 
-    /* Ensure empty lines don't get backgrounds */
-    .empty {
-        background: transparent !important;
+    /* File wrapper --------------------------------------------------- */
+    .diff-file {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        background: var(--bg-stage);
     }
 
-    /* Remove background from code span */
-    .added > .code,
-    .removed > .code,
-    .context > .code {
-        background: transparent;
+    /* Sticky header -------------------------------------------------- */
+    .diff-header {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        background: var(--bg-header);
     }
 
-
-/* ───────── “no diff” state ───────── */
-.no-diff{
-    display: flex; justify-content: center; align-items: center;
-    padding: 48px 0; color: #555; font-style: italic;
-}
-
-    .lineno {
-        min-width: 5ch;
-        width: auto;
-    }
-
-    .no-diff {
+    /* Toolbar / Controls (supports either markup) -------------------- */
+    .toolbar,
+    .diff-controls {
+        position: sticky;
+        top: 36px; /* height of .diff-header */
+        z-index: 2;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-toolbar);
+        /* layout */
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
-        height: 100%; /* Ensure it takes the full height of its container */
+        gap: 1rem;
+        /* handle overflow */
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .toolbar-left,
+    .controls-left {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .toolbar-right,
+    .controls-right {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin-left: auto; /* push to the far right */
+    }
+
+    /* Hunks ---------------------------------------------------------- */
+    .hunk-header {
+        padding: 4px 12px;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-hunk);
+        font-style: italic;
+        position: sticky;
+        top: 68px; /* header + controls */
+        z-index: 1;
+    }
+
+    /* Panels grid ---------------------------------------------------- */
+    .panels {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
     }
 
     .panel {
-        border-right: 1px solid var(--c-border);
+        overflow-x: auto;
+        border-right: 1px solid var(--border);
     }
 
         .panel:last-child {
             border-right: none;
         }
 
+    /* Lines ---------------------------------------------------------- */
+    .line {
+        display: grid;
+        grid-template-columns: minmax(5ch,auto) 1fr;
+        min-height: var(--line-height);
+        width: max-content; /* enable horizontal scroll for very long lines */
+    }
+
+    .lineno {
+        text-align: right;
+        padding: 0 6px;
+        background: var(--bg-lineno);
+        color: #6e7781;
+        border-right: 1px solid var(--border);
+        position: sticky;
+        left: 0;
+        user-select: none;
+    }
+
+    .blank .lineno {
+        visibility: hidden;
+    }
+
+    /* backgrounds */
+    .added {
+        background: var(--bg-added);
+    }
+
+    .removed {
+        background: var(--bg-removed);
+    }
+
+    .context {
+        background: var(--bg-stage);
+    }
+
+    .blank {
+        background: var(--bg-stage);
+    }
+
+    /* code cell */
+    .code {
+        padding: 0 12px 0 6px;
+        white-space: pre; /* keep spacing */
+    }
+
+    /* No diff -------------------------------------------------------- */
+    .no-diff {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 0;
+        color: #555;
+        font-style: italic;
+    }
 </style>
