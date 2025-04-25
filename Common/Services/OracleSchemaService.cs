@@ -99,7 +99,7 @@ namespace Common.Services
                 var viewName = devView.Name;
                 if (qaViewDict.TryGetValue(viewName, out string? value))
                 {
-                    var diff = GetViewDiff(viewName, devView.Definition, value);
+                    var diff = await GetViewDiffAsync(viewName, devView.Definition, value);
                     if (diff.HasDifferences)
                     {
                         _logger.LogInformation($"Diferença na view: {viewName}");
@@ -109,7 +109,7 @@ namespace Common.Services
                 }
                 else
                 {
-                    var diff = GetViewDiff(viewName, devView.Definition, string.Empty);
+                    var diff = await GetViewDiffAsync(viewName, devView.Definition, string.Empty);
                     differences.Add(diff);
                     _logger.LogInformation($"A view {viewName} está presente no DEV, mas não no QA");
                 }
@@ -120,7 +120,7 @@ namespace Common.Services
                 var viewName = qaView.Name;
                 if (!devViewDict.ContainsKey(viewName))
                 {
-                    var diff = GetViewDiff(viewName, string.Empty, qaView.Definition);
+                    var diff = await GetViewDiffAsync(viewName, string.Empty, qaView.Definition);
                     differences.Add(diff);
                     _logger.LogInformation($"A view {viewName} está presente no QA, mas não no DEV");
                 }
@@ -130,16 +130,25 @@ namespace Common.Services
         }
 
 
-        public OracleDiffResult GetViewDiff(string viewName, string oldContent, string newContent)
+        public async Task<OracleDiffResult> GetViewDiffAsync(string viewName, string oldContent, string newContent)
         {
             var viewNameFormatted = $"{viewName}.SQL";
             var ps = new Patch(new PatchOptions(), new DiffOptions());
 
+            // Execute NormalizeLineBreaks in parallel
+            var normalizeOldTask = Task.Run(() => NormalizeLineBreaks(oldContent));
+            var normalizeNewTask = Task.Run(() => NormalizeLineBreaks(newContent));
+
+            await Task.WhenAll(normalizeOldTask, normalizeNewTask);
+
+            var normalizedOldContent = normalizeOldTask.Result;
+            var normalizedNewContent = normalizeNewTask.Result;
+
             var patch = ps.createPatchResult(
                 viewNameFormatted,
                 viewNameFormatted,
-                NormalizeLineBreaks(oldContent),
-                NormalizeLineBreaks(newContent),
+                normalizedOldContent,
+                normalizedNewContent,
                 null,
                 null
             );

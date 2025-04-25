@@ -298,7 +298,7 @@
                 var targetEnv = environments.First(e => e.Name == MessageDiffStateService.SelectedTargetEnv);
                 return await OracleMessageService.GetMessagesAsync(targetEnv.ConnectionString);
             },
-            (key, source, target) => OracleMessageService.GetMessageDiff(key, source, target),
+            (key, source, target) => OracleMessageService.GetMessageDiffAsync(key, source, target),
             (key, source, target, diff) =>
             {
                 var matchesSearch = true;
@@ -321,7 +321,7 @@
                                        (target?.Languages.Any(x => x.Value?.Descricao?.Contains(MessageDiffStateService.SearchDescription, StringComparison.OrdinalIgnoreCase) ?? false) ?? false);
                 }
 
-                return matchesSearch && matchesDescription && (!MessageDiffStateService.ShowOnlyChanged || diff.HasDifferences);
+                return Task.FromResult(matchesSearch && matchesDescription && (!MessageDiffStateService.ShowOnlyChanged || diff.HasDifferences));
             }
         );
     }

@@ -304,7 +304,7 @@
                 var targetEnv = environments.First(e => e.Name == MongoMessageDiffStateService.SelectedTargetEnv);
                 return await MongoMessageService.GetMessagesAsync(targetEnv.ConnectionString);
             },
-            (id, source, target) => MongoMessageService.GetMessageDiff(id, source, target),
+            (id, source, target) => MongoMessageService.GetMessageDiffAsync(id, source, target),
             (id, source, target, diff) =>
             {
                 var matchesSearch = true;
@@ -327,7 +327,7 @@
                                (target?.Texto?.Contains(MongoMessageDiffStateService.SearchText, StringComparison.OrdinalIgnoreCase) ?? false);
                 }
 
-                return matchesSearch && matchesText && (!MongoMessageDiffStateService.ShowOnlyChanged || diff.HasDifferences);
+                return Task.FromResult(matchesSearch && matchesText && (!MongoMessageDiffStateService.ShowOnlyChanged || diff.HasDifferences));
             }
         );
     }

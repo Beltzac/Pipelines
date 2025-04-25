@@ -17,7 +17,7 @@ namespace Tests.Common.Services
 
             var connectionFactoryMock = new Mock<IOracleConnectionFactory>();
             var oracleRepositoryMock = new Mock<IOracleRepository>();
-            var result = (new OracleSchemaService(null, null, oracleRepositoryMock.Object)).GetViewDiff(view, old, newString);
+            var result = (new OracleSchemaService(null, null, oracleRepositoryMock.Object)).GetViewDiffAsync(view, old, newString);
 
             result.Should().NotBeNull();
             result.Key.Should().Be(view);

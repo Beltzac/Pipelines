@@ -104,7 +104,7 @@ namespace Common.Services
         }
 
 
-        public MongoMessageDiffResult GetMessageDiff(string id, MongoMessage source, MongoMessage target)
+        public Task<MongoMessageDiffResult> GetMessageDiffAsync(string id, MongoMessage source, MongoMessage target)
         {
             var diff = new MongoMessageDiffResult
             {
@@ -120,7 +120,7 @@ namespace Common.Services
             {
                 diff.HasDifferences = source != target;
                 diff.FormattedDiff = source == null ? "Source is null" : "Target is null";
-                return diff;
+                return Task.FromResult(diff);
             }
 
             var properties = typeof(MongoMessage).GetProperties();
@@ -155,7 +155,7 @@ namespace Common.Services
             diff.FormattedDiff = string.Join(Environment.NewLine, diff.ChangedFields
                 .Select(f => $"{f}: '{GetPropertyValue(source, f)}' => '{GetPropertyValue(target, f)}'"));
 
-            return diff;
+            return Task.FromResult(diff);
         }
 
         private Metadata ConvertMetadata(BsonDocument doc)

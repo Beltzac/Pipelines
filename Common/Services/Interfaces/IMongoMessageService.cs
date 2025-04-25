@@ -6,6 +6,6 @@ namespace Common.Services.Interfaces
     {
         Task<Dictionary<string, MongoMessage>> GetMessagesAsync(string connectionString);
         Task<string> GenerateInsertStatementAsync(MongoMessage message);
-        MongoMessageDiffResult GetMessageDiff(string id, MongoMessage source, MongoMessage target);
+        Task<MongoMessageDiffResult> GetMessageDiffAsync(string id, MongoMessage source, MongoMessage target);
     }
 }

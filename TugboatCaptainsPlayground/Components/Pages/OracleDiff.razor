@@ -135,13 +135,13 @@
             {
                 var sourceDefinition = source?.Definition ?? string.Empty;
                 var targetDefinition = target?.Definition ?? string.Empty;
-                return OracleSchemaService.GetViewDiff(viewName, sourceDefinition, targetDefinition);
+                return OracleSchemaService.GetViewDiffAsync(viewName, sourceDefinition, targetDefinition);
             },
-            (viewName, source, target, diff) =>
+            (viewName, source, target, diff) => Task.FromResult(
                 (string.IsNullOrEmpty(OracleDiffStateService.SearchKey) ||
                 (!string.IsNullOrEmpty(OracleDiffStateService.SearchKey) &&
                 viewName.Contains(OracleDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) &&
-                (!OracleDiffStateService.ShowOnlyChanged || diff.HasDifferences)
+                (!OracleDiffStateService.ShowOnlyChanged || diff.HasDifferences))
         );
     }
 

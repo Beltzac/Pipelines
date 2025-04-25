@@ -190,8 +190,8 @@
             ConsulDiffStateService,
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedSourceEnv)),
             async () => await ConsulService.GetConsulKeyValues(environments.First(e => e.Name == ConsulDiffStateService.SelectedTargetEnv)),
-            (key, source, target) => ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive),
-            (key, source, target, diff) => (string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) || (!string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) && key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences)
+            (key, source, target) => Task.FromResult(ConsulService.GetDiff(key, source, target, ConsulDiffStateService.UseRecursive)),
+            (key, source, target, diff) => Task.FromResult((string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) || (!string.IsNullOrEmpty(ConsulDiffStateService.SearchKey) && key.Contains(ConsulDiffStateService.SearchKey, StringComparison.OrdinalIgnoreCase))) && (!ConsulDiffStateService.ShowOnlyChanged || diff.HasDifferences))
         );
     }
 

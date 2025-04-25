@@ -38,10 +38,10 @@ namespace Tests.Common
                 {
                     ["1"] = new() { Id = "1" }
                 }),
-                (id, source, target) => new MongoMessageDiffResult(),
-                (id, source, target, diff) => true
+                }),
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult()),
+                (id, source, target, diff) => Task.FromResult(true)
             );
-
             // Act
             await service.InitializeAsync();
 
@@ -82,8 +82,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // Act
@@ -118,8 +118,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => source.Path == "test" // Only include items with Path = "test"
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(source.Path == "test") // Only include items with Path = "test"
             );
 
             // Act
@@ -155,8 +155,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // Act
@@ -176,8 +176,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(new Dictionary<string, MongoMessage>()),
                 () => Task.FromResult(new Dictionary<string, MongoMessage>()),
-                (id, source, target) => new MongoMessageDiffResult(),
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult()),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // Act
@@ -218,8 +218,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // Act
@@ -255,8 +255,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => source.Path == "test" // Only include items with Path = "test"
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(source.Path == "test") // Only include items with Path = "test"
             );
 
             // Act
@@ -295,8 +295,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // Act - First page with size 2
@@ -337,8 +337,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => false // Filter that excludes all items
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(false) // Filter that excludes all items
             );
 
             // Act
@@ -379,8 +379,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // First page load
@@ -432,8 +432,8 @@ namespace Tests.Common
                 state,
                 () => Task.FromResult(state.SourceValues),
                 () => Task.FromResult(state.TargetValues),
-                (id, source, target) => new MongoMessageDiffResult { Id = id },
-                (id, source, target, diff) => true
+                (id, source, target) => Task.FromResult(new MongoMessageDiffResult { Id = id }),
+                (id, source, target, diff) => Task.FromResult(true)
             );
 
             // First page load

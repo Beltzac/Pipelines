@@ -1,5 +1,6 @@
 ﻿using Common.Models;
 using Common.Services.Interfaces;
+using Common.Utils;
 using System.Collections.Concurrent;
 
 namespace Common.Services
@@ -8,8 +9,8 @@ namespace Common.Services
     {
         private Func<Task<Dictionary<TKey, TValue>>> _getSourceItemsAsync;
         private Func<Task<Dictionary<TKey, TValue>>> _getTargetItemsAsync;
-        private Func<TKey, TValue, TValue, TDiffResult> _getDiffAsync;
-        private Func<TKey, TValue, TValue, TDiffResult, bool> _filter;
+        private Func<TKey, TValue, TValue, Task<TDiffResult>> _getDiffAsync;
+        private Func<TKey, TValue, TValue, TDiffResult, Task<bool>> _filter;
 
         private IComparesItems<TKey, TValue, TDiffResult> _state;
         private HashSet<TKey>? _previousAllKeys;
@@ -50,8 +51,8 @@ namespace Common.Services
         public PaginationService(IComparesItems<TKey, TValue, TDiffResult> state,
             Func<Task<Dictionary<TKey, TValue>>> getSourceItemsAsync,
             Func<Task<Dictionary<TKey, TValue>>> getTargetItemsAsync,
-            Func<TKey, TValue, TValue, TDiffResult> getDiffAsync,
-            Func<TKey, TValue, TValue, TDiffResult, bool> filter)
+            Func<TKey, TValue, TValue, Task<TDiffResult>> getDiffAsync,
+            Func<TKey, TValue, TValue, TDiffResult, Task<bool>> filter)
         {
             _state = state;
             _getSourceItemsAsync = getSourceItemsAsync;
@@ -83,13 +84,14 @@ namespace Common.Services
                     var targetItem = _state.TargetValues.TryGetValue(key, out var t) ? t : default;
 
                     // Calculate or retrieve cached diff using concurrent dictionary
-                    var diffResult = _state.DiffCache.GetOrAdd(
-                        key,
-                        k => _getDiffAsync(k, sourceItem, targetItem));
 
-                    if (_filter(key, sourceItem, targetItem, diffResult))
+                    var diffResultCached = await _state.DiffCache.GetOrAddAsync(
+                        key,
+                        async k => await _getDiffAsync(k, sourceItem, targetItem));
+
+                    if (await _filter(key, sourceItem, targetItem, diffResultCached))
                     {
-                        filteredDiffs.Add((key, diffResult));
+                        filteredDiffs.Add((key, diffResultCached));
                     }
 
                     // Update progress atomically
