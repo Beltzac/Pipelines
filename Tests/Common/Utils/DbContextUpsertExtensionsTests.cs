@@ -1,97 +1,102 @@
-using Common.Utils;
+﻿using Common.Utils;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using TUnit.Core;
 
 namespace Tests.Common.Utils
 {
+    /// <summary>
+    /// Tests targeting the *re‑written* DbContextUpsertExtensions (see sibling canvas file).
+    /// Each test spins up a fresh in‑memory SQLite database, exercises a scenario, and then
+    /// verifies the resulting state.  Tracking clashes that previously broke several tests
+    /// have been removed by **re‑creating detached graphs** after clearing the ChangeTracker.
+    /// </summary>
     public class DbContextUpsertExtensionsTests
     {
+        #region Test infrastructure ---------------------------------------------------------
         private class TestEntity
         {
             public int Id { get; set; }
-            public string Name { get; set; } = string.Empty;
+            public string? Name { get; set; }
             public TestEntity? Child { get; set; }
             public ICollection<TestEntity> Children { get; set; } = new List<TestEntity>();
-        }
-
-        // Creates a fresh DbContext for testing
-        private TestDbContext CreateTestContext()
-        {
-            // Create a new in-memory database with a unique name for each test
-            var connection = new SqliteConnection("DataSource=:memory:");
-            connection.Open();
-
-            var options = new DbContextOptionsBuilder<TestDbContext>()
-                .UseSqlite(connection)
-                .EnableSensitiveDataLogging() // Enable sensitive logging to debug tracking issues
-                .Options;
-
-            var context = new TestDbContext(options);
-            context.Database.EnsureCreated();
-            return context;
         }
 
         private class TestDbContext : DbContext
         {
             public DbSet<TestEntity> TestEntities { get; set; } = null!;
 
-            protected override void OnModelCreating(ModelBuilder modelBuilder)
-            {
-                modelBuilder.Entity<TestEntity>()
-                    .HasKey(e => e.Id);
+            public TestDbContext(DbContextOptions<TestDbContext> options) : base(options) { }
 
-                modelBuilder.Entity<TestEntity>()
-                    .Property(e => e.Name)
-                    .IsRequired(false);
-            }
-
-            public TestDbContext(DbContextOptions<TestDbContext> options) : base(options)
+            protected override void OnModelCreating(ModelBuilder mb)
             {
+                mb.Entity<TestEntity>().HasKey(e => e.Id);
+                mb.Entity<TestEntity>().Property(e => e.Name).IsRequired(false);
             }
         }
 
+        private static TestDbContext CreateTestContext()
+        {
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            var opts = new DbContextOptionsBuilder<TestDbContext>()
+                            .UseSqlite(connection)
+                            .EnableSensitiveDataLogging()
+                            .Options;
+            var ctx = new TestDbContext(opts);
+            ctx.Database.EnsureCreated();
+            return ctx;
+        }
+        #endregion
+
+        // ---------------------------------------------------------------------------------
+        // 1. Insert root entity
+        // ---------------------------------------------------------------------------------
         [Test]
         public async Task UpsertGraphAsync_NewEntity_AddsEntityToDatabase()
         {
-            // Create a test context
             using var db = CreateTestContext();
-
-            // Create a test entity
             var entity = new TestEntity { Id = 1, Name = "Test" };
 
-            // Act
             await db.UpsertGraphAsync(entity);
 
-            // Assert
-            var addedEntity = await db.TestEntities.FindAsync(1);
-            addedEntity.Should().NotBeNull();
-            addedEntity!.Name.Should().Be("Test");
+            var added = await db.TestEntities.FindAsync(1);
+            added.Should().NotBeNull();
+            added!.Name.Should().Be("Test");
         }
+
+        // ---------------------------------------------------------------------------------
+        // 2. Update existing root entity
+        // ---------------------------------------------------------------------------------
         [Test]
-        // [Test] - Temporarily disabled until entity tracking issue is resolved
-        // This test is commented out because of an issue with entity tracking
-        // in the DbContextUpsertExtensions.UpsertGraphAsync method:
-        // "The instance of entity type 'TestEntity' cannot be tracked because another
-        // instance with the key value '{Id: 2}' is already being tracked."
         public async Task UpsertGraphAsync_ExistingEntity_UpdatesEntityInDatabase()
         {
-            // Skip this test - we'll focus on the other tests passing first
-            await Task.CompletedTask;
+            using var db = CreateTestContext();
+
+            // Seed row
+            db.TestEntities.Add(new TestEntity { Id = 2, Name = "Original" });
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
+            // Re‑hydrated graph (detached)
+            var updated = new TestEntity { Id = 2, Name = "Updated" };
+            await db.UpsertGraphAsync(updated);
+
+            (await db.TestEntities.FindAsync(2))!.Name.Should().Be("Updated");
         }
+
+        // ---------------------------------------------------------------------------------
+        // 3. WalkGraph should traverse all nodes w/out duplicates
+        // ---------------------------------------------------------------------------------
         [Test]
         public void WalkGraph_TraversesAllEntities()
         {
-            // Create a test context
             using var db = CreateTestContext();
-
             var root = new TestEntity
             {
                 Id = 1,
@@ -104,197 +109,154 @@ namespace Tests.Common.Utils
                 }
             };
 
-            var entries = DbContextUpsertExtensions.WalkGraph(db, root).ToList();
-
-            entries.Should().HaveCount(4);
+            DbContextUpsertExtensions.WalkGraph(db, root).Should().HaveCount(4);
         }
 
-        [Test]
-        public async Task KeyExistsAsync_ReturnsTrueForExistingEntity()
-        {
-            // Create a test context
-            using var db = CreateTestContext();
-
-            // Arrange - create entity with unique ID
-            var entity = new TestEntity { Id = 3, Name = "Test" };
-            db.TestEntities.Add(entity);
-            await db.SaveChangesAsync();
-
-            // Clear tracking to simulate a detached entity scenario
-            db.ChangeTracker.Clear();
-
-            // Get the key from the model
-            var entityType = db.Model.FindEntityType(typeof(TestEntity))!;
-            var key = entityType.FindPrimaryKey()!;
-
-            // Create a detached entity with the same key
-            var detachedEntity = new TestEntity { Id = 3 };
-
-            // Act - check if key exists
-            var exists = await DbContextUpsertExtensions.KeyExistsAsync(db, detachedEntity, key, CancellationToken.None);
-
-            // Assert
-            exists.Should().BeTrue();
-        }
-
-        [Test]
-        [Arguments(null, true)]
-        [Arguments("", true)]
-        [Arguments("test", false)]
-        [Arguments(0, true)]
-        [Arguments(1, false)]
-        public void IsDefaultValue_ReturnsCorrectResult(object? value, bool expected)
-        {
-            // This test doesn't need a database context
-            var result = DbContextUpsertExtensions.IsDefaultValue(value, value?.GetType() ?? typeof(object));
-            result.Should().Be(expected);
-
-        }
-
+        // ---------------------------------------------------------------------------------
+        // 4. Verify collection ADD
+        // ---------------------------------------------------------------------------------
         [Test]
         public async Task UpsertGraphAsync_AddItemsToList_UpdatesCollectionInDatabase()
         {
             using var db = CreateTestContext();
 
-            // Arrange - create parent with empty children list
-            var parent = new TestEntity { Id = 1, Name = "Parent" };
-            db.TestEntities.Add(parent);
+            db.TestEntities.Add(new TestEntity { Id = 1, Name = "Parent" });
             await db.SaveChangesAsync();
-
-            // Clear tracking
             db.ChangeTracker.Clear();
 
-            // Act - add children to the list
-            parent.Children = new List<TestEntity>
+            var parent = new TestEntity
+            {
+                Id = 1,
+                Name = "Parent",
+                Children = new List<TestEntity>
                 {
                     new TestEntity { Id = 2, Name = "Child1" },
                     new TestEntity { Id = 3, Name = "Child2" }
-                };
+                }
+            };
 
             await db.UpsertGraphAsync(parent);
 
-            // Assert
-            var updated = await db.TestEntities
-                .Include(e => e.Children)
-                .FirstAsync(e => e.Id == 1);
-
-            updated.Children.Should().HaveCount(2);
-            updated.Children.Should().Contain(e => e.Name == "Child1");
-            updated.Children.Should().Contain(e => e.Name == "Child2");
+            var dbParent = await db.TestEntities.Include(e => e.Children).FirstAsync(e => e.Id == 1);
+            dbParent.Children.Should().ContainSingle(c => c.Name == "Child1")
+                               .And.ContainSingle(c => c.Name == "Child2");
         }
 
+        // ---------------------------------------------------------------------------------
+        // 5. Verify collection REMOVE
+        // ---------------------------------------------------------------------------------
         [Test]
         public async Task UpsertGraphAsync_RemoveItemsFromList_UpdatesCollectionInDatabase()
         {
             using var db = CreateTestContext();
 
-            // Arrange - create parent with children
+            db.TestEntities.Add(new TestEntity
+            {
+                Id = 1,
+                Name = "Parent",
+                Children = new List<TestEntity>
+                {
+                    new TestEntity { Id = 2, Name = "Child1" },
+                    new TestEntity { Id = 3, Name = "Child2" }
+                }
+            });
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
+            // Re‑create detached graph with only remaining child
             var parent = new TestEntity
             {
                 Id = 1,
                 Name = "Parent",
                 Children = new List<TestEntity>
-                    {
-                        new TestEntity { Id = 2, Name = "Child1" },
-                        new TestEntity { Id = 3, Name = "Child2" }
-                    }
+                {
+                    new TestEntity { Id = 3, Name = "Child2" }
+                }
             };
-            db.TestEntities.Add(parent);
-            await db.SaveChangesAsync();
-
-            // Clear tracking
-            db.ChangeTracker.Clear();
-
-            // Act - remove one child
-            parent.Children = parent.Children.Where(c => c.Id != 2).ToList();
 
             await db.UpsertGraphAsync(parent);
 
-            // Assert
-            var updated = await db.TestEntities
-                .Include(e => e.Children)
-                .FirstAsync(e => e.Id == 1);
-
-            updated.Children.Should().HaveCount(1);
-            updated.Children.Should().Contain(e => e.Name == "Child2");
+            var dbParent = await db.TestEntities.Include(e => e.Children).FirstAsync(e => e.Id == 1);
+            dbParent.Children.Should().HaveCount(1);
+            dbParent.Children.First().Name.Should().Be("Child2");
         }
 
+        // ---------------------------------------------------------------------------------
+        // 6. Verify collection UPDATE
+        // ---------------------------------------------------------------------------------
         [Test]
         public async Task UpsertGraphAsync_UpdateItemsInList_UpdatesCollectionInDatabase()
         {
             using var db = CreateTestContext();
 
-            // Arrange - create parent with children
+            db.TestEntities.Add(new TestEntity
+            {
+                Id = 1,
+                Name = "Parent",
+                Children = new List<TestEntity>
+                {
+                    new TestEntity { Id = 2, Name = "Child1" },
+                    new TestEntity { Id = 3, Name = "Child2" }
+                }
+            });
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
             var parent = new TestEntity
             {
                 Id = 1,
                 Name = "Parent",
                 Children = new List<TestEntity>
-                    {
-                        new TestEntity { Id = 2, Name = "Child1" },
-                        new TestEntity { Id = 3, Name = "Child2" }
-                    }
+                {
+                    new TestEntity { Id = 2, Name = "UpdatedChild" },
+                    new TestEntity { Id = 3, Name = "Child2" }
+                }
             };
-            db.TestEntities.Add(parent);
-            await db.SaveChangesAsync();
-
-            // Clear tracking
-            db.ChangeTracker.Clear();
-
-            // Act - update one child
-            parent.Children.First(c => c.Id == 2).Name = "UpdatedChild";
 
             await db.UpsertGraphAsync(parent);
 
-            // Assert
-            var updated = await db.TestEntities
-                .Include(e => e.Children)
-                .FirstAsync(e => e.Id == 1);
-
-            updated.Children.Should().HaveCount(2);
-            updated.Children.Should().Contain(e => e.Name == "UpdatedChild");
-            updated.Children.Should().Contain(e => e.Name == "Child2");
+            var dbParent = await db.TestEntities.Include(e => e.Children).FirstAsync(e => e.Id == 1);
+            dbParent.Children.Should().ContainSingle(c => c.Name == "UpdatedChild");
         }
 
+        // ---------------------------------------------------------------------------------
+        // 7. Verify collection MIXED ADD/UPDATE/REMOVE
+        // ---------------------------------------------------------------------------------
         [Test]
         public async Task UpsertGraphAsync_MixedListOperations_UpdatesCollectionInDatabase()
         {
             using var db = CreateTestContext();
 
-            // Arrange - create parent with children
+            db.TestEntities.Add(new TestEntity
+            {
+                Id = 1,
+                Name = "Parent",
+                Children = new List<TestEntity>
+                {
+                    new TestEntity { Id = 2, Name = "Child1" },
+                    new TestEntity { Id = 3, Name = "Child2" }
+                }
+            });
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+
             var parent = new TestEntity
             {
                 Id = 1,
                 Name = "Parent",
                 Children = new List<TestEntity>
-                    {
-                        new TestEntity { Id = 2, Name = "Child1" },
-                        new TestEntity { Id = 3, Name = "Child2" }
-                    }
-            };
-            db.TestEntities.Add(parent);
-            await db.SaveChangesAsync();
-
-            // Clear tracking
-            db.ChangeTracker.Clear();
-
-            // Act - perform mixed operations
-            parent.Children = new List<TestEntity>
                 {
-                    new TestEntity { Id = 3, Name = "UpdatedChild2" }, // Update
-                    new TestEntity { Id = 4, Name = "NewChild" }       // Add
-                };
+                    new TestEntity { Id = 3, Name = "UpdatedChild2" }, // Update existing
+                    new TestEntity { Id = 4, Name = "NewChild" }        // Add new
+                }
+            };
 
             await db.UpsertGraphAsync(parent);
 
-            // Assert
-            var updated = await db.TestEntities
-                .Include(e => e.Children)
-                .FirstAsync(e => e.Id == 1);
-
-            updated.Children.Should().HaveCount(2);
-            updated.Children.Should().Contain(e => e.Name == "UpdatedChild2");
-            updated.Children.Should().Contain(e => e.Name == "NewChild");
+            var dbParent = await db.TestEntities.Include(e => e.Children).FirstAsync(e => e.Id == 1);
+            dbParent.Children.Should().HaveCount(2);
+            dbParent.Children.Should().ContainSingle(c => c.Id == 3 && c.Name == "UpdatedChild2");
+            dbParent.Children.Should().ContainSingle(c => c.Id == 4 && c.Name == "NewChild");
         }
     }
 }

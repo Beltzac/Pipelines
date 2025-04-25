@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,70 +12,75 @@ namespace Common.Utils
 {
     public static class DbContextUpsertExtensions
     {
+        /// <summary>
+        /// Upserts an entire object graph. New entities (determined by default PK values)
+        /// are <see cref="EntityState.Added"/>; existing entities are <see cref="EntityState.Modified"/>.
+        /// Any children that were removed from collection navigations are deleted.
+        /// </summary>
         public static async Task UpsertGraphAsync<T>(
-            this DbContext db, T root, CancellationToken ct = default)
-            where T : class
+            this DbContext db,
+            T root,
+            CancellationToken ct = default) where T : class
         {
-            // Remove deleted children in collection navigations for root
+            if (root == null) throw new ArgumentNullException(nameof(root));
+
+            // -----------------------------------------------------------------
+            // 1. Detect children that were removed from collection navigations
+            // -----------------------------------------------------------------
             var rootEntry = db.Entry(root);
+
             foreach (var nav in rootEntry.Navigations.Where(n => n.Metadata.IsCollection))
             {
-                var collectionEntry = rootEntry.Collection(nav.Metadata.Name);
-                // Load existing child keys without tracking
-                var existingKeys = await collectionEntry.Query()
-                    .Cast<object>()
-                    .Select(e => EF.Property<object>(e, "Id"))
-                    .ToListAsync(ct);
-                // Current child instances in memory
-                var current = ((IEnumerable)collectionEntry.CurrentValue ?? Enumerable.Empty<object>())
-                    .Cast<object>()
-                    .ToList();
-                var currentKeys = new HashSet<object>(current
-                    .Select(c => db.Entry(c).Property("Id").CurrentValue));
-                // Delete children removed from the collection
-                foreach (var id in existingKeys.Where(id => !currentKeys.Contains(id)))
+                var collection = rootEntry.Collection(nav.Metadata.Name);
+
+                // Current children coming from DB
+                var dbChildren = await collection.Query().Cast<object>().ToListAsync(ct);
+
+                // Children present in the new graph
+                var graphChildren = ((IEnumerable)collection.CurrentValue ?? Enumerable.Empty<object>())
+                                    .Cast<object>();
+
+                var graphKeys = new HashSet<object>(
+                    graphChildren.Select(c => db.Entry(c).Property("Id").CurrentValue),
+                    ReferenceEqualityComparer.Instance);
+
+                foreach (var child in dbChildren)
                 {
-                    var elementType = nav.Metadata.TargetEntityType.ClrType;
-                    var stub = Activator.CreateInstance(elementType)!;
-                    elementType.GetProperty("Id")!.SetValue(stub, id);
-                    db.Entry(stub).State = EntityState.Deleted;
+                    var key = db.Entry(child).Property("Id").CurrentValue;
+                    if (!graphKeys.Contains(key))
+                    {
+                        db.Remove(child); // mark missing child for deletion
+                    }
                 }
             }
-// Apply deletions before processing graph updates
-await db.SaveChangesAsync(ct);
-db.ChangeTracker.Clear();
 
-// Reattach root and set foreign keys for collection navigations
-var rootEntryAfterDelete = db.Entry(root);
-var rootKeyName = rootEntryAfterDelete.Metadata.FindPrimaryKey().Properties.Single().Name;
-foreach (var navAfter in rootEntryAfterDelete.Navigations.Where(n => n.Metadata.IsCollection))
-{
-    var fkName = navAfter.Metadata.ForeignKey.Properties.Single().Name;
-    var children = ((IEnumerable)rootEntryAfterDelete.Collection(navAfter.Metadata.Name).CurrentValue ?? Enumerable.Empty<object>())
-                   .Cast<object>();
-    foreach (var child in children)
-        db.Entry(child).Property(fkName).CurrentValue = rootEntryAfterDelete.Property(rootKeyName).CurrentValue;
-}
-
+            // -----------------------------------------------------------------
+            // 2. Traverse the graph and set Added / Modified appropriately
+            // -----------------------------------------------------------------
             foreach (var entry in WalkGraph(db, root))
             {
-                var key = entry.Metadata.FindPrimaryKey()!;
-                bool isDefault = key.Properties.All(p =>
+                var pk = entry.Metadata.FindPrimaryKey()!;
+
+                bool isTransient = pk.Properties.All(p =>
                 {
                     var v = entry.Property(p.Name).CurrentValue;
                     return IsDefaultValue(v, p.ClrType);
                 });
 
-                if (isDefault)
+                if (isTransient)
                 {
                     entry.State = EntityState.Added;
                     continue;
                 }
 
-                bool exists = await KeyExistsAsync(db, entry.Entity, key, ct);
-                entry.State = exists ? EntityState.Modified : EntityState.Added;
+                entry.State = await KeyExistsAsync(db, entry.Entity, pk, ct)
+                    ? EntityState.Modified
+                    : EntityState.Added;
             }
 
+            // -----------------------------------------------------------------
+            // 3. Persist everything in a single round-trip
+            // -----------------------------------------------------------------
             await db.SaveChangesAsync(ct);
         }
 
@@ -115,45 +120,41 @@ foreach (var navAfter in rootEntryAfterDelete.Navigations.Where(n => n.Metadata.
         }
 
         // --------------------------------------------------------------------
-        //  Existence check: fast Any() with composite-PK support
+        //  Efficient existence check (supports composite PKs)
         // --------------------------------------------------------------------
-        public static async Task<bool> KeyExistsAsync(
+        private static async Task<bool> KeyExistsAsync(
             DbContext db, object entity, IKey key, CancellationToken ct)
         {
             var entityType = db.Model.FindEntityType(entity.GetType())!;
-            var primaryKey = entityType.FindPrimaryKey()!;
-            var keyValues = primaryKey.Properties
-                .Select(p => entityType
-                    .FindProperty(p.Name)!
-                    .GetGetter()
-                    .GetClrValue(entity))
+            var pk = entityType.FindPrimaryKey()!;
+
+            var keyValues = pk.Properties
+                .Select(p => entityType.FindProperty(p.Name)!.GetGetter().GetClrValue(entity))
                 .ToArray();
 
-            var existingEntity = await db.FindAsync(entity.GetType(), keyValues, ct);
-            var exists = existingEntity != null;
-            if (existingEntity != null)
-                db.Entry(existingEntity).State = EntityState.Detached;
+            var tracked = await db.FindAsync(entity.GetType(), keyValues, ct);
+            if (tracked != null)
+            {
+                // Prevent duplicate tracking of the existing row
+                db.Entry(tracked).State = EntityState.Detached;
+            }
 
-            return exists;
+            return tracked != null;
         }
 
-        public static IQueryable GetQueryable(DbContext db, Type t)
+        // --------------------------------------------------------------------
+        //  Helpers
+        // --------------------------------------------------------------------
+        private static bool IsDefaultValue(object? value, Type type)
         {
-            var setMethod = typeof(DbContext).GetMethod(nameof(DbContext.Set), Type.EmptyTypes)!
-                                             .MakeGenericMethod(t);
-            return (IQueryable)setMethod.Invoke(db, null)!;
-        }
-
-        public static bool IsDefaultValue(object? value, Type type)
-        {
-            if (value == null) return true;           // reference-type default
+            if (value == null) return true; // reference-type default
 
             if (type == typeof(string))
                 return string.IsNullOrEmpty((string)value);
 
             if (type.IsValueType)
             {
-                object defaultVal = Activator.CreateInstance(type)!; // safe for value types
+                object defaultVal = Activator.CreateInstance(type)!; // safe for structs
                 return value.Equals(defaultVal);
             }
 
