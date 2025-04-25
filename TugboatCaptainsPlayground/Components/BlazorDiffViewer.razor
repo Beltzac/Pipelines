@@ -2,9 +2,9 @@
 @using CSharpDiff.Patches.Models
 @using CSharpDiff.Diffs.Models
 
-@if (Diff?.Patch != null)
+@if (Diff?.Patch is not null)
 {
-    <div class="diff-container">
+    <div class="diff-file">
         <div class="diff-header">
             @if (Diff.Patch.OldFileName == Diff.Patch.NewFileName)
             {
@@ -21,39 +21,29 @@
             <div class="controls-right">@RightButtons</div>
         </div>
 
-        @foreach (var hunk in Diff.Patch.Hunks)
+        @foreach (var hunk in _prepared)
         {
             <div class="hunk">
-                <div class="hunk-header">@@ -@hunk.oldStart,@hunk.oldLines +@hunk.newStart,@hunk.newLines @@</div>
-                @{
-                    var oldLines = hunk.lines.Where(l => l.StartsWith("-") || l.StartsWith(" ")).ToList();
-                    var newLines = hunk.lines.Where(l => l.StartsWith("+") || l.StartsWith(" ")).ToList();
-                    int max = Math.Max(oldLines.Count, newLines.Count);
-                }
+                <div class="hunk-header">@@ -@hunk.OldStart,@hunk.OldLines +@hunk.NewStart,@hunk.NewLines @@</div>
                 <div class="panels">
                     <div class="panel old-panel">
-                        @for (int i = 0; i < max; i++)
+                        @for (int i = 0; i < hunk.RowCount; i++)
                         {
-                            var oldLine = i < oldLines.Count ? oldLines[i] : null;
-                            bool isContext = oldLine?.StartsWith(" ") == true;
-                            string cls = oldLine?.StartsWith("-") == true ? "removed" : isContext ? "context" : "empty";
-                            int num = !string.IsNullOrWhiteSpace(oldLine) && !oldLine.StartsWith("+") ? hunk.oldStart + oldLines.Take(i).Count(l => !l.StartsWith("+")) : -1;
-                            <div class="line @cls">
-                                <span class="lineno">@(num > 0 ? num.ToString() : string.Empty)</span>
-                                <span class="code">@(oldLine != null ? oldLine.Substring(1) : string.Empty)</span>
+                            var row = hunk.Rows[i];
+                            <div class="line @row.OldCls">
+                                <span class="lineno">@(row.OldNo?.ToString() ?? string.Empty)</span>
+                                <span class="code">@row.OldText</span>
                             </div>
                         }
                     </div>
+
                     <div class="panel new-panel">
-                        @for (int i = 0; i < max; i++)
+                        @for (int i = 0; i < hunk.RowCount; i++)
                         {
-                            var newLine = i < newLines.Count ? newLines[i] : null;
-                            bool isContext = newLine?.StartsWith(" ") == true;
-                            string cls = newLine?.StartsWith("+") == true ? "added" : isContext ? "context" : "empty";
-                            int num = !string.IsNullOrWhiteSpace(newLine) && !newLine.StartsWith("-") ? hunk.newStart + newLines.Take(i).Count(l => !l.StartsWith("-")) : -1;
-                            <div class="line @cls">
-                                <span class="lineno">@(num > 0 ? num.ToString() : string.Empty)</span>
-                                <span class="code">@(newLine != null ? newLine.Substring(1) : string.Empty)</span>
+                            var row = hunk.Rows[i];
+                            <div class="line @row.NewCls">
+                                <span class="lineno">@(row.NewNo?.ToString() ?? string.Empty)</span>
+                                <span class="code">@row.NewText</span>
                             </div>
                         }
                     </div>
@@ -64,13 +54,121 @@
 }
 else
 {
-    <div class="no-diff"><p>No differences to display.</p></div>
+    <div class="no-diff">No differences to display.</div>
 }
 
 @code {
-    [Parameter] public IDiffResult Diff { get; set; }
-    [Parameter] public RenderFragment LeftButtons { get; set; }
-    [Parameter] public RenderFragment RightButtons { get; set; }
+    private sealed record Row(
+        string OldText,
+        string NewText,
+        int? OldNo,
+        int? NewNo,
+        string OldCls,
+        string NewCls);
+
+    private sealed record PreparedHunk(
+        int OldStart,
+        int OldLines,
+        int NewStart,
+        int NewLines,
+        Row[] Rows)
+    {
+        public int RowCount => Rows.Length;
+    }
+
+    private IReadOnlyList<PreparedHunk>? _prepared;
+    private IDiffResult? _prev;
+
+    [Parameter] public IDiffResult? Diff { get; set; }
+    [Parameter] public RenderFragment? LeftButtons { get; set; }
+    [Parameter] public RenderFragment? RightButtons { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_prev, Diff)) return;
+        _prev = Diff;
+
+        if (Diff?.Patch is null)
+        {
+            _prepared = null;
+            return;
+        }
+
+        var hunkList = new List<PreparedHunk>(Diff.Patch.Hunks.Count());
+
+        foreach (var h in Diff.Patch.Hunks)
+        {
+            // Build filtered lists once (no LINQ in loops later)
+            var oldLines = new List<string>();
+            var newLines = new List<string>();
+            foreach (var l in h.lines)
+            {
+                if (l.StartsWith("-") || l.StartsWith(" ")) oldLines.Add(l);
+                if (l.StartsWith("+") || l.StartsWith(" ")) newLines.Add(l);
+            }
+
+            int max = Math.Max(oldLines.Count, newLines.Count);
+            var rows = new Row[max];
+
+            int oldNum = h.oldStart;
+            int newNum = h.newStart;
+
+            // precompute running counts to avoid Count/Take
+            for (int i = 0; i < max; i++)
+            {
+                string oldLine = i < oldLines.Count ? oldLines[i] : string.Empty;
+                string newLine = i < newLines.Count ? newLines[i] : string.Empty;
+
+                string oldCls;
+                string newCls;
+                int? oldNo = null;
+                int? newNo = null;
+
+                // classify old side
+                if (string.IsNullOrEmpty(oldLine))
+                {
+                    oldCls = "blank";
+                }
+                else if (oldLine.StartsWith("-"))
+                {
+                    oldCls = "removed";
+                    oldNo = oldNum++;
+                }
+                else // context
+                {
+                    oldCls = "context";
+                    oldNo = oldNum++;
+                }
+
+                // classify new side
+                if (string.IsNullOrEmpty(newLine))
+                {
+                    newCls = "blank";
+                }
+                else if (newLine.StartsWith("+"))
+                {
+                    newCls = "added";
+                    newNo = newNum++;
+                }
+                else // context
+                {
+                    newCls = "context";
+                    newNo = newNum++;
+                }
+
+                string oldText = oldLine.Length > 0 ? oldLine.Substring(1) : string.Empty;
+                string newText = newLine.Length > 0 ? newLine.Substring(1) : string.Empty;
+
+                rows[i] = new Row(oldText, newText, oldNo, newNo, oldCls, newCls);
+            }
+
+            hunkList.Add(new PreparedHunk(h.oldStart, h.oldLines, h.newStart, h.newLines, rows));
+        }
+
+        _prepared = hunkList;
+    }
+
+    protected override bool ShouldRender() => true;
 }
 
 <style>
