@@ -19,24 +19,25 @@ namespace Common.Repositories.TCP
             var database = client.GetDatabase(query.Database);
             var collection = database.GetCollection<BsonDocument>(query.Collection);
 
-            BsonDocument filter;
+            List<BsonDocument> pipeline;
             if (string.IsNullOrWhiteSpace(query.QueryString))
             {
-                filter = new BsonDocument(); // No filter if query string is empty
+                pipeline = new List<BsonDocument>(); // Empty pipeline if query string is empty
             }
             else
             {
                 try
                 {
-                    filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(query.QueryString);
+                    // Deserialize the query string as a list of BsonDocuments (the aggregation pipeline)
+                    pipeline = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<List<BsonDocument>>(query.QueryString);
                 }
                 catch (Exception ex)
                 {
-                    throw new FormatException($"Invalid MongoDB query string format: {ex.Message}", ex);
+                    throw new FormatException($"Invalid MongoDB aggregation pipeline format: {ex.Message}", ex);
                 }
             }
 
-            var result = await (await collection.FindAsync(filter, cancellationToken: cancellationToken)).ToListAsync(cancellationToken);
+            var result = await (await collection.AggregateAsync<BsonDocument>(pipeline, cancellationToken: cancellationToken)).ToListAsync(cancellationToken);
 
             // Convert the result BsonDocument into a list of dictionaries
             var resultList = new List<Dictionary<string, object>>();
