@@ -195,7 +195,23 @@
                             {
                                 @foreach (var header in State.QueryResults.First().Keys)
                                 {
-                                    <td>@(row.ContainsKey(header) ? row[header]?.ToString() : "")</td>
+                                    <td>
+                                        @{
+                                            var cellValue = row.ContainsKey(header) ? row[header] : null;
+                                            if (cellValue is Dictionary<string, object> dictValue)
+                                            {
+                                                @(string.Join(", ", dictValue.Select(kv => $"{kv.Key}: {kv.Value}")))
+                                            }
+                                            else if (cellValue is List<object> listValue)
+                                            {
+                                                @(string.Join(", ", listValue.Select(item => item?.ToString())))
+                                            }
+                                            else
+                                            {
+                                                @(cellValue?.ToString())
+                                            }
+                                        }
+                                    </td>
                                 }
                             }
                         </tr>

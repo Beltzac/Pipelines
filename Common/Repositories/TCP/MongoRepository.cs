@@ -61,9 +61,15 @@ namespace Common.Repositories.TCP
             if (value.IsBsonNull)
                 return null;
             if (value.IsBsonDocument)
-                return value.AsBsonDocument.Elements.ToDictionary(e => e.Name, e => ConvertBsonValue(e.Value));
+            {
+                var dict = value.AsBsonDocument.Elements.ToDictionary(e => e.Name, e => ConvertBsonValue(e.Value));
+                return "{ " + string.Join(", ", dict.Select(kv => $"{kv.Key}: {kv.Value}")) + " }";
+            }
             if (value.IsBsonArray)
-                return value.AsBsonArray.Select(ConvertBsonValue).ToList();
+            {
+                var list = value.AsBsonArray.Select(ConvertBsonValue).ToList();
+                return "[ " + string.Join(", ", list.Select(item => item?.ToString())) + " ]";
+            }
             if (value.IsObjectId)
                 return value.AsObjectId.ToString();
             if (value.IsString)
