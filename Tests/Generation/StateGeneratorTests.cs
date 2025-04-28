@@ -184,6 +184,30 @@ namespace TestNamespace
         }
 
         [Test]
+        public void GeneratesCollectionMethods_ForDictionaryObjectProperties()
+        {
+            // Arrange
+            var source = @"
+namespace TestNamespace
+{
+    public class DictionaryObjectState
+    {
+        public System.Collections.Generic.List<System.Collections.Generic.Dictionary<string, object>> QueryResults { get; set; }
+    }
+}";
+
+            // Act
+            var outputs = GetGeneratedOutput(source);
+
+            // Assert
+            var serviceOutput = outputs.First(o => o.HintName.Contains("DictionaryObjectStateService.g.cs"));
+            var sourceText = serviceOutput.SourceText.ToString();
+
+            sourceText.Should().Contain("public void AddQueryResult(System.Collections.Generic.Dictionary<string, object> item)")
+                .And.Contain("public void RemoveQueryResult(System.Collections.Generic.Dictionary<string, object> item)");
+        }
+
+        [Test]
         public void DoesNotGenerate_ForNonStateClasses()
         {
             // Arrange

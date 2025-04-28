@@ -61,6 +61,17 @@ public class ConfigurationService : IConfigurationService
         await SaveConfigAsync();
     }
 
+    public async Task SaveSavedQueriesAsync(List<SavedQuery> savedQueries)
+    {
+        _config.SavedQueries = savedQueries;
+        await SaveConfigAsync();
+    }
+
+    public List<SavedQuery> LoadSavedQueries()
+    {
+        return _config.SavedQueries ?? new List<SavedQuery>();
+    }
+
     public string ExportConfig()
     {
         return JsonSerializer.Serialize(_config, new JsonSerializerOptions

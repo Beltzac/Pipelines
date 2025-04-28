@@ -250,9 +250,12 @@ namespace Generation
                 propertyAccessors.Append(propertyContent);
 
                 // Generate collection-specific methods if property is a collection
-                if (property.Type.ToString().StartsWith("System.Collections.Generic.List<"))
+                if (property.Type is INamedTypeSymbol namedType &&
+                    namedType.IsGenericType &&
+                    namedType.TypeArguments.Length == 1 &&
+                    namedType.ConstructedFrom.ToDisplayString() == "System.Collections.Generic.List<T>")
                 {
-                    var itemType = property.Type.ToString().Replace("System.Collections.Generic.List<", "").TrimEnd('>');
+                    var itemType = namedType.TypeArguments[0].ToDisplayString();
                     collectionMethods.AppendLine($@"
         /// <summary>
         /// Adds an item to {property.Name}.

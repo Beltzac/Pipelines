@@ -34,6 +34,7 @@
         public HashSet<Guid> PinnedRepositories { get; set; } = new HashSet<Guid>();
         public List<string> RouteDomains { get; set; } = new List<string>();
         public List<MongoEnvironment> MongoEnvironments { get; set; } = new List<MongoEnvironment>();
+        public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
     }
 
     public class OracleEnvironment

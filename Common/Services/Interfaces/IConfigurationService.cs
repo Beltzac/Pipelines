@@ -6,4 +6,6 @@ public interface IConfigurationService
     Task SaveConfigAsync(ConfigModel config);
     string ExportConfig();
     Task ImportConfigAsync(string jsonConfig);
+    Task SaveSavedQueriesAsync(List<SavedQuery> savedQueries);
+    List<SavedQuery> LoadSavedQueries();
 }

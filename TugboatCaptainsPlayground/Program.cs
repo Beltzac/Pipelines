@@ -16,6 +16,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using Vanara.Windows.Shell;
+using Common.Services; // Added using directive for DatabaseAssertsService
+using Common.Repositories.TCP.Interfaces; // Added using directive for IMongoRepository
+using Common.Repositories.TCP; // Added using directive for MongoRepository
 
 internal class Program
 {
@@ -97,6 +100,10 @@ internal class Program
 
         builder.Services.AddCustomServices();
 
+        // Register Database Asserts services
+        builder.Services.AddScoped<DatabaseAssertsService>();
+        builder.Services.AddScoped<IMongoRepository, MongoRepository>();
+
         builder.Services.AddHttpClient("Github").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
             ClientCertificateOptions = ClientCertificateOption.Manual,
@@ -157,7 +164,7 @@ internal class Program
 
         Console.WriteLine($"App running on {AppContext.BaseDirectory}");
 
-     
+
         app.UseStaticFiles();
 
 
