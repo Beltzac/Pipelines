@@ -118,6 +118,7 @@
                 Run All Asserts
             </button>
             <button class="btn btn-info" @onclick="ClearQueryForm">New Query</button>
+            <button class="btn btn-secondary" @onclick="ExportResultsToExcel" disabled="@(!State.QueryResults.Any() || State.IsLoading)">Export Results</button>
         </div>
     </div>
 </StickyFilter>
@@ -602,5 +603,123 @@
         State.QueryResults = new List<Dictionary<string, object>>(); // Clear displayed results
         selectedQuery = null; // Clear selected query
         StateHasChanged(); // Update UI
+    }
+
+    private async Task ExportResultsToExcel()
+    {
+        if (State.SavedQueries == null || !State.SavedQueries.Any())
+        {
+            toastService.ShowInfo("No saved queries to export.");
+            return;
+        }
+
+        State.IsLoading = true;
+        State.ProgressLabel = "Executing queries for export...";
+        State.ProgressValue = 0;
+
+        int completedQueries = 0;
+        var queriesToExport = new List<SavedQuery>();
+
+        foreach (var savedQuery in State.SavedQueries)
+        {
+            // Execute each saved query to get the latest results
+            try
+            {
+                string connectionString = null;
+                string mongoDatabaseName = null;
+                string mongoCollectionName = null;
+
+                if (savedQuery.QueryType == "SQL")
+                {
+                    var selectedEnv = oracleEnvironments.FirstOrDefault(e => e.Name == State.SelectedOracleEnvironment);
+                    if (selectedEnv == null)
+                    {
+                        savedQuery.LastRunStatus = AssertStatus.Error;
+                        savedQuery.LastRunResults = new List<Dictionary<string, object>> { new Dictionary<string, object> { { "Error", "Oracle environment not selected." } } };
+                         toastService.ShowError($"Error executing query '{savedQuery.Name}' for export: Oracle environment not selected.");
+                        continue; // Move to the next query
+                    }
+                    connectionString = selectedEnv.ConnectionString;
+                }
+                else if (savedQuery.QueryType == "MongoDB")
+                {
+                     var selectedEnv = mongoEnvironments.FirstOrDefault(e => e.Name == State.SelectedMongoEnvironment);
+                    if (selectedEnv == null)
+                    {
+                        savedQuery.LastRunStatus = AssertStatus.Error;
+                         savedQuery.LastRunResults = new List<Dictionary<string, object>> { new Dictionary<string, object> { { "Error", "MongoDB environment not selected." } } };
+                        toastService.ShowError($"Error executing query '{savedQuery.Name}' for export: MongoDB environment not selected.");
+                        continue; // Move to the next query
+                    }
+                    connectionString = selectedEnv.ConnectionString;
+                    mongoDatabaseName = selectedEnv.DatabaseName;
+                    mongoCollectionName = savedQuery.Collection; // Use saved collection name
+                }
+                else
+                {
+                    savedQuery.LastRunStatus = AssertStatus.Error;
+                     savedQuery.LastRunResults = new List<Dictionary<string, object>> { new Dictionary<string, object> { { "Error", $"Unknown query type: {savedQuery.QueryType}" } } };
+                    toastService.ShowError($"Error executing query '{savedQuery.Name}' for export: Invalid query type.");
+                    continue; // Move to the next query
+                }
+
+                // Temporarily update the query object with current date filters if needed for execution
+                 var queryToExecute = new SavedQuery
+                {
+                    Name = savedQuery.Name,
+                    Description = savedQuery.Description,
+                    QueryString = savedQuery.QueryString,
+                    QueryType = savedQuery.QueryType,
+                    Database = savedQuery.Database,
+                    Collection = savedQuery.Collection,
+                    LastRunStatus = savedQuery.LastRunStatus, // Preserve existing status
+                    LastRunResults = savedQuery.LastRunResults // Preserve existing results
+                };
+
+
+                var results = await DatabaseAssertsService.ExecuteQueryAsync(
+                    connectionString,
+                    queryToExecute,
+                    State.StartDate, // Apply current date filters
+                    State.EndDate
+                );
+
+                savedQuery.LastRunResults = results; // Update the saved query with results
+                savedQuery.LastRunStatus = results.Any() ? AssertStatus.Problems : AssertStatus.OK; // Update status based on results
+
+            }
+            catch (Exception ex)
+            {
+                savedQuery.LastRunStatus = AssertStatus.Error;
+                savedQuery.LastRunResults = new List<Dictionary<string, object>> { new Dictionary<string, object> { { "Error", ex.Message } } };
+                toastService.ShowError($"Error executing query '{savedQuery.Name}' for export: {ex.Message}");
+            }
+            finally
+            {
+                completedQueries++;
+                State.ProgressValue = State.SavedQueries.Count > 0 ? (int)((double)completedQueries / State.SavedQueries.Count * 100) : 0;
+                queriesToExport.Add(savedQuery); // Add the query (with results or error) to the export list
+                StateHasChanged(); // Update UI with progress
+            }
+        }
+
+        State.ProgressLabel = "Exporting to Excel...";
+        State.ProgressValue = 0; // Reset progress for export
+
+        try
+        {
+            await DatabaseAssertsService.ExportToExcelAsync(queriesToExport);
+            toastService.ShowSuccess("All query results exported to Excel.");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error exporting results to Excel: {ex.Message}");
+        }
+        finally
+        {
+            State.IsLoading = false;
+            State.ProgressLabel = string.Empty;
+            State.ProgressValue = null;
+        }
     }
 }

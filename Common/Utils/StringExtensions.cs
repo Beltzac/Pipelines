@@ -98,5 +98,19 @@ namespace Common.Utils
                 .Distinct()
                 .ToList();
         }
+
+        public static string ReplaceInvalidChars(this string str)
+        {
+            // Define invalid characters for Excel sheet names
+            char[] invalidChars = { '\\', '/', '*', '[', ']', ':', '?' };
+            string cleanedString = str;
+
+            foreach (char invalidChar in invalidChars)
+            {
+                cleanedString = cleanedString.Replace(invalidChar, '_'); // Replace with underscore or another suitable character
+            }
+
+            return cleanedString;
+        }
     }
 }
