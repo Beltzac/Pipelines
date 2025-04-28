@@ -131,9 +131,12 @@
                 @foreach (var row in State.QueryResults)
                 {
                     <tr>
-                        @foreach (var header in State.QueryResults.First().Keys)
+                        @if (State.QueryResults != null && State.QueryResults.Any())
                         {
-                            <td>@(row.ContainsKey(header) ? row[header]?.ToString() : "")</td>
+                            @foreach (var header in State.QueryResults.First().Keys)
+                            {
+                                <td>@(row.ContainsKey(header) ? row[header]?.ToString() : "")</td>
+                            }
                         }
                     </tr>
                 }
@@ -163,6 +166,10 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
                         <label for="queryName">Query Name:</label>
                         <input type="text" class="form-control" id="queryName" @bind="newSavedQueryName" />
                     </div>
+                     <div class="form-group mt-3">
+                        <label for="queryDescription">Description:</label>
+                        <textarea class="form-control" id="queryDescription" @bind="newSavedQueryDescription" rows="3"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="HideSaveQueryModal">Cancel</button>
@@ -191,7 +198,10 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
                             @foreach (var savedQuery in State.SavedQueries)
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @savedQuery.Name (@savedQuery.QueryType)
+                                    <div>
+                                        <strong>@savedQuery.Name (@savedQuery.QueryType)</strong><br />
+                                        <small>@savedQuery.Description</small>
+                                    </div>
                                     <div>
                                         <button class="btn btn-sm btn-primary me-2" @onclick="() => LoadQuery(savedQuery)">Load</button>
                                         <button class="btn btn-sm btn-danger" @onclick="() => DeleteQuery(savedQuery)">Delete</button>
@@ -221,6 +231,7 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
     private bool showSaveQueryModal = false;
     private bool showLoadQueryModal = false;
     private string newSavedQueryName;
+    private string newSavedQueryDescription;
 
     protected override void OnInitialized()
     {
@@ -355,6 +366,7 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
         var queryToSave = new SavedQuery
         {
             Name = newSavedQueryName,
+            Description = newSavedQueryDescription,
             QueryString = State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
             QueryType = State.SelectedQueryType
         };
@@ -387,6 +399,9 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
     private void LoadQuery(SavedQuery savedQuery)
     {
         State.SelectedQueryType = savedQuery.QueryType;
+        newSavedQueryName = savedQuery.Name; // Populate name field
+        newSavedQueryDescription = savedQuery.Description; // Populate description field
+
         if (savedQuery.QueryType == "SQL")
         {
             State.SqlQuery = savedQuery.QueryString;

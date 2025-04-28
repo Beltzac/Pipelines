@@ -1,8 +1,6 @@
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore; // Added for DatabaseFacade
 
 namespace Common.Services
 {
@@ -10,11 +8,13 @@ namespace Common.Services
     {
         private readonly IOracleRepository _oracleRepo;
         private readonly IMongoRepository _mongoRepo;
+        private readonly IOracleConnectionFactory _connectionFactory;
 
-        public DatabaseAssertsService(IOracleRepository oracleRepo, IMongoRepository mongoRepo)
+        public DatabaseAssertsService(IOracleRepository oracleRepo, IMongoRepository mongoRepo, IOracleConnectionFactory connectionFactory)
         {
             _oracleRepo = oracleRepo;
             _mongoRepo = mongoRepo;
+            _connectionFactory = connectionFactory;
         }
 
         public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string query, string queryType, string connectionString, string mongoDatabaseName = null, string mongoCollectionName = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
@@ -31,25 +31,28 @@ namespace Common.Services
                 // Execute SQL query using OracleRepository
                 // Need to find a way to get dynamic results (List<Dictionary<string, object>>)
                 // as GetFromSqlAsync<T> requires a specific type T.
-                // For now, we'll use object and try to convert. This might not be robust.
                 try
                 {
-                    // Using FormattableStringFactory to create FormattableString from raw string
-                    var sqlFormattable = System.Runtime.CompilerServices.FormattableStringFactory.Create(query);
-                    var sqlResults = await _oracleRepo.GetFromSqlAsync<object>(connectionString, sqlFormattable, cancellationToken);
+                    using var context = _connectionFactory.CreateContext(connectionString);
+                    using var connection = context.Database.GetDbConnection();
+                    using var command = connection.CreateCommand();
+                    command.CommandText = query;
 
-                    // Attempt to convert object results to List<Dictionary<string, object>>
-                    // This conversion might need refinement based on how EF Core returns object results
-                    foreach (var item in sqlResults)
+                    if (connection.State != System.Data.ConnectionState.Open)
                     {
-                        // Simple conversion - might need more complex logic based on actual result structure
-                        var dictionary = new Dictionary<string, object>();
-                        var properties = item.GetType().GetProperties();
-                        foreach (var prop in properties)
+                        await connection.OpenAsync(cancellationToken);
+                    }
+
+                    using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        var row = new Dictionary<string, object>();
+                        for (int i = 0; i < reader.FieldCount; i++)
                         {
-                            dictionary[prop.Name] = prop.GetValue(item);
+                            row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
                         }
-                        results.Add(dictionary);
+                        results.Add(row);
                     }
                 }
                 catch (Exception ex)
