@@ -109,11 +109,52 @@
                 }
                 Execute Query
             </button>
-             <button class="btn btn-secondary" @onclick="ShowSaveQueryModal">Save Query</button>
-             <button class="btn btn-secondary" @onclick="ShowLoadQueryModal">Load Query</button>
+            <button class="btn btn-secondary" @onclick="ShowSaveQueryModal">Save Query</button>
+            <button class="btn btn-success" @onclick="RunAllAsserts" disabled="@State.IsLoading">
+                @if (State.IsLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                }
+                Run All Asserts
+            </button>
         </div>
     </div>
 </StickyFilter>
+
+@if (State.SavedQueries != null && State.SavedQueries.Any(q => q.LastRunStatus != AssertStatus.NotRun))
+{
+    <div class="mt-4">
+        <h3>Assert Results</h3>
+        <ul class="list-group">
+            @foreach (var savedQuery in State.SavedQueries.Where(q => q.LastRunStatus != AssertStatus.NotRun))
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@savedQuery.Name</strong> (@savedQuery.QueryType)
+                    </div>
+                    <div>
+                        @if (savedQuery.LastRunStatus == AssertStatus.OK)
+                        {
+                            <span class="badge bg-success">OK</span>
+                        }
+                        else if (savedQuery.LastRunStatus == AssertStatus.Problems)
+                        {
+                            <span class="badge bg-warning text-dark">Problems</span>
+                        }
+                        else if (savedQuery.LastRunStatus == AssertStatus.Error)
+                        {
+                            <span class="badge bg-danger">Error</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Not Run</span>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+}
 
 @if (State.QueryResults != null && State.QueryResults.Any())
 {
@@ -181,49 +222,26 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
     <div class="modal-backdrop fade show"></div>
 }
 
-@* Load Query Modal *@
-@if (showLoadQueryModal)
+@if (State.SavedQueries != null && State.SavedQueries.Any())
 {
-    <div class="modal fade show" style="display: block" tabindex="-1" @onclick="HideLoadQueryModal">
-        <div class="modal-dialog">
-            <div class="modal-content" @onclick:stopPropagation>
-                <div class="modal-header">
-                    <h5 class="modal-title">Load Query</h5>
-                    <button type="button" class="btn-close" @onclick="HideLoadQueryModal"></button>
-                </div>
-                <div class="modal-body">
-                    @if (State.SavedQueries != null && State.SavedQueries.Any())
-                    {
-                        <ul class="list-group">
-                            @foreach (var savedQuery in State.SavedQueries)
-                            {
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>@savedQuery.Name (@savedQuery.QueryType)</strong><br />
-                                        <small>@savedQuery.Description</small>
-                                    </div>
-                                    <div>
-                                        <button class="btn btn-sm btn-primary me-2" @onclick="() => LoadQuery(savedQuery)">Load</button>
-                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteQuery(savedQuery)">Delete</button>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p>No saved queries found.</p>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="HideLoadQueryModal">Close</button>
-                </div>
-            </div>
-        </div>
+    <div class="mt-4">
+        <h3>Saved Queries</h3>
+        <ul class="list-group">
+            @foreach (var savedQuery in State.SavedQueries)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center" @onclick="() => LoadQueryFromList(savedQuery)" style="cursor: pointer;">
+                    <div>
+                        <strong>@savedQuery.Name (@savedQuery.QueryType)</strong><br />
+                        <small>@savedQuery.Description</small>
+                    </div>
+                    <div>
+                         <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteQuery(savedQuery)">Delete</button>
+                    </div>
+                </li>
+            }
+        </ul>
     </div>
-    <div class="modal-backdrop fade show"></div>
 }
-
 
 @code {
     private List<OracleEnvironment> oracleEnvironments = new();
@@ -232,6 +250,8 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
     private bool showLoadQueryModal = false;
     private string newSavedQueryName;
     private string newSavedQueryDescription;
+    private SavedQuery selectedQuery; // To hold the currently selected query
+
 
     protected override void OnInitialized()
     {
@@ -263,6 +283,8 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
                 x.SelectedMongoEnvironment = mongoEnvironments.First().Name;
             }
         });
+
+        State.SavedQueries = ConfigService.LoadSavedQueries();
     }
 
     private void HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) range)
@@ -386,8 +408,6 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
 
     private void ShowLoadQueryModal()
     {
-        // Ensure saved queries are loaded from config before showing the modal
-        State.SavedQueries = ConfigService.LoadSavedQueries();
         showLoadQueryModal = true;
     }
 
@@ -422,5 +442,131 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
         await ConfigService.SaveSavedQueriesAsync(State.SavedQueries); // Save to config file
         toastService.ShowSuccess($"Query '{savedQuery.Name}' deleted.");
         // No need to hide modal, list will update
+    }
+
+    private async Task RunAllAsserts()
+    {
+        State.IsLoading = true;
+        // No need to clear assertStatuses as we are storing status in SavedQuery object
+
+        if (State.SavedQueries == null || !State.SavedQueries.Any())
+        {
+            toastService.ShowInfo("No saved queries to run.");
+            State.IsLoading = false;
+            return;
+        }
+
+        State.ProgressLabel = "Running asserts...";
+        State.ProgressValue = 0;
+        int completedAsserts = 0;
+
+        foreach (var savedQuery in State.SavedQueries)
+        {
+            savedQuery.LastRunStatus = AssertStatus.NotRun; // Initial status
+            savedQuery.LastRunResults = null; // Clear previous results
+            StateHasChanged(); // Update UI to show Not Run status
+
+            try
+            {
+                string connectionString = null;
+                string mongoDatabaseName = null;
+                string mongoCollectionName = null;
+
+                if (savedQuery.QueryType == "SQL")
+                {
+                    var selectedEnv = oracleEnvironments.FirstOrDefault(e => e.Name == State.SelectedOracleEnvironment);
+                    if (selectedEnv == null)
+                    {
+                        savedQuery.LastRunStatus = AssertStatus.Error;
+                        toastService.ShowError($"Error running assert '{savedQuery.Name}': Oracle environment not selected.");
+                        continue; // Move to the next assert
+                    }
+                    connectionString = selectedEnv.ConnectionString;
+                }
+                else if (savedQuery.QueryType == "MongoDB")
+                {
+                    var selectedEnv = mongoEnvironments.FirstOrDefault(e => e.Name == State.SelectedMongoEnvironment);
+                    if (selectedEnv == null)
+                    {
+                        savedQuery.LastRunStatus = AssertStatus.Error;
+                        toastService.ShowError($"Error running assert '{savedQuery.Name}': MongoDB environment not selected.");
+                        continue; // Move to the next assert
+                    }
+                    connectionString = selectedEnv.ConnectionString;
+                    mongoDatabaseName = selectedEnv.DatabaseName;
+                    // For saved MongoDB queries, the collection name should ideally be saved with the query.
+                    // For now, we'll use the one from the State, but this might need refinement.
+                    mongoCollectionName = State.MongoCollectionName;
+                }
+                else
+                {
+                    savedQuery.LastRunStatus = AssertStatus.Error;
+                    toastService.ShowError($"Error running assert '{savedQuery.Name}': Invalid query type.");
+                    continue; // Move to the next assert
+                }
+
+                var results = await DatabaseAssertsService.ExecuteQueryAsync(
+                    savedQuery.QueryString,
+                    savedQuery.QueryType,
+                    connectionString,
+                    mongoDatabaseName,
+                    mongoCollectionName,
+                    State.StartDate,
+                    State.EndDate
+                );
+
+                savedQuery.LastRunResults = results;
+
+                if (results == null || !results.Any())
+                {
+                    savedQuery.LastRunStatus = AssertStatus.Problems;
+                }
+                else
+                {
+                    savedQuery.LastRunStatus = AssertStatus.OK;
+                }
+            }
+            catch (Exception ex)
+            {
+                savedQuery.LastRunStatus = AssertStatus.Error;
+                savedQuery.LastRunResults = new List<Dictionary<string, object>> { new Dictionary<string, object> { { "Error", ex.Message } } };
+                toastService.ShowError($"Error running assert '{savedQuery.Name}': {ex.Message}");
+            }
+            finally
+            {
+                completedAsserts++;
+                State.ProgressValue = State.SavedQueries.Count > 0 ? (int)((double)completedAsserts / State.SavedQueries.Count * 100) : 0;
+                StateHasChanged(); // Update UI with the status of the current assert
+            }
+        }
+
+        State.IsLoading = false;
+        State.ProgressLabel = string.Empty;
+        State.ProgressValue = null;
+        toastService.ShowSuccess("All asserts finished running.");
+    }
+
+    private void LoadQueryFromList(SavedQuery savedQuery)
+    {
+        selectedQuery = savedQuery; // Set the selected query
+        State.SelectedQueryType = savedQuery.QueryType;
+        newSavedQueryName = savedQuery.Name; // Populate name field
+        newSavedQueryDescription = savedQuery.Description; // Populate description field
+
+        if (savedQuery.QueryType == "SQL")
+        {
+            State.SqlQuery = savedQuery.QueryString;
+            State.MongoQuery = string.Empty; // Clear other query type
+        }
+        else if (savedQuery.QueryType == "MongoDB")
+        {
+            State.MongoQuery = savedQuery.QueryString;
+            State.SqlQuery = string.Empty; // Clear other query type
+        }
+
+        // Display last run results if available
+        State.QueryResults = savedQuery.LastRunResults ?? new List<Dictionary<string, object>>();
+
+        StateHasChanged(); // Update UI
     }
 }
