@@ -117,78 +117,98 @@
                 }
                 Run All Asserts
             </button>
+            <button class="btn btn-info" @onclick="ClearQueryForm">New Query</button>
         </div>
     </div>
 </StickyFilter>
 
-@if (State.SavedQueries != null && State.SavedQueries.Any(q => q.LastRunStatus != AssertStatus.NotRun))
-{
-    <div class="mt-4">
-        <h3>Assert Results</h3>
-        <ul class="list-group">
-            @foreach (var savedQuery in State.SavedQueries.Where(q => q.LastRunStatus != AssertStatus.NotRun))
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>@savedQuery.Name</strong> (@savedQuery.QueryType)
-                    </div>
-                    <div>
-                        @if (savedQuery.LastRunStatus == AssertStatus.OK)
-                        {
-                            <span class="badge bg-success">OK</span>
-                        }
-                        else if (savedQuery.LastRunStatus == AssertStatus.Problems)
-                        {
-                            <span class="badge bg-warning text-dark">Problems</span>
-                        }
-                        else if (savedQuery.LastRunStatus == AssertStatus.Error)
-                        {
-                            <span class="badge bg-danger">Error</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Not Run</span>
-                        }
-                    </div>
-                </li>
-            }
-        </ul>
-    </div>
-}
-
-@if (State.QueryResults != null && State.QueryResults.Any())
+@if (State.SavedQueries != null && State.SavedQueries.Any())
 {
     <div class="mt-4 table-responsive">
+        <h3>Saved Queries and Assert Results</h3>
         <table class="table table-striped table-bordered">
             <thead>
                 <tr>
-                    @foreach (var header in State.QueryResults.First().Keys)
-                    {
-                        <th>@header</th>
-                    }
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Last Run Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var row in State.QueryResults)
+                @foreach (var savedQuery in State.SavedQueries)
                 {
                     <tr>
-                        @if (State.QueryResults != null && State.QueryResults.Any())
-                        {
-                            @foreach (var header in State.QueryResults.First().Keys)
+                        <td>
+                            <strong @onclick="() => LoadQueryFromList(savedQuery)" style="cursor: pointer;">@savedQuery.Name</strong>
+                        </td>
+                        <td>@savedQuery.QueryType</td>
+                        <td>@savedQuery.Description</td>
+                        <td>
+                            @if (savedQuery.LastRunStatus == AssertStatus.OK)
                             {
-                                <td>@(row.ContainsKey(header) ? row[header]?.ToString() : "")</td>
+                                <span class="badge bg-success">OK</span>
                             }
-                        }
+                            else if (savedQuery.LastRunStatus == AssertStatus.Problems)
+                            {
+                                <span class="badge bg-warning text-dark">Problems</span>
+                            }
+                            else if (savedQuery.LastRunStatus == AssertStatus.Error)
+                            {
+                                <span class="badge bg-danger">Error</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Not Run</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteQuery(savedQuery)">Delete</button>
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 }
-else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoading)
+
+@if (selectedQuery != null) // Display table if a query is selected
 {
-    <div class="alert alert-info mt-4" role="alert">
-        No results found for the specified query and filters.
+    <div class="mt-4 table-responsive">
+        @if (State.QueryResults != null && State.QueryResults.Any())
+        {
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        @foreach (var header in State.QueryResults.First().Keys)
+                        {
+                            <th>@header</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in State.QueryResults)
+                    {
+                        <tr>
+                            @if (State.QueryResults != null && State.QueryResults.Any())
+                            {
+                                @foreach (var header in State.QueryResults.First().Keys)
+                                {
+                                    <td>@(row.ContainsKey(header) ? row[header]?.ToString() : "")</td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else if (!State.IsLoading) // Show no results message if no results and not loading
+        {
+            <div class="alert alert-info mt-4" role="alert">
+                No results found for the selected query or the query has not been run yet.
+            </div>
+        }
     </div>
 }
 
@@ -220,27 +240,6 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
         </div>
     </div>
     <div class="modal-backdrop fade show"></div>
-}
-
-@if (State.SavedQueries != null && State.SavedQueries.Any())
-{
-    <div class="mt-4">
-        <h3>Saved Queries</h3>
-        <ul class="list-group">
-            @foreach (var savedQuery in State.SavedQueries)
-            {
-                <li class="list-group-item d-flex justify-content-between align-items-center" @onclick="() => LoadQueryFromList(savedQuery)" style="cursor: pointer;">
-                    <div>
-                        <strong>@savedQuery.Name (@savedQuery.QueryType)</strong><br />
-                        <small>@savedQuery.Description</small>
-                    </div>
-                    <div>
-                         <button class="btn btn-sm btn-danger" @onclick="async () => await DeleteQuery(savedQuery)">Delete</button>
-                    </div>
-                </li>
-            }
-        </ul>
-    </div>
 }
 
 @code {
@@ -336,15 +335,20 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
             }
 
 
+            // Create a temporary SavedQuery object for execution
+            var tempQuery = new SavedQuery
+            {
+                QueryString = State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
+                QueryType = State.SelectedQueryType,
+                Database = State.MongoDatabaseName, // Include database and collection for MongoDB
+                Collection = State.MongoCollectionName
+            };
+
             State.QueryResults = await DatabaseAssertsService.ExecuteQueryAsync(
-                State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
-                State.SelectedQueryType,
                 connectionString,
-                mongoDatabaseName,
-                mongoCollectionName,
+                tempQuery,
                 State.StartDate,
-                State.EndDate//,
-                //State.DateFieldForFiltering // Pass date field for filtering
+                State.EndDate
             );
         }
         catch (Exception ex)
@@ -362,7 +366,6 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
 
     private void ShowSaveQueryModal()
     {
-        newSavedQueryName = string.Empty; // Clear previous name
         showSaveQueryModal = true;
     }
 
@@ -390,18 +393,21 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
             Name = newSavedQueryName,
             Description = newSavedQueryDescription,
             QueryString = State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
-            QueryType = State.SelectedQueryType
+            QueryType = State.SelectedQueryType,
+            Database = State.SelectedQueryType == "MongoDB" ? State.MongoDatabaseName : null, // Save Database for MongoDB
+            Collection = State.SelectedQueryType == "MongoDB" ? State.MongoCollectionName : null // Save Collection for MongoDB
         };
 
         // Prevent saving duplicate query names for the same type
-        if (State.SavedQueries.Any(q => q.Name.Equals(newSavedQueryName, StringComparison.OrdinalIgnoreCase) && q.QueryType == State.SelectedQueryType))
+        var existingQuery = State.SavedQueries.FirstOrDefault(q => q.Name.Equals(newSavedQueryName, StringComparison.OrdinalIgnoreCase) && q.QueryType == State.SelectedQueryType);
+        if (existingQuery != null)
         {
-             toastService.ShowWarning($"A query with the name '{newSavedQueryName}' and type '{State.SelectedQueryType}' already exists.");
-            return;
+            State.RemoveSavedQuerie(existingQuery);
         }
 
         State.SavedQueries.Add(queryToSave);
-        await ConfigService.SaveSavedQueriesAsync(State.SavedQueries); // Save to config file
+        await ConfigService.SaveSavedQueriesAsync(State.SavedQueries);
+
         toastService.ShowSuccess($"Query '{newSavedQueryName}' saved successfully.");
         HideSaveQueryModal();
     }
@@ -506,18 +512,15 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
                 }
 
                 var results = await DatabaseAssertsService.ExecuteQueryAsync(
-                    savedQuery.QueryString,
-                    savedQuery.QueryType,
                     connectionString,
-                    mongoDatabaseName,
-                    mongoCollectionName,
+                    savedQuery, // Pass the SavedQuery object directly
                     State.StartDate,
                     State.EndDate
                 );
 
                 savedQuery.LastRunResults = results;
 
-                if (results == null || !results.Any())
+                if (results.Any())
                 {
                     savedQuery.LastRunStatus = AssertStatus.Problems;
                 }
@@ -567,6 +570,21 @@ else if (State.QueryResults != null && !State.QueryResults.Any() && !State.IsLoa
         // Display last run results if available
         State.QueryResults = savedQuery.LastRunResults ?? new List<Dictionary<string, object>>();
 
+        StateHasChanged(); // Update UI
+    }
+
+    private void ClearQueryForm()
+    {
+        State.SqlQuery = string.Empty;
+        State.MongoQuery = string.Empty;
+        State.SelectedOracleEnvironment = string.Empty;
+        State.SelectedMongoEnvironment = string.Empty;
+        State.StartDate = null;
+        State.EndDate = null;
+        State.MongoDatabaseName = string.Empty;
+        State.MongoCollectionName = string.Empty;
+        State.QueryResults = new List<Dictionary<string, object>>(); // Clear displayed results
+        selectedQuery = null; // Clear selected query
         StateHasChanged(); // Update UI
     }
 }

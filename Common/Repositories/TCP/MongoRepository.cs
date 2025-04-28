@@ -1,83 +1,84 @@
 using Common.Repositories.TCP.Interfaces;
 using MongoDB.Driver;
-using MongoDB.Bson; // Added using directive for BsonDocument
+using MongoDB.Bson;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Linq; // Added using directive for LINQ
+using System.Linq;
+using Common.Models;
+using MongoDB.Driver.Linq;
 
 namespace Common.Repositories.TCP
 {
     public class MongoRepository : IMongoRepository
     {
-        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string connectionString, string databaseName, string collectionName, string query, CancellationToken cancellationToken)
+        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string connectionString, SavedQuery query, CancellationToken cancellationToken)
         {
             var client = new MongoClient(connectionString);
-            var database = client.GetDatabase(databaseName);
-            var collection = database.GetCollection<BsonDocument>(collectionName);
 
-            // Assuming the query is a JSON filter document for a Find operation
-            BsonDocument filterDocument = null;
-            if (!string.IsNullOrWhiteSpace(query))
+            var database = client.GetDatabase(query.Database);
+            var collection = database.GetCollection<BsonDocument>(query.Collection);
+
+            BsonDocument filter;
+            if (string.IsNullOrWhiteSpace(query.QueryString))
+            {
+                filter = new BsonDocument(); // No filter if query string is empty
+            }
+            else
             {
                 try
                 {
-                    filterDocument = BsonDocument.Parse(query);
+                    filter = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<BsonDocument>(query.QueryString);
                 }
                 catch (Exception ex)
                 {
-                    throw new ArgumentException($"Invalid MongoDB query format: {ex.Message}", ex);
+                    throw new FormatException($"Invalid MongoDB query string format: {ex.Message}", ex);
                 }
             }
 
-            var findOptions = new FindOptions<BsonDocument, BsonDocument>
-            {
-                // Add options if needed, e.g., Sort, Limit, Projection
-            };
+            var result = await (await collection.FindAsync(filter, cancellationToken: cancellationToken)).ToListAsync(cancellationToken);
 
-            using (var cursor = await collection.FindAsync(filterDocument ?? new BsonDocument(), findOptions, cancellationToken))
+            // Convert the result BsonDocument into a list of dictionaries
+            var resultList = new List<Dictionary<string, object>>();
+
+            foreach (var doc in result)
             {
-                var results = new List<Dictionary<string, object>>();
-                while (await cursor.MoveNextAsync(cancellationToken))
+                var resultDict = new Dictionary<string, object>();
+                foreach (var element in doc.Elements)
                 {
-                    foreach (var document in cursor.Current)
-                    {
-                        // Convert BsonDocument to Dictionary<string, object>
-                        var dictionary = new Dictionary<string, object>();
-                        foreach (var element in document)
-                        {
-                            // Attempt to convert BsonValue to .NET object
-                            object dotNetValue;
-                            if (element.Value.IsBsonDateTime)
-                            {
-                                dotNetValue = element.Value.ToUniversalTime();
-                            }
-                            else if (element.Value.IsBsonNull)
-                            {
-                                dotNetValue = null;
-                            }
-                            else if (element.Value.IsBsonDocument)
-                            {
-                                // Recursively convert nested documents if needed, or store as BsonDocument
-                                dotNetValue = element.Value.ToBsonDocument().ToDictionary(); // Simple conversion to Dictionary
-                            }
-                            else if (element.Value.IsBsonArray)
-                            {
-                                // Convert BsonArray to List<object>
-                                // Let's try a simpler conversion for array elements for now
-                                dotNetValue = element.Value.AsBsonArray.Select(v => v.ToString()).ToList();
-                            }
-                            else
-                            {
-                                // Use ToString() for other basic types
-                                dotNetValue = element.Value.ToString();
-                            }
-                            dictionary[element.Name] = dotNetValue;
-                        }
-                        results.Add(dictionary);
-                    }
+                    resultDict[element.Name] = ConvertBsonValue(element.Value);
                 }
-                return results;
+                resultList.Add(resultDict);
             }
+
+            return resultList;
+        }
+
+        private object ConvertBsonValue(BsonValue value)
+        {
+            if (value.IsBsonDateTime)
+                return value.ToUniversalTime();
+            if (value.IsBsonNull)
+                return null;
+            if (value.IsBsonDocument)
+                return value.AsBsonDocument.Elements.ToDictionary(e => e.Name, e => ConvertBsonValue(e.Value));
+            if (value.IsBsonArray)
+                return value.AsBsonArray.Select(ConvertBsonValue).ToList();
+            if (value.IsObjectId)
+                return value.AsObjectId.ToString();
+            if (value.IsString)
+                return value.AsString;
+            if (value.IsInt32)
+                return value.AsInt32;
+            if (value.IsInt64)
+                return value.AsInt64;
+            if (value.IsDouble)
+                return value.AsDouble;
+            if (value.IsBoolean)
+                return value.AsBoolean;
+
+            // Default fallback
+            return value.ToString();
         }
     }
 }

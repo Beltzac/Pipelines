@@ -1,3 +1,4 @@
+using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using Microsoft.EntityFrameworkCore; // Added for DatabaseFacade
@@ -17,16 +18,11 @@ namespace Common.Services
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string query, string queryType, string connectionString, string mongoDatabaseName = null, string mongoCollectionName = null, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
+        public async Task<List<Dictionary<string, object>>> ExecuteQueryAsync(string connectionString, SavedQuery query, DateTime? startDate = null, DateTime? endDate = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                return new List<Dictionary<string, object>>();
-            }
-
             List<Dictionary<string, object>> results = new List<Dictionary<string, object>>();
 
-            if (queryType.Equals("SQL", StringComparison.OrdinalIgnoreCase))
+            if (query.QueryType.Equals("SQL", StringComparison.OrdinalIgnoreCase))
             {
                 // Execute SQL query using OracleRepository
                 // Need to find a way to get dynamic results (List<Dictionary<string, object>>)
@@ -36,7 +32,7 @@ namespace Common.Services
                     using var context = _connectionFactory.CreateContext(connectionString);
                     using var connection = context.Database.GetDbConnection();
                     using var command = connection.CreateCommand();
-                    command.CommandText = query;
+                    command.CommandText = query.QueryString;
 
                     if (connection.State != System.Data.ConnectionState.Open)
                     {
@@ -61,17 +57,11 @@ namespace Common.Services
                     results.Add(new Dictionary<string, object> { { "Error", $"SQL Execution Error: {ex.Message}" } });
                 }
             }
-            else if (queryType.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
+            else if (query.QueryType.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
             {
-                // Execute MongoDB query using MongoRepository
-                if (string.IsNullOrWhiteSpace(mongoDatabaseName) || string.IsNullOrWhiteSpace(mongoCollectionName))
-                {
-                     results.Add(new Dictionary<string, object> { { "Error", "MongoDB database and collection names are required." } });
-                     return results;
-                }
                 try
                 {
-                    results = await _mongoRepo.ExecuteQueryAsync(connectionString, mongoDatabaseName, mongoCollectionName, query, cancellationToken);
+                    results = await _mongoRepo.ExecuteQueryAsync(connectionString, query, cancellationToken);
                 }
                  catch (Exception ex)
                 {
@@ -82,7 +72,7 @@ namespace Common.Services
             else
             {
                 // Handle unknown query type
-                 results.Add(new Dictionary<string, object> { { "Error", $"Unknown query type: {queryType}" } });
+                 results.Add(new Dictionary<string, object> { { "Error", $"Unknown query type: {query.QueryType}" } });
             }
 
             // TODO: Apply date filtering if not done in the query
