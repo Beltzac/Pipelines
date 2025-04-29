@@ -151,8 +151,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in ConsultaEsbStateService.Results)
-                {
+                <Virtualize Items="@ConsultaEsbStateService.Results" Context="item">
                     <tr>
                         <td class="align-middle ">@item.Source</td>
                         <td class="align-middle "><span class="badge bg-info align-middle" style="cursor: pointer;" @onclick="() => ToggleExecucaoIdFilter(item.IdExecucao)">@item.IdExecucao</span></td>
@@ -171,7 +170,7 @@
                             </button>
                         </td>
                     </tr>
-                }
+                </Virtualize>
             </tbody>
         </table>
     </div>
