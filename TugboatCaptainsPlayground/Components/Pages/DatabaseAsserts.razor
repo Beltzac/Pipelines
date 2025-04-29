@@ -58,14 +58,8 @@
     <div class="row g-3 mt-2">
         <div class="col-md-6">
             <div class="form-group">
-                <label class="form-label">SQL Query:</label>
-                <textarea class="form-control" @bind="@State.SqlQuery" rows="5"></textarea>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="form-label">MongoDB Query:</label>
-                <textarea class="form-control" @bind="@State.MongoQuery" rows="5"></textarea>
+                <label class="form-label">Query:</label>
+                <textarea class="form-control" @bind="@State.CurrentQueryString" rows="5"></textarea>
             </div>
         </div>
     </div>
@@ -355,7 +349,7 @@
             // Create a temporary SavedQuery object for execution
             var tempQuery = new SavedQuery
             {
-                QueryString = State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
+                QueryString = State.CurrentQueryString,
                 QueryType = State.SelectedQueryType,
                 Database = State.MongoDatabaseName, // Include database and collection for MongoDB
                 Collection = State.MongoCollectionName
@@ -399,7 +393,7 @@
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(State.SqlQuery) && string.IsNullOrWhiteSpace(State.MongoQuery))
+        if (string.IsNullOrWhiteSpace(State.CurrentQueryString))
         {
              toastService.ShowWarning("Please enter a query to save.");
             return;
@@ -409,7 +403,7 @@
         {
             Name = newSavedQueryName,
             Description = newSavedQueryDescription,
-            QueryString = State.SelectedQueryType == "SQL" ? State.SqlQuery : State.MongoQuery,
+            QueryString = State.CurrentQueryString,
             QueryType = State.SelectedQueryType,
             Database = State.SelectedQueryType == "MongoDB" ? State.MongoDatabaseName : null, // Save Database for MongoDB
             Collection = State.SelectedQueryType == "MongoDB" ? State.MongoCollectionName : null // Save Collection for MongoDB
@@ -444,17 +438,8 @@
         State.SelectedQueryType = savedQuery.QueryType;
         newSavedQueryName = savedQuery.Name; // Populate name field
         newSavedQueryDescription = savedQuery.Description; // Populate description field
+        State.CurrentQueryString = savedQuery.QueryString;
 
-        if (savedQuery.QueryType == "SQL")
-        {
-            State.SqlQuery = savedQuery.QueryString;
-            State.MongoQuery = string.Empty; // Clear other query type
-        }
-        else if (savedQuery.QueryType == "MongoDB")
-        {
-            State.MongoQuery = savedQuery.QueryString;
-            State.SqlQuery = string.Empty; // Clear other query type
-        }
         toastService.ShowSuccess($"Query '{savedQuery.Name}' loaded.");
         HideLoadQueryModal();
     }
@@ -572,32 +557,18 @@
         State.SelectedQueryType = savedQuery.QueryType;
         newSavedQueryName = savedQuery.Name; // Populate name field
         newSavedQueryDescription = savedQuery.Description; // Populate description field
-
-        if (savedQuery.QueryType == "SQL")
-        {
-            State.SqlQuery = savedQuery.QueryString;
-            State.MongoQuery = string.Empty; // Clear other query type
-            State.MongoDatabaseName = string.Empty;
-            State.MongoCollectionName = string.Empty;
-        }
-        else if (savedQuery.QueryType == "MongoDB")
-        {
-            State.MongoQuery = savedQuery.QueryString;
-            State.SqlQuery = string.Empty; // Clear other query type
-            State.MongoDatabaseName = savedQuery.Database; // Load saved database name
-            State.MongoCollectionName = savedQuery.Collection; // Load saved collection name
-        }
+        State.CurrentQueryString = savedQuery.QueryString;
+        State.MongoDatabaseName = savedQuery.Database; // Load saved database name
+        State.MongoCollectionName = savedQuery.Collection; // Load saved collection name
 
         // Display last run results if available
         State.QueryResults = savedQuery.LastRunResults ?? new List<Dictionary<string, object>>();
 
         StateHasChanged(); // Update UI
     }
-
     private void ClearQueryForm()
     {
-        State.SqlQuery = string.Empty;
-        State.MongoQuery = string.Empty;
+        State.CurrentQueryString = string.Empty; // Clear the unified query string
         State.SelectedOracleEnvironment = string.Empty;
         State.SelectedMongoEnvironment = string.Empty;
         State.StartDate = null;
@@ -610,7 +581,6 @@
         newSavedQueryDescription = string.Empty;
         StateHasChanged(); // Update UI
     }
-
     private async Task ExportResultsToExcel()
     {
         if (State.SavedQueries == null || !State.SavedQueries.Any())

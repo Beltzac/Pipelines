@@ -7,9 +7,7 @@ namespace TugboatCaptainsPlayground.Services
 {
     public class DatabaseAssertsState : IPaginates<object>, ITracksLoading
     {
-        public string SqlQuery { get; set; }
-        public string MongoQuery { get; set; }
-        public string SelectedOracleEnvironment { get; set; } 
+        public string SelectedOracleEnvironment { get; set; }
         public string SelectedMongoEnvironment { get; set; }
         public string SelectedQueryType { get; set; } = "SQL"; // Default to SQL
         public string MongoDatabaseName { get; set; }
@@ -19,6 +17,9 @@ namespace TugboatCaptainsPlayground.Services
         public DateTime? EndDate { get; set; }
         public List<Dictionary<string, object>> QueryResults { get; set; } = new List<Dictionary<string, object>>();
         public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
+
+        // Unified property for the query text area
+        public string CurrentQueryString { get; set; }
 
         // Properties for pagination (from IPaginates<object>)
         public List<object> PageItems { get; set; } = new List<object>();
