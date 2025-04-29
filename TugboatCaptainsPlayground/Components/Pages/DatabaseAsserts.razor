@@ -577,11 +577,15 @@
         {
             State.SqlQuery = savedQuery.QueryString;
             State.MongoQuery = string.Empty; // Clear other query type
+            State.MongoDatabaseName = string.Empty;
+            State.MongoCollectionName = string.Empty;
         }
         else if (savedQuery.QueryType == "MongoDB")
         {
             State.MongoQuery = savedQuery.QueryString;
             State.SqlQuery = string.Empty; // Clear other query type
+            State.MongoDatabaseName = savedQuery.Database; // Load saved database name
+            State.MongoCollectionName = savedQuery.Collection; // Load saved collection name
         }
 
         // Display last run results if available
@@ -602,6 +606,8 @@
         State.MongoCollectionName = string.Empty;
         State.QueryResults = new List<Dictionary<string, object>>(); // Clear displayed results
         selectedQuery = null; // Clear selected query
+        newSavedQueryName = string.Empty; // Clear name field
+        newSavedQueryDescription = string.Empty;
         StateHasChanged(); // Update UI
     }
 
