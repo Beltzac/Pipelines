@@ -18,7 +18,10 @@ using System.Windows.Input;
 using Vanara.Windows.Shell;
 using Common.Services; // Added using directive for DatabaseAssertsService
 using Common.Repositories.TCP.Interfaces; // Added using directive for IMongoRepository
-using Common.Repositories.TCP; // Added using directive for MongoRepository
+using Common.Repositories.TCP;
+using Serilog.Events;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.Extensions.FileProviders.Physical; // Added using directive for MongoRepository
 
 internal class Program
 {
@@ -67,11 +70,7 @@ internal class Program
             Console.WriteLine($"Error registering hotkey: {ex.Message}");
         }
 
-
-        //return;
-
         var builder = WebApplication.CreateBuilder();
-
 
         // Configure the WebHost to set the URLs
         builder.WebHost.ConfigureKestrel((context, options) =>
@@ -84,6 +83,10 @@ internal class Program
             configuration
                 .MinimumLevel.Information()
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", Serilog.Events.LogEventLevel.Warning)
+                // .MinimumLevel.Override("Microsoft.AspNetCore.StaticFiles", LogEventLevel.Debug)
+                // .MinimumLevel.Override("Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware", LogEventLevel.Debug)
+                // .MinimumLevel.Override("Microsoft.AspNetCore.Hosting.StaticWebAssets.StaticWebAssetsLoader", LogEventLevel.Debug)
+                // .MinimumLevel.Override("Microsoft.Extensions.FileProviders", LogEventLevel.Debug)
                 //.MinimumLevel.Override("Microsoft.AspNetCore.SignalR", Serilog.Events.LogEventLevel.Debug)
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
@@ -154,6 +157,9 @@ internal class Program
 
         builder.Services.AddSingleton<LocalEmbedder>();
 
+        builder.Services.AddDirectoryBrowser();
+
+
         var app = builder.Build();
 
         if (!app.Environment.IsDevelopment())
@@ -164,41 +170,7 @@ internal class Program
 
         Console.WriteLine($"App running on {AppContext.BaseDirectory}");
 
-
-        app.UseStaticFiles();
-
-
-
-        // https://github.com/dotnet/aspnetcore/issues/50894
-
-
-
-        var embeddedFileProvider = new EmbeddedFileProvider(typeof(Program).Assembly, "TugboatCaptainsPlayground.wwwroot");
-        if (embeddedFileProvider.GetDirectoryContents("/").Any())
-        {
-            // Serve the wwwroot files from embedded resources (see tricks in the csproj for embedding static assets instead of having a wwwroot directory on disk when publishing)
-            app.Environment.WebRootFileProvider = embeddedFileProvider;
-        }
-
-
-        var embeddedProvider2 = new EmbeddedFileProvider(
-            Assembly.GetExecutingAssembly(), // your project's assembly
-            "wwwroot" // this must match your LogicalName prefix
-        );
-
-        //var embeddedProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly(), "TugboatCaptainsPlayground.wwwroot");
-
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = embeddedProvider2,
-            RequestPath = ""
-        });
-
-        foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
-        {
-            Console.WriteLine(name);
-        }
-
+        ConfigureStaticFileFallbacks(app);
 
         app.UseAntiforgery();
 
@@ -445,6 +417,43 @@ internal class Program
         catch (Exception ex)
         {
             Console.WriteLine($"Error hiding taskbar icon: {ex.Message}");
+        }
+    }
+
+    static void ConfigureStaticFileFallbacks(WebApplication app)
+    {
+        var env = app.Environment;
+
+        var embedded = new EmbeddedFileProvider(typeof(Program).Assembly, "wwwroot");
+
+        app.UseDirectoryBrowser(new DirectoryBrowserOptions
+        {
+            FileProvider = embedded,
+            RequestPath = "/browser"
+        });
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = embedded,
+            RequestPath = "/browser"
+        });
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = embedded,
+            RequestPath = ""
+        });
+
+        Console.WriteLine("Manifest resource names:");
+        foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
+        {
+            Console.WriteLine("Manifest: "+ name);
+        }
+
+        Console.WriteLine("Composite resource names:");
+        foreach (var file in embedded.GetDirectoryContents("/"))
+        {
+            Console.WriteLine("Composite: " + file.Name);
         }
     }
 }
