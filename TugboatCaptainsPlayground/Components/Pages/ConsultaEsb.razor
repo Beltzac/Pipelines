@@ -92,6 +92,11 @@
             <input type="number" class="form-control" @bind="ConsultaEsbStateService.ExecucaoId">
         </div>
 
+        <div class="col-md-3">
+            <label class="form-label">Atraso (Segundos) >=</label>
+            <input type="number" class="form-control" @bind="ConsultaEsbStateService.MinDelaySeconds">
+        </div>
+
         <div class="col-md-6">
             <div class="row">
                 <div class="col-md-6">
@@ -391,6 +396,7 @@
         ConsultaEsbStateService.ResponseStatus = null;
         ConsultaEsbStateService.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
         ConsultaEsbStateService.StartDate = ConsultaEsbStateService.EndDate?.AddHours(-24);
+        ConsultaEsbStateService.MinDelaySeconds = null;
         ConsultaEsbStateService.CurrentPage = 1;
         await ExecuteQuery();
     }
@@ -438,6 +444,7 @@
                 ConsultaEsbStateService.CurrentPage,
                 ConsultaEsbStateService.HttpStatusRange,
                 ConsultaEsbStateService.ResponseStatus,
+                ConsultaEsbStateService.MinDelaySeconds,
                 cts.Token);
 
             ConsultaEsbStateService.Results = queryResults;
@@ -492,7 +499,8 @@
             ConsultaEsbStateService.PageSize,
             ConsultaEsbStateService.CurrentPage,
             ConsultaEsbStateService.HttpStatusRange,
-            ConsultaEsbStateService.ResponseStatus);
+            ConsultaEsbStateService.ResponseStatus,
+            ConsultaEsbStateService.MinDelaySeconds);
 
         await CopyToClipboard(sqlQuery);
         toastService.ShowSuccess("Query SQL copiada para a área de transferência.");

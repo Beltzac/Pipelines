@@ -29,10 +29,11 @@ namespace Common.Services
             int pageNumber = 1,
             string? httpStatusRange = null,
             string? responseStatus = null,
+            int? minDelaySeconds = null,
             CancellationToken cancellationToken = default)
         {
             var sql = BuildQuery(startDate, endDate, urlFilter, httpMethod, genericText, userId,
-                execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus);
+                execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus, minDelaySeconds);
 
             var results = await _repo.GetFromSqlAsync<RequisicaoExecucao>(environment, FormattableStringFactory.Create(sql), cancellationToken);
 
@@ -53,9 +54,13 @@ namespace Common.Services
             int pageSize,
             int pageNumber,
             string? httpStatusRange,
-            string? responseStatus)
+            string? responseStatus,
+            int? minDelaySeconds)
         {
             var conditions = new List<string>();
+
+            if (minDelaySeconds.HasValue)
+                conditions.Add($"EXTRACT(SECOND FROM (RE.DATA_FIM - RE.DATA_INICIO)) + EXTRACT(MINUTE FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
 
             if (startDate.HasValue)
                 conditions.Add($"RE.DATA_INICIO >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
@@ -109,7 +114,7 @@ namespace Common.Services
 WITH RequisicaoExecucao AS (
     SELECT 'Requisição' AS SOURCE, E.ID_EXECUCAO, e.HTTP_METHOD, e.HTTP_STATUS_CODE,
            REQ.CONTEUDO AS REQUISICAO, RESP.CONTEUDO AS RESPOSTA, NULL as ERRO,
-           E.NOME_FLUXO, E.END_POINT, E.URL, (e.data_fim - e.data_inicio) as DURATION,
+           E.NOME_FLUXO, E.END_POINT, E.URL, E.DATA_FIM, (e.data_fim - e.data_inicio) as DURATION,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.REQUISICAO E
     LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
@@ -121,7 +126,7 @@ WITH RequisicaoExecucao AS (
     SELECT 'Execução' AS SOURCE, E.ID_EXECUCAO, null as HTTP_METHOD,
            null as HTTP_STATUS_CODE, REQ.CONTEUDO AS REQUISICAO,
            RESP.CONTEUDO AS RESPOSTA, ERRO.CONTEUDO AS ERRO,
-           E.NOME_FLUXO, null as END_POINT, E.URL, (e.data_fim - e.data_inicio) as DURATION,
+           E.NOME_FLUXO, null as END_POINT, E.URL, E.DATA_FIM, (e.data_fim - e.data_inicio) as DURATION,
            E.DATA_INICIO, E.ID_USUARIO_INCLUSAO, L.LOGIN as USER_LOGIN
     FROM TCPESB.EXECUCAO E
     LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO

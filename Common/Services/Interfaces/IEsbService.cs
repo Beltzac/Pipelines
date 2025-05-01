@@ -17,6 +17,7 @@ namespace Common.Services.Interfaces
             int pageNumber = 1,
             string? httpStatusRange = null,
             string? responseStatus = null,
+            int? minDelaySeconds = null,
             CancellationToken cancellationToken = default);
 
         string BuildQuery(
@@ -30,6 +31,7 @@ namespace Common.Services.Interfaces
             int pageSize,
             int pageNumber,
             string? httpStatusRange,
-            string? responseStatus);
+            string? responseStatus,
+            int? minDelaySeconds);
     }
 }
