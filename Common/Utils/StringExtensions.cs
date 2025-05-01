@@ -1,5 +1,6 @@
 ﻿using Common.Models;
 using Markdig;
+using Microsoft.AspNetCore.Components;
 using System.Text.RegularExpressions;
 
 namespace Common.Utils
@@ -111,6 +112,32 @@ namespace Common.Utils
             }
 
             return cleanedString;
+        }
+
+        public static MarkupString GetHighlightedText(this string text, string searchTerm)
+        {
+            if (string.IsNullOrEmpty(text))
+                return new MarkupString(string.Empty); // Return empty if text is null/empty
+
+            if (string.IsNullOrEmpty(searchTerm))
+                return new MarkupString(text); // Return plain text if no search term
+
+            try
+            {
+                // Use Regex.Escape for safety
+                var regex = new Regex(Regex.Escape(searchTerm), RegexOptions.IgnoreCase);
+                return new MarkupString(regex.Replace(text, match => $"<mark>{match.Value}</mark>"));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Handle potential regex timeouts on very large text/complex patterns
+                return new MarkupString($"[Error highlighting text: Timeout] {text}");
+            }
+            catch (ArgumentException)
+            {
+                // Handle invalid regex patterns if Escape wasn't perfect
+                return new MarkupString($"[Error highlighting text: Invalid Pattern] {text}");
+            }
         }
     }
 }

@@ -1,5 +1,8 @@
 ﻿using Common.Jobs;
 using Common.Repositories.Interno;
+using Common.Repositories.TCP;
+using Common.Repositories.TCP.Interfaces;
+using Common.Services;
 using Common.Utils;
 using Generation;
 using GlobalHotKey;
@@ -16,12 +19,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using Vanara.Windows.Shell;
-using Common.Services; // Added using directive for DatabaseAssertsService
-using Common.Repositories.TCP.Interfaces; // Added using directive for IMongoRepository
-using Common.Repositories.TCP;
-using Serilog.Events;
-using Microsoft.AspNetCore.Hosting.StaticWebAssets;
-using Microsoft.Extensions.FileProviders.Physical; // Added using directive for MongoRepository
 
 internal class Program
 {
@@ -44,8 +41,8 @@ internal class Program
                .Load($"http://localhost:{port}")
                .SetTitle(title)
                .SetMaximized(true)
-               .RegisterWindowClosingHandler(WindowIsClosing)
-               .SetLogVerbosity(5);
+               .RegisterWindowClosingHandler(WindowIsClosing);
+               //.SetLogVerbosity(5);
 
         mainWindow.WindowMaximized += HandleWindowEvent;
         mainWindow.WindowMinimized += HandleWindowEvent;
