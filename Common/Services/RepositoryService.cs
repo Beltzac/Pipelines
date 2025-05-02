@@ -704,115 +704,120 @@ namespace Common.Services
             return repository.Id;
         }
 
-        public async Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId)
+        public async Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId, CancellationToken cancellationToken)
         {
-            var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
-            if (buildInfo == null)
+            return await Task.Run(async () =>
             {
-                return (false, $"Repository with ID {buildInfoId} not found.");
-            }
-
-            var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
-
-            if (!Directory.Exists(localPath))
-            {
-                return (false, $"Local repository not found at {localPath}. Please clone it first.");
-            }
-
-            try
-            {
-                using var repo = new LibGit2Sharp.Repository(localPath);
-                var currentBranch = repo.Head;
-                if (currentBranch == null)
+                var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
+                if (buildInfo == null)
                 {
-                    return (false, "Could not determine the current branch.");
+                    return (false, $"Repository with ID {buildInfoId} not found.");
                 }
 
-                // Get the current local branch name
-                var localBranchName = currentBranch.FriendlyName;
+                var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
 
-                // Construct the expected remote tracking branch name (assuming "origin" remote)
-                var remoteTrackingBranchName = $"origin/{localBranchName}";
-
-                // Get the remote tracking branch
-                var trackingBranch = repo.Branches[remoteTrackingBranchName];
-                if (trackingBranch == null)
+                if (!Directory.Exists(localPath))
                 {
-                    return (false, $"Could not find remote tracking branch '{remoteTrackingBranchName}' for current branch '{localBranchName}'.");
+                    return (false, $"Local repository not found at {localPath}. Please clone it first.");
                 }
 
-                // Configure fetch options with credentials
-                var fetchOptions = new FetchOptions
+                try
                 {
-                    CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
-                };
+                    using var repo = new LibGit2Sharp.Repository(localPath);
+                    var currentBranch = repo.Head;
+                    if (currentBranch == null)
+                    {
+                        return (false, "Could not determine the current branch.");
+                    }
 
-                // Explicitly fetch the tracking branch
-                var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
-                var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
-                Commands.Fetch(repo, remote.Name, new[] { refSpec }, fetchOptions, null);
+                    // Get the current local branch name
+                    var localBranchName = currentBranch.FriendlyName;
+
+                    // Construct the expected remote tracking branch name (assuming "origin" remote)
+                    var remoteTrackingBranchName = $"origin/{localBranchName}";
+
+                    // Get the remote tracking branch
+                    var trackingBranch = repo.Branches[remoteTrackingBranchName];
+                    if (trackingBranch == null)
+                    {
+                        return (false, $"Could not find remote tracking branch '{remoteTrackingBranchName}' for current branch '{localBranchName}'.");
+                    }
+
+                    // Configure fetch options with credentials
+                    var fetchOptions = new FetchOptions
+                    {
+                        CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
+                    };
+
+                    // Explicitly fetch the tracking branch
+                    var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
+                    var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
+                    Commands.Fetch(repo, remote.Name, new[] { refSpec }, fetchOptions, null);
 
 
-                // Configure pull options
-                var pullOptions = new PullOptions
-                {
-                    FetchOptions = fetchOptions,
-                    MergeOptions = new MergeOptions() // Default merge options
-                };
+                    // Configure pull options
+                    var pullOptions = new PullOptions
+                    {
+                        FetchOptions = fetchOptions,
+                        MergeOptions = new MergeOptions() // Default merge options
+                    };
 
-                // Perform the pull operation
-                var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
-                var result = Commands.Pull(repo, signature, pullOptions);
+                    // Perform the pull operation
+                    var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
+                    var result = Commands.Pull(repo, signature, pullOptions);
 
-                // Check the result of the pull
-                if (result != null && result.Status == MergeStatus.UpToDate)
-                {
-                    _logger.LogInformation($"Repository {buildInfo.Name} is already up-to-date.");
-                    return (true, "Already up-to-date.");
+                    // Check the result of the pull
+                    if (result != null && result.Status == MergeStatus.UpToDate)
+                    {
+                        _logger.LogInformation($"Repository {buildInfo.Name} is already up-to-date.");
+                        return (true, "Already up-to-date.");
+                    }
+                    else if (result != null && (result.Status == MergeStatus.FastForward || result.Status == MergeStatus.NonFastForward)) // Consider FastForward and NonFastForward as successful merges
+                    {
+                        _logger.LogInformation($"Repository {buildInfo.Name} pulled successfully.");
+                        return (true, "Pulled successfully.");
+                    }
+                    else if (result != null && result.Status == MergeStatus.Conflicts)
+                    {
+                        _logger.LogWarning($"Repository {buildInfo.Name} has conflicts after pull.");
+                        return (false, "Conflicts after pull. Please resolve manually.");
+                    }
+                    else
+                    {
+                        _logger.LogError($"Pull failed for repository {buildInfo.Name} with status: {result?.Status}");
+                        return (false, $"Pull failed with status: {result?.Status}");
+                    }
                 }
-                else if (result != null && (result.Status == MergeStatus.FastForward || result.Status == MergeStatus.NonFastForward)) // Consider FastForward and NonFastForward as successful merges
+                catch (LibGit2Sharp.CheckoutConflictException ex)
                 {
-                    _logger.LogInformation($"Repository {buildInfo.Name} pulled successfully.");
-                    return (true, "Pulled successfully.");
+                    _logger.LogError(ex, $"Checkout conflict in repository {buildInfo.Name}");
+                    return (false, $"Checkout conflict: {ex.Message}");
                 }
-                else if (result != null && result.Status == MergeStatus.Conflicts)
+                catch (LibGit2Sharp.MergeFetchHeadNotFoundException ex)
                 {
-                    _logger.LogWarning($"Repository {buildInfo.Name} has conflicts after pull.");
-                    return (false, "Conflicts after pull. Please resolve manually.");
+                     _logger.LogError(ex, $"Merge fetch head not found in repository {buildInfo.Name}");
+                    return (false, $"Merge fetch head not found: {ex.Message}");
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogError($"Pull failed for repository {buildInfo.Name} with status: {result?.Status}");
-                    return (false, $"Pull failed with status: {result?.Status}");
+                    _logger.LogError(ex, $"Error pulling repository {buildInfo.Name}");
+                    return (false, $"Error pulling repository: {ex.Message}");
                 }
-            }
-            catch (LibGit2Sharp.CheckoutConflictException ex)
-            {
-                _logger.LogError(ex, $"Checkout conflict in repository {buildInfo.Name}");
-                return (false, $"Checkout conflict: {ex.Message}");
-            }
-            catch (LibGit2Sharp.MergeFetchHeadNotFoundException ex)
-            {
-                 _logger.LogError(ex, $"Merge fetch head not found in repository {buildInfo.Name}");
-                return (false, $"Merge fetch head not found: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error pulling repository {buildInfo.Name}");
-                return (false, $"Error pulling repository: {ex.Message}");
-            }
+            }, cancellationToken);
         }
 
-        public async Task<(int Successful, int Failed)> PullAllRepositoriesAsync(IProgress<(int, string)> progressValue, CancellationToken cancellationToken)
+        public async Task<(int Successful, int Failed)> PullAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken)
         {
             var buildInfos = await GetBuildInfoAsync();
             var successfulPulls = 0;
             var failedPulls = 0;
             var totalRepos = buildInfos.Count;
 
-            for (int i = 0; i < totalRepos; i++)
+            await Task.Run(async () =>
             {
-                cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
+                for (int i = 0; i < totalRepos; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
 
                 var buildInfo = buildInfos[i];
                 // Only attempt to pull if the repository is cloned
@@ -822,9 +827,9 @@ namespace Common.Services
                 }
 
                 var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
-                progressValue.Report((percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})..."));
+                await reportProgress(percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})...");
 
-                var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id);
+                var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id, cancellationToken);
                 if (Success)
                 {
                     successfulPulls++;
@@ -835,9 +840,10 @@ namespace Common.Services
                     _logger.LogError($"Failed to pull repository {buildInfo.Name}: {ErrorMessage}");
                 }
             }
+            }, cancellationToken);
 
             // Report 100% completion at the end
-            progressValue.Report((100, "Pull complete."));
+            await reportProgress(100, "Pull complete.");
 
             return (successfulPulls, failedPulls);
         }

@@ -605,16 +605,14 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
         BuildInfoStateService.ProgressValue = 0;
         BuildInfoStateService.ProgressLabel = "Starting pull...";
 
-        var progressValueReporter = new Progress<(int, string)>(async (value, label) =>
-        {
-            BuildInfoStateService.ProgressValue = value;
-            BuildInfoStateService.ProgressLabel = label;
-        });
-
         try
         {
             var result = await BuildInfoService.PullAllRepositoriesAsync(
-                progressValueReporter,
+                async (value, label) =>
+                {
+                    BuildInfoStateService.ProgressValue = value;
+                    BuildInfoStateService.ProgressLabel = label;
+                },
                 cancellationToken);
 
             if (result.Failed > 0)
@@ -628,7 +626,7 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
         }
         catch (OperationCanceledException)
         {
-            toastService.ShowInfo("Pull operation canceled.")
+            toastService.ShowInfo("Pull operation canceled.");
         }
         catch (Exception ex)
         {
@@ -642,6 +640,7 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
             BuildInfoStateService.ProgressLabel = string.Empty;
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

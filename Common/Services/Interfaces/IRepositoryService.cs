@@ -30,7 +30,7 @@ namespace Common.Services.Interfaces
         Task<(bool Success, string ErrorMessage)> CheckoutBranch(Repository buildInfo, string branchName);
         Task<int> GetActivePullRequestCountAsync(Guid repositoryId);
         Task<Guid> GetIdFromPathAsync(string? path);
-        Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId);
-        Task<(int Successful, int Failed)> PullAllRepositoriesAsync(IProgress<(int, string)> progressValue, CancellationToken cancellationToken);
+        Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId, CancellationToken cancellationToken);
+        Task<(int Successful, int Failed)> PullAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken);
     }
 }
