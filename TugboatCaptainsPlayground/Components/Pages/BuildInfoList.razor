@@ -62,6 +62,8 @@
         {
             <Item OnClick="@OpenRepositoryClickAsync">Abrir Repositório</Item>
         }
+
+        <Item OnClick="@OpenAzureRepositoryClickAsync">Abrir Repositório Remoto</Item>
     }
 
     <Item OnClick="@DeleteClickAsync">Excluir</Item>
@@ -410,17 +412,24 @@
         OpenFolderUtils.OpenUrl(url);
     }
 
-    async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
-    {
-        this.toastService.ShowInfo("Atualizando informações da pipeline");
-        var repo = e.Data as Repository;
-        repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
-        await ReloadById(repo.Id);
 
-        var url = repo.Pipeline.Last.Url;
-        OpenFolderUtils.OpenUrl(url);
-    }
+async Task OpenAzureRepositoryClickAsync(ItemClickEventArgs e)
+{
+    var repo = e.Data as Repository;
+    var url = repo.Url; // Assuming repo.Url is the Azure DevOps repository URL
+    OpenFolderUtils.OpenUrl(url);
+}
 
+async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
+{
+    this.toastService.ShowInfo("Atualizando informações da pipeline");
+    var repo = e.Data as Repository;
+    repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
+    await ReloadById(repo.Id);
+
+    var url = repo.Pipeline.Last.Url;
+    OpenFolderUtils.OpenUrl(url);
+}
     async Task OpenSonarClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
