@@ -92,6 +92,7 @@
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
         <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Limpar</button>
         <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
+        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await PullAll()">Pull TODOS</button>
         <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Abrir Pasta Clonada no VS CODE</button>
         <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Script Clonar Todos</button>
     </div>
@@ -588,5 +589,32 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
         BuildInfoService.OpenRepoInVsCode(repo);
     }
 
+    private async Task PullAll()
+    {
+        BuildInfoStateService.IsLoading = true;
+        try
+        {
+            var result = await BuildInfoService.PullAllRepositoriesAsync();
+            if (result.Failed > 0)
+            {
+                toastService.ShowWarning($"Pull completed with {result.Successful} successful and {result.Failed} failed repositories. Check logs for details.");
+            }
+            else
+            {
+                toastService.ShowSuccess($"Pull completed successfully for {result.Successful} repositories.");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"An error occurred during pull all: {ex.Message}");
+            _logger.LogError(ex, "Error during PullAll operation");
+        }
+        finally
+        {
+            BuildInfoStateService.IsLoading = false;
+            // Reload the list to reflect any changes from the pull
+            await OnFilterChange(new ChangeEventArgs { Value = BuildInfoStateService.Filter });
+        }
+    }
 }
 

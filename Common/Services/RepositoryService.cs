@@ -704,5 +704,105 @@ namespace Common.Services
             return repository.Id;
         }
 
+        public async Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId)
+        {
+            var buildInfo = await _repositoryDatabase.FindByIdAsync(buildInfoId);
+            if (buildInfo == null)
+            {
+                return (false, $"Repository with ID {buildInfoId} not found.");
+            }
+
+            var localPath = Path.Combine(_localCloneFolder, buildInfo.Project, buildInfo.Name);
+
+            if (!Directory.Exists(localPath))
+            {
+                return (false, $"Local repository not found at {localPath}. Please clone it first.");
+            }
+
+            try
+            {
+                using (var repo = new LibGit2Sharp.Repository(localPath))
+                {
+                    // Configure fetch options with credentials
+                    var fetchOptions = new FetchOptions
+                    {
+                        CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
+                    };
+
+                    // Configure pull options
+                    var pullOptions = new PullOptions
+                    {
+                        FetchOptions = fetchOptions,
+                        MergeOptions = new MergeOptions() // Default merge options
+                    };
+
+                    // Get the currently checked out branch
+                    // Get the currently checked out branch
+                    var currentBranch = repo.Head;
+                    if (currentBranch == null)
+                    {
+                        return (false, "Could not determine the current branch.");
+                    }
+
+                    // Perform the pull operation
+                    var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
+                    var result = Commands.Pull(repo, signature, pullOptions);
+
+                    // Check the result of the pull
+                    if (result != null && result.Status == MergeStatus.UpToDate)
+                    {
+                        _logger.LogInformation($"Repository {buildInfo.Name} is already up-to-date.");
+                        return (true, "Already up-to-date.");
+                    }
+                    else if (result != null && (result.Status == MergeStatus.FastForward || result.Status == MergeStatus.NonFastForward)) // Consider FastForward and NonFastForward as successful merges
+                    {
+                        _logger.LogInformation($"Repository {buildInfo.Name} pulled successfully.");
+                        return (true, "Pulled successfully.");
+                    }
+                    else if (result != null && result.Status == MergeStatus.Conflicts)
+                    {
+                         _logger.LogWarning($"Repository {buildInfo.Name} has conflicts after pull.");
+                        return (false, "Conflicts after pull. Please resolve manually.");
+                    }
+                    else
+                    {
+                        _logger.LogError($"Pull failed for repository {buildInfo.Name} with status: {result?.Status}");
+                        return (false, $"Pull failed with status: {result?.Status}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error pulling repository {buildInfo.Name}");
+                return (false, $"Error pulling repository: {ex.Message}");
+            }
+        }
+
+        public async Task<(int Successful, int Failed)> PullAllRepositoriesAsync()
+        {
+            var buildInfos = await GetBuildInfoAsync();
+            var successfulPulls = 0;
+            var failedPulls = 0;
+
+            foreach (var buildInfo in buildInfos)
+            {
+                // Only attempt to pull if the repository is cloned
+                if (buildInfo.MasterClonned)
+                {
+                    var result = await PullRepositoryAsync(buildInfo.Id);
+                    if (result.Success)
+                    {
+                        successfulPulls++;
+                    }
+                    else
+                    {
+                        failedPulls++;
+                        _logger.LogError($"Failed to pull repository {buildInfo.Name}: {result.ErrorMessage}");
+                    }
+                }
+            }
+
+            return (successfulPulls, failedPulls);
+        }
     }
 }
