@@ -328,8 +328,50 @@
 
     private async ValueTask CloneAll()
     {
-        await BuildInfoService.CloneAllRepositoriesAsync();
-        this.toastService.ShowSuccess("TODOS OS REPOSITÓRIOS FORAM CLONADOS");
+        _cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = _cancellationTokenSource.Token;
+
+        BuildInfoStateService.IsLoading = true;
+        BuildInfoStateService.ProgressValue = 0;
+        BuildInfoStateService.ProgressLabel = "Starting clone...";
+
+        try
+        {
+            var result = await BuildInfoService.CloneAllRepositoriesAsync(
+                async (value, label) =>
+                {
+                    BuildInfoStateService.ProgressValue = value;
+                    BuildInfoStateService.ProgressLabel = label;
+                },
+                cancellationToken);
+
+            if (result.Failed > 0)
+            {
+                toastService.ShowWarning($"Clone completed with {result.Successful} successful and {result.Failed} failed repositories.");
+            }
+            else
+            {
+                toastService.ShowSuccess($"Clone completed successfully for {result.Successful} repositories.");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            toastService.ShowInfo("Clone operation canceled.");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error during clone all: {ex.Message}");
+            _logger.LogError(ex, "CloneAll error");
+        }
+        finally
+        {
+            BuildInfoStateService.IsLoading = false;
+            BuildInfoStateService.ProgressValue = null;
+            BuildInfoStateService.ProgressLabel = string.Empty;
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async ValueTask OpenCloneInVSCode()

@@ -387,14 +387,48 @@ namespace Common.Services
             return x => GetLatestBuildDate(x);
         }
 
-        public async Task CloneAllRepositoriesAsync()
+        public async Task<(int Successful, int Failed)> CloneAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken)
         {
             var buildInfos = await GetBuildInfoAsync();
+            var successfulClones = 0;
+            var failedClones = 0;
+            var totalRepos = buildInfos.Count;
 
-            foreach (var buildInfo in buildInfos)
+            await Task.Run(async () =>
             {
-                await CloneRepositoryByBuildInfoAsync(buildInfo);
-            }
+                for (int i = 0; i < totalRepos; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
+
+                    var buildInfo = buildInfos[i];
+
+                    var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
+                    await reportProgress(percentage, $"Cloning {buildInfo.Name} ({i + 1} of {totalRepos})...");
+
+                    // Only attempt to clone if the repository is not already cloned
+                    if (buildInfo.MasterClonned)
+                    {
+                        successfulClones++; // Count as successful if already cloned
+                        continue;
+                    }
+
+                    try
+                    {
+                        await CloneRepositoryByBuildInfoAsync(buildInfo);
+                        successfulClones++;
+                    }
+                    catch (Exception ex)
+                    {
+                        failedClones++;
+                        _logger.LogError(ex, $"Failed to clone repository {buildInfo.Name}");
+                    }
+                }
+            }, cancellationToken);
+
+            // Report 100% completion at the end
+            await reportProgress(100, "Clone complete.");
+
+            return (successfulClones, failedClones);
         }
 
         public async Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId)

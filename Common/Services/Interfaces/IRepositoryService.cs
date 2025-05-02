@@ -6,7 +6,7 @@ namespace Common.Services.Interfaces
 {
     public interface IRepositoryService
     {
-        Task CloneAllRepositoriesAsync();
+        Task<(int Successful, int Failed)> CloneAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken);
         Task CloneRepositoryByBuildInfoAsync(Repository buildInfo);
         Task CloneRepositoryByBuildInfoIdAsync(Guid buildInfoId);
         Task<Repository> CreateBuildInfoAsync(GitRepository repo, BuildDefinitionReference buildDefinition);
