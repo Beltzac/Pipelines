@@ -821,27 +821,27 @@ namespace Common.Services
                 {
                     cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
 
-                var buildInfo = buildInfos[i];
-                // Only attempt to pull if the repository is cloned
-                if (!buildInfo.MasterClonned)
-                {
-                    continue;
-                }
+                    var buildInfo = buildInfos[i];
+                    // Only attempt to pull if the repository is cloned
+                    if (!buildInfo.MasterClonned)
+                    {
+                        continue;
+                    }
 
-                var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
-                await reportProgress(percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})...");
+                    var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
+                    await reportProgress(percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})...");
 
-                var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id, cancellationToken);
-                if (Success)
-                {
-                    successfulPulls++;
+                    var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id, cancellationToken);
+                    if (Success)
+                    {
+                        successfulPulls++;
+                    }
+                    else
+                    {
+                        failedPulls++;
+                        _logger.LogError($"Failed to pull repository {buildInfo.Name}: {ErrorMessage}");
+                    }
                 }
-                else
-                {
-                    failedPulls++;
-                    _logger.LogError($"Failed to pull repository {buildInfo.Name}: {ErrorMessage}");
-                }
-            }
             }, cancellationToken);
 
             // Report 100% completion at the end
