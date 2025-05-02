@@ -85,14 +85,23 @@
         }}
 </ContextMenu>
 
-<CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Label="Carregando..." />
+<CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Value="@BuildInfoStateService.ProgressValue" Label="@BuildInfoStateService.ProgressLabel" />
 
 <StickyFilter>
     <div class="mb-3 d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
         <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Limpar</button>
-        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
-        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await PullAll()">Pull TODOS</button>
+
+        @if (BuildInfoStateService.IsLoading)
+        {
+            <button class="btn btn-danger me-2 text-nowrap" @onclick="Cancel" style="display: block;">Cancelar</button>
+        }
+        else
+        {
+            <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
+            <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await PullAll()">Pull TODOS</button>
+        }
+
         <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Abrir Pasta Clonada no VS CODE</button>
         <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Script Clonar Todos</button>
     </div>
@@ -205,6 +214,7 @@
     private Subject<string> _searchEvents;
     private IDisposable _subscription;
     private ElementReference filterInputElement;
+    private CancellationTokenSource _cancellationTokenSource;
     private Dictionary<Guid, string> _nextRunTimes = new();
     private bool loadingBranches = false;
     private string[] remoteBranches = Array.Empty<string>();
@@ -309,10 +319,6 @@
         }
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        _subscription.Dispose();
-    }
 
     private async Task OnFilterChange(ChangeEventArgs e)
     {
@@ -501,13 +507,6 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
         return BuildInfoStateService.BuildInfos ?? new List<Repository>();
     }
 
-    public void Dispose()
-    {
-        BuildInfoStateService.OnChange -= () => InvokeAsync(StateHasChanged);
-        BuildInfoStateService.Save();
-
-
-    }
     private bool showModal = false;
     private Commit currentCommit;
 
@@ -583,6 +582,14 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
         }
     }
 
+    public void Dispose()
+    {
+        _subscription?.Dispose();
+        _cancellationTokenSource?.Dispose(); // Dispose CancellationTokenSource
+        BuildInfoStateService.OnChange -= () => InvokeAsync(StateHasChanged);
+        BuildInfoStateService.Save();
+    }
+
     private async Task OpenInVSCodeClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
@@ -591,30 +598,55 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
 
     private async Task PullAll()
     {
+        _cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = _cancellationTokenSource.Token;
+
         BuildInfoStateService.IsLoading = true;
+        BuildInfoStateService.ProgressValue = 0;
+        BuildInfoStateService.ProgressLabel = "Starting pull...";
+
+        var progressValueReporter = new Progress<(int, string)>(async (value, label) =>
+        {
+            BuildInfoStateService.ProgressValue = value;
+            BuildInfoStateService.ProgressLabel = label;
+        });
+
         try
         {
-            var result = await BuildInfoService.PullAllRepositoriesAsync();
+            var result = await BuildInfoService.PullAllRepositoriesAsync(
+                progressValueReporter,
+                cancellationToken);
+
             if (result.Failed > 0)
             {
-                toastService.ShowWarning($"Pull completed with {result.Successful} successful and {result.Failed} failed repositories. Check logs for details.");
+                toastService.ShowWarning($"Pull completed with {result.Successful} successful and {result.Failed} failed repositories.");
             }
             else
             {
                 toastService.ShowSuccess($"Pull completed successfully for {result.Successful} repositories.");
             }
         }
+        catch (OperationCanceledException)
+        {
+            toastService.ShowInfo("Pull operation canceled.")
+        }
         catch (Exception ex)
         {
-            toastService.ShowError($"An error occurred during pull all: {ex.Message}");
-            _logger.LogError(ex, "Error during PullAll operation");
+            toastService.ShowError($"Error during pull all: {ex.Message}");
+            _logger.LogError(ex, "PullAll error");
         }
         finally
         {
             BuildInfoStateService.IsLoading = false;
-            // Reload the list to reflect any changes from the pull
-            await OnFilterChange(new ChangeEventArgs { Value = BuildInfoStateService.Filter });
+            BuildInfoStateService.ProgressValue = null;
+            BuildInfoStateService.ProgressLabel = string.Empty;
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
         }
     }
-}
 
+    private void Cancel()
+    {
+        _cancellationTokenSource?.Cancel();
+    }
+}

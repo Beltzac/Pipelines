@@ -721,71 +721,69 @@ namespace Common.Services
 
             try
             {
-                using (var repo = new LibGit2Sharp.Repository(localPath))
+                using var repo = new LibGit2Sharp.Repository(localPath);
+                var currentBranch = repo.Head;
+                if (currentBranch == null)
                 {
-                    var currentBranch = repo.Head;
-                    if (currentBranch == null)
-                    {
-                        return (false, "Could not determine the current branch.");
-                    }
+                    return (false, "Could not determine the current branch.");
+                }
 
-                    // Get the current local branch name
-                    var localBranchName = currentBranch.FriendlyName;
+                // Get the current local branch name
+                var localBranchName = currentBranch.FriendlyName;
 
-                    // Construct the expected remote tracking branch name (assuming "origin" remote)
-                    var remoteTrackingBranchName = $"origin/{localBranchName}";
+                // Construct the expected remote tracking branch name (assuming "origin" remote)
+                var remoteTrackingBranchName = $"origin/{localBranchName}";
 
-                    // Get the remote tracking branch
-                    var trackingBranch = repo.Branches[remoteTrackingBranchName];
-                    if (trackingBranch == null)
-                    {
-                        return (false, $"Could not find remote tracking branch '{remoteTrackingBranchName}' for current branch '{localBranchName}'.");
-                    }
+                // Get the remote tracking branch
+                var trackingBranch = repo.Branches[remoteTrackingBranchName];
+                if (trackingBranch == null)
+                {
+                    return (false, $"Could not find remote tracking branch '{remoteTrackingBranchName}' for current branch '{localBranchName}'.");
+                }
 
-                    // Configure fetch options with credentials
-                    var fetchOptions = new FetchOptions
-                    {
-                        CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
-                    };
+                // Configure fetch options with credentials
+                var fetchOptions = new FetchOptions
+                {
+                    CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
+                };
 
-                    // Explicitly fetch the tracking branch
-                    var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
-                    var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
-                    Commands.Fetch(repo, remote.Name, new[] { refSpec }, fetchOptions, null);
+                // Explicitly fetch the tracking branch
+                var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
+                var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
+                Commands.Fetch(repo, remote.Name, new[] { refSpec }, fetchOptions, null);
 
 
-                    // Configure pull options
-                    var pullOptions = new PullOptions
-                    {
-                        FetchOptions = fetchOptions,
-                        MergeOptions = new MergeOptions() // Default merge options
-                    };
+                // Configure pull options
+                var pullOptions = new PullOptions
+                {
+                    FetchOptions = fetchOptions,
+                    MergeOptions = new MergeOptions() // Default merge options
+                };
 
-                    // Perform the pull operation
-                    var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
-                    var result = Commands.Pull(repo, signature, pullOptions);
+                // Perform the pull operation
+                var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
+                var result = Commands.Pull(repo, signature, pullOptions);
 
-                    // Check the result of the pull
-                    if (result != null && result.Status == MergeStatus.UpToDate)
-                    {
-                        _logger.LogInformation($"Repository {buildInfo.Name} is already up-to-date.");
-                        return (true, "Already up-to-date.");
-                    }
-                    else if (result != null && (result.Status == MergeStatus.FastForward || result.Status == MergeStatus.NonFastForward)) // Consider FastForward and NonFastForward as successful merges
-                    {
-                        _logger.LogInformation($"Repository {buildInfo.Name} pulled successfully.");
-                        return (true, "Pulled successfully.");
-                    }
-                    else if (result != null && result.Status == MergeStatus.Conflicts)
-                    {
-                         _logger.LogWarning($"Repository {buildInfo.Name} has conflicts after pull.");
-                        return (false, "Conflicts after pull. Please resolve manually.");
-                    }
-                    else
-                    {
-                        _logger.LogError($"Pull failed for repository {buildInfo.Name} with status: {result?.Status}");
-                        return (false, $"Pull failed with status: {result?.Status}");
-                    }
+                // Check the result of the pull
+                if (result != null && result.Status == MergeStatus.UpToDate)
+                {
+                    _logger.LogInformation($"Repository {buildInfo.Name} is already up-to-date.");
+                    return (true, "Already up-to-date.");
+                }
+                else if (result != null && (result.Status == MergeStatus.FastForward || result.Status == MergeStatus.NonFastForward)) // Consider FastForward and NonFastForward as successful merges
+                {
+                    _logger.LogInformation($"Repository {buildInfo.Name} pulled successfully.");
+                    return (true, "Pulled successfully.");
+                }
+                else if (result != null && result.Status == MergeStatus.Conflicts)
+                {
+                    _logger.LogWarning($"Repository {buildInfo.Name} has conflicts after pull.");
+                    return (false, "Conflicts after pull. Please resolve manually.");
+                }
+                else
+                {
+                    _logger.LogError($"Pull failed for repository {buildInfo.Name} with status: {result?.Status}");
+                    return (false, $"Pull failed with status: {result?.Status}");
                 }
             }
             catch (LibGit2Sharp.CheckoutConflictException ex)
@@ -805,29 +803,41 @@ namespace Common.Services
             }
         }
 
-        public async Task<(int Successful, int Failed)> PullAllRepositoriesAsync()
+        public async Task<(int Successful, int Failed)> PullAllRepositoriesAsync(IProgress<(int, string)> progressValue, CancellationToken cancellationToken)
         {
             var buildInfos = await GetBuildInfoAsync();
             var successfulPulls = 0;
             var failedPulls = 0;
+            var totalRepos = buildInfos.Count;
 
-            foreach (var buildInfo in buildInfos)
+            for (int i = 0; i < totalRepos; i++)
             {
+                cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
+
+                var buildInfo = buildInfos[i];
                 // Only attempt to pull if the repository is cloned
-                if (buildInfo.MasterClonned)
+                if (!buildInfo.MasterClonned)
                 {
-                    var result = await PullRepositoryAsync(buildInfo.Id);
-                    if (result.Success)
-                    {
-                        successfulPulls++;
-                    }
-                    else
-                    {
-                        failedPulls++;
-                        _logger.LogError($"Failed to pull repository {buildInfo.Name}: {result.ErrorMessage}");
-                    }
+                    continue;
+                }
+
+                var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
+                progressValue.Report((percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})..."));
+
+                var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id);
+                if (Success)
+                {
+                    successfulPulls++;
+                }
+                else
+                {
+                    failedPulls++;
+                    _logger.LogError($"Failed to pull repository {buildInfo.Name}: {ErrorMessage}");
                 }
             }
+
+            // Report 100% completion at the end
+            progressValue.Report((100, "Pull complete."));
 
             return (successfulPulls, failedPulls);
         }

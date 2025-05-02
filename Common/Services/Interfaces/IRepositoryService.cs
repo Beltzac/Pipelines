@@ -31,6 +31,6 @@ namespace Common.Services.Interfaces
         Task<int> GetActivePullRequestCountAsync(Guid repositoryId);
         Task<Guid> GetIdFromPathAsync(string? path);
         Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId);
-        Task<(int Successful, int Failed)> PullAllRepositoriesAsync();
+        Task<(int Successful, int Failed)> PullAllRepositoriesAsync(IProgress<(int, string)> progressValue, CancellationToken cancellationToken);
     }
 }
