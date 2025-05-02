@@ -749,6 +749,8 @@ namespace Common.Services
                         CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
                     };
 
+                    fetchOptions.CertificateCheck = (cert, valid, host) => true;
+
                     // Explicitly fetch the tracking branch
                     var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
                     var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
