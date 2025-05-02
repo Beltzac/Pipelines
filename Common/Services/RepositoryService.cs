@@ -723,11 +723,36 @@ namespace Common.Services
             {
                 using (var repo = new LibGit2Sharp.Repository(localPath))
                 {
+                    var currentBranch = repo.Head;
+                    if (currentBranch == null)
+                    {
+                        return (false, "Could not determine the current branch.");
+                    }
+
+                    // Get the current local branch name
+                    var localBranchName = currentBranch.FriendlyName;
+
+                    // Construct the expected remote tracking branch name (assuming "origin" remote)
+                    var remoteTrackingBranchName = $"origin/{localBranchName}";
+
+                    // Get the remote tracking branch
+                    var trackingBranch = repo.Branches[remoteTrackingBranchName];
+                    if (trackingBranch == null)
+                    {
+                        return (false, $"Could not find remote tracking branch '{remoteTrackingBranchName}' for current branch '{localBranchName}'.");
+                    }
+
                     // Configure fetch options with credentials
                     var fetchOptions = new FetchOptions
                     {
                         CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = "Anything", Password = _privateToken }
                     };
+
+                    // Explicitly fetch the tracking branch
+                    var remote = repo.Network.Remotes["origin"]; // Assuming the remote name is "origin"
+                    var refSpec = $"+refs/heads/{localBranchName}:refs/remotes/origin/{localBranchName}";
+                    Commands.Fetch(repo, remote.Name, new[] { refSpec }, fetchOptions, null);
+
 
                     // Configure pull options
                     var pullOptions = new PullOptions
@@ -735,14 +760,6 @@ namespace Common.Services
                         FetchOptions = fetchOptions,
                         MergeOptions = new MergeOptions() // Default merge options
                     };
-
-                    // Get the currently checked out branch
-                    // Get the currently checked out branch
-                    var currentBranch = repo.Head;
-                    if (currentBranch == null)
-                    {
-                        return (false, "Could not determine the current branch.");
-                    }
 
                     // Perform the pull operation
                     var signature = new Signature(_name, "Anything@example.com", DateTimeOffset.Now); // Replace with actual user info if available
@@ -770,6 +787,16 @@ namespace Common.Services
                         return (false, $"Pull failed with status: {result?.Status}");
                     }
                 }
+            }
+            catch (LibGit2Sharp.CheckoutConflictException ex)
+            {
+                _logger.LogError(ex, $"Checkout conflict in repository {buildInfo.Name}");
+                return (false, $"Checkout conflict: {ex.Message}");
+            }
+            catch (LibGit2Sharp.MergeFetchHeadNotFoundException ex)
+            {
+                 _logger.LogError(ex, $"Merge fetch head not found in repository {buildInfo.Name}");
+                return (false, $"Merge fetch head not found: {ex.Message}");
             }
             catch (Exception ex)
             {
