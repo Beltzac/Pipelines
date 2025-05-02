@@ -822,14 +822,15 @@ namespace Common.Services
                     cancellationToken.ThrowIfCancellationRequested(); // Check for cancellation
 
                     var buildInfo = buildInfos[i];
+
+                    var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
+                    await reportProgress(percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})...");
+
                     // Only attempt to pull if the repository is cloned
                     if (!buildInfo.MasterClonned)
                     {
                         continue;
                     }
-
-                    var percentage = (int)(((double)(i + 1) / totalRepos) * 100);
-                    await reportProgress(percentage, $"Pulling {buildInfo.Name} ({i + 1} of {totalRepos})...");
 
                     var (Success, ErrorMessage) = await PullRepositoryAsync(buildInfo.Id, cancellationToken);
                     if (Success)
