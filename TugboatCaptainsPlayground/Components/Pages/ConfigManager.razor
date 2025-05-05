@@ -21,15 +21,15 @@
             <div class="col-md-6">
                 <!-- Configuration Import/Export -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header">
                         <h5 class="mb-0">Importar/Exportar Configurações</h5>
                     </div>
                     <div class="card-body">
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-primary" @onclick="ExportConfiguration">
+                            <button type="button" class="btn" @onclick="ExportConfiguration">
                                 <i class="fas fa-download"></i> Exportar Configuração
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" @onclick="ImportConfiguration">
+                            <button type="button" class="btn" @onclick="ImportConfiguration">
                                 <i class="fas fa-upload"></i> Importar Configuração
                             </button>
                             <InputFile hidden OnChange="LoadFiles" id="importFile" accept=".json" />
@@ -39,7 +39,7 @@
 
                 <!-- User and Organization Settings -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header">
                         <h5 class="mb-0">Configurações Básicas</h5>
                     </div>
                     <div class="card-body">
@@ -124,7 +124,7 @@
 
                 <!-- Repository Ignore Rules -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header">
                         <h5 class="mb-0">Regras de Ignorar Repositórios</h5>
                     </div>
                     <div class="card-body">
@@ -134,12 +134,12 @@
                             <div class="input-group mb-2">
                                 <InputText @bind-Value="config.IgnoreRepositoriesRegex[index]" class="form-control"
                                     placeholder="Enter regex pattern" />
-                                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveRegex(index)">
+                                <button type="button" class="btn" @onclick="() => RemoveRegex(index)">
                                     <i class="fas fa-trash"></i> Remover
                                 </button>
                             </div>
                         }
-                        <button type="button" class="btn btn-outline-secondary" @onclick="AddRegex">
+                        <button type="button" class="btn" @onclick="AddRegex">
                             <i class="fas fa-plus"></i> Adicionar Padrão
                         </button>
                     </div>
@@ -150,7 +150,7 @@
 
                 <!-- Backup Jobs Configuration -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header">
                         <h5 class="mb-0">Configuração de Jobs de Backup</h5>
                     </div>
                     <div class="card-body">
@@ -179,7 +179,7 @@
                                     Ativar Backup Automático de Views Oracle
                                 </label>
                             </div>
-                            <button type="button" class="btn btn-outline-primary" @onclick="RunOracleBackupNow">
+                            <button type="button" class="btn" @onclick="RunOracleBackupNow">
                                 <i class="fas fa-play"></i> Executar Agora
                             </button>
                         </div>
@@ -205,9 +205,9 @@
             <div class="col-md-6">
                 <!-- Consul Environments -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Ambientes Consul</h5>
-                        <button type="button" class="btn btn-light btn-sm" @onclick="AddConsulEnvironment">
+                        <button type="button" class="btn btn-sm" @onclick="AddConsulEnvironment">
                             <i class="fas fa-plus"></i> Adicionar Ambiente
                         </button>
                     </div>
@@ -236,7 +236,7 @@
                                         <InputText @bind-Value="env.ConsulToken" class="form-control" />
                                         <ValidationMessage For="@(() => env.ConsulToken)" />
                                     </div>
-                                    <button type="button" class="btn btn-outline-danger"
+                                    <button type="button" class="btn"
                                         @onclick="() => RemoveConsulEnvironment(env)">
                                         <i class="fas fa-trash"></i> Remover
                                     </button>
@@ -248,9 +248,9 @@
 
                 <!-- Oracle Environments -->
                 <div class="card mb-4">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Ambientes Oracle</h5>
-                        <button type="button" class="btn btn-light btn-sm" @onclick="AddOracleEnvironment">
+                        <button type="button" class="btn btn-sm" @onclick="AddOracleEnvironment">
                             <i class="fas fa-plus"></i> Adicionar Ambiente
                         </button>
                     </div>
@@ -272,11 +272,11 @@
                                         <InputText @bind-Value="env.Schema" class="form-control" />
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-outline-danger"
+                                        <button type="button" class="btn"
                                             @onclick="() => RemoveOracleEnvironment(env)">
                                             <i class="fas fa-trash"></i> Remover
                                         </button>
-                                        <button type="button" class="btn btn-outline-secondary"
+                                        <button type="button" class="btn"
                                             @onclick="() => TestOracleConnection(env)">
                                             <i class="fas fa-plug"></i> Testar Conexão
                                         </button>
@@ -289,9 +289,9 @@
                     <!-- MongoDB Environments -->
                     <div class="card mb-4">
                         <div
-                            class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Ambientes MongoDB</h5>
-                            <button type="button" class="btn btn-light btn-sm" @onclick="AddMongoEnvironment">
+                            <button type="button" class="btn btn-sm" @onclick="AddMongoEnvironment">
                                 <i class="fas fa-plus"></i> Adicionar Ambiente
                             </button>
                         </div>
@@ -315,7 +315,7 @@
                                             <InputText @bind-Value="env.DatabaseName" class="form-control" />
                                             <ValidationMessage For="@(() => env.DatabaseName)" />
                                         </div>
-                                        <button type="button" class="btn btn-outline-danger"
+                                        <button type="button" class="btn"
                                             @onclick="() => RemoveMongoEnvironment(env)">
                                             <i class="fas fa-trash"></i> Remover
                                         </button>

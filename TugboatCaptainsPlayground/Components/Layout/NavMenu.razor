@@ -78,6 +78,10 @@
                 <span class="bi bi-github" aria-hidden="true"></span> GitHub
             </a>
 
+            <button class="nav-link btn btn-link" @onclick="ToggleTheme">
+                <span class="bi bi-palette" aria-hidden="true"></span> @(enabled ? "Disable 90s Theme" : "Enable 90s Theme")
+            </button>
+
            <div style="z-index: 1010;"><AutoUpdate /></div>
 
         </div>
@@ -197,3 +201,35 @@
         }
     }
 </style>
+
+@inject Common.Services.ThemeService ThemeService
+@code {
+    private bool enabled = false; // Initialize to false
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.InitialiseAsync(); // Initialize theme based on localStorage
+            enabled = await ThemeService.IsThemeEnabledAsync(); // Get the actual state after initialization
+            StateHasChanged(); // Re-render to show the correct initial state
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        enabled = !enabled;
+        if (enabled)
+        {
+            await ThemeService.EnableThemeAsync(); // Call EnableThemeAsync
+        }
+        else
+        {
+            await ThemeService.DisableThemeAsync(); // Call DisableThemeAsync
+        }
+        // StateHasChanged is not strictly necessary here because Enable/DisableThemeAsync doesn't
+        // directly change component state, but the theme change will cause a re-render anyway.
+        // Keeping it for clarity if needed for other state updates later.
+        StateHasChanged();
+    }
+}

@@ -97,6 +97,7 @@ namespace Common.Utils
 
             services.AddScoped<LogViewerService>();
             services.AddScoped<WindowsRoutesManager>();
+            services.AddScoped<ThemeService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
