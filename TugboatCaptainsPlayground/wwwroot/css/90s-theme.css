@@ -8,8 +8,9 @@ body {
 
 .container {
     background-color: #ffffff;
-    border: 2px solid #000000;
-    box-shadow: 4px 4px 0px 0px #808080; /* Simple shadow */
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff; /* 3D effect */
+    box-shadow: none;
     padding: 20px;
     margin-top: 20px;
 }
@@ -18,27 +19,29 @@ body {
     font-family: 'Courier New', Courier, monospace;
     background-color: #c0c0c0;
     color: #000000;
-    border: 2px solid #000000;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff; /* Raised button effect */
     border-radius: 0;
-    box-shadow: 2px 2px 0px 0px #808080;
+    box-shadow: none;
     padding: 5px 10px;
     text-transform: uppercase;
 }
 
 .btn:hover {
-    background-color: #a0a0a0;
-    box-shadow: 1px 1px 0px 0px #808080;
+    background-color: #d0d0d0; /* Slightly lighter on hover */
+    border-color: #ffffff #808080 #808080 #ffffff; /* Maintain raised effect */
 }
 
 .btn:active {
-    background-color: #808080;
-    box-shadow: none;
-    transform: translate(1px, 1px);
+    background-color: #a0a0a0; /* Darker on active */
+    border-color: #808080 #ffffff #ffffff #808080; /* Sunken button effect */
+    transform: none; /* Remove translate */
 }
 
 .form-control {
     font-family: 'Courier New', Courier, monospace;
-    border: 2px solid #000000;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; /* Sunken input effect */
     border-radius: 0;
     padding: 5px;
     background-color: #ffffff;
@@ -47,18 +50,20 @@ body {
 
 .form-control:focus {
     border-color: #0000ff; /* Blue focus border */
-    box-shadow: 0 0 0 0.1rem #0000ff, 0 0 0 0.25rem rgba(0, 0, 255, 0.25);
+    box-shadow: 0 0 0 0.1rem #0000ff; /* Simpler focus ring */
 }
 
 .card {
-    border: 2px solid #000000;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff; /* Raised card effect */
     border-radius: 0;
-    box-shadow: 3px 3px 0px 0px #808080;
+    box-shadow: none;
     margin-bottom: 20px;
 }
 
 .card-header {
-    background-color: #c0c0c0;
+    background-color: #000080; /* Windows 98 title bar blue */
+    color: #ffffff;
     border-bottom: 2px solid #000000;
     font-weight: bold;
     text-transform: uppercase;
@@ -66,26 +71,29 @@ body {
 }
 
 .table {
-    border: 2px solid #000000;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; /* Sunken table effect */
     border-collapse: collapse;
 }
 
 .table th,
 .table td {
-    border: 1px solid #000000;
+    border: 1px solid #c0c0c0; /* Lighter grey border for cells */
     padding: 8px;
 }
 
 .table thead th {
-    background-color: #c0c0c0;
+    background-color: #c0c0c0; /* Standard grey for header */
     font-weight: bold;
     text-transform: uppercase;
+    border-color: #ffffff #808080 #808080 #ffffff; /* Raised header effect */
 }
 
 .alert {
-    border: 2px solid #000000;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; /* Sunken alert effect */
     border-radius: 0;
-    box-shadow: 2px 2px 0px 0px #808080;
+    box-shadow: none;
     padding: 10px;
     margin-bottom: 15px;
 }
@@ -115,15 +123,17 @@ body {
 /* StickyFilter styles */
 .sticky-filter {
     background-color: #c0c0c0 !important; /* 90s grey */
-    border: 2px solid #000000 !important;
-    box-shadow: 4px 4px 0px 0px #808080 !important; /* Simple shadow */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
+    box-shadow: none !important;
     border-radius: 0 !important;
 }
 
 /* CustomProgressBar styles */
 .progress-container {
-    border: 2px solid #000000 !important; /* 90s border */
-    box-shadow: 2px 2px 0px 0px #808080 !important; /* Simple shadow */
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
+    box-shadow: none !important;
     border-radius: 0 !important;
 }
 
@@ -145,8 +155,9 @@ body {
 /* CustomPagination styles */
 .sticky-pagination {
     background-color: #c0c0c0 !important; /* 90s grey */
-    border: 2px solid #000000 !important;
-    box-shadow: 4px 4px 0px 0px #808080 !important; /* Simple shadow */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
+    box-shadow: none !important;
     border-radius: 0 !important;
 }
 
@@ -154,17 +165,18 @@ body {
     font-family: 'Courier New', Courier, monospace !important;
     background-color: #c0c0c0 !important;
     color: #000000 !important;
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Raised button effect */
     border-radius: 0 !important;
-    box-shadow: 2px 2px 0px 0px #808080 !important;
+    box-shadow: none !important;
     margin: 0 2px !important; /* Add some spacing between buttons */
 }
 
 .pagination .page-item.active .page-link {
-    background-color: #0000ff !important; /* 90s blue for active */
+    background-color: #000080 !important; /* Windows 98 blue for active */
     color: #ffffff !important;
-    border-color: #000000 !important;
-    box-shadow: 1px 1px 0px 0px #808080 !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
+    box-shadow: none !important;
 }
 
 .pagination .page-item.disabled .page-link {
@@ -173,27 +185,29 @@ body {
 }
 
 .pagination .page-item .page-link:hover {
-    background-color: #a0a0a0 !important;
-    box-shadow: 1px 1px 0px 0px #808080 !important;
+    background-color: #d0d0d0 !important; /* Slightly lighter on hover */
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Maintain raised effect */
 }
 
 .pagination .page-item .page-link:active {
-    background-color: #808080 !important;
-    box-shadow: none !important;
-    transform: translate(1px, 1px) !important;
+    background-color: #a0a0a0 !important; /* Darker on active */
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken button effect */
+    transform: none !important; /* Remove translate */
 }
 
 /* BlazorDiffViewer styles */
 .diff-file {
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-radius: 0 !important;
-    box-shadow: 4px 4px 0px 0px #808080 !important;
+    box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
     background: #ffffff !important;
 }
 
 .diff-header {
-    background: #c0c0c0 !important;
+    background: #000080 !important; /* Windows 98 title bar blue */
+    color: #ffffff !important;
     border-bottom: 2px solid #000000 !important;
     font-weight: bold !important;
 }
@@ -202,18 +216,19 @@ body {
 .diff-controls {
     background: #c0c0c0 !important;
     border-bottom: 2px solid #000000 !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
 }
 
 .hunk-header {
-    border-top: 2px solid #000000 !important;
-    border-bottom: 2px solid #000000 !important;
-    background: #a0a0a0 !important; /* Darker grey for hunk header */
+    border-top: 2px solid #808080 !important;
+    border-bottom: 2px solid #ffffff !important;
+    background: #d0d0d0 !important; /* Slightly lighter grey for hunk header */
     font-style: normal !important;
     font-weight: bold !important;
 }
 
 .panel {
-    border-right: 2px solid #000000 !important;
+    border-right: 2px solid #808080 !important; /* Darker right border */
 }
 
 .panel:last-child {
@@ -221,31 +236,32 @@ body {
 }
 
 .lineno {
-    background: #808080 !important; /* Even darker grey for line numbers */
-    color: #ffffff !important;
-    border-right: 2px solid #000000 !important;
+    background: #c0c0c0 !important; /* Standard grey for line numbers */
+    color: #000000 !important;
+    border-right: 2px solid #808080 !important; /* Darker right border */
 }
 
 .added {
-    background: #aaffaa !important; /* Light green */
+    background: #ccffcc !important; /* Lighter green */
 }
 
 .removed {
-    background: #ffaaaa !important; /* Light red */
+    background: #ffcccc !important; /* Lighter red */
 }
 
 .context {
-    background: #ffffff !important; /* White background for context */
+    background: #eeeeee !important; /* Light grey background for context */
 }
 
 .blank {
-    background: #ffffff !important; /* White background for blank lines */
+    background: #dddddd !important; /* Slightly darker grey background for blank lines */
 }
 
 /* form-select styles */
 .form-select {
     font-family: 'Courier New', Courier, monospace !important;
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-radius: 0 !important;
     padding: 5px !important;
     background-color: #ffffff !important;
@@ -254,7 +270,7 @@ body {
 
 .form-select:focus {
     border-color: #0000ff !important; /* Blue focus border */
-    box-shadow: 0 0 0 0.1rem #0000ff, 0 0 0 0.25rem rgba(0, 0, 255, 0.25) !important;
+    box-shadow: 0 0 0 0.1rem #0000ff !important; /* Simpler focus ring */
 }
 
 /* Badge styles */
@@ -267,9 +283,40 @@ body {
 }
 
 .badge-primary {
-    background-color: #0000ff !important;
+    background-color: #000080 !important; /* Windows 98 blue */
     color: #ffffff !important;
     border: 1px solid #000000 !important;
+}
+
+/* Primary button styling */
+.btn-primary {
+    background-color: #000080 !important; /* Windows 98 blue */
+    color: #ffffff !important;
+    border: 2px solid !important;
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Raised button effect */
+    box-shadow: none !important;
+}
+
+.btn-primary:hover {
+    background-color: #0000a0 !important; /* Slightly lighter blue on hover */
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Maintain raised effect */
+}
+
+.btn-primary:active {
+    background-color: #000060 !important; /* Darker blue on active */
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken button effect */
+    transform: none !important; /* Remove translate */
+}
+
+.btn:disabled,
+.btn-primary:disabled {
+    background-color: #c0c0c0 !important;
+    color: #a0a0a0 !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
+    opacity: 1 !important; /* Don't reduce opacity */
+    box-shadow: none !important;
+    transform: none !important;
+    pointer-events: none; /* Disable clicks */
 }
 
 .badge-secondary {
@@ -316,41 +363,46 @@ body {
 
 /* NavMenu styles */
 .top-row {
-    background-color: #808080 !important; /* Darker grey for top row */
+    background-color: #000080 !important; /* Windows 98 title bar blue */
     border-bottom: 2px solid #000000 !important;
+    color: #ffffff !important; /* White text for title bar */
 }
 
 .navbar-brand {
-    color: #000000 !important;
+    color: #ffffff !important; /* White text for title */
     font-weight: bold !important;
 }
 
 .navbar-toggler {
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised button effect */
     background: #c0c0c0 !important;
     color: #000000 !important;
 }
 
 .navbar-toggler:checked {
     background-color: #a0a0a0 !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
 }
 
 .nav-item .nav-link {
     color: #000000 !important;
     border-radius: 0 !important;
-    border: 1px solid #c0c0c0 !important; /* Light grey border */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
     margin-bottom: 2px !important;
 }
 
 .nav-item a.active {
-    background-color: #0000ff !important; /* 90s blue for active */
+    background-color: #000080 !important; /* Windows 98 blue for active */
     color: #ffffff !important;
-    border-color: #000000 !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
 }
 
 .nav-item .nav-link:hover {
-    background-color: #a0a0a0 !important;
+    background-color: #d0d0d0 !important; /* Slightly lighter on hover */
     color: #000000 !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Maintain raised effect */
 }
 
 .nav-scrollable {
@@ -359,7 +411,8 @@ body {
 
 /* card-header styles */
 .card-header {
-    background-color: #c0c0c0 !important;
+    background-color: #000080 !important; /* Windows 98 title bar blue */
+    color: #ffffff !important;
     border-bottom: 2px solid #000000 !important;
     font-weight: bold !important;
     text-transform: uppercase !important;
@@ -368,7 +421,8 @@ body {
 
 /* form-check-input styles */
 .form-check-input {
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-radius: 0 !important;
     appearance: none !important; /* Remove default styles */
     width: 1em !important;
@@ -388,20 +442,21 @@ body {
 }
 
 .form-check-input:checked {
-    background-color: #0000ff !important;
-    border-color: #0000ff !important;
+    background-color: #000080 !important; /* Windows 98 blue */
+    border-color: #000080 !important;
 }
 
 .form-check-input:focus {
     border-color: #0000ff !important;
-    box-shadow: 0 0 0 0.1rem #0000ff, 0 0 0 0.25rem rgba(0, 0, 255, 0.25) !important;
+    box-shadow: 0 0 0 0.1rem #0000ff !important; /* Simpler focus ring */
 }
 
 /* blazored-typeahead styles */
 .blazored-typeahead {
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-radius: 0 !important;
-    box-shadow: 2px 2px 0px 0px #808080 !important;
+    box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
 }
 
@@ -411,18 +466,21 @@ body {
 }
 
 .blazored-typeahead__input {
-    border: none !important;
+    flex: 1;
+    max-width: 100%;
+    border: none !important; /* Remove default border */
     outline: none !important;
     box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
     padding: 5px !important;
     flex-grow: 1 !important;
+    border-radius: 0 !important; /* Remove rounded corners */
 }
 
 .blazored-typeahead__input-icon {
     padding: 5px !important;
     cursor: pointer !important;
-    border-left: 2px solid #000000 !important;
+    border-left: 2px solid #808080 !important; /* Darker left border */
 }
 
 .blazored-typeahead__down-arrow {
@@ -430,10 +488,11 @@ body {
 }
 
 .blazored-typeahead__results {
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-top: none !important;
     border-radius: 0 !important;
-    box-shadow: 2px 2px 0px 0px #808080 !important;
+    box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
     background-color: #ffffff !important;
 }
@@ -450,7 +509,7 @@ body {
 
 .blazored-typeahead__results li:hover,
 .blazored-typeahead__results li.active {
-    background-color: #0000ff !important;
+    background-color: #000080 !important; /* Windows 98 blue */
     color: #ffffff !important;
 }
 
@@ -461,9 +520,10 @@ body {
 }
 
 .key-item {
-    border: 2px solid #000000 !important; /* 90s border */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
     border-radius: 0 !important;
-    box-shadow: 4px 4px 0px 0px #808080 !important; /* Simple shadow */
+    box-shadow: none !important;
     padding: 1rem !important;
     margin-bottom: 1rem !important;
     background-color: #c0c0c0 !important; /* 90s grey background */
@@ -473,7 +533,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 2px solid #000000 !important; /* Separator */
+    border-bottom: 2px solid #808080 !important; /* Darker separator */
     padding-bottom: 0.5rem !important;
     margin-bottom: 0.5rem !important;
 }
@@ -490,7 +550,8 @@ body {
 
 .key-item textarea.form-control {
     font-family: 'Courier New', Courier, monospace !important;
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
     border-radius: 0 !important;
     padding: 5px !important;
     background-color: #ffffff !important;
@@ -502,29 +563,31 @@ body {
 
 .key-item textarea.form-control:focus {
     border-color: #0000ff !important; /* Blue focus border */
-    box-shadow: 0 0 0 0.1rem #0000ff, 0 0 0 0.25rem rgba(0, 0, 255, 0.25) !important;
+    box-shadow: 0 0 0 0.1rem #0000ff !important; /* Simpler focus ring */
 }
 
 .key-item .btn {
     font-family: 'Courier New', Courier, monospace !important;
+    font-family: 'Courier New', Courier, monospace !important;
     background-color: #c0c0c0 !important;
     color: #000000 !important;
-    border: 2px solid #000000 !important;
+    border: 2px solid !important;
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Raised button effect */
     border-radius: 0 !important;
-    box-shadow: 2px 2px 0px 0px #808080 !important;
+    box-shadow: none !important;
     padding: 5px 10px !important;
     text-transform: uppercase !important;
 }
 
 .key-item .btn:hover {
-    background-color: #a0a0a0 !important;
-    box-shadow: 1px 1px 0px 0px #808080 !important;
+    background-color: #d0d0d0 !important; /* Slightly lighter on hover */
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Maintain raised effect */
 }
 
 .key-item .btn:active {
-    background-color: #808080 !important;
-    box-shadow: none !important;
-    transform: translate(1px, 1px) !important;
+    background-color: #a0a0a0 !important; /* Darker on active */
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken button effect */
+    transform: none !important; /* Remove translate */
 }
 
 .key-item .open-consul {
@@ -534,7 +597,8 @@ body {
 /* LogDetails page styles */
 pre {
     font-family: 'Courier New', Courier, monospace;
-    border: 2px solid #000000; /* Black border */
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; /* Sunken effect */
     padding: 15px;
     border-radius: 0; /* Remove rounded corners */
     overflow-x: auto; /* Add horizontal scroll if needed */
@@ -542,14 +606,16 @@ pre {
 
 /* Modal styles */
 .modal-content {
-    border: 2px solid #000000 !important; /* 90s border */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
     border-radius: 0 !important;
-    box-shadow: 6px 6px 0px 0px #808080 !important; /* Simple shadow */
+    box-shadow: none !important;
     font-family: 'Courier New', Courier, monospace !important;
 }
 
 .modal-header {
-    background-color: #c0c0c0 !important; /* 90s grey */
+    background-color: #000080 !important; /* Windows 98 title bar blue */
+    color: #ffffff !important;
     border-bottom: 2px solid #000000 !important;
     border-radius: 0 !important;
     padding: 10px 15px !important;
@@ -568,25 +634,51 @@ pre {
 }
 
 .modal-footer {
-    border-top: 2px solid #000000 !important;
+    border-top: 2px solid #808080 !important; /* Darker top border */
     background-color: #c0c0c0 !important;
     border-radius: 0 !important;
     padding: 10px 15px !important;
 }
 
 .btn-close {
-    background-color: #ffaaaa !important; /* Light red for close button */
-    border: 2px solid #000000 !important;
+    background-color: #c0c0c0 !important; /* Grey close button */
+    border: 2px solid !important;
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Raised effect */
     border-radius: 0 !important;
     opacity: 1 !important;
     padding: 5px !important;
     margin: -5px !important; /* Adjust margin to align */
+    color: #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    line-height: 1 !important;
+    width: 20px !important; /* Fixed size */
+    height: 20px !important; /* Fixed size */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    /* Add an X using content or background image if possible, but for simplicity, just style the button */
 }
 
 .btn-close:hover {
-    background-color: #ff8888 !important;
+    background-color: #d0d0d0 !important; /* Slightly lighter on hover */
+    border-color: #ffffff #808080 #808080 #ffffff !important; /* Maintain raised effect */
 }
 
 .sidebar {
-    border-right: 2px solid #000000;
+    border-right: 2px solid #808080; /* Darker right border */
+}
+
+/* Custom styling for domain list */
+.domain-list {
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
+    border-radius: 0 !important; /* Remove rounded corners */
+    padding: 10px !important; /* Adjust padding */
+    background-color: #ffffff !important; /* White background */
+}
+
+/* Override rounded corners for elements within the 90s theme */
+.rounded {
+    border-radius: 0 !important;
 }
