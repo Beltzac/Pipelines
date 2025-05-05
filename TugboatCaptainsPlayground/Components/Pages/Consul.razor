@@ -22,7 +22,7 @@
 
 <CustomProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" IsLoading="@ConsulStateService.IsLoading" />
 
-<div class="options floating-controls">
+<StickyFilter>
     <div class="form-group">
         <label for="consulEnvSelect">Selecionar Ambiente Consul</label>
         <select id="consulEnvSelect" class="form-control" @bind="ConsulStateService.SelectedConsulEnv">
@@ -57,7 +57,7 @@
         <input type="text" class="form-control" placeholder="Pesquisar chaves" @bind="ConsulStateService.SearchKey" />
         <input type="text" class="form-control" placeholder="Pesquisar valores" @bind="ConsulStateService.SearchValue" />
     </div>
-</div>
+</StickyFilter>
 
 <ul class="key-list">
     @foreach (var kvp in filteredConsulKeyValues)

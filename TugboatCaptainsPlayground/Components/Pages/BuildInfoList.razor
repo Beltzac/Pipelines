@@ -163,7 +163,7 @@
 
                             @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
                             {
-                                <ContextMenuTrigger MenuId="branchContextMenu" Data="buildInfo" style="vertical-align: middle;" MouseButtonTrigger="MouseButtonTrigger.Left">
+                                <ContextMenuTrigger MenuId="branchContextMenu" Data="buildInfo"  MouseButtonTrigger="MouseButtonTrigger.Left">
                                     <span class="badge bg-info clickable-badge">@buildInfo.CurrentBranch</span>
                                 </ContextMenuTrigger>
                             }
