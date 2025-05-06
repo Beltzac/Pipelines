@@ -1,4 +1,6 @@
-﻿﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿﻿@using Common.Services
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid d-flex justify-content-center">
         <a class="navbar-brand" href="">
             <img src="favicon.ico" alt="App Icon" style="height: 30px;">
@@ -78,8 +80,8 @@
                 <span class="bi bi-github" aria-hidden="true"></span> GitHub
             </a>
 
-            <button class="nav-link btn btn-link" @onclick="ToggleTheme">
-                <span class="bi bi-palette" aria-hidden="true"></span> @(enabled ? "Disable 90s Theme" : "Enable 90s Theme")
+            <button class="nav-link btn btn-link" @onclick="RotateTheme">
+                <span class="bi bi-palette" aria-hidden="true"></span> @($"Theme: {themeDisplayNames[currentTheme]}")
             </button>
 
            <div style="z-index: 1010;"><AutoUpdate /></div>
@@ -204,32 +206,37 @@
 
 @inject Common.Services.ThemeService ThemeService
 @code {
-    private bool enabled = false; // Initialize to false
+    private ThemeService.ThemeType currentTheme = ThemeService.ThemeType.Default;
+    private readonly Dictionary<ThemeService.ThemeType, string> themeDisplayNames = new()
+    {
+        [ThemeService.ThemeType.Default] = "Default",
+        [ThemeService.ThemeType.Retro] = "Retrofuturist",
+        [ThemeService.ThemeType.Ninety] = "90s"
+    };
+
+    // protected override async Task OnInitializedAsync()
+    // {
+
+    // }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await ThemeService.InitialiseAsync(); // Initialize theme based on localStorage
-            enabled = await ThemeService.IsThemeEnabledAsync(); // Get the actual state after initialization
-            StateHasChanged(); // Re-render to show the correct initial state
+            currentTheme = await ThemeService.GetActiveThemeAsync();
+            await base.OnInitializedAsync();
+            // StateHasChanged(); // Re-render to show the correct initial state
         }
     }
 
-    private async Task ToggleTheme()
+    private async Task RotateTheme()
     {
-        enabled = !enabled;
-        if (enabled)
-        {
-            await ThemeService.EnableThemeAsync(); // Call EnableThemeAsync
-        }
-        else
-        {
-            await ThemeService.DisableThemeAsync(); // Call DisableThemeAsync
-        }
-        // StateHasChanged is not strictly necessary here because Enable/DisableThemeAsync doesn't
-        // directly change component state, but the theme change will cause a re-render anyway.
-        // Keeping it for clarity if needed for other state updates later.
+        var themes = Enum.GetValues<ThemeService.ThemeType>();
+        var currentIndex = Array.IndexOf(themes, currentTheme);
+        var nextIndex = (currentIndex + 1) % themes.Length;
+        currentTheme = themes[nextIndex];
+
+        await ThemeService.SetThemeAsync(currentTheme);
         StateHasChanged();
     }
 }

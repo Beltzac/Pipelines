@@ -6,39 +6,47 @@ namespace Common.Services
     public sealed class ThemeService
     {
         readonly IJSRuntime _js;
-        const string ThemeEnabledKey = "theme-enabled";
+        const string ActiveThemeKey = "active-theme";
+
+        public enum ThemeType { Default, Retro, Ninety }
+        private static readonly Dictionary<ThemeType, string> ThemePaths = new()
+        {
+            [ThemeType.Default] = null,
+            [ThemeType.Retro] = "/css/retrofuturist.css",
+            [ThemeType.Ninety] = "/css/90s-theme.css"
+        };
 
         public ThemeService(IJSRuntime js) => _js = js;
 
-        public async Task<bool> IsThemeEnabledAsync()
+        public async Task<ThemeType> GetActiveThemeAsync()
         {
-            var enabled = await _js.InvokeAsync<string>("localStorage.getItem", ThemeEnabledKey);
-            return enabled == "true";
+            var themeName = await _js.InvokeAsync<string>("localStorage.getItem", ActiveThemeKey);
+            if (Enum.TryParse<ThemeType>(themeName, out var theme))
+            {
+                return theme;
+            }
+            return ThemeType.Default;
         }
 
-        public async Task EnableThemeAsync()
+        public async Task SetThemeAsync(ThemeType theme)
         {
-            await _js.InvokeVoidAsync("themeManager.load", "/css/90s-theme.css");
-            await _js.InvokeVoidAsync("localStorage.setItem", ThemeEnabledKey, "true");
-        }
-
-        public async Task DisableThemeAsync()
-        {
+            // First unload any existing theme
             await _js.InvokeVoidAsync("themeManager.unload");
-            await _js.InvokeVoidAsync("localStorage.setItem", ThemeEnabledKey, "false");
+
+            // Load new theme if needed
+            if (theme != ThemeType.Default && ThemePaths.TryGetValue(theme, out var path))
+            {
+                await _js.InvokeVoidAsync("themeManager.load", path);
+            }
+
+            await _js.InvokeVoidAsync("localStorage.setItem", ActiveThemeKey, theme.ToString());
         }
 
         // call once on first render so the theme persists on refresh
         public async Task InitialiseAsync()
         {
-            if (await IsThemeEnabledAsync())
-            {
-                await EnableThemeAsync();
-            }
-            else
-            {
-                await DisableThemeAsync(); // Ensure theme is unloaded if not enabled
-            }
+            var theme = await GetActiveThemeAsync();
+            await SetThemeAsync(theme);
         }
     }
 }

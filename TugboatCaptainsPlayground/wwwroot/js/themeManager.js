@@ -1,16 +1,18 @@
-/* adds or removes <link id="90s-theme-link"> in <head> */
+/* Manages theme stylesheets in <head> */
 window.themeManager = {
     load: href => {
-        if (!document.getElementById('90s-theme-link')) {
+        // Remove any existing theme links first
+        document.querySelectorAll('link[data-theme]').forEach(link => link.remove());
+
+        if (href) {
             const link = document.createElement('link');
-            link.id = '90s-theme-link';
+            link.dataset.theme = 'custom';
             link.rel = 'stylesheet';
             link.href = href;
             document.head.appendChild(link);
         }
     },
     unload: () => {
-        const link = document.getElementById('90s-theme-link');
-        if (link) link.remove();
+        document.querySelectorAll('link[data-theme]').forEach(link => link.remove());
     }
 };
