@@ -165,9 +165,9 @@
       },
       "Markdig": {
         "type": "Direct",
-        "requested": "[0.40.0, )",
-        "resolved": "0.40.0",
-        "contentHash": "4ve14zs+gt1irldTQE3y5FLAHuzmhW7T99lAAvVipe/q2LWT/nUCO0iICb9TXGvMX6n7Z1OZroFXkdSy91rO8w=="
+        "requested": "[0.41.1, )",
+        "resolved": "0.41.1",
+        "contentHash": "e9QXUg2agxd9iWV3hO5fA4Qp2avMuXFiElatzD8hp69yIEgESrdhKvDFf9y9NOlPe9jO7AA6W1JAnntLmqwRwA=="
       },
       "Microsoft.AspNetCore.SignalR.Client": {
         "type": "Direct",
@@ -3291,7 +3291,7 @@
           "H.NotifyIcon": "[2.3.0, )",
           "Hogimn.Sql.Formatter": "[2.0.1, )",
           "LibGit2Sharp": "[0.31.0, )",
-          "Markdig": "[0.40.0, )",
+          "Markdig": "[0.41.1, )",
           "Microsoft.AspNetCore.SignalR.Client": "[9.0.3, )",
           "Microsoft.AspNetCore.SignalR.Core": "[1.2.0, )",
           "Microsoft.EntityFrameworkCore": "[9.0.4, )",
