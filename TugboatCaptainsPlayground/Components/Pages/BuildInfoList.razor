@@ -88,7 +88,7 @@
 <CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Value="@BuildInfoStateService.ProgressValue" Label="@BuildInfoStateService.ProgressLabel" />
 
 <StickyFilter>
-    <div class="mb-3 d-flex align-items-center">
+    <div class="d-flex align-items-center">
         <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
         <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Limpar</button>
 
@@ -155,16 +155,16 @@
                         </div>
 
                         <div class="d-flex flex-wrap gap-1">
-                            <span class="badge bg-primary clickable-badge" @onclick="async () => await OpenClickAsync(buildInfo)">@buildInfo.ProjectType.Humanize().Transform(To.LowerCase, To.TitleCase)</span>
+                            <span class="badge text-bg-primary clickable-badge" @onclick="async () => await OpenClickAsync(buildInfo)">@buildInfo.ProjectType.Humanize().Transform(To.LowerCase, To.TitleCase)</span>
                             @if (!buildInfo.MasterClonned)
                             {
-                                <span class="badge bg-danger clickable-badge" @onclick="async () => await CloneRepoAsync(buildInfo)">Não Clonado</span>
+                                <span class="badge text-bg-danger clickable-badge" @onclick="async () => await CloneRepoAsync(buildInfo)">Não Clonado</span>
                             }
 
                             @if (buildInfo.MasterClonned && !string.IsNullOrEmpty(buildInfo.CurrentBranch))
                             {
                                 <ContextMenuTrigger MenuId="branchContextMenu" Data="buildInfo"  MouseButtonTrigger="MouseButtonTrigger.Left">
-                                    <span class="badge bg-info clickable-badge">@buildInfo.CurrentBranch</span>
+                                    <span class="badge text-bg-info clickable-badge">@buildInfo.CurrentBranch</span>
                                 </ContextMenuTrigger>
                             }
 
@@ -172,14 +172,14 @@
                             {
                                 @foreach (var jiraCard in ExtractJiraCards(buildInfo.Pipeline.Last.Commit.CommitMessage))
                                 {
-                                    <span class="badge bg-success clickable-badge" @onclick="() => OpenJiraCard(jiraCard)">@jiraCard</span>
+                                    <span class="badge text-bg-success clickable-badge" @onclick="() => OpenJiraCard(jiraCard)">@jiraCard</span>
                                 }
 
                                 @foreach (var prNumber in ExtractPrNumbers(buildInfo.Pipeline.Last.Commit.CommitMessage))
                                 {
                                     @if (!string.IsNullOrEmpty(buildInfo.Project) && !string.IsNullOrEmpty(buildInfo.Name))
                                     {
-                                        <span class="badge bg-warning clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR Commit @prNumber</span>
+                                        <span class="badge text-bg-warning clickable-badge" @onclick="() => OpenPr(prNumber, buildInfo.Project, buildInfo.Name)">PR Commit @prNumber</span>
                                     }
                                 }
                             }
@@ -188,7 +188,7 @@
                             {
                                 @foreach (var pr in buildInfo.ActivePullRequests)
                                 {
-                                    <span class="badge bg-secondary clickable-badge"
+                                    <span class="badge text-bg-secondary clickable-badge"
                                             @onclick="() => OpenPr(pr.Id.ToString(), buildInfo.Project, buildInfo.Name)"
                                             data-bs-toggle="tooltip"
                                             title="@($"{pr.Title} ({pr.SourceBranch} → {pr.TargetBranch})")">

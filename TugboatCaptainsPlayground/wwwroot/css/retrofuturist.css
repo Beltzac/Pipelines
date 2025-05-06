@@ -1,287 +1,111 @@
-/* Retrofuturist Theme for Bootstrap */
+﻿/* ========== Hacker Overlay ==================================== */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
 
-body {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    background-color: #1a1a1a;
-    color: #00ffff;
-    text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+:root{
+    --bg:        #000;       /* jet black */
+    --bg-panel:  #0c0c0c;    /* deep gray */
+    --txt:       #b9ffb9;    /* soft lime */
+    --txt-dim:   #6aff6a;    /* muted lime */
+    --accent:    #00ff41;    /* matrix green */
+    --danger:    #ff3b3b;
+    --warn:      #ffbf00;
 }
 
-.container {
-    background-color: #2d2d2d;
-    border: 2px dashed;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    box-shadow: 0 0 10px #ff00ff inset;
-    padding: 25px;
-    margin-top: 30px;
+html,body{
+    height:100%;
+    background:var(--bg);
+    font-family:'Fira Code','Courier New',monospace;
+    color:var(--txt);
 }
 
-.btn {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    background-color: #330033;
-    color: #00ff00;
-    border: 2px solid;
-    border-color: #00ff00 #ff00ff #ff00ff #00ff00;
-    border-radius: 0;
-    box-shadow: 0 0 5px #00ff00;
-    padding: 8px 15px;
-    text-transform: uppercase;
-    transition: all 0.3s ease-in-out;
+/* CRT scan‑lines */
+body::after{
+    content:"";
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(
+        transparent 0 2px,
+        rgba(0,255,65,.07) 2px 4px
+    );
+    mix-blend-mode:overlay;
+    pointer-events:none;
 }
 
-.btn:hover {
-    background-color: #4d004d;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    box-shadow: 0 0 10px #ff00ff;
-    transform: scale(1.05);
+/* Panels / cards / modals */
+.container,.card,.modal-content{
+    background:var(--bg-panel);
+    border:1px solid var(--accent);
+    box-shadow:0 0 6px rgba(0,255,65,.15) inset;
 }
 
-.btn:active {
-    background-color: #1a001a;
-    border-color: #00ff00 #00ffff #00ffff #00ff00;
-    transform: none;
+/* Headings */
+.card-header,.modal-header,.display-4{
+    background:var(--bg-panel);
+    color:var(--accent);
+    border-bottom:1px solid var(--accent);
 }
 
-.form-control {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    border: 2px dashed;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    border-radius: 0;
-    padding: 6px;
-    background-color: #1a1a1a;
-    color: #ff00ff;
-    box-shadow: 0 0 5px #ff00ff inset;
+/* Buttons */
+.btn{
+    background:var(--bg-panel);
+    color:var(--accent);
+    border:1px solid var(--accent);
+    text-transform:uppercase;
+    transition:filter .15s ease;
+}
+.btn:hover{ filter:brightness(140%); }
+.btn:active{ transform:scale(.97); }
+
+/* Inputs */
+.form-control{
+    background:var(--bg-panel);
+    color:var(--txt);
+    border:1px solid var(--accent);
+}
+.form-control:focus{
+    outline:none;
+    box-shadow:0 0 4px var(--accent);
 }
 
-.form-control:focus {
-    border-color: #00ff00;
-    box-shadow: 0 0 0 0.2rem #00ff00;
+/* Table */
+.table thead th{
+    background:var(--bg-panel);
+    color:var(--accent);
+    border-bottom:2px solid var(--accent);
+}
+.table td,.table th{ border-color:#1a1a1a; }
+
+/* Badges */
+.badge{
+    background:var(--accent);
+    color:#000;
+    font-weight:600;
 }
 
-.card {
-    border: 2px solid;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    border-radius: 0;
-    box-shadow: 0 0 10px #ff00ff;
-    margin-bottom: 25px;
-}
+/* Alerts */
+.alert{ background:var(--bg-panel); }
+.alert-success{ color:var(--accent); }
+.alert-danger { color:var(--danger); }
+.alert-warning{ color:var(--warn); }
 
-.card-header {
-    background-color: #000080;
-    color: #00ff00;
-    border-bottom: 2px solid #00ff00;
-    font-weight: bold;
-    text-transform: uppercase;
-    border-radius: 0 !important;
-    box-shadow: 0 0 5px #00ff00;
+/* Links: blinking cursor on hover */
+a{ color:var(--accent); text-decoration:none; }
+a:hover{
+    color:var(--accent);
+    position:relative;
 }
-
-.table {
-    border: 2px dashed;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    background-color: #1a1a1a;
-    color: #00ffff;
+a:hover::after{
+    content:"_";
+    animation:blink 1s steps(1) infinite;
 }
+@keyframes blink{ 50%{opacity:0;} }
 
-.table th,
-.table td {
-    border: 1px solid #333333;
-    padding: 10px;
-    background-color: #222222;
+/* Checkbox / radio */
+.form-check-input{
+    appearance:none; width:1rem; height:1rem;
+    border:1px solid var(--accent);
+    background:var(--bg-panel);
 }
-
-.table thead th {
-    background-color: #000033;
-    color: #00ffff;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-}
-
-.alert {
-    border: 2px solid;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    border-radius: 0;
-    box-shadow: 0 0 5px #ff00ff;
-    padding: 12px;
-    margin-bottom: 20px;
-}
-
-.alert-success {
-    background-color: #004d00;
-    color: #00ff00;
-}
-
-.alert-danger {
-    background-color: #4d0000;
-    color: #ff0000;
-}
-
-.alert-warning {
-    background-color: #4d4d00;
-    color: #ffff00;
-}
-
-.alert-info {
-    background-color: #00004d;
-    color: #00ffff;
-}
-
-.pagination .page-item .page-link {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    background-color: #1a1a1a;
-    color: #00ffff;
-    border: 2px dashed;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff;
-    border-radius: 0;
-    margin: 0 3px !important;
-    box-shadow: 0 0 3px #00ffff;
-}
-
-.pagination .page-item.active .page-link {
-    background-color: #000080 !important;
-    color: #00ff00 !important;
-    border-color: #00ff00 #ff00ff #ff00ff #00ff00 !important;
-    box-shadow: 0 0 8px #00ff00;
-}
-
-.pagination .page-item .page-link:hover {
-    background-color: #330033 !important;
-    border-color: #00ffff #00ffff #00ffff #00ffff !important;
-    color: #ff00ff !important;
-}
-
-.key-item {
-    border: 2px dashed !important;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff !important;
-    background-color: #1a1a1a !important;
-    box-shadow: 0 0 10px #ff00ff !important;
-}
-
-.modal-content {
-    border: 2px dashed !important;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff !important;
-    background-color: #1a1a1a !important;
-    color: #00ffff !important;
-    box-shadow: 0 0 15px #ff00ff !important;
-}
-
-.modal-header {
-    background-color: #000033 !important;
-    color: #00ffff !important;
-    border-bottom: 2px solid #00ffff !important;
-}
-
-.btn-close {
-    background-color: #1a1a1a !important;
-    border: 2px dashed !important;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff !important;
-    color: #ff00ff !important;
-    box-shadow: 0 0 5px #ff00ff !important;
-}
-
-.btn-close:hover {
-    background-color: #330033 !important;
-    border-color: #00ff00 #ff00ff #ff00ff #00ff00 !important;
-    color: #00ff00 !important;
-}
-
-/* Override Bootstrap's default rounded corners */
-.rounded {
-    border-radius: 0 !important;
-}
-
-/* Add glowing effect to links */
-a {
-    color: #00ffff;
-    text-shadow: 0 0 5px #00ffff;
-    transition: color 0.3s, text-shadow 0.3s;
-}
-
-a:hover {
-    color: #ff00ff;
-    text-shadow: 0 0 10px #ff00ff;
-}
-
-/* Futuristic input focus effect */
-.form-control:focus {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 #00ff00; }
-    70% { box-shadow: 0 0 10px 4px #00ff00; }
-    100% { box-shadow: 0 0 0 0 #00ff00; }
-}
-
-/* Add glowing effect to active nav items */
-.nav-item .nav-link.active {
-    background-color: #000033 !important;
-    color: #ff00ff !important;
-    box-shadow: 0 0 10px #ff00ff !important;
-}
-
-/* Futuristic progress bar */
-.progress {
-    background-color: #333333 !important;
-    border-radius: 0 !important;
-}
-
-.progress-bar {
-    background-color: #00ffff !important;
-    color: #ff00ff !important;
-    font-weight: bold !important;
-    box-shadow: 0 0 5px #00ffff !important;
-}
-
-/* Custom badge styles */
-.badge {
-    font-family: 'Orbitron', 'Courier New', monospace !important;
-    background-color: #330033 !important;
-    color: #ff00ff !important;
-    border: 1px solid #ff00ff !important;
-    box-shadow: 0 0 5px #ff00ff !important;
-}
-
-/* Add neon glow to input elements */
-.form-check-input {
-    border: 2px dashed !important;
-    border-color: #00ffff #ff00ff #ff00ff #00ffff !important;
-    background-color: #1a1a1a !important;
-    box-shadow: 0 0 5px #ff00ff !important;
-}
-
-.form-check-input:checked {
-    background-color: #000033 !important;
-    border-color: #00ff00 !important;
-    box-shadow: 0 0 10px #00ff00 !important;
-}
-
-/* Retrofuturist header */
-.display-4 {
-    font-family: 'Orbitron', 'Courier New', monospace;
-    color: #00ffff;
-    text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-    font-size: 2.5rem;
-}
-
-/* Futuristic code blocks */
-pre, code {
-    background-color: #000000 !important;
-    color: #00ff00 !important;
-    border: 2px dashed #00ff00 !important;
-    padding: 15px;
-    overflow-x: auto;
-    font-family: 'Courier New', monospace;
-    box-shadow: 0 0 10px #00ff00 inset;
-}
-
-/* Add some movement to the background */
-@keyframes starfield {
-    0% { background-position: 0 0; }
-    100% { background-position: 100% 100%; }
-}
-
-body {
-    background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
-    background-size: 400% 400%;
-    animation: starfield 20s linear infinite;
+.form-check-input:checked{
+    background:var(--accent);
+    box-shadow:inset 0 0 0 2px #000;
 }

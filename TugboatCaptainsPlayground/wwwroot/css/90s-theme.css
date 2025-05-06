@@ -307,7 +307,6 @@ body {
     border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken button effect */
     transform: none !important; /* Remove translate */
 }
-
 .btn:disabled,
 .btn-primary:disabled {
     background-color: #c0c0c0 !important;
@@ -317,6 +316,47 @@ body {
     box-shadow: none !important;
     transform: none !important;
     pointer-events: none; /* Disable clicks */
+}
+
+/* Warning button styling */
+.btn-warning {
+    background-color: #ffcc00 !important; /* 90s yellow */
+    color: #000000 !important;
+    border: 2px solid !important;
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Raised button effect */
+    box-shadow: none !important;
+}
+
+.btn-warning:hover {
+    background-color: #ffdd33 !important; /* Slightly lighter yellow on hover */
+    border-color: #ffffff #000000 #000000 #ffffff !important; /* Maintain raised effect */
+}
+
+.btn-warning:active {
+    background-color: #e6b800 !important; /* Darker yellow on active */
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken button effect */
+    transform: none !important; /* Remove translate */
+}
+
+/* Outline warning button styling */
+.btn-outline-warning {
+    background-color: transparent !important;
+    color: #ffcc00 !important; /* 90s yellow */
+    border: 2px solid !important;
+    border-color: #ffcc00 !important;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffcc00 !important; /* Solid yellow on hover */
+    color: #000000 !important;
+}
+
+/* Card body styling */
+.card-body {
+    background-color: #e0e0e0 !important; /* Light gray background */
+    border: 2px solid !important;
+    border-color: #808080 #ffffff #ffffff #808080 !important; /* Sunken effect */
+    padding: 15px !important;
 }
 
 .badge-secondary {
