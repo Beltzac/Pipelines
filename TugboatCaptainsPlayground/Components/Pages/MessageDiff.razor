@@ -16,61 +16,53 @@
 <CustomProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />
 
 <StickyFilter>
-    <div class="row g-3">
-        <div class="col-md-5">
-            <div class="form-group">
-                <label class="form-label" title="Ambiente de origem para comparação">Ambiente Origem:</label>
-                <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
-                    @foreach (var env in environments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
-            </div>
-        </div>
-        <div class="col-md-5">
-            <div class="form-group">
-                <label class="form-label" title="Ambiente de destino para comparação">Ambiente Destino:</label>
-                <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
-                    @foreach (var env in environments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100 mt-4" @onclick="CompareEnvironments">Comparar</button>
-        </div>
-    </div>
+   <div class="row g-3 align-items-end">
+       <div class="col-md-6 col-lg-4">
+           <label class="form-label" title="Ambiente de origem para comparação">Ambiente Origem:</label>
+           <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
+               @foreach (var env in environments)
+               {
+                   <option value="@env.Name">@env.Name</option>
+               }
+           </select>
+       </div>
+       <div class="col-md-6 col-lg-4">
+           <label class="form-label" title="Ambiente de destino para comparação">Ambiente Destino:</label>
+           <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
+               @foreach (var env in environments)
+               {
+                   <option value="@env.Name">@env.Name</option>
+               }
+           </select>
+       </div>
+       <div class="col-md-12 col-lg-4">
+           <button class="btn btn-primary w-100" @onclick="CompareEnvironments">Comparar</button>
+       </div>
+   </div>
 
-    <div class="row g-3 mt-2">
-        <div class="col-md-6">
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="Pesquisar por módulo, código ou prefixo..."
-                @bind="MessageDiffStateService.SearchKey"
-                @bind:event="oninput"
-                @onkeyup="HandleSearch"
-                title="Filtrar por módulo, código ou prefixo da mensagem" />
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="Pesquisar por descrição..."
-                @bind="MessageDiffStateService.SearchDescription"
-                @bind:event="oninput"
-                @onkeyup="HandleSearch"
-                title="Filtrar pelo texto da descrição da mensagem" />
-            </div>
-        </div>
-        <div class="col-md-1">
-            <div class="form-check form-switch mt-3">
-                <input class="form-check-input" type="checkbox" role="switch"
-                       id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
-                <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
-            </div>
-        </div>
-    </div>
+   <div class="row g-3 mt-2 align-items-center">
+       <div class="col-md-6 col-lg-4">
+           <input type="text" class="form-control" placeholder="Pesquisar por módulo, código ou prefixo..."
+                  @bind="MessageDiffStateService.SearchKey"
+                  @bind:event="oninput"
+                  @onkeyup="HandleSearch"
+                  title="Filtrar por módulo, código ou prefixo da mensagem" />
+       </div>
+       <div class="col-md-6 col-lg-4">
+           <input type="text" class="form-control" placeholder="Pesquisar por descrição..."
+                  @bind="MessageDiffStateService.SearchDescription"
+                  @bind:event="oninput"
+                  @onkeyup="HandleSearch"
+                  title="Filtrar pelo texto da descrição da mensagem" />
+       </div>
+       <div class="col-md-12 col-lg-4">
+           <div class="form-check form-switch">
+               <input class="form-check-input" type="checkbox" role="switch"
+                      id="showOnlyChanged" @bind="MessageDiffStateService.ShowOnlyChanged" @bind:after="HandleSearch">
+               <label class="form-check-label" for="showOnlyChanged" title="Mostrar apenas mensagens com diferenças">Mostrar apenas alterações</label>
+           </div>
+       </div>
+   </div>
 </StickyFilter>
 
 <div class="diff-container">

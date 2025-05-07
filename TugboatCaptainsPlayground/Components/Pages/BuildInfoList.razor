@@ -88,22 +88,28 @@
 <CustomProgressBar IsLoading="@BuildInfoStateService.IsLoading" Value="@BuildInfoStateService.ProgressValue" Label="@BuildInfoStateService.ProgressLabel" />
 
 <StickyFilter>
-    <div class="d-flex align-items-center">
-        <input @ref="filterInputElement" type="text" id="filterInput" class="form-control me-2" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" />
-        <button class="btn btn-secondary me-2 text-nowrap" @onclick="ClearFilter">Limpar</button>
+    <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <input @ref="filterInputElement" type="text" id="filterInput" class="form-control" @bind="BuildInfoStateService.Filter" @oninput="OnFilterChange" placeholder="Filtrar repositórios..." />
+        </div>
+        <div class="col-md-8">
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-secondary text-nowrap" @onclick="ClearFilter">Limpar</button>
 
-        @if (BuildInfoStateService.IsLoading)
-        {
-            <button class="btn btn-danger me-2 text-nowrap" @onclick="Cancel" style="display: block;">Cancelar</button>
-        }
-        else
-        {
-            <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
-            <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await PullAll()">Pull TODOS</button>
-        }
+                @if (BuildInfoStateService.IsLoading)
+                {
+                    <button class="btn btn-danger text-nowrap" @onclick="Cancel" style="display: block;">Cancelar</button>
+                }
+                else
+                {
+                    <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAll()">Clonar TODOS</button>
+                    <button class="btn btn-primary text-nowrap" @onclick="async () => await PullAll()">Pull TODOS</button>
+                }
 
-        <button class="btn btn-primary me-2 text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Abrir Pasta Clonada no VS CODE</button>
-        <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Script Clonar Todos</button>
+                <button class="btn btn-primary text-nowrap" @onclick="async () => await OpenCloneInVSCode()">Abrir Pasta Clonada no VS CODE</button>
+                <button class="btn btn-primary text-nowrap" @onclick="async () => await CloneAllCmd()">Script Clonar Todos</button>
+            </div>
+        </div>
     </div>
 </StickyFilter>
 

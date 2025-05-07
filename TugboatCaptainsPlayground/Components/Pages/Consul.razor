@@ -23,40 +23,49 @@
 <CustomProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" IsLoading="@ConsulStateService.IsLoading" />
 
 <StickyFilter>
-    <div class="form-group">
-        <label for="consulEnvSelect">Selecionar Ambiente Consul</label>
-        <select id="consulEnvSelect" class="form-control" @bind="ConsulStateService.SelectedConsulEnv">
-            @foreach (var env in config.ConsulEnvironments)
-            {
-                <option value="@env.Name">@env.Name</option>
-            }
-        </select>
-    </div>
+   <div class="row g-3 align-items-end">
+       <div class="col-md-6 col-lg-3">
+           <label for="consulEnvSelect" class="form-label">Selecionar Ambiente Consul</label>
+           <select id="consulEnvSelect" class="form-select" @bind="ConsulStateService.SelectedConsulEnv">
+               @foreach (var env in config.ConsulEnvironments)
+               {
+                   <option value="@env.Name">@env.Name</option>
+               }
+           </select>
+       </div>
 
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="ConsulStateService.IsRecursive" />
-        <label class="form-check-label" for="recursiveToggle">
-            Habilitar Valores Recursivos
-        </label>
-    </div>
+       <div class="col-md-6 col-lg-3">
+           <div class="form-check mb-2">
+               <input class="form-check-input" type="checkbox" id="recursiveToggle" @bind="ConsulStateService.IsRecursive" />
+               <label class="form-check-label" for="recursiveToggle">
+                   Habilitar Valores Recursivos
+               </label>
+           </div>
+           <div class="form-check">
+               <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="ConsulStateService.ShowInvalidOnly" />
+               <label class="form-check-label" for="showInvalidOnlyToggle">
+                   Mostrar Apenas Valores Inválidos
+               </label>
+           </div>
+       </div>
 
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="showInvalidOnlyToggle" @bind="ConsulStateService.ShowInvalidOnly" />
-        <label class="form-check-label" for="showInvalidOnlyToggle">
-            Mostrar Apenas Valores Inválidos
-        </label>
-    </div>
+       <div class="col-md-12 col-lg-6">
+           <div class="d-flex flex-wrap gap-2">
+               <button class="btn btn-primary text-nowrap" @onclick="async () => await LoadConsul()">Carregar Consul</button>
+               <button class="btn btn-success text-nowrap" @onclick="async () => await SaveConsulToFolder()">Salvar na Pasta</button>
+               <button class="btn btn-secondary text-nowrap" @onclick="async () => await OpenFolderInVsCode()">Abrir Pasta no VS Code</button>
+           </div>
+       </div>
+   </div>
 
-    <div class="buttons">
-        <button class="btn btn-primary" @onclick="async () => await LoadConsul()">Carregar Consul</button>
-        <button class="btn btn-success" @onclick="async () => await SaveConsulToFolder()">Salvar na Pasta</button>
-        <button class="btn btn-secondary" @onclick="async () => await OpenFolderInVsCode()">Abrir Pasta no VS Code</button>
-    </div>
-
-    <div class="search-container">
-        <input type="text" class="form-control" placeholder="Pesquisar chaves" @bind="ConsulStateService.SearchKey" />
-        <input type="text" class="form-control" placeholder="Pesquisar valores" @bind="ConsulStateService.SearchValue" />
-    </div>
+   <div class="row g-3 mt-2">
+       <div class="col-md-6">
+           <input type="text" class="form-control" placeholder="Pesquisar chaves" @bind="ConsulStateService.SearchKey" />
+       </div>
+       <div class="col-md-6">
+           <input type="text" class="form-control" placeholder="Pesquisar valores" @bind="ConsulStateService.SearchValue" />
+       </div>
+   </div>
 </StickyFilter>
 
 <ul class="key-list">
