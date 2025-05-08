@@ -1,12 +1,16 @@
 using Microsoft.JSInterop;
 using System.Threading.Tasks;
+using System;
+using System.Linq;
 
 namespace Common.Services
 {
     public sealed class ThemeService
     {
         readonly IJSRuntime _js;
-        const string ActiveThemeKey = "active-theme";
+        readonly IConfigurationService _config;
+        bool _isJsInitialized;
+        const string ThemeManagerJsPath = "./js/themeManager.js";
 
         public enum ThemeType { Default, Retro, Ninety }
         private static readonly Dictionary<ThemeType, string> ThemePaths = new()
@@ -16,30 +20,47 @@ namespace Common.Services
             [ThemeType.Ninety] = "/css/90s-theme.css"
         };
 
-        public ThemeService(IJSRuntime js) => _js = js;
+        public ThemeService(IJSRuntime js, IConfigurationService config)
+        {
+            _js = js;
+            _config = config;
+        }
 
         public async Task<ThemeType> GetActiveThemeAsync()
         {
-            var themeName = await _js.InvokeAsync<string>("localStorage.getItem", ActiveThemeKey);
-            if (Enum.TryParse<ThemeType>(themeName, out var theme))
+            return Enum.Parse<ThemeType>(_config.GetConfig().Theme);
+        }
+
+        private async Task EnsureJsLoadedAsync()
+        {
+            if (_isJsInitialized) return;
+
+            try
             {
-                return theme;
+                await _js.InvokeAsync<object>("import", ThemeManagerJsPath);
+                _isJsInitialized = true;
             }
-            return ThemeType.Default;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading theme manager: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task SetThemeAsync(ThemeType theme)
         {
-            // First unload any existing theme
+            await EnsureJsLoadedAsync();
             await _js.InvokeVoidAsync("themeManager.unload");
-
             // Load new theme if needed
             if (theme != ThemeType.Default && ThemePaths.TryGetValue(theme, out var path))
             {
                 await _js.InvokeVoidAsync("themeManager.load", path);
             }
 
-            await _js.InvokeVoidAsync("localStorage.setItem", ActiveThemeKey, theme.ToString());
+            // Update config
+            var config = _config.GetConfig();
+            config.Theme = theme.ToString();
+            await _config.SaveConfigAsync(config);
         }
 
         // call once on first render so the theme persists on refresh

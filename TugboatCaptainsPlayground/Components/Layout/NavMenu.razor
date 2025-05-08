@@ -80,7 +80,7 @@
                 <span class="bi bi-github" aria-hidden="true"></span> GitHub
             </a>
 
-            <button class="nav-link btn btn-link" @onclick="RotateTheme">
+            <button class="nav-link" @onclick="RotateTheme">
                 <span class="bi bi-palette" aria-hidden="true"></span> @($"Theme: {themeDisplayNames[currentTheme]}")
             </button>
 
@@ -223,8 +223,8 @@
     {
         if (firstRender)
         {
-            currentTheme = await ThemeService.GetActiveThemeAsync();
-            await base.OnInitializedAsync();
+            //currentTheme = await ThemeService.GetActiveThemeAsync();
+            await ThemeService.InitialiseAsync();
             // StateHasChanged(); // Re-render to show the correct initial state
         }
     }

@@ -89,7 +89,7 @@ MainQuery AS (
         NVL(MOTORISTA, 'INVALID_XML') AS MOTORISTA,
         LTDB.XML AS LTDB_XML,
         LTVC.XML AS LTVC_XML,
-        extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400*1000) / 1000 AS DELAY,
+        extract(day from (COALESCE(LTVC.CREATED_AT, SYSDATE)  - LTDB.CREATED_AT)*86400*1000) / 1000 AS DELAY,
         NVL(LTVC_STATUS, 'UNKNOWN') AS STATUS,
         COALESCE(
             TO_CHAR(LTVC_MESSAGE),
@@ -210,12 +210,12 @@ CROSS JOIN CountQuery c";
 
             if (!string.IsNullOrEmpty(filter.Status))
                 conditions.Add($"LTVC.XML LIKE '%{filter.Status}%'");
-if (!string.IsNullOrEmpty(filter.CodigoBarras))
-    conditions.Add($"AGE.CODIGO_BARRAS LIKE '%{filter.CodigoBarras}%'");
 
-if (!string.IsNullOrEmpty(filter.RequestId))
-    conditions.Add($"LTDB.REQUEST_ID = '{filter.RequestId}'");
+            if (!string.IsNullOrEmpty(filter.CodigoBarras))
                 conditions.Add($"AGE.CODIGO_BARRAS LIKE '%{filter.CodigoBarras}%'");
+
+            if (!string.IsNullOrEmpty(filter.RequestId))
+                conditions.Add($"LTDB.REQUEST_ID = '{filter.RequestId}'");
 
             var whereClause = conditions.Any()
                 ? $"AND {string.Join(" AND ", conditions)}"
@@ -224,8 +224,8 @@ if (!string.IsNullOrEmpty(filter.RequestId))
             return $@"
 SELECT
     TO_CHAR(TRUNC(LTDB.CREATED_AT, 'HH'), 'dd/MM HH:mm') as TIMESTAMP,
-    CAST(AVG(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
-    CAST(MAX(extract(day from (LTVC.CREATED_AT - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
+    CAST(AVG(extract(day from (COALESCE(LTVC.CREATED_AT, SYSDATE) - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as AVG_DELAY_SECONDS,
+    CAST(MAX(extract(day from (COALESCE(LTVC.CREATED_AT, SYSDATE) - LTDB.CREATED_AT)*86400)) AS NUMBER(10,2)) as MAX_DELAY_SECONDS,
     COUNT(*) as REQUEST_COUNT
 FROM
     TCPSGATE.TRACKING LTDB

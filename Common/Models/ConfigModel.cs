@@ -1,4 +1,6 @@
-﻿namespace Common.Models
+﻿using Common.Services;
+
+namespace Common.Models
 {
     public class ConfigModel
     {
@@ -12,6 +14,7 @@
         /// </summary>
         public int MaxUpdateTime { get; set; } = 14400; // 4 hours
         public bool IsDarkMode { get; set; }
+        public string Theme { get; set; } = ThemeService.ThemeType.Default.ToString();
         public string PAT { get; set; }
         public string OrganizationUrl { get; set; }
         public string LocalCloneFolder { get; set; }
