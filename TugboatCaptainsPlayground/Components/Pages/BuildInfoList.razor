@@ -205,7 +205,6 @@
                         </div>
                     </div>
                 </td>
-                <td>@GetNextRunTime(buildInfo.Id)</td>
                 <td>
                     <button class="btn btn-sm @(BuildInfoService.IsPinned(buildInfo) ? "btn-warning" : "btn-outline-warning")" @onclick="() => TogglePin(buildInfo)">
                         <i class="bi bi-pin-angle"></i>
