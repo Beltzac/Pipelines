@@ -40,6 +40,7 @@
         {
             <Item OnClick="@OpenClickAsync">Abrir</Item>
             <Item OnClick="@OpenInVSCodeClickAsync">Abrir no VS Code</Item>
+            <Item OnClick="@OpenProjectFolderClickAsync">Abrir Pasta do Projeto</Item>
         }
 
         if (!string.IsNullOrEmpty(repo.Pipeline?.Last?.ErrorLogs))
@@ -641,6 +642,13 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
         BuildInfoService.OpenRepoInVsCode(repo);
+    }
+
+    private async Task OpenProjectFolderClickAsync(ItemClickEventArgs e)
+    {
+        var repo = e.Data as Repository;
+        var localPath = Path.Combine(BuildInfoService.GetLocalCloneFolder(), repo.Project, repo.Name);
+        OpenFolderUtils.OpenFolder(localPath);
     }
 
     private async Task PullAll()
