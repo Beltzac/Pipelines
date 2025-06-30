@@ -58,7 +58,7 @@ jobs:
           cache-dependency-path: '**/packages.lock.json'
 
       - name: Restore dependencies
-        run: dotnet restore TugboatCaptainsPlayground
+        run: dotnet restore TugboatCaptainsPlayground --force-evaluate
 
       - name: Test
         run: dotnet test --verbosity minimal
