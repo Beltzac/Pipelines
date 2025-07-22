@@ -79,10 +79,15 @@
                                 <br />
                                 @((MarkupString)commit.ToHtml(ConfigService.GetConfig()))
                             </div>
-                            @if (!string.IsNullOrEmpty(commit.JiraCardID))
-                            {
-                                <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
-                            }
+                            <div class="d-flex gap-2 align-items-center">
+                                @if (!string.IsNullOrEmpty(commit.JiraCardID))
+                                {
+                                    <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
+                                        <i class="fas fa-clock"></i>
+                                    </button>
+                                }
+                            </div>
                         </div>
                     </li>
                 }
@@ -243,6 +248,33 @@ else
         finally
         {
             isSendingWorklogs = false;
+        }
+    }
+
+    private async Task SendSingleWorklogToTempo(Commit commit)
+    {
+        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
+        {
+            toastService.ShowWarning("No JIRA card found for this commit");
+            return;
+        }
+
+        try
+        {
+            var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+
+            if (result.Success)
+            {
+                toastService.ShowSuccess($"Worklog created for {commit.JiraCardID}");
+            }
+            else
+            {
+                toastService.ShowError($"Failed to create worklog: {result.Error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending worklog: {ex.Message}");
         }
     }
 }
