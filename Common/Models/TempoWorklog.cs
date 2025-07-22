@@ -69,10 +69,12 @@ namespace Common.Models
 
     public class CreateWorklogRequest
     {
-        public string IssueKey { get; set; }
+        public int IssueId { get; set; }
         public int TimeSpentSeconds { get; set; }
-        public DateTime Started { get; set; }
-        public string Comment { get; set; }
+        public string StartDate { get; set; }
+        public string StartTime { get; set; }
+        public string Description { get; set; }
+        public string AuthorAccountId { get; set; }
         public List<TempoAttribute> Attributes { get; set; } = new List<TempoAttribute>();
     }
 

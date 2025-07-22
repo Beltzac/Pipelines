@@ -112,30 +112,29 @@ namespace Common.Services
                     };
                 }
 
+                var config = _configService.GetConfig();
+                var authorAccountId = config.TempoConfig?.AccountId;
+
+                if (string.IsNullOrEmpty(authorAccountId))
+                {
+                    throw new InvalidOperationException("Tempo AccountId is required but not configured");
+                }
+
+                // Convert issue ID string to integer
+                if (!int.TryParse(issueId, out var issueIdInt))
+                {
+                    throw new InvalidOperationException($"Invalid issue ID format: {issueId}");
+                }
+
                 var request = new CreateWorklogRequest
                 {
-                    IssueKey = issueId,
+                    IssueId = issueIdInt,
                     TimeSpentSeconds = timeSpentMinutes * 60,
-                    Started = commit.CommitDate,
-                    Comment = FormatCommitMessageForWorklog(commit),
-                    Attributes = new List<TempoAttribute>
-                    {
-                        new TempoAttribute
-                        {
-                            Key = "Repository",
-                            Value = $"{commit.ProjectName}/{commit.RepoName}"
-                        },
-                        new TempoAttribute
-                        {
-                            Key = "Branch",
-                            Value = commit.BranchName
-                        },
-                        new TempoAttribute
-                        {
-                            Key = "CommitId",
-                            Value = commit.Id
-                        }
-                    }
+                    StartDate = commit.CommitDate.Date.ToString("yyyy-MM-dd"),
+                    StartTime = commit.CommitDate.ToString("HH:mm:ss"),
+                    Description = FormatCommitMessageForWorklog(commit),
+                    AuthorAccountId = authorAccountId,
+                    Attributes = new List<TempoAttribute>()
                 };
 
                 var worklog = await _tempoService.CreateWorklogAsync(request);
