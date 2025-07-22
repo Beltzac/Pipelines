@@ -99,6 +99,10 @@ namespace Common.Utils
             services.AddScoped<WindowsRoutesManager>();
             services.AddScoped<ThemeService>();
 
+            // Register Tempo services
+            services.AddHttpClient<ITempoService, TempoService>();
+            services.AddScoped<IWorklogService, WorklogService>();
+
             services.AddAutoMapper(typeof(RepositoryDbContext));
 
             return services;

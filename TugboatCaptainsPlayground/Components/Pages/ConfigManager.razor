@@ -122,6 +122,36 @@
                     </div>
                 </div> *@
 
+                <!-- Tempo API Configuration -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Configuração Tempo API</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="tempoApiToken" class="form-label">Tempo API Token</label>
+                            <InputText id="tempoApiToken" @bind-Value="config.TempoConfig.ApiToken" class="form-control" />
+                            <ValidationMessage For="@(() => config.TempoConfig.ApiToken)" />
+                            <small class="form-text text-muted">Token de acesso para a API do Tempo (JIRA)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tempoBaseUrl" class="form-label">Tempo Base URL</label>
+                            <InputText id="tempoBaseUrl" @bind-Value="config.TempoConfig.BaseUrl" class="form-control" />
+                            <ValidationMessage For="@(() => config.TempoConfig.BaseUrl)" />
+                            <small class="form-text text-muted">URL base da API do Tempo (ex: https://api.tempo.io/core/3)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tempoAccountId" class="form-label">Account ID</label>
+                            <InputText id="tempoAccountId" @bind-Value="config.TempoConfig.AccountId" class="form-control" />
+                            <ValidationMessage For="@(() => config.TempoConfig.AccountId)" />
+                            <small class="form-text text-muted">ID da conta do Tempo para criar worklogs</small>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" @onclick="TestTempoConnection">
+                            <i class="fas fa-plug"></i> Testar Conexão
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Repository Ignore Rules -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -342,6 +372,11 @@
     protected override void OnInitialized()
     {
         config = ConfigService.GetConfig();
+        // Ensure TempoConfig is initialized
+        if (config.TempoConfig == null)
+        {
+            config.TempoConfig = new TempoConfiguration();
+        }
         Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
         Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
     }
@@ -554,6 +589,43 @@
         catch (Exception ex)
         {
             ToastService.ShowError($"Falha ao iniciar job de backup Consul: {ex.Message}");
+        }
+    }
+
+    private async Task TestTempoConnection()
+    {
+        try
+        {
+            if (config.TempoConfig == null ||
+                string.IsNullOrWhiteSpace(config.TempoConfig.ApiToken) ||
+                string.IsNullOrWhiteSpace(config.TempoConfig.BaseUrl) ||
+                string.IsNullOrWhiteSpace(config.TempoConfig.AccountId))
+            {
+                ToastService.ShowError("Por favor, preencha todos os campos de configuração do Tempo");
+                return;
+            }
+
+            // Save current config temporarily to test connection
+            await ConfigService.SaveConfigAsync(config);
+
+            // Use the configured service to test connection
+            var httpClient = new HttpClient();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<TempoService>();
+            var tempoService = new Common.Services.TempoService(httpClient, ConfigService, logger);
+            var isConnected = await tempoService.TestConnectionAsync();
+
+            if (isConnected)
+            {
+                ToastService.ShowSuccess("Conexão com Tempo API estabelecida com sucesso!");
+            }
+            else
+            {
+                ToastService.ShowError("Falha ao conectar com Tempo API. Verifique suas credenciais.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Erro ao testar conexão: {ex.Message}");
         }
     }
 }

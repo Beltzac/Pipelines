@@ -15,6 +15,7 @@
 @inject ICommitExportService CommitDataExportService
 @inject IConfigurationService ConfigService
 @inject CommitsStateService CommitsStateService
+@inject IWorklogService WorklogService
 
 <StickyFilter>
     <div class="d-flex flex-column gap-2">
@@ -31,6 +32,19 @@
             </div>
             <div class="col-auto">
                 <button class="btn btn-secondary text-nowrap" @onclick="async () => await DownloadCommits()">Baixar para Excel</button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success text-nowrap" @onclick="async () => await SendWorklogsToTempo()" disabled="@(!commitsWithJira.Any() || isSendingWorklogs)">
+                    @if (isSendingWorklogs)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-1">Enviando...</span>
+                    }
+                    else
+                    {
+                        <span>Enviar Worklogs (@commitsWithJira.Count)</span>
+                    }
+                </button>
             </div>
             <div class="col">
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
@@ -81,8 +95,51 @@ else
     <p>Nenhum commit buscado ainda.</p>
 }
 
+@if (worklogResults.Any())
+{
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Worklog Results</h5>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                @foreach (var result in worklogResults)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>@result.Commit?.JiraCardID</strong> - @result.Commit?.RepoName
+                                <br />
+                                <small class="text-muted">@result.Commit?.CommitMessage?.Split('\n')[0]</small>
+                            </div>
+                            <div>
+                                @if (result.Success)
+                                {
+                                    <span class="badge bg-success">✓ Created</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger" title="@result.Error">✗ Failed</span>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(result.Message))
+                        {
+                            <small class="text-muted">@result.Message</small>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
 @code {
     private List<Commit> commitDataList = new List<Commit>();
+    private List<WorklogCreationResult> worklogResults = new List<WorklogCreationResult>();
+    private bool isSendingWorklogs = false;
+
+    private List<Commit> commitsWithJira => commitDataList.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,6 +208,42 @@ else
     {
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
         toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
+    }
+
+    private async Task SendWorklogsToTempo()
+    {
+        if (!commitsWithJira.Any())
+        {
+            toastService.ShowWarning("No commits with JIRA cards found");
+            return;
+        }
+
+        isSendingWorklogs = true;
+        try
+        {
+            worklogResults = await WorklogService.CreateWorklogsFromCommitsAsync(commitsWithJira);
+
+            var successful = worklogResults.Count(r => r.Success);
+            var failed = worklogResults.Count(r => !r.Success);
+
+            if (successful > 0)
+            {
+                toastService.ShowSuccess($"Successfully created {successful} worklogs");
+            }
+
+            if (failed > 0)
+            {
+                toastService.ShowWarning($"Failed to create {failed} worklogs");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending worklogs: {ex.Message}");
+        }
+        finally
+        {
+            isSendingWorklogs = false;
+        }
     }
 }
 
