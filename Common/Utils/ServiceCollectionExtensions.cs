@@ -100,8 +100,10 @@ namespace Common.Utils
             services.AddScoped<ThemeService>();
 
             // Register Tempo services
-            services.AddHttpClient<ITempoService, TempoService>();
+            services.AddScoped<ITempoService, TempoService>();
             services.AddScoped<IWorklogService, WorklogService>();
+            services.AddScoped<IJiraService, JiraService>();
+            services.AddHttpClient<IJiraService, JiraService>();
 
             services.AddAutoMapper(typeof(RepositoryDbContext));
 

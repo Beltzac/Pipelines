@@ -8,6 +8,7 @@
 @inject IOracleSchemaService OracleService
 @inject IJSRuntime JSRuntime
 @inject ISchedulerFactory SchedulerFactory
+@inject IJiraService JiraService
 
 <div class="container-fluid pb-5">
     <h3 class="mb-4">Gerenciador de Configurações</h3>
@@ -151,6 +152,36 @@
                         </button>
                     </div>
                 </div>
+                <!-- Jira API Configuration -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Configuração Jira API</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="jiraEmail" class="form-label">Email Jira</label>
+                            <InputText id="jiraEmail" @bind-Value="config.JiraConfig.Email" class="form-control" />
+                            <ValidationMessage For="@(() => config.JiraConfig.Email)" />
+                            <small class="form-text text-muted">Email da conta Jira para autenticação</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jiraApiToken" class="form-label">Jira API Token</label>
+                            <InputText id="jiraApiToken" @bind-Value="config.JiraConfig.ApiToken" class="form-control" />
+                            <ValidationMessage For="@(() => config.JiraConfig.ApiToken)" />
+                            <small class="form-text text-muted">Token de API do Jira (gerado em https://id.atlassian.com/manage-profile/security/api-tokens)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jiraBaseUrl" class="form-label">Jira Base URL</label>
+                            <InputText id="jiraBaseUrl" @bind-Value="config.JiraConfig.BaseUrl" class="form-control" />
+                            <ValidationMessage For="@(() => config.JiraConfig.BaseUrl)" />
+                            <small class="form-text text-muted">URL base do Jira (ex: https://your-domain.atlassian.net)</small>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" @onclick="TestJiraConnection">
+                            <i class="fas fa-plug"></i> Testar Conexão
+                        </button>
+                    </div>
+                </div>
+
 
                 <!-- Repository Ignore Rules -->
                 <div class="card mb-4">
@@ -377,6 +408,11 @@
         {
             config.TempoConfig = new TempoConfiguration();
         }
+        // Ensure JiraConfig is initialized
+        if (config.JiraConfig == null)
+        {
+            config.JiraConfig = new JiraConfiguration();
+        }
         Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
         Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
     }
@@ -467,6 +503,31 @@
         var base64Content = Convert.ToBase64String(byteArray);
         await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64Content);
     }
+    private async Task TestJiraConnection()
+    {
+        try
+        {
+            // Use the JiraService to test the connection
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<JiraService>();
+            var httpClient = new HttpClient();
+            var jiraService = new JiraService(httpClient, ConfigService, logger);
+            var isConnected = await jiraService.TestConnectionAsync();
+
+            if (isConnected)
+            {
+                ToastService.ShowSuccess("Conexão com Jira bem-sucedida");
+            }
+            else
+            {
+                ToastService.ShowError("Falha na conexão com Jira");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Falha na conexão com Jira: {ex.Message}");
+        }
+    }
+
 
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {

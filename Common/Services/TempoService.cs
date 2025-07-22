@@ -31,7 +31,7 @@ namespace Common.Services
             };
         }
 
-        private void ConfigureHttpClient()
+        private (string baseUrl, string apiToken) GetTempoConfig()
         {
             var config = _configService.GetConfig();
             if (config.TempoConfig == null || string.IsNullOrEmpty(config.TempoConfig.ApiToken))
@@ -39,38 +39,49 @@ namespace Common.Services
                 throw new InvalidOperationException("Tempo API configuration is missing");
             }
 
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.TempoConfig.ApiToken);
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.BaseAddress = new Uri(config.TempoConfig.BaseUrl);
+            // Ensure the base URL ends with the correct API path
+            var baseUrl = config.TempoConfig.BaseUrl.TrimEnd('/');
+
+            return (baseUrl, config.TempoConfig.ApiToken);
+        }
+
+        private HttpRequestMessage CreateRequest(HttpMethod method, string endpoint)
+        {
+            var (baseUrl, apiToken) = GetTempoConfig();
+            var request = new HttpRequestMessage(method, $"{baseUrl}/{endpoint}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return request;
         }
 
         public async Task<List<TempoWorklog>> GetWorklogsAsync(DateTime? from = null, DateTime? to = null)
         {
-            ConfigureHttpClient();
-
             var queryParams = new List<string>();
             if (from.HasValue)
                 queryParams.Add($"from={from.Value:yyyy-MM-dd}");
             if (to.HasValue)
                 queryParams.Add($"to={to.Value:yyyy-MM-dd}");
 
-            var url = $"worklogs" + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "");
+            var endpoint = $"worklogs" + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "");
+            var request = CreateRequest(HttpMethod.Get, endpoint);
 
-            var response = await _httpClient.GetAsync(url);
+            var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<List<TempoWorklog>>(content, _jsonOptions) ?? new List<TempoWorklog>();
+            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(content, _jsonOptions);
+            return responseData?.Results ?? new List<TempoWorklog>();
         }
 
         public async Task<TempoWorklog> CreateWorklogAsync(CreateWorklogRequest request)
         {
-            ConfigureHttpClient();
-
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("worklogs", content);
+            var httpRequest = CreateRequest(HttpMethod.Post, "worklogs");
+            httpRequest.Content = content;
+
+            var response = await _httpClient.SendAsync(httpRequest);
             response.EnsureSuccessStatusCode();
 
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -79,12 +90,13 @@ namespace Common.Services
 
         public async Task<TempoWorklog> UpdateWorklogAsync(string worklogId, CreateWorklogRequest request)
         {
-            ConfigureHttpClient();
-
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PutAsync($"worklogs/{worklogId}", content);
+            var httpRequest = CreateRequest(HttpMethod.Put, $"worklogs/{worklogId}");
+            httpRequest.Content = content;
+
+            var response = await _httpClient.SendAsync(httpRequest);
             response.EnsureSuccessStatusCode();
 
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -93,29 +105,29 @@ namespace Common.Services
 
         public async Task<bool> DeleteWorklogAsync(string worklogId)
         {
-            ConfigureHttpClient();
-
-            var response = await _httpClient.DeleteAsync($"worklogs/{worklogId}");
+            var request = CreateRequest(HttpMethod.Delete, $"worklogs/{worklogId}");
+            var response = await _httpClient.SendAsync(request);
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<List<TempoWorklog>> GetWorklogsByIssueAsync(string issueKey)
+        public async Task<List<TempoWorklog>> GetWorklogsByIssueAsync(string issueId)
         {
-            ConfigureHttpClient();
-
-            var response = await _httpClient.GetAsync($"worklogs/issue/{issueKey}");
+            // Use the correct worklogs endpoint with issue filter
+            var request = CreateRequest(HttpMethod.Get, $"worklogs/issue/{issueId}");
+            var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<List<TempoWorklog>>(content, _jsonOptions) ?? new List<TempoWorklog>();
+            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(content, _jsonOptions);
+            return responseData?.Results ?? new List<TempoWorklog>();
         }
 
         public async Task<bool> TestConnectionAsync()
         {
             try
             {
-                ConfigureHttpClient();
-                var response = await _httpClient.GetAsync("worklogs?limit=1");
+                var request = CreateRequest(HttpMethod.Get, "worklogs?limit=1");
+                var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)

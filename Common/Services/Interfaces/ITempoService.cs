@@ -11,7 +11,7 @@ namespace Common.Services.Interfaces
         Task<TempoWorklog> CreateWorklogAsync(CreateWorklogRequest request);
         Task<TempoWorklog> UpdateWorklogAsync(string worklogId, CreateWorklogRequest request);
         Task<bool> DeleteWorklogAsync(string worklogId);
-        Task<List<TempoWorklog>> GetWorklogsByIssueAsync(string issueKey);
+        Task<List<TempoWorklog>> GetWorklogsByIssueAsync(string issueId);
         Task<bool> TestConnectionAsync();
     }
 }

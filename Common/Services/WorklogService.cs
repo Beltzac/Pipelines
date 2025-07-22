@@ -11,15 +11,18 @@ namespace Common.Services
     public class WorklogService : IWorklogService
     {
         private readonly ITempoService _tempoService;
+        private readonly IJiraService _jiraService;
         private readonly IConfigurationService _configService;
         private readonly ILogger<WorklogService> _logger;
 
         public WorklogService(
             ITempoService tempoService,
+            IJiraService jiraService,
             IConfigurationService configService,
             ILogger<WorklogService> logger)
         {
             _tempoService = tempoService;
+            _jiraService = jiraService;
             _configService = configService;
             _logger = logger;
         }
@@ -80,7 +83,20 @@ namespace Common.Services
                     };
                 }
 
-                var existingWorklogs = await _tempoService.GetWorklogsByIssueAsync(commit.JiraCardID);
+                // Get the issue ID from Jira using the issue key
+                var issueId = await _jiraService.GetIssueIdByKeyAsync(commit.JiraCardID);
+                if (string.IsNullOrEmpty(issueId))
+                {
+                    return new WorklogCreationResult
+                    {
+                        Success = false,
+                        Commit = commit,
+                        Message = "Could not resolve JIRA issue key to ID",
+                        Error = $"Failed to find issue with key: {commit.JiraCardID}"
+                    };
+                }
+
+                var existingWorklogs = await _tempoService.GetWorklogsByIssueAsync(issueId);
                 var existingWorklogForCommit = existingWorklogs.FirstOrDefault(w =>
                     w.Comment != null && w.Comment.Contains(commit.Id));
 
@@ -98,7 +114,7 @@ namespace Common.Services
 
                 var request = new CreateWorklogRequest
                 {
-                    IssueKey = commit.JiraCardID,
+                    IssueKey = issueId,
                     TimeSpentSeconds = timeSpentMinutes * 60,
                     Started = commit.CommitDate,
                     Comment = FormatCommitMessageForWorklog(commit),

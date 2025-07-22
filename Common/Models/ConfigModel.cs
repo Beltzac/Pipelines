@@ -39,6 +39,7 @@ namespace Common.Models
         public List<MongoEnvironment> MongoEnvironments { get; set; } = new List<MongoEnvironment>();
         public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
         public TempoConfiguration TempoConfig { get; set; } = new TempoConfiguration();
+        public JiraConfiguration JiraConfig { get; set; } = new JiraConfiguration();
     }
 
     public class OracleEnvironment
