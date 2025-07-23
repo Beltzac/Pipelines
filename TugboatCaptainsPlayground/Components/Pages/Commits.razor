@@ -46,6 +46,19 @@
                     }
                 </button>
             </div>
+            <div class="col-auto">
+                <button class="btn btn-warning text-nowrap" @onclick="async () => await SendDailyWorklogsToTempo()" disabled="@(!commitsWithJira.Any() || isSendingWorklogs)" title="Distribui 8 horas de trabalho entre todos os commits de cada dia">
+                    @if (isSendingWorklogs)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-1">Enviando...</span>
+                    }
+                    else
+                    {
+                        <span>8h Diária</span>
+                    }
+                </button>
+            </div>
             <div class="col">
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
             </div>
@@ -64,8 +77,18 @@
     @foreach (var dayGroup in groupedCommits)
     {
         <div class="card mt-3">
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">@dayGroup.Key.ToString("dddd, MMMM dd, yyyy")</h5>
+                @{
+                    var dayCommitsWithJira = dayGroup.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
+                    if (dayCommitsWithJira.Any())
+                    {
+                        <button class="btn btn-sm btn-warning" @onclick="() => SendDailyWorklogsForDate(dayGroup.Key)"
+                                title="Distribuir 8h entre @dayCommitsWithJira.Count commits deste dia">
+                            <i class="fas fa-clock"></i> 8h
+                        </button>
+                    }
+                }
             </div>
             <ul class="list-group list-group-flush">
                 @foreach (var commit in dayGroup.OrderByDescending(c => c.CommitDate))
@@ -275,6 +298,134 @@ else
         catch (Exception ex)
         {
             toastService.ShowError($"Error sending worklog: {ex.Message}");
+        }
+    }
+
+    private async Task SendDailyWorklogsToTempo()
+    {
+        if (!commitsWithJira.Any())
+        {
+            toastService.ShowWarning("No commits with JIRA cards found");
+            return;
+        }
+
+        // Confirm with user before proceeding
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            "This will distribute 8 hours evenly between all commits for each day. Continue?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        isSendingWorklogs = true;
+        try
+        {
+            var groupedByDay = commitsWithJira
+                .GroupBy(c => c.CommitDate.Date)
+                .OrderByDescending(g => g.Key)
+                .ToList();
+
+            var allResults = new List<WorklogCreationResult>();
+
+            foreach (var dayGroup in groupedByDay)
+            {
+                var commitsForDay = dayGroup.ToList();
+                var totalCommits = commitsForDay.Count;
+
+                if (totalCommits == 0) continue;
+
+                // Split 8 hours (480 minutes) evenly between all commits for the day
+                var timePerCommit = 480 / totalCommits;
+
+                // Create worklogs for each commit in the day
+                foreach (var commit in commitsForDay)
+                {
+                    var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timePerCommit);
+                    allResults.Add(result);
+                }
+            }
+
+            worklogResults = allResults;
+
+            var successful = allResults.Count(r => r.Success);
+            var failed = allResults.Count(r => !r.Success);
+
+            if (successful > 0)
+            {
+                toastService.ShowSuccess($"Successfully created {successful} worklogs with distributed 8h daily time");
+            }
+
+            if (failed > 0)
+            {
+                toastService.ShowWarning($"Failed to create {failed} worklogs");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending daily worklogs: {ex.Message}");
+        }
+        finally
+        {
+            isSendingWorklogs = false;
+        }
+    }
+
+    private async Task SendDailyWorklogsForDate(DateTime date)
+    {
+        var commitsForDate = commitsWithJira.Where(c => c.CommitDate.Date == date.Date).ToList();
+
+        if (!commitsForDate.Any())
+        {
+            toastService.ShowWarning("No commits with JIRA cards found for this date");
+            return;
+        }
+
+        // Confirm with user before proceeding
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"This will distribute 8 hours evenly between {commitsForDate.Count} commits for {date:dd/MM/yyyy}. Continue?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        isSendingWorklogs = true;
+        try
+        {
+            var totalCommits = commitsForDate.Count;
+            var timePerCommit = 480 / totalCommits;
+
+            var results = new List<WorklogCreationResult>();
+
+            foreach (var commit in commitsForDate)
+            {
+                var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timePerCommit);
+                results.Add(result);
+            }
+
+            worklogResults = results;
+
+            var successful = results.Count(r => r.Success);
+            var failed = results.Count(r => !r.Success);
+
+            if (successful > 0)
+            {
+                toastService.ShowSuccess($"Successfully created {successful} worklogs for {date:dd/MM/yyyy}");
+            }
+
+            if (failed > 0)
+            {
+                toastService.ShowWarning($"Failed to create {failed} worklogs");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending worklogs for {date:dd/MM/yyyy}: {ex.Message}");
+        }
+        finally
+        {
+            isSendingWorklogs = false;
         }
     }
 }
