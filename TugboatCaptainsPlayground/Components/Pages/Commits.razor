@@ -383,7 +383,7 @@ else
                 {
                     try
                     {
-                        var dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date, date);
+                        var dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date.Date, date.Date.AddDays(1).AddTicks(-1));
                         allWorklogs.AddRange(dayWorklogs);
 
                         processedDates++;

@@ -75,22 +75,24 @@ namespace Common.Services
 
         public async Task<List<TempoWorklog>> GetWorklogsByUserAsync(string accountId, DateTime? from = null, DateTime? to = null)
         {
-            var queryParams = new List<string>();
+            var requestBody = new
+            {
+                authorIds = new[] { accountId },
+                from = from?.ToString("yyyy-MM-ddTHH:mm:ss"),
+                to = to?.ToString("yyyy-MM-ddTHH:mm:ss")
+            };
 
-            if (from.HasValue)
-                queryParams.Add($"from={from.Value:yyyy-MM-dd}");
+            var json = JsonSerializer.Serialize(requestBody, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            if (to.HasValue)
-                queryParams.Add($"to={to.Value:yyyy-MM-dd}");
-
-            var endpoint = $"worklogs/account/{accountId}" + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "");
-            var request = CreateRequest(HttpMethod.Get, endpoint);
+            var request = CreateRequest(HttpMethod.Post, "4/worklogs/search");
+            request.Content = content;
 
             var response = await _httpClient.SendAsync(request);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(content, _jsonOptions);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(responseContent, _jsonOptions);
             return responseData?.Results ?? new List<TempoWorklog>();
         }
 
