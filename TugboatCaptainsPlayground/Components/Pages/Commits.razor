@@ -319,7 +319,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         await FetchCommits();
-        await FetchExistingWorklogs();
     }
 
     private async Task HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) args)
@@ -423,7 +422,11 @@ else
                 }
             }
 
-            existingWorklogs = allWorklogs;
+            // Deduplicate worklogs by ID to prevent duplicates
+            existingWorklogs = allWorklogs
+                .GroupBy(w => w.Id)
+                .Select(g => g.First())
+                .ToList();
             worklogLoadingProgress = 100;
         }
         catch (Exception ex)

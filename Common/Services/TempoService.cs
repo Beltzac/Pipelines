@@ -78,14 +78,14 @@ namespace Common.Services
             var requestBody = new
             {
                 authorIds = new[] { accountId },
-                from = from?.ToString("yyyy-MM-ddTHH:mm:ss"),
-                to = to?.ToString("yyyy-MM-ddTHH:mm:ss")
+                from = from?.ToString("yyyy-MM-dd"),
+                to = to?.ToString("yyyy-MM-dd")
             };
 
             var json = JsonSerializer.Serialize(requestBody, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var request = CreateRequest(HttpMethod.Post, "4/worklogs/search");
+            var request = CreateRequest(HttpMethod.Post, "worklogs/search");
             request.Content = content;
 
             var response = await _httpClient.SendAsync(request);
