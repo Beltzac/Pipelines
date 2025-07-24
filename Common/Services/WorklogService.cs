@@ -173,6 +173,19 @@ namespace Common.Services
             }
         }
 
+        public async Task<List<TempoWorklog>> GetWorklogsByUserAsync(string accountId, DateTime? from = null, DateTime? to = null)
+        {
+            try
+            {
+                return await _tempoService.GetWorklogsByUserAsync(accountId, from, to);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get worklogs for user {AccountId}", accountId);
+                return new List<TempoWorklog>();
+            }
+        }
+
         private string FormatCommitMessageForWorklog(Commit commit)
         {
             var cleanMessage = commit.CommitMessage.Split('\n')[0]; // Take only first line
