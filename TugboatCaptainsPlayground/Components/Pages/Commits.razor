@@ -127,6 +127,10 @@
                             <span class="badge bg-success" title="@dayWorklogCount worklog(s) encontrado(s)">
                                 <i class="fas fa-check-circle"></i> @dayWorklogCount
                             </span>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteWorklogsForDate(dayGroup.Key)"
+                                    title="Deletar todos os worklogs deste dia">
+                                <i class="fas fa-trash"></i> Delete All
+                            </button>
                         }
                         else if (isLoadingWorklogs)
                         {
@@ -168,11 +172,14 @@
                                     <br />
                                     <span class="text-muted small">@worklog.Description</span>
                                 </div>
-                                <div>
+                                <div class="d-flex gap-2 align-items-center">
                                     <span class="badge bg-success">
                                         <i class="fas fa-check me-1"></i>
                                         @(worklog.TimeSpentSeconds / 3600)h @((worklog.TimeSpentSeconds % 3600) / 60)m
                                     </span>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSingleWorklog(worklog)" title="Deletar worklog">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             </div>
                         </li>
@@ -703,6 +710,101 @@ else
         finally
         {
             isLoadingWorklogs = false;
+        }
+    }
+
+    private async Task DeleteWorklogsForDate(DateTime date)
+    {
+        var worklogsForDate = existingWorklogs.Where(w => w.StartDate.Date == date.Date).ToList();
+
+        if (!worklogsForDate.Any())
+        {
+            toastService.ShowWarning("Nenhum worklog encontrado para esta data");
+            return;
+        }
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Tem certeza que deseja deletar todos os {worklogsForDate.Count} worklogs de {date:dd/MM/yyyy}?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                toastService.ShowError("Account ID não configurado");
+                return;
+            }
+
+            var deleteResults = new List<bool>();
+            foreach (var worklog in worklogsForDate)
+            {
+                try
+                {
+                    await WorklogService.DeleteWorklogAsync(worklog.Id);
+                    deleteResults.Add(true);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Erro ao deletar worklog {worklog.Id}: {ex.Message}");
+                    deleteResults.Add(false);
+                }
+            }
+
+            var successful = deleteResults.Count(r => r);
+            var failed = deleteResults.Count - successful;
+
+            if (successful > 0)
+            {
+                toastService.ShowSuccess($"Deletados {successful} worklogs com sucesso");
+            }
+
+            if (failed > 0)
+            {
+                toastService.ShowWarning($"Falha ao deletar {failed} worklogs");
+            }
+
+            // Refresh worklogs after deletion
+            await FetchExistingWorklogs();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao deletar worklogs: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteSingleWorklog(TempoWorklog worklog)
+    {
+        if (worklog == null)
+        {
+            return;
+        }
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Tem certeza que deseja deletar o worklog para {worklog.Issue.Key} ({worklog.StartDate:dd/MM/yyyy HH:mm})?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        try
+        {
+            await WorklogService.DeleteWorklogAsync(worklog.Id);
+            toastService.ShowSuccess($"Worklog deletado com sucesso");
+
+            // Refresh worklogs after deletion
+            await FetchExistingWorklogs();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao deletar worklog: {ex.Message}");
         }
     }
 }

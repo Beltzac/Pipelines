@@ -186,6 +186,26 @@ namespace Common.Services
             }
         }
 
+        public async Task DeleteWorklogAsync(string worklogId)
+        {
+            var config = _configService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                throw new InvalidOperationException("Account ID not configured");
+            }
+
+            try
+            {
+                await _tempoService.DeleteWorklogAsync(worklogId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to delete worklog: {ex.Message}", ex);
+            }
+        }
+
         private string FormatCommitMessageForWorklog(Commit commit)
         {
             var cleanMessage = commit.CommitMessage.Split('\n')[0]; // Take only first line
