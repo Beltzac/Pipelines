@@ -1,0 +1,81 @@
+@using Common.Models
+@using Common.Services.Interfaces
+@inject IWorklogService WorklogService
+@inject IConfigurationService ConfigService
+@inject IJSRuntime JS
+@inject ToastService toastService
+
+@if (Worklogs.Any())
+{
+    @foreach (var worklog in Worklogs.OrderBy(w => w.StartDate))
+    {
+        <div class="card mb-2">
+            <div class="card-body bg-light border-start border-success border-3">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong class="text-success">
+                        <i class="fas fa-clock text-success me-1"></i>
+                        Worklog: @worklog.Issue.Key
+                    </strong>
+                    <br />
+                    <small class="text-muted">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        @worklog.StartDate.ToString("HH:mm") -
+                        <span class="badge bg-secondary">@(worklog.TimeSpentSeconds / 3600)h @((worklog.TimeSpentSeconds % 3600) / 60)m</span>
+                    </small>
+                    <br />
+                    <span class="text-muted small">@worklog.Description</span>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-success">
+                        <i class="fas fa-check me-1"></i>
+                        @(worklog.TimeSpentSeconds / 3600)h @((worklog.TimeSpentSeconds % 3600) / 60)m
+                    </span>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSingleWorklog(worklog)" title="Deletar worklog">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    }
+}
+else if (IsLoading)
+{
+    <li class="list-group-item bg-light">
+        <div class="d-flex justify-content-center align-items-center py-2">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="text-muted">Carregando worklogs...</span>
+        </div>
+    </li>
+}
+
+@code {
+    [Parameter]
+    public List<TempoWorklog> Worklogs { get; set; } = new List<TempoWorklog>();
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private async Task DeleteSingleWorklog(TempoWorklog worklog)
+    {
+        if (worklog == null) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+            $"Tem certeza que deseja deletar o worklog para {worklog.Issue.Key} ({worklog.StartDate:dd/MM/yyyy HH:mm})?");
+
+        if (!confirmed) return;
+
+        try
+        {
+            await WorklogService.DeleteWorklogAsync(worklog.Id);
+            toastService.ShowSuccess($"Worklog deletado com sucesso");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao deletar worklog: {ex.Message}");
+        }
+    }
+}

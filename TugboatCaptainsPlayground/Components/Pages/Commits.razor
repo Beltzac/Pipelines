@@ -150,78 +150,8 @@
                     }
                 </div>
             </div>
-            <ul class="list-group list-group-flush">
-                @* Display Worklogs first *@
-                @if (dayWorklogs.Any())
-                {
-                    @foreach (var worklog in dayWorklogs.OrderBy(w => w.StartDate))
-                    {
-                        <li class="list-group-item bg-light border-start border-success border-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <strong class="text-success">
-                                        <i class="fas fa-clock text-success me-1"></i>
-                                        Worklog: @worklog.Issue.Key
-                                    </strong>
-                                    <br />
-                                    <small class="text-muted">
-                                        <i class="fas fa-calendar-alt me-1"></i>
-                                        @worklog.StartDate.ToString("HH:mm") -
-                                        <span class="badge bg-secondary">@(worklog.TimeSpentSeconds / 3600)h @((worklog.TimeSpentSeconds % 3600) / 60)m</span>
-                                    </small>
-                                    <br />
-                                    <span class="text-muted small">@worklog.Description</span>
-                                </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-check me-1"></i>
-                                        @(worklog.TimeSpentSeconds / 3600)h @((worklog.TimeSpentSeconds % 3600) / 60)m
-                                    </span>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteSingleWorklog(worklog)" title="Deletar worklog">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </li>
-                    }
-                }
-                else if (isLoadingWorklogs)
-                {
-                    <li class="list-group-item bg-light">
-                        <div class="d-flex justify-content-center align-items-center py-2">
-                            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <span class="text-muted">Carregando worklogs...</span>
-                        </div>
-                    </li>
-                }
-
-                @* Display Commits *@
-                @foreach (var commit in dayGroup.OrderByDescending(c => c.CommitDate))
-                {
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
-                                <br />
-                                <small class="text-muted">@commit.CommitDate.ToString("HH:mm:ss")</small> by <strong>@commit.AuthorName</strong>
-                                <br />
-                                @((MarkupString)commit.ToHtml(ConfigService.GetConfig()))
-                            </div>
-                            <div class="d-flex gap-2 align-items-center">
-                                @if (!string.IsNullOrEmpty(commit.JiraCardID))
-                                {
-                                    <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
-                                        <i class="fas fa-clock"></i>
-                                    </button>
-                                }
-                            </div>
-                        </div>
-                    </li>
-                }
-            </ul>
+            <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" />
+            <JiraCardList Commits="@dayGroup.ToList()" ConfigService="@ConfigService" WorklogService="@WorklogService" />
         </div>
     }
 }

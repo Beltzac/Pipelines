@@ -1,0 +1,74 @@
+@using Common.Models
+@using Common.Services.Interfaces
+@inject IJSRuntime JS
+@inject ToastService toastService
+
+@foreach (var commit in Commits.OrderByDescending(c => c.CommitDate))
+{
+    <div class="card mb-2">
+        <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <strong>@commit.ProjectName</strong> - @commit.RepoName - @commit.BranchName
+                <br />
+                <small class="text-muted">@commit.CommitDate.ToString("HH:mm:ss")</small> by <strong>@commit.AuthorName</strong>
+                <br />
+                @((MarkupString)commit.ToHtml(ConfigService.GetConfig()))
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                @if (!string.IsNullOrEmpty(commit.JiraCardID))
+                {
+                    <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
+                        <i class="fas fa-clock"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<Commit> Commits { get; set; } = new List<Commit>();
+
+    [Parameter]
+    public IConfigurationService ConfigService { get; set; }
+
+    [Parameter]
+    public IWorklogService WorklogService { get; set; }
+
+    private async Task CopyToClipboard(string jiraCardID)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
+        toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
+    }
+
+    private async Task SendSingleWorklogToTempo(Commit commit)
+    {
+        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
+        {
+            toastService.ShowWarning("No JIRA card found for this commit");
+            return;
+        }
+
+        try
+        {
+            var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+
+            if (result.Success)
+            {
+                toastService.ShowSuccess($"Worklog created for {commit.JiraCardID}");
+            }
+            else
+            {
+                toastService.ShowError($"Failed to create worklog: {result.Error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending worklog: {ex.Message}");
+        }
+    }
+}
