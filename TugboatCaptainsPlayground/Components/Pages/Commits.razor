@@ -375,7 +375,11 @@ else
         finally
         {
             isLoadingWorklogs = false;
-            worklogLoadingProgress = 0;
+            // Only reset progress to 0 if we're not in a successful completion state
+            if (worklogLoadingProgress != 100)
+            {
+                worklogLoadingProgress = 0;
+            }
             StateHasChanged();
         }
     }
@@ -385,9 +389,12 @@ else
     private async Task SyncCommits()
     {
         CommitsStateService.IsLoading = true;
+        // Dispose old CTS and create new one
+        cts?.Dispose();
+        cts = new CancellationTokenSource();
+
         try
         {
-            cts = new CancellationTokenSource();
             var progressHandler = new Progress<int>(value =>
             {
                 CommitsStateService.ProgressValue = value;
@@ -416,9 +423,20 @@ else
 
     private async Task CancelSyncCommits()
     {
-        cts.Cancel();
-        await Task.Yield();
-        cts.Dispose();
+        try
+        {
+            cts?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // CTS already disposed, create new one
+            cts = new CancellationTokenSource();
+        }
+        finally
+        {
+            cts?.Dispose();
+            cts = new CancellationTokenSource();
+        }
     }
 
     private async Task DownloadCommits()
@@ -530,12 +548,17 @@ else
                 if (totalCommits == 0) continue;
 
                 // Split 8 hours (480 minutes) evenly between all commits for the day
-                var timePerCommit = 480 / totalCommits;
+                // Use integer division with remainder distribution
+                var baseTimePerCommit = 480 / totalCommits;
+                var remainderMinutes = 480 % totalCommits;
 
                 // Create worklogs for each commit in the day
-                foreach (var commit in commitsForDay)
+                for (int i = 0; i < commitsForDay.Count; i++)
                 {
-                    var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timePerCommit);
+                    var commit = commitsForDay[i];
+                    // Distribute remainder minutes to first commits
+                    var timeForThisCommit = baseTimePerCommit + (i < remainderMinutes ? 1 : 0);
+                    var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeForThisCommit);
                     allResults.Add(result);
                 }
             }
@@ -588,13 +611,17 @@ else
         try
         {
             var totalCommits = commitsForDate.Count;
-            var timePerCommit = 480 / totalCommits;
+            var baseTimePerCommit = 480 / totalCommits;
+            var remainderMinutes = 480 % totalCommits;
 
             var results = new List<WorklogCreationResult>();
 
-            foreach (var commit in commitsForDate)
+            for (int i = 0; i < commitsForDate.Count; i++)
             {
-                var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timePerCommit);
+                var commit = commitsForDate[i];
+                // Distribute remainder minutes to first commits
+                var timeForThisCommit = baseTimePerCommit + (i < remainderMinutes ? 1 : 0);
+                var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeForThisCommit);
                 results.Add(result);
             }
 
@@ -701,7 +728,15 @@ else
             }
 
             // Refresh worklogs after deletion
-            await FetchExistingWorklogs();
+            try
+            {
+                await FetchExistingWorklogs();
+            }
+            catch (Exception refreshEx)
+            {
+                Console.WriteLine($"Error refreshing worklogs after deletion: {refreshEx.Message}");
+                toastService.ShowWarning("Worklogs deletados, mas houve erro ao atualizar a lista");
+            }
         }
         catch (Exception ex)
         {
@@ -730,7 +765,15 @@ else
             toastService.ShowSuccess($"Worklog deletado com sucesso");
 
             // Refresh worklogs after deletion
-            await FetchExistingWorklogs();
+            try
+            {
+                await FetchExistingWorklogs();
+            }
+            catch (Exception refreshEx)
+            {
+                Console.WriteLine($"Error refreshing worklogs after single worklog deletion: {refreshEx.Message}");
+                toastService.ShowWarning("Worklog deletado, mas houve erro ao atualizar a lista");
+            }
         }
         catch (Exception ex)
         {
