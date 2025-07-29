@@ -14,5 +14,6 @@ namespace Common.Services.Interfaces
         Task<WorklogCreationResult> CreateWorklogFromCommitAsync(Commit commit, int timeSpentMinutes = 60);
         Task<WorklogCreationResult> CreateGMWorklogFromCommitAsync(Commit commit);
         Task DeleteWorklogAsync(string worklogId);
+        Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null);
     }
 }

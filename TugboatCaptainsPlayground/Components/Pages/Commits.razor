@@ -231,6 +231,25 @@ else
                                 <small class="text-danger fst-italic">@result.Error</small>
                             </div>
                         }
+                        @if (!result.Success)
+                        {
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-warning"
+                                        @onclick="() => RetryWorklogAsync(result)"
+                                        disabled="@retryLoadingStates.GetValueOrDefault(GetResultKey(result), false)">
+                                    @if (retryLoadingStates.GetValueOrDefault(GetResultKey(result), false))
+                                    {
+                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        <span class="ms-1">Retrying...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-redo me-1"></i>
+                                        <span>Retry</span>
+                                    }
+                                </button>
+                            </div>
+                        }
                     </li>
                 }
             </ul>
@@ -246,6 +265,7 @@ else
     private bool isLoadingWorklogs = false;
     private string worklogLoadingError = null;
     private int worklogLoadingProgress = 0;
+    private Dictionary<int, bool> retryLoadingStates = new Dictionary<int, bool>();
 
     private List<Commit> commitsWithJira => commitDataList.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
 
@@ -291,83 +311,14 @@ else
 
         try
         {
-            var startDate = CommitsStateService.DataInicial ?? DateTime.Now.AddDays(-7);
-            var endDate = DateTime.Now.Date;
-
-            // Get all unique dates from commits
-            var uniqueDates = commitDataList
-                .Select(c => c.CommitDate.Date)
-                .Distinct()
-                .OrderBy(d => d)
-                .ToList();
-
-            // Add any additional dates in the range
-            for (var date = startDate; date <= endDate; date = date.AddDays(1))
-            {
-                if (!uniqueDates.Contains(date))
-                {
-                    uniqueDates.Add(date);
-                }
-            }
-
-            var allWorklogs = new List<TempoWorklog>();
             var config = ConfigService.GetConfig();
             var accountId = config.TempoConfig?.AccountId;
-            var totalDates = uniqueDates.Count;
-            var processedDates = 0;
 
-            Logger.LogInformation("Fetching worklogs for {TotalDates} dates using accountId: {AccountId}", totalDates, accountId ?? "fallback");
+            Logger.LogInformation("Fetching worklogs for {CommitCount} commits using accountId: {AccountId}",
+                commitDataList.Count, accountId ?? "fallback");
 
-            if (!string.IsNullOrEmpty(accountId))
-            {
-                Logger.LogInformation("Using GetWorklogsByUserAsync method with accountId: {AccountId}", accountId);
-                foreach (var date in uniqueDates)
-                {
-                    try
-                    {
-                        Logger.LogDebug("Fetching worklogs for date: {Date:yyyy-MM-dd}", date);
-                        var dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date.Date, date.Date.AddDays(1).AddTicks(-1));
-                        Logger.LogDebug("Found {WorklogCount} worklogs for date: {Date:yyyy-MM-dd}", dayWorklogs.Count, date);
-                        allWorklogs.AddRange(dayWorklogs);
-
-                        processedDates++;
-                        worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
-                        StateHasChanged();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Error fetching worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
-                        processedDates++;
-                        worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
-                        StateHasChanged();
-                    }
-                }
-            }
-            else
-            {
-                Logger.LogInformation("Using fallback GetExistingWorklogsForDateRangeAsync method");
-                foreach (var date in uniqueDates)
-                {
-                    try
-                    {
-                        Logger.LogDebug("Fetching worklogs for date: {Date:yyyy-MM-dd}", date);
-                        var dayWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(date, date);
-                        Logger.LogDebug("Found {WorklogCount} worklogs for date: {Date:yyyy-MM-dd}", dayWorklogs.Count, date);
-                        allWorklogs.AddRange(dayWorklogs);
-
-                        processedDates++;
-                        worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
-                        StateHasChanged();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError(ex, "Error fetching worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
-                        processedDates++;
-                        worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
-                        StateHasChanged();
-                    }
-                }
-            }
+            // Use the new efficient method to fetch all worklogs at once
+            var allWorklogs = await WorklogService.GetWorklogsForCommitsAsync(commitDataList, accountId);
 
             // Deduplicate worklogs by ID to prevent duplicates
             existingWorklogs = allWorklogs
@@ -847,6 +798,61 @@ else
         {
             toastService.ShowError($"Erro ao deletar worklog: {ex.Message}");
         }
+    }
+
+    private async Task RetryWorklogAsync(WorklogCreationResult failedResult)
+    {
+        if (failedResult?.Commit == null)
+        {
+            toastService.ShowError("Invalid worklog data for retry");
+            return;
+        }
+
+        var resultKey = GetResultKey(failedResult);
+        retryLoadingStates[resultKey] = true;
+        StateHasChanged();
+
+        try
+        {
+            var newResult = await WorklogService.CreateWorklogFromCommitAsync(failedResult.Commit);
+
+            // Find and replace the failed result in the list
+            var index = worklogResults.FindIndex(r => GetResultKey(r) == resultKey);
+            if (index >= 0)
+            {
+                worklogResults[index] = newResult;
+
+                if (newResult.Success)
+                {
+                    toastService.ShowSuccess($"Worklog created successfully for {newResult.Commit.JiraCardID}");
+                    // Refresh worklogs for the affected date
+                    await RefreshWorklogsForDates(new HashSet<DateTime> { newResult.Commit.CommitDate.Date });
+                }
+                else
+                {
+                    toastService.ShowError($"Retry failed: {newResult.Error}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error during retry: {ex.Message}");
+        }
+        finally
+        {
+            retryLoadingStates[resultKey] = false;
+            StateHasChanged();
+        }
+    }
+
+    private int GetResultKey(WorklogCreationResult result)
+    {
+        if (result?.Commit == null) return 0;
+        return HashCode.Combine(
+            result.Commit.CommitHash,
+            result.Commit.JiraCardID,
+            result.Commit.CommitDate
+        );
     }
 }
 

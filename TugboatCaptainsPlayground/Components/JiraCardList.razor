@@ -33,11 +33,31 @@
                     <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)" title="Copiar JIRA card">
                         @commit.JiraCardID
                     </span>
-                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog (1h)">
-                        <i class="fas fa-clock"></i>
+                    <button class="btn btn-sm btn-outline-primary"
+                            @onclick="() => SendSingleWorklogToTempo(commit)"
+                            title="Enviar worklog (1h)"
+                            disabled="@IsCommitLoading(commit.Id)">
+                        @if (IsCommitLoading(commit.Id))
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-clock"></i>
+                        }
                     </button>
-                    <button class="btn btn-sm btn-outline-success" @onclick="() => SendGMWorklogToTempo(commit)" title="Acompanhamento de GM">
-                        <i class="fas fa-tools"></i> GM
+                    <button class="btn btn-sm btn-outline-success"
+                            @onclick="() => SendGMWorklogToTempo(commit)"
+                            title="Acompanhamento de GM"
+                            disabled="@IsCommitLoading(commit.Id)">
+                        @if (IsCommitLoading(commit.Id))
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-tools"></i> <span>GM</span>
+                        }
                     </button>
                 }
             </div>
@@ -59,6 +79,10 @@
     [Parameter]
     public EventCallback OnWorklogCreated { get; set; }
 
+    private readonly HashSet<string> _loadingCommits = new HashSet<string>();
+
+    private bool IsCommitLoading(string commitId) => _loadingCommits.Contains(commitId);
+
     private async Task CopyToClipboard(string jiraCardID)
     {
         Logger.LogInformation("CopyToClipboard called with JIRA card: {JiraCardID}", jiraCardID);
@@ -76,6 +100,7 @@
             return;
         }
 
+        _loadingCommits.Add(commit.Id);
         try
         {
             var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
@@ -95,6 +120,10 @@
             Logger.LogError(ex, "Error sending worklog: {Message}", ex.Message);
             toastService.ShowError($"Error sending worklog: {ex.Message}");
         }
+        finally
+        {
+            _loadingCommits.Remove(commit.Id);
+        }
     }
 
     private async Task SendGMWorklogToTempo(Commit commit)
@@ -107,6 +136,7 @@
             return;
         }
 
+        _loadingCommits.Add(commit.Id);
         try
         {
             var result = await WorklogService.CreateGMWorklogFromCommitAsync(commit);
@@ -125,6 +155,10 @@
         {
             Logger.LogError(ex, "Error sending GM worklog: {Message}", ex.Message);
             toastService.ShowError($"Error sending GM worklog: {ex.Message}");
+        }
+        finally
+        {
+            _loadingCommits.Remove(commit.Id);
         }
     }
 }
