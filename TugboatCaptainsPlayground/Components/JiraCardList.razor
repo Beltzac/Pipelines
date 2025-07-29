@@ -36,8 +36,8 @@
                     <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog (1h)">
                         <i class="fas fa-clock"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-success" @onclick="() => SendGMWorklogToTempo(commit)" title="Enviar worklog GM (2h)">
-                        <i class="fas fa-tools"></i>
+                    <button class="btn btn-sm btn-outline-success" @onclick="() => SendGMWorklogToTempo(commit)" title="Acompanhamento de GM">
+                        <i class="fas fa-tools"></i> GM
                     </button>
                 }
             </div>
@@ -109,11 +109,11 @@
 
         try
         {
-            var result = await WorklogService.CreateWorklogFromCommitAsync(commit, 120);
+            var result = await WorklogService.CreateGMWorklogFromCommitAsync(commit);
 
             if (result.Success)
             {
-                toastService.ShowSuccess($"GM worklog (2h) created for {commit.JiraCardID}");
+                toastService.ShowSuccess($"GM worklog created for {commit.JiraCardID}");
                 await OnWorklogCreated.InvokeAsync();
             }
             else

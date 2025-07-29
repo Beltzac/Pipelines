@@ -554,6 +554,7 @@ else
                 .ToList();
 
             var allResults = new List<WorklogCreationResult>();
+            var affectedDates = new HashSet<DateTime>();
 
             foreach (var dayGroup in groupedByDay)
             {
@@ -575,6 +576,7 @@ else
                     var timeForThisCommit = baseTimePerCommit + (i < remainderMinutes ? 1 : 0);
                     var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeForThisCommit);
                     allResults.Add(result);
+                    affectedDates.Add(dayGroup.Key.Date);
                 }
             }
 
@@ -586,6 +588,8 @@ else
             if (successful > 0)
             {
                 toastService.ShowSuccess($"Successfully created {successful} worklogs with distributed 8h daily time");
+                // Refresh only the affected dates
+                await RefreshWorklogsForDates(affectedDates);
             }
 
             if (failed > 0)
@@ -648,6 +652,8 @@ else
             if (successful > 0)
             {
                 toastService.ShowSuccess($"Successfully created {successful} worklogs for {date:dd/MM/yyyy}");
+                // Refresh only the affected date
+                await RefreshWorklogsForDates(new HashSet<DateTime> { date.Date });
             }
 
             if (failed > 0)
@@ -678,6 +684,69 @@ else
         catch (Exception ex)
         {
             toastService.ShowError($"Erro ao atualizar worklogs: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingWorklogs = false;
+        }
+    }
+
+    private async Task RefreshWorklogsForDates(HashSet<DateTime> datesToRefresh)
+    {
+        if (isLoadingWorklogs || !datesToRefresh.Any()) return;
+
+        isLoadingWorklogs = true;
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
+
+            Logger.LogInformation("Refreshing worklogs for {Count} specific dates", datesToRefresh.Count);
+
+            foreach (var date in datesToRefresh)
+            {
+                try
+                {
+                    List<TempoWorklog> dayWorklogs;
+
+                    if (!string.IsNullOrEmpty(accountId))
+                    {
+                        dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date.Date, date.Date.AddDays(1).AddTicks(-1));
+                    }
+                    else
+                    {
+                        dayWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(date, date);
+                    }
+
+                    // Update only the specific date in existingWorklogs
+                    var worklogsToRemove = existingWorklogs.Where(w => w.StartDate.Date == date.Date).ToList();
+                    foreach (var worklog in worklogsToRemove)
+                    {
+                        existingWorklogs.Remove(worklog);
+                    }
+
+                    existingWorklogs.AddRange(dayWorklogs);
+                    Logger.LogDebug("Refreshed worklogs for date: {Date:yyyy-MM-dd}, found {Count} worklogs", date, dayWorklogs.Count);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error refreshing worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
+                }
+            }
+
+            // Deduplicate worklogs by ID to prevent duplicates
+            existingWorklogs = existingWorklogs
+                .GroupBy(w => w.Id)
+                .Select(g => g.First())
+                .ToList();
+
+            StateHasChanged();
+            Logger.LogInformation("Successfully refreshed worklogs for {Count} dates", datesToRefresh.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh worklogs for specific dates: {Message}", ex.Message);
+            toastService.ShowError($"Error refreshing worklogs: {ex.Message}");
         }
         finally
         {
@@ -742,16 +811,8 @@ else
                 toastService.ShowWarning($"Falha ao deletar {failed} worklogs");
             }
 
-            // Refresh worklogs after deletion
-            try
-            {
-                await FetchExistingWorklogs();
-            }
-            catch (Exception refreshEx)
-            {
-                Logger.LogError(refreshEx, "Error refreshing worklogs after deletion: {Message}", refreshEx.Message);
-                toastService.ShowWarning("Worklogs deletados, mas houve erro ao atualizar a lista");
-            }
+            // Refresh only the affected date
+            await RefreshWorklogsForDates(new HashSet<DateTime> { date.Date });
         }
         catch (Exception ex)
         {
@@ -779,16 +840,8 @@ else
             await WorklogService.DeleteWorklogAsync(worklog.Id);
             toastService.ShowSuccess($"Worklog deletado com sucesso");
 
-            // Refresh worklogs after deletion
-            try
-            {
-                await FetchExistingWorklogs();
-            }
-            catch (Exception refreshEx)
-            {
-                Logger.LogError(refreshEx, "Error refreshing worklogs after single worklog deletion: {Message}", refreshEx.Message);
-                toastService.ShowWarning("Worklog deletado, mas houve erro ao atualizar a lista");
-            }
+            // Refresh only the affected date
+            await RefreshWorklogsForDates(new HashSet<DateTime> { worklog.StartDate.Date });
         }
         catch (Exception ex)
         {
