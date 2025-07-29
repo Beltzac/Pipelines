@@ -2,6 +2,7 @@
 @using Common.Services.Interfaces
 @inject IJSRuntime JS
 @inject ToastService toastService
+@inject ILogger<JiraCardList> Logger
 
 @foreach (var commit in Commits.OrderByDescending(c => c.CommitDate))
 {
@@ -19,9 +20,9 @@
                 @if (!string.IsNullOrEmpty(commit.JiraCardID))
                 {
                     <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
-                    @* <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
                         <i class="fas fa-clock"></i>
-                    </button> *@
+                    </button>
                     <button class="btn btn-sm btn-outline-success" @onclick="() => SendGMWorklogToTempo(commit)" title="Enviar worklog GM (2h)">
                         <i class="fas fa-tools"></i> GM
                     </button>
@@ -44,61 +45,104 @@
 
     private async Task CopyToClipboard(string jiraCardID)
     {
+        Logger.LogDebug("CopyToClipboard called with JIRA card: {JiraCardID}", jiraCardID);
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
         toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
     }
 
     private async Task SendSingleWorklogToTempo(Commit commit)
     {
-        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
+        Logger.LogDebug("SendSingleWorklogToTempo called for commit: {CommitId}", commit?.Id);
+        Logger.LogDebug("Commit details - JiraCardID: {JiraCardID}, Message: {CommitMessage}, Date: {CommitDate}",
+            commit?.JiraCardID, commit?.CommitMessage, commit?.CommitDate);
+
+        if (commit == null)
         {
+            Logger.LogError("SendSingleWorklogToTempo: Commit is null");
+            toastService.ShowWarning("No commit data provided");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(commit.JiraCardID))
+        {
+            Logger.LogError("SendSingleWorklogToTempo: JiraCardID is null or empty");
             toastService.ShowWarning("No JIRA card found for this commit");
             return;
         }
 
+        Logger.LogInformation("Creating worklog for JIRA card: {JiraCardID}", commit.JiraCardID);
+
         try
         {
             var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+            Logger.LogDebug("Worklog creation result - Success: {Success}, Message: {Message}, Error: {Error}",
+                result.Success, result.Message, result.Error);
 
             if (result.Success)
             {
+                Logger.LogInformation("Worklog created successfully for {JiraCardID}, WorklogId: {WorklogId}",
+                    commit.JiraCardID, result.WorklogId);
                 toastService.ShowSuccess($"Worklog created for {commit.JiraCardID}");
             }
             else
             {
+                Logger.LogError("Failed to create worklog: {Error}", result.Error);
                 toastService.ShowError($"Failed to create worklog: {result.Error}");
             }
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error in SendSingleWorklogToTempo: {ExceptionType} - {Message}",
+                ex.GetType().Name, ex.Message);
             toastService.ShowError($"Error sending worklog: {ex.Message}");
         }
     }
 
     private async Task SendGMWorklogToTempo(Commit commit)
     {
-        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
+        Logger.LogDebug("SendGMWorklogToTempo called for commit: {CommitId}", commit?.Id);
+        Logger.LogDebug("Commit details - JiraCardID: {JiraCardID}, Message: {CommitMessage}, Date: {CommitDate}",
+            commit?.JiraCardID, commit?.CommitMessage, commit?.CommitDate);
+
+        if (commit == null)
         {
+            Logger.LogError("SendGMWorklogToTempo: Commit is null");
+            toastService.ShowWarning("No commit data provided");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(commit.JiraCardID))
+        {
+            Logger.LogError("SendGMWorklogToTempo: JiraCardID is null or empty");
             toastService.ShowWarning("No JIRA card found for this commit");
             return;
         }
+
+        Logger.LogInformation("Creating GM worklog (2h) for JIRA card: {JiraCardID}", commit.JiraCardID);
 
         try
         {
             // Create a GM worklog with 2 hours duration (120 minutes)
             var result = await WorklogService.CreateWorklogFromCommitAsync(commit, 120);
+            Logger.LogDebug("GM worklog creation result - Success: {Success}, Message: {Message}, Error: {Error}",
+                result.Success, result.Message, result.Error);
 
             if (result.Success)
             {
+                Logger.LogInformation("GM worklog (2h) created successfully for {JiraCardID}, WorklogId: {WorklogId}",
+                    commit.JiraCardID, result.WorklogId);
                 toastService.ShowSuccess($"GM worklog (2h) created for {commit.JiraCardID}");
             }
             else
             {
+                Logger.LogError("Failed to create GM worklog: {Error}", result.Error);
                 toastService.ShowError($"Failed to create GM worklog: {result.Error}");
             }
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error in SendGMWorklogToTempo: {ExceptionType} - {Message}",
+                ex.GetType().Name, ex.Message);
             toastService.ShowError($"Error sending GM worklog: {ex.Message}");
         }
     }

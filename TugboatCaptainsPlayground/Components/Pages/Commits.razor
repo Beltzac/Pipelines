@@ -16,6 +16,7 @@
 @inject IConfigurationService ConfigService
 @inject CommitsStateService CommitsStateService
 @inject IWorklogService WorklogService
+@inject ILogger<Commits> Logger
 
 <StickyFilter>
     <div class="d-flex flex-column gap-2">
@@ -328,7 +329,7 @@ else
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error fetching worklogs for {date:yyyy-MM-dd}: {ex.Message}");
+                        Logger.LogError(ex, "Error fetching worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
                         processedDates++;
                         worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
                         StateHasChanged();
@@ -351,7 +352,7 @@ else
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error fetching worklogs for {date:yyyy-MM-dd}: {ex.Message}");
+                        Logger.LogError(ex, "Error fetching worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
                         processedDates++;
                         worklogLoadingProgress = (int)((double)processedDates / totalDates * 100);
                         StateHasChanged();
@@ -709,7 +710,7 @@ else
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Erro ao deletar worklog {worklog.Id}: {ex.Message}");
+                    Logger.LogError(ex, "Erro ao deletar worklog {WorklogId}: {Message}", worklog.Id, ex.Message);
                     deleteResults.Add(false);
                 }
             }
@@ -734,7 +735,7 @@ else
             }
             catch (Exception refreshEx)
             {
-                Console.WriteLine($"Error refreshing worklogs after deletion: {refreshEx.Message}");
+                Logger.LogError(refreshEx, "Error refreshing worklogs after deletion: {Message}", refreshEx.Message);
                 toastService.ShowWarning("Worklogs deletados, mas houve erro ao atualizar a lista");
             }
         }
@@ -771,7 +772,7 @@ else
             }
             catch (Exception refreshEx)
             {
-                Console.WriteLine($"Error refreshing worklogs after single worklog deletion: {refreshEx.Message}");
+                Logger.LogError(refreshEx, "Error refreshing worklogs after single worklog deletion: {Message}", refreshEx.Message);
                 toastService.ShowWarning("Worklog deletado, mas houve erro ao atualizar a lista");
             }
         }
