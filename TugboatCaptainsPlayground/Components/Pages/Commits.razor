@@ -151,8 +151,8 @@
                     }
                 </div>
             </div>
-            <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" />
-            <JiraCardList Commits="@dayGroup.ToList()" ConfigService="@ConfigService" WorklogService="@WorklogService" />
+            <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" OnWorklogDeleted="RefreshWorklogs" />
+            <JiraCardList Commits="@dayGroup.ToList()" ConfigService="@ConfigService" WorklogService="@WorklogService" OnWorklogCreated="RefreshWorklogs" />
         </div>
     }
 }
@@ -280,12 +280,14 @@ else
         if (!commitDataList.Any())
         {
             existingWorklogs = new List<TempoWorklog>();
+            StateHasChanged();
             return;
         }
 
         isLoadingWorklogs = true;
         worklogLoadingError = null;
         worklogLoadingProgress = 0;
+        StateHasChanged();
 
         try
         {
@@ -314,13 +316,18 @@ else
             var totalDates = uniqueDates.Count;
             var processedDates = 0;
 
+            Logger.LogInformation("Fetching worklogs for {TotalDates} dates using accountId: {AccountId}", totalDates, accountId ?? "fallback");
+
             if (!string.IsNullOrEmpty(accountId))
             {
+                Logger.LogInformation("Using GetWorklogsByUserAsync method with accountId: {AccountId}", accountId);
                 foreach (var date in uniqueDates)
                 {
                     try
                     {
+                        Logger.LogDebug("Fetching worklogs for date: {Date:yyyy-MM-dd}", date);
                         var dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date.Date, date.Date.AddDays(1).AddTicks(-1));
+                        Logger.LogDebug("Found {WorklogCount} worklogs for date: {Date:yyyy-MM-dd}", dayWorklogs.Count, date);
                         allWorklogs.AddRange(dayWorklogs);
 
                         processedDates++;
@@ -338,12 +345,14 @@ else
             }
             else
             {
-                // Fallback to original method if account ID is not configured
+                Logger.LogInformation("Using fallback GetExistingWorklogsForDateRangeAsync method");
                 foreach (var date in uniqueDates)
                 {
                     try
                     {
+                        Logger.LogDebug("Fetching worklogs for date: {Date:yyyy-MM-dd}", date);
                         var dayWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(date, date);
+                        Logger.LogDebug("Found {WorklogCount} worklogs for date: {Date:yyyy-MM-dd}", dayWorklogs.Count, date);
                         allWorklogs.AddRange(dayWorklogs);
 
                         processedDates++;
@@ -365,13 +374,18 @@ else
                 .GroupBy(w => w.Id)
                 .Select(g => g.First())
                 .ToList();
+
+            Logger.LogInformation("Successfully loaded {TotalWorklogs} unique worklogs", existingWorklogs.Count);
             worklogLoadingProgress = 100;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to fetch existing worklogs: {Message}", ex.Message);
             worklogLoadingError = ex.Message;
             toastService.ShowError($"Error fetching worklogs: {ex.Message}");
             existingWorklogs = new List<TempoWorklog>();
+            StateHasChanged();
         }
         finally
         {
