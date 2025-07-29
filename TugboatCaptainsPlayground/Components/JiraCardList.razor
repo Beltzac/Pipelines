@@ -19,8 +19,11 @@
                 @if (!string.IsNullOrEmpty(commit.JiraCardID))
                 {
                     <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)"> @commit.JiraCardID </span>
-                    <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
+                    @* <button class="btn btn-sm btn-outline-primary" @onclick="() => SendSingleWorklogToTempo(commit)" title="Enviar worklog para Tempo">
                         <i class="fas fa-clock"></i>
+                    </button> *@
+                    <button class="btn btn-sm btn-outline-success" @onclick="() => SendGMWorklogToTempo(commit)" title="Enviar worklog GM (2h)">
+                        <i class="fas fa-tools"></i> GM
                     </button>
                 }
             </div>
@@ -69,6 +72,34 @@
         catch (Exception ex)
         {
             toastService.ShowError($"Error sending worklog: {ex.Message}");
+        }
+    }
+
+    private async Task SendGMWorklogToTempo(Commit commit)
+    {
+        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
+        {
+            toastService.ShowWarning("No JIRA card found for this commit");
+            return;
+        }
+
+        try
+        {
+            // Create a GM worklog with 2 hours duration (120 minutes)
+            var result = await WorklogService.CreateWorklogFromCommitAsync(commit, 120);
+
+            if (result.Success)
+            {
+                toastService.ShowSuccess($"GM worklog (2h) created for {commit.JiraCardID}");
+            }
+            else
+            {
+                toastService.ShowError($"Failed to create GM worklog: {result.Error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending GM worklog: {ex.Message}");
         }
     }
 }
