@@ -156,8 +156,9 @@
 
     @if (!string.IsNullOrEmpty(StatusMessage))
     {
-        <div class="alert @StatusAlertClass">
+        <div class="alert @StatusAlertClass alert-dismissible fade show" role="alert">
             @((MarkupString)StatusMessage)
+            <button type="button" class="btn-close" @onclick="() => StatusMessage = string.Empty" aria-label="Close"></button>
         </div>
     }
 
@@ -166,44 +167,89 @@
         <div class="row mt-4">
             <div class="col-md-12">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Resolved IP Addresses</h5>
+                        <span class="badge bg-light text-dark">@ResolvedAddresses.Count total addresses</span>
                     </div>
                     <div class="card-body">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>IP Address</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var (ip, status) in ResolvedAddresses)
-                                {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
                                     <tr>
-                                        <td>@ip</td>
-                                        <td>
-                                            @if (status == "Success")
-                                            {
-                                                <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Added</span>
-                                            }
-                                            else if (status == "Removed")
-                                            {
-                                                <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Removed</span>
-                                            }
-                                            else if (status == "Processing")
-                                            {
-                                                <span class="badge bg-info"><i class="bi bi-hourglass-split"></i> Processing...</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> @status</span>
-                                            }
-                                        </td>
+                                        <th style="width: 25%">Domain</th>
+                                        <th style="width: 20%">IP Address</th>
+                                        <th style="width: 30%">URL</th>
+                                        <th style="width: 15%">Status</th>
+                                        <th style="width: 10%">Actions</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    @foreach (var (domain, ip, status) in ResolvedAddresses)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="fw-bold text-primary">@domain</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <code>@ip</code>
+                                                    <button class="btn btn-sm btn-outline-secondary ms-2"
+                                                            @onclick="() => CopyToClipboard(ip)"
+                                                            title="Copy IP to clipboard">
+                                                        <i class="bi bi-clipboard"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a href="http://@domain" target="_blank" class="text-decoration-none">
+                                                    <i class="bi bi-box-arrow-up-right"></i> http://@domain
+                                                </a>
+                                            </td>
+                                            <td>
+                                                @if (status == "Success")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle-fill"></i> Added
+                                                    </span>
+                                                }
+                                                else if (status == "Removed")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle-fill"></i> Removed
+                                                    </span>
+                                                }
+                                                else if (status == "Processing")
+                                                {
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-hourglass-split"></i> Processing...
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-x-circle-fill"></i> @status
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-sm btn-outline-primary"
+                                                            @onclick="() => CopyToClipboard(ip)"
+                                                            title="Copy IP">
+                                                        <i class="bi bi-clipboard"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-info"
+                                                            @onclick="() => CopyToClipboard(domain)"
+                                                            title="Copy URL">
+                                                        <i class="bi bi-link-45deg"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -220,7 +266,7 @@
     private int SelectedInterfaceIndex { get; set; } = -1;
     private string StatusMessage { get; set; } = "";
     private string StatusAlertClass { get; set; } = "alert-info";
-    private List<(string ip, string status)> ResolvedAddresses { get; set; } = new();
+    private List<(string domain, string ip, string status)> ResolvedAddresses { get; set; } = new();
     private ConfigModel Config { get; set; } = new();
 
     private bool CanAddRoutes => SelectedDomains.Count > 0 && SelectedInterfaceIndex >= 0;
@@ -375,7 +421,7 @@
 
         StatusMessage = "Resolving domain names to clear routes...";
         StatusAlertClass = "alert-info";
-        ResolvedAddresses = new List<(string ip, string status)>();
+        ResolvedAddresses = new List<(string domain, string ip, string status)>();
         await InvokeAsync(StateHasChanged);
 
         try
@@ -411,7 +457,7 @@
                         {
                             totalAddresses++;
                             var ipString = ip.ToString();
-                            ResolvedAddresses.Add((ipString, "Processing"));
+                            ResolvedAddresses.Add((domain, ipString, "Processing"));
                             await InvokeAsync(StateHasChanged);
 
                             try
@@ -435,7 +481,7 @@
                 }
             }
 
-            StatusMessage = $"Processed {SelectedDomains.Count} domains. Removed {successCount} routes, {errorCount} errors.";
+            StatusMessage = $"<strong>Complete!</strong> Processed {SelectedDomains.Count} domains. Removed {successCount} routes, {errorCount} errors.";
             StatusAlertClass = "alert-success";
         }
         catch (Exception ex)
@@ -444,7 +490,6 @@
             StatusAlertClass = "alert-danger";
         }
     }
-
     private async Task AddRoutes()
     {
         if (SelectedDomains.Count == 0)
@@ -459,9 +504,9 @@
             return;
         }
 
-        StatusMessage = "Resolving domain name...";
+        StatusMessage = "Resolving domain names...";
         StatusAlertClass = "alert-info";
-        ResolvedAddresses = new List<(string ip, string status)>();
+        ResolvedAddresses = new List<(string domain, string ip, string status)>();
         await InvokeAsync(StateHasChanged);
 
         try
@@ -516,7 +561,7 @@
                         {
                             totalAddresses++;
                             var ipString = ip.ToString();
-                            ResolvedAddresses.Add((ipString, "Processing"));
+                            ResolvedAddresses.Add((domain, ipString, "Processing"));
                             await InvokeAsync(StateHasChanged);
 
                             try
@@ -540,7 +585,7 @@
                 }
             }
 
-            StatusMessage = $"Processed {SelectedDomains.Count} domains. Added {successCount} routes, {errorCount} errors.";
+            StatusMessage = $"<strong>Complete!</strong> Processed {SelectedDomains.Count} domains. Added {successCount} routes, {errorCount} errors.";
             StatusAlertClass = "alert-success";
         }
         catch (Exception ex)
@@ -557,9 +602,16 @@
         var index = ResolvedAddresses.FindIndex(a => a.ip == ip);
         if (index >= 0)
         {
-            ResolvedAddresses[index] = (ip, status);
+            var (domain, _, _) = ResolvedAddresses[index];
+            ResolvedAddresses[index] = (domain, ip, status);
             InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        ToastService.ShowSuccess($"Copied {text} to clipboard");
     }
 
     private async Task DeleteRoute(string ip)

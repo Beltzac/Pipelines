@@ -849,7 +849,7 @@ else
     {
         if (result?.Commit == null) return 0;
         return HashCode.Combine(
-            result.Commit.CommitHash,
+            result.Commit.Id,
             result.Commit.JiraCardID,
             result.Commit.CommitDate
         );
