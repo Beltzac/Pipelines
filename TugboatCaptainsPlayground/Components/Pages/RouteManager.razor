@@ -1,14 +1,18 @@
 @page "/routemanager"
-@using System;
-@using System.Diagnostics;
-@using System.Net;
-@using System.Net.Sockets;
-@using System.Net.NetworkInformation;
-@using System.Linq;
-@using Common.Models;
-@using Common.Services.Interfaces;
-@using System.Collections.Generic;
-@using System.Threading.Tasks;
+@using System
+@using System.Diagnostics
+@using System.Net
+@using System.Net.Sockets
+@using System.Net.NetworkInformation
+@using System.Linq
+@using Common.Models
+@using Common.Services.Interfaces
+@using System.Collections.Generic
+@using System.Threading.Tasks
+@using System.Threading
+@using DnsClient
+@using Microsoft.JSInterop
+@using System.Text.Json
 @inject IJSRuntime JS
 @inject ToastService ToastService
 @inject IConfigurationService ConfigService
@@ -411,6 +415,69 @@
         return -1;
     }
 
+    public async Task<IPAddress[]> ResolveDomainWithDoh(string domain)
+    {
+        using var httpClient = new HttpClient();
+        var url = $"https://one.one.one.one/dns-query?name={domain}&type=A";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Version = new Version(2, 0); // HTTP/2
+        request.Headers.Add("Accept", "application/dns-json");
+
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+
+        var result = new List<IPAddress>();
+        if (doc.RootElement.TryGetProperty("Answer", out var answers))
+        {
+            foreach (var answer in answers.EnumerateArray())
+            {
+                if (answer.GetProperty("type").GetInt32() == 1)
+                {
+                    result.Add(IPAddress.Parse(answer.GetProperty("data").GetString()));
+                }
+            }
+        }
+
+        return result.ToArray();
+    }
+
+
+    private async Task<IPAddress[]> ResolveDomainWithSpecificDns(string domain, string[] dnsServers)
+    {
+        var resolvedAddresses = new List<IPAddress>();
+        var nameServers = new List<NameServer> { NameServer.Cloudflare, NameServer.GooglePublicDns };
+
+        var client = new LookupClient(nameServers.ToArray());
+
+        try
+        {
+            var result = await client.QueryAsync(domain, QueryType.A);
+
+            foreach (var record in result.Answers.OfType<DnsClient.Protocol.ARecord>())
+            {
+                resolvedAddresses.Add(record.Address);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Console.WriteLine($"DNS resolution for {domain} was cancelled.");
+        }
+        catch (DnsClient.DnsResponseException ex)
+        {
+            Console.WriteLine($"DNS query for {domain} failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error resolving {domain}: {ex.Message}");
+        }
+        
+        return resolvedAddresses.ToArray();
+    }
+
     private async Task ClearRoutes()
     {
         if (SelectedDomains.Count == 0)
@@ -436,9 +503,10 @@
 
             foreach (var domain in SelectedDomains)
             {
-                try
+                try 
                 {
-                    IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(domain));
+                    string[] dnsServers = { "1.1.1.1", "8.8.8.8", "95.85.95.85", "2.56.220.2" };
+                    IPAddress[] addresses = await ResolveDomainWithDoh(domain);
 
                     if (addresses.Length == 0)
                     {
@@ -540,9 +608,9 @@
 
             foreach (var domain in SelectedDomains)
             {
-                try
-                {
-                    IPAddress[] addresses = await Task.Run(() => Dns.GetHostAddresses(domain));
+                try {
+                    string[] dnsServers = { "1.1.1.1", "8.8.8.8" };
+                    IPAddress[] addresses = await ResolveDomainWithDoh(domain);
 
                     if (addresses.Length == 0)
                     {

@@ -40,6 +40,12 @@
           "Microsoft.AspNetCore.Components.Web": "6.0.3"
         }
       },
+      "DnsClient": {
+        "type": "Direct",
+        "requested": "[1.8.0, )",
+        "resolved": "1.8.0",
+        "contentHash": "RRwtaCXkXWsx0mmsReGDqCbRLtItfUbkRJlet1FpdciVhyMGKcPd57T1+8Jki9ojHlq9fntVhXQroOOgRak8DQ=="
+      },
       "EFCore.NamingConventions": {
         "type": "Direct",
         "requested": "[9.0.0, )",
@@ -479,14 +485,6 @@
         "type": "Transitive",
         "resolved": "1.8.0",
         "contentHash": "gnyDsNbi0/mdW3qOXtmsuD3ZtbdKn4FIai7znhUPviuIHvV20bjWIt15gbky7RgH6Q8MMWyXhv8nk52HW37BAQ=="
-      },
-      "DnsClient": {
-        "type": "Transitive",
-        "resolved": "1.6.1",
-        "contentHash": "4H/f2uYJOZ+YObZjpY9ABrKZI+JNw3uizp6oMzTXwDw6F+2qIPhpRl/1t68O/6e98+vqNiYGu+lswmwdYUy3gg==",
-        "dependencies": {
-          "Microsoft.Win32.Registry": "5.0.0"
-        }
       },
       "DocumentFormat.OpenXml": {
         "type": "Transitive",
