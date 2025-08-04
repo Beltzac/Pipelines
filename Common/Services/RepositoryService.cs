@@ -317,7 +317,8 @@ namespace Common.Services
                         Url = $"{_organizationUrl}/{projectName}/_git/{buildInfo.Name}/pullrequest/{pr.PullRequestId}",
                         SourceBranch = pr.SourceRefName,
                         TargetBranch = pr.TargetRefName,
-                        ChangedFileCount = 0 // Needs separate API call to get changes
+                        ChangedFileCount = 0, // Needs separate API call to get changes
+                        CreatedDate = pr.CreationDate
                     })
                     .ToList();
             }

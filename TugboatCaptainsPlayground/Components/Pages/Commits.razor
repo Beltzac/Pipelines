@@ -16,6 +16,7 @@
 @inject IConfigurationService ConfigService
 @inject CommitsStateService CommitsStateService
 @inject IWorklogService WorklogService
+@inject IRepositoryService RepositoryService
 @inject ILogger<Commits> Logger
 
 <StickyFilter>
@@ -154,6 +155,29 @@
             <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" OnWorklogDeleted="RefreshWorklogs" />
             <JiraCardList Commits="@dayGroup.ToList()" ConfigService="@ConfigService" WorklogService="@WorklogService" OnWorklogCreated="RefreshWorklogs" />
         </div>
+        var dayPullRequests = pullRequestsByDate.ContainsKey(dayGroup.Key) ? pullRequestsByDate[dayGroup.Key] : new List<PullRequest>();
+        if (dayPullRequests.Any())
+        {
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Pull Requests (@dayPullRequests.Count)</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        @foreach (var pr in dayPullRequests)
+                        {
+                            <li class="list-group-item">
+                                <a href="@pr.Url" target="_blank">@pr.Title</a>
+                                <br />
+                                <small class="text-muted">Source: @pr.SourceBranch.Replace("refs/heads/", "")</small>
+                                <br />
+                                <small class="text-muted">Target: @pr.TargetBranch.Replace("refs/heads/", "")</small>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
     }
 }
 else
@@ -261,6 +285,7 @@ else
     private List<Commit> commitDataList = new List<Commit>();
     private List<WorklogCreationResult> worklogResults = new List<WorklogCreationResult>();
     private List<TempoWorklog> existingWorklogs = new List<TempoWorklog>();
+    private List<PullRequest> pullRequests = new List<PullRequest>();
     private bool isSendingWorklogs = false;
     private bool isLoadingWorklogs = false;
     private string worklogLoadingError = null;
@@ -274,9 +299,15 @@ else
         .OrderByDescending(g => g.Key)
         .ToDictionary(g => g.Key, g => g.ToList());
 
+    private Dictionary<DateTime, List<PullRequest>> pullRequestsByDate => pullRequests
+        .GroupBy(pr => pr.CreatedDate.Date)
+        .OrderByDescending(g => g.Key)
+        .ToDictionary(g => g.Key, g => g.ToList());
+
     protected override async Task OnInitializedAsync()
     {
         await FetchCommits();
+        await LoadPullRequests();
     }
 
     private async Task HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) args)
@@ -293,6 +324,32 @@ else
         var config = ConfigService.GetConfig();
         commitDataList = await CommitDataExportService.GetRecentCommitsAsync(config.Username, CommitsStateService.DataInicial);
         await FetchExistingWorklogs();
+    }
+
+    private async Task LoadPullRequests()
+    {
+        try
+        {
+            var repositories = await RepositoryService.GetBuildInfoAsync();
+            var allPullRequests = new List<PullRequest>();
+
+            if (repositories != null)
+            {
+                foreach (var repo in repositories)
+                {
+                    if (repo.ActivePullRequests != null && repo.ActivePullRequests.Any())
+                    {
+                        allPullRequests.AddRange(repo.ActivePullRequests);
+                    }
+                }
+            }
+
+            pullRequests = allPullRequests;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading pull requests: {ex.Message}");
+        }
     }
 
     private async Task FetchExistingWorklogs()

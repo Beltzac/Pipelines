@@ -59,4 +59,5 @@ public class PullRequest
     public string SourceBranch { get; set; }
     public string TargetBranch { get; set; }
     public int ChangedFileCount { get; set; }
+    public DateTime CreatedDate { get; set; }
 }
