@@ -338,7 +338,7 @@ internal class Program
                 .Build();
 
             var trigger = TriggerBuilder.Create()
-                .StartNow()
+                .StartAt(DateTime.UtcNow.AddSeconds(5))
                 .Build();
 
             scheduler.ScheduleJob(job, trigger).Wait();
