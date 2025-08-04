@@ -109,91 +109,105 @@
     </div>
 }
 
-@if (commitDataList != null && commitDataList.Any())
+@code {
+
+    private IEnumerable<DateTime> AllUniqueDates =>
+        commitDataList.Select(c => c.CommitDate.Date)
+            .Concat(pullRequestsByDate.Keys)
+            .Distinct()
+            .OrderByDescending(d => d);
+}
+
+@if (AllUniqueDates.Any())
 {
-    var groupedCommits = commitDataList
-        .GroupBy(c => c.CommitDate.Date)
-        .OrderByDescending(g => g.Key);
-
-    @foreach (var dayGroup in groupedCommits)
+    @foreach (var date in AllUniqueDates)
     {
-        var dayWorklogs = worklogsByDate.ContainsKey(dayGroup.Key) ? worklogsByDate[dayGroup.Key] : new List<TempoWorklog>();
-        <div class="card mt-3">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">@dayGroup.Key.ToString("dddd, MMMM dd, yyyy")</h5>
-                <div class="d-flex align-items-center gap-2">
-                    @{
-                        var dayWorklogCount = dayWorklogs.Count;
-                        if (dayWorklogCount > 0)
-                        {
-                            <span class="badge bg-success" title="@dayWorklogCount worklog(s) encontrado(s)">
-                                <i class="fas fa-check-circle"></i> @dayWorklogCount
-                            </span>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteWorklogsForDate(dayGroup.Key)"
-                                    title="Deletar todos os worklogs deste dia">
-                                <i class="fas fa-trash"></i> Delete All
-                            </button>
-                        }
-                        else if (isLoadingWorklogs)
-                        {
-                            <span class="badge bg-info">
-                                <span class="spinner-border spinner-border-sm" role="status"></span>
-                            </span>
-                        }
+        var dayCommits = commitDataList.Where(c => c.CommitDate.Date == date).ToList();
+        var dayPullRequests = pullRequestsByDate.ContainsKey(date) ? pullRequestsByDate[date] : new List<PullRequest>();
+        var dayWorklogs = worklogsByDate.ContainsKey(date) ? worklogsByDate[date] : new List<TempoWorklog>();
 
-                        var dayCommitsWithJira = dayGroup.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
-                        if (dayCommitsWithJira.Any())
-                        {
-                            <button class="btn btn-sm btn-warning" @onclick="() => SendDailyWorklogsForDate(dayGroup.Key)"
-                                    title="Distribuir 8h entre @dayCommitsWithJira.Count commits deste dia">
-                                <i class="fas fa-clock"></i> 8h
-                            </button>
-                        }
-                    }
-                </div>
-            </div>
-            <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" OnWorklogDeleted="RefreshWorklogs" />
-            <JiraCardList Commits="@dayGroup.ToList()" ConfigService="@ConfigService" WorklogService="@WorklogService" OnWorklogCreated="RefreshWorklogs" />
-        </div>
-        var dayPullRequests = pullRequestsByDate.ContainsKey(dayGroup.Key) ? pullRequestsByDate[dayGroup.Key] : new List<PullRequest>();
-        if (dayPullRequests.Any())
+        if (dayCommits.Any() || dayPullRequests.Any())
         {
             <div class="card mt-3">
-                <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0">Pull Requests (@dayPullRequests.Count)</h6>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        @foreach (var pr in dayPullRequests)
-                        {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <a href="@pr.Url" target="_blank">@pr.Title</a>
-                                    <br />
-                                    <small class="text-muted">Source: @pr.SourceBranch.Replace("refs/heads/", "")</small>
-                                    <br />
-                                    <small class="text-muted">Target: @pr.TargetBranch.Replace("refs/heads/", "")</small>
-                                </div>
-                                @if (pr.JiraCardIDs != null && pr.JiraCardIDs.Any())
-                                {
-                                    @foreach (var jiraCardID in pr.JiraCardIDs)
-                                    {
-                                        <button class="btn btn-sm btn-success ms-1" @onclick="() => SendSingleWorklogToTempoForPullRequest(pr, jiraCardID)">
-                                            <i class="fas fa-plus"></i> GM (@jiraCardID)
-                                        </button>
-                                    }
-                                }
-                            </li>
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">@date.ToString("dddd, MMMM dd, yyyy")</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        @{
+                            var dayWorklogCount = dayWorklogs.Count;
+                            if (dayWorklogCount > 0)
+                            {
+                                <span class="badge bg-success" title="@dayWorklogCount worklog(s) encontrado(s)">
+                                    <i class="fas fa-check-circle"></i> @dayWorklogCount
+                                </span>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteWorklogsForDate(date)"
+                                        title="Deletar todos os worklogs deste dia">
+                                    <i class="fas fa-trash"></i> Delete All
+                                </button>
+                            }
+                            else if (isLoadingWorklogs)
+                            {
+                                <span class="badge bg-info">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                </span>
+                            }
+
+                            var dayCommitsWithJira = dayCommits.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
+                            if (dayCommitsWithJira.Any())
+                            {
+                                <button class="btn btn-sm btn-warning" @onclick="() => SendDailyWorklogsForDate(date)"
+                                        title="Distribuir 8h entre @dayCommitsWithJira.Count commits deste dia">
+                                    <i class="fas fa-clock"></i> 8h
+                                </button>
+                            }
                         }
-                    </ul>
+                    </div>
                 </div>
+                @if (dayCommits.Any())
+                {
+                    <WorklogList Worklogs="@dayWorklogs" IsLoading="@isLoadingWorklogs" OnWorklogDeleted="RefreshWorklogs" />
+                    <JiraCardList Commits="@dayCommits" ConfigService="@ConfigService" WorklogService="@WorklogService" OnWorklogCreated="RefreshWorklogs" />
+                }
+
+                @if (dayPullRequests.Any())
+                {
+                    <div class="card mt-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">Pull Requests (@dayPullRequests.Count)</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var pr in dayPullRequests)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <a href="@pr.Url" target="_blank">@pr.Title</a>
+                                            <br />
+                                            <small class="text-muted">Source: @pr.SourceBranch.Replace("refs/heads/", "")</small>
+                                            <br />
+                                            <small class="text-muted">Target: @pr.TargetBranch.Replace("refs/heads/", "")</small>
+                                        </div>
+                                        @if (pr.JiraCardIDs != null && pr.JiraCardIDs.Any())
+                                        {
+                                            @foreach (var jiraCardID in pr.JiraCardIDs)
+                                            {
+                                                <button class="btn btn-sm btn-success ms-1" @onclick="() => SendSingleWorklogToTempoForPullRequest(pr, jiraCardID)">
+                                                    <i class="fas fa-plus"></i> GM (@jiraCardID)
+                                                </button>
+                                            }
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
             </div>
         }
     }
 }
-}
+else
 {
-    <p>Nenhum commit buscado ainda.</p>
+    <p>Nenhum commit ou pull request buscado ainda.</p>
 }
 
 @if (worklogResults.Any())
@@ -310,10 +324,38 @@
         .OrderByDescending(g => g.Key)
         .ToDictionary(g => g.Key, g => g.ToList());
 
-    private Dictionary<DateTime, List<PullRequest>> pullRequestsByDate => pullRequests
-        .GroupBy(pr => pr.CreatedDate.Date)
-        .OrderByDescending(g => g.Key)
-        .ToDictionary(g => g.Key, g => g.ToList());
+    private Dictionary<DateTime, List<PullRequest>> pullRequestsByDate
+    {
+        get
+        {
+            var allDatedPullRequests = new List<(DateTime Date, PullRequest PR)>();
+
+            foreach (var pr in pullRequests)
+            {
+                // Add CreatedDate
+                allDatedPullRequests.Add((pr.CreatedDate.Date, pr));
+
+                // Add LastUpdatedDate if available and different from CreatedDate
+                if (pr.LastUpdatedDate.HasValue && pr.LastUpdatedDate.Value.Date != pr.CreatedDate.Date)
+                {
+                    allDatedPullRequests.Add((pr.LastUpdatedDate.Value.Date, pr));
+                }
+
+                // Add LastPipelineRunDate if available and different from other dates
+                if (pr.LastPipelineRunDate.HasValue &&
+                    pr.LastPipelineRunDate.Value.Date != pr.CreatedDate.Date &&
+                    (!pr.LastUpdatedDate.HasValue || pr.LastPipelineRunDate.Value.Date != pr.LastUpdatedDate.Value.Date))
+                {
+                    allDatedPullRequests.Add((pr.LastPipelineRunDate.Value.Date, pr));
+                }
+            }
+
+            return allDatedPullRequests
+                .GroupBy(item => item.Date)
+                .OrderByDescending(g => g.Key)
+                .ToDictionary(g => g.Key, g => g.Select(item => item.PR).Distinct().ToList());
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

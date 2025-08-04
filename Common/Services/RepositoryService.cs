@@ -308,9 +308,10 @@ namespace Common.Services
             // Fetch active pull requests
             try
             {
-                var pullRequests = await _gitClient.GetActivePullRequestsAsync(repo.ProjectReference.Id, repo.Id);
-                buildInfo.ActivePullRequests = pullRequests
-                    .Select(pr => new PullRequest
+                var gitPullRequests = await _gitClient.GetActivePullRequestsAsync(repo.ProjectReference.Id, repo.Id);
+                var pullRequestTasks = gitPullRequests.Select(async pr =>
+                {
+                    return new PullRequest
                     {
                         Id = pr.PullRequestId,
                         Title = pr.Title,
@@ -321,9 +322,13 @@ namespace Common.Services
                         CreatedDate = pr.CreationDate,
                         JiraCardIDs = PullRequest.ExtractJiraCardIDs(pr.Title, pr.Description),
                         ProjectId = repo.ProjectReference.Id,
-                        RepositoryId = repo.Id
-                    })
-                    .ToList();
+                        RepositoryId = repo.Id,
+                        LastUpdatedDate = pr.LastMergeCommit?.Author?.Date.ToUniversalTime() ?? pr.CreationDate, // Use LastMergeCommit date if available, otherwise CreationDate
+                        LastPipelineRunDate = await GetLatestPipelineRunDateForPullRequest(repo.ProjectReference.Name, repo.Id, pr.SourceRefName)
+                    };
+                }).ToList();
+
+                buildInfo.ActivePullRequests = (await Task.WhenAll(pullRequestTasks)).ToList();
             }
             catch (Exception ex)
             {
@@ -332,6 +337,22 @@ namespace Common.Services
             }
 
             return buildInfo;
+        }
+
+        private async Task<DateTime?> GetLatestPipelineRunDateForPullRequest(string projectName, Guid repositoryId, string sourceBranch)
+        {
+            try
+            {
+                var builds = await _buildClient.GetBuildsAsync(projectName, repositoryId, sourceBranch);
+                return builds.Where(b => b.Status == BuildStatus.Completed && b.Result == BuildResult.Succeeded)
+                             .OrderByDescending(b => b.FinishTime)
+                             .FirstOrDefault()?.FinishTime?.ToUniversalTime();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error fetching pipeline runs for source branch {sourceBranch} in repository {repositoryId}");
+                return null;
+            }
         }
 
         private async Task<string> FetchBuildLogsAsync(string projectName, int buildId)

@@ -64,6 +64,8 @@ public class PullRequest
     public List<string> JiraCardIDs { get; set; } = new List<string>();
     public Guid ProjectId { get; set; }
     public Guid RepositoryId { get; set; }
+    public DateTime? LastUpdatedDate { get; set; }
+    public DateTime? LastPipelineRunDate { get; set; }
 
     public static List<string> ExtractJiraCardIDs(params string[] texts)
     {

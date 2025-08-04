@@ -11,5 +11,6 @@ namespace Common.ExternalApis.Interfaces
         Task<List<GitRef>> GetBranchesAsync(Guid projectId, Guid repositoryId);
         Task<List<GitCommitRef>> GetCommitsAsync(Guid projectId, Guid repositoryId, string branchName, string author, DateTime fromDate, DateTime toDate);
         Task<List<GitPullRequest>> GetActivePullRequestsAsync(Guid projectId, Guid repositoryId);
+        Task<List<GitPullRequestIteration>> GetPullRequestIterationsAsync(Guid projectId, Guid repositoryId, int pullRequestId);
     }
 }

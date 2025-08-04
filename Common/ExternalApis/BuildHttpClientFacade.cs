@@ -31,5 +31,16 @@ namespace Common.ExternalApis
         {
             return _buildHttpClient.GetBuildLogLinesAsync(project, buildId, logId);
         }
+
+        public async Task<List<Microsoft.TeamFoundation.Build.WebApi.Build>> GetBuildsAsync(string project, Guid repositoryId, string sourceBranch)
+        {
+            var builds = await _buildHttpClient.GetBuildsAsync(
+                project: project,
+                repositoryId: repositoryId.ToString(),
+                repositoryType: "TfsGit", // Assuming TfsGit for Azure DevOps
+                branchName: sourceBranch
+            );
+            return builds.ToList();
+        }
     }
 }

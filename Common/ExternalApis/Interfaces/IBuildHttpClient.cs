@@ -8,5 +8,6 @@ namespace Common.ExternalApis.Interfaces
         Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetBuildAsync(string project, int buildId);
         Task<List<BuildLog>> GetBuildLogsAsync(string project, int buildId);
         Task<List<string>> GetBuildLogLinesAsync(string project, int buildId, int logId);
+        Task<List<Microsoft.TeamFoundation.Build.WebApi.Build>> GetBuildsAsync(string project, Guid repositoryId, string sourceBranch);
     }
 }
