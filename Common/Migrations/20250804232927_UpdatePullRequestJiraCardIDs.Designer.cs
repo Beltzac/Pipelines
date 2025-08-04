@@ -3,6 +3,7 @@ using System;
 using Common.Repositories.Interno;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Common.Migrations
 {
     [DbContext(typeof(RepositoryDbContext))]
-    partial class RepositoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250804232927_UpdatePullRequestJiraCardIDs")]
+    partial class UpdatePullRequestJiraCardIDs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
@@ -685,10 +688,7 @@ namespace Common.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("RepositoryId")
+                    b.Property<Guid?>("RepositoryId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SourceBranch")
@@ -870,9 +870,7 @@ namespace Common.Migrations
                 {
                     b.HasOne("Repository", null)
                         .WithMany("ActivePullRequests")
-                        .HasForeignKey("RepositoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RepositoryId");
                 });
 
             modelBuilder.Entity("Repository", b =>

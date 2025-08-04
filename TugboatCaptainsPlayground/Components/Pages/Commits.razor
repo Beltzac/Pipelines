@@ -166,12 +166,23 @@
                     <ul class="list-group list-group-flush">
                         @foreach (var pr in dayPullRequests)
                         {
-                            <li class="list-group-item">
-                                <a href="@pr.Url" target="_blank">@pr.Title</a>
-                                <br />
-                                <small class="text-muted">Source: @pr.SourceBranch.Replace("refs/heads/", "")</small>
-                                <br />
-                                <small class="text-muted">Target: @pr.TargetBranch.Replace("refs/heads/", "")</small>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="@pr.Url" target="_blank">@pr.Title</a>
+                                    <br />
+                                    <small class="text-muted">Source: @pr.SourceBranch.Replace("refs/heads/", "")</small>
+                                    <br />
+                                    <small class="text-muted">Target: @pr.TargetBranch.Replace("refs/heads/", "")</small>
+                                </div>
+                                @if (pr.JiraCardIDs != null && pr.JiraCardIDs.Any())
+                                {
+                                    @foreach (var jiraCardID in pr.JiraCardIDs)
+                                    {
+                                        <button class="btn btn-sm btn-success ms-1" @onclick="() => SendSingleWorklogToTempoForPullRequest(pr, jiraCardID)">
+                                            <i class="fas fa-plus"></i> GM (@jiraCardID)
+                                        </button>
+                                    }
+                                }
                             </li>
                         }
                     </ul>
@@ -180,7 +191,7 @@
         }
     }
 }
-else
+}
 {
     <p>Nenhum commit buscado ainda.</p>
 }
@@ -533,6 +544,33 @@ else
         catch (Exception ex)
         {
             toastService.ShowError($"Error sending worklog: {ex.Message}");
+        }
+    }
+
+    private async Task SendSingleWorklogToTempoForPullRequest(PullRequest pullRequest, string jiraCardID)
+    {
+        if (pullRequest == null || string.IsNullOrEmpty(jiraCardID))
+        {
+            toastService.ShowWarning("No JIRA card found for this pull request");
+            return;
+        }
+
+        try
+        {
+            var result = await WorklogService.CreateWorklogFromPullRequestAsync(pullRequest, jiraCardID);
+
+            if (result.Success)
+            {
+                toastService.ShowSuccess($"Worklog created for PR {jiraCardID}");
+            }
+            else
+            {
+                toastService.ShowError($"Failed to create worklog for PR {jiraCardID}: {result.Error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Error sending worklog for PR {jiraCardID}: {ex.Message}");
         }
     }
 

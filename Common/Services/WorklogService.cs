@@ -78,6 +78,16 @@ namespace Common.Services
             return await CreateWorklogInternalAsync(commit, 120, "Acompanhamento de GM");
         }
 
+        public async Task<WorklogCreationResult> CreateWorklogFromPullRequestAsync(PullRequest pullRequest, string jiraCardID, int timeSpentMinutes = 60)
+        {
+            return await CreateWorklogInternalAsync(pullRequest, jiraCardID, timeSpentMinutes, FormatPullRequestMessageForWorklog(pullRequest));
+        }
+
+        public async Task<WorklogCreationResult> CreateGMPullRequestWorklogAsync(PullRequest pullRequest, string jiraCardID)
+        {
+            return await CreateWorklogInternalAsync(pullRequest, jiraCardID, 120, "Acompanhamento de GM");
+        }
+
         private async Task<WorklogCreationResult> CreateWorklogInternalAsync(Commit commit, int timeSpentMinutes, string description)
         {
             try
@@ -179,6 +189,110 @@ namespace Common.Services
                     Error = ex.Message
                 };
             }
+        }
+
+        private async Task<WorklogCreationResult> CreateWorklogInternalAsync(PullRequest pullRequest, string jiraCardID, int timeSpentMinutes, string description)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(jiraCardID))
+                {
+                    return new WorklogCreationResult
+                    {
+                        Success = false,
+                        Message = "No JIRA card ID found for pull request",
+                        Error = "Pull Request does not contain a valid JIRA card reference"
+                    };
+                }
+
+                // Get the issue ID from Jira using the issue key
+                var issueId = await _jiraService.GetIssueIdByKeyAsync(jiraCardID);
+                if (string.IsNullOrEmpty(issueId))
+                {
+                    return new WorklogCreationResult
+                    {
+                        Success = false,
+                        Message = "Could not resolve JIRA issue key to ID",
+                        Error = $"Failed to find issue with key: {jiraCardID}"
+                    };
+                }
+
+                var existingWorklogs = await _tempoService.GetWorklogsByIssueAsync(issueId);
+                var existingWorklogForPullRequest = existingWorklogs.FirstOrDefault(w =>
+                    w.Comment != null && w.Comment.Contains($"PR: {pullRequest.Id}"));
+
+                if (existingWorklogForPullRequest != null)
+                {
+                    return new WorklogCreationResult
+                    {
+                        Success = false,
+                        Message = "Worklog already exists for this pull request",
+                        WorklogId = existingWorklogForPullRequest.Id,
+                        Error = "A worklog for this pull request already exists"
+                    };
+                }
+
+                var config = _configService.GetConfig();
+                var authorAccountId = config.TempoConfig?.AccountId;
+
+                if (string.IsNullOrEmpty(authorAccountId))
+                {
+                    throw new InvalidOperationException("Tempo AccountId is required but not configured");
+                }
+
+                // Convert issue ID string to integer
+                if (!int.TryParse(issueId, out var issueIdInt))
+                {
+                    throw new InvalidOperationException($"Invalid issue ID format: {issueId}");
+                }
+
+                var request = new CreateWorklogRequest
+                {
+                    IssueId = issueIdInt,
+                    TimeSpentSeconds = timeSpentMinutes * 60,
+                    StartDate = pullRequest.CreatedDate.Date.ToString("yyyy-MM-dd"),
+                    StartTime = pullRequest.CreatedDate.ToString("HH:mm:ss"),
+                    Description = description,
+                    AuthorAccountId = authorAccountId,
+                    Attributes = new List<TempoAttribute>()
+                };
+
+                var worklog = await _tempoService.CreateWorklogAsync(request);
+
+                return new WorklogCreationResult
+                {
+                    Success = true,
+                    Message = "Worklog created successfully",
+                    WorklogId = worklog.Id
+                };
+            }
+            catch (System.Net.Http.HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Failed to communicate with API for pull request {PullRequestId}", pullRequest.Id);
+                return new WorklogCreationResult
+                {
+                    Success = false,
+                    Message = "Failed to communicate with the API. Please check the connection and try again.",
+                    Error = ex.Message
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create worklog for pull request {PullRequestId}", pullRequest.Id);
+                return new WorklogCreationResult
+                {
+                    Success = false,
+                    Message = "Failed to create worklog",
+                    Error = ex.Message
+                };
+            }
+        }
+
+
+        private string FormatPullRequestMessageForWorklog(PullRequest pullRequest)
+        {
+            var cleanTitle = pullRequest.Title.Split('\n')[0]; // Take only first line
+            return $"{cleanTitle} (PR: {pullRequest.Id} - {pullRequest.SourceBranch.Replace("refs/heads/", "")} -> {pullRequest.TargetBranch.Replace("refs/heads/", "")})";
         }
 
         public async Task<List<TempoWorklog>> GetExistingWorklogsForDateRangeAsync(DateTime startDate, DateTime endDate)

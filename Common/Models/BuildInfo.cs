@@ -1,5 +1,6 @@
 using Common.Models;
 using SmartComponents.LocalEmbeddings;
+using System.Text.RegularExpressions;
 
 public class Build
 {
@@ -60,4 +61,21 @@ public class PullRequest
     public string TargetBranch { get; set; }
     public int ChangedFileCount { get; set; }
     public DateTime CreatedDate { get; set; }
+    public List<string> JiraCardIDs { get; set; } = new List<string>();
+    public Guid ProjectId { get; set; }
+    public Guid RepositoryId { get; set; }
+
+    public static List<string> ExtractJiraCardIDs(params string[] texts)
+    {
+        var allJiraCardIDs = new List<string>();
+        foreach (var text in texts)
+        {
+            if (!string.IsNullOrEmpty(text))
+            {
+                var matches = Regex.Matches(text, @"([A-Z]+-\d+)");
+                allJiraCardIDs.AddRange(matches.Cast<Match>().Select(m => m.Groups[1].Value));
+            }
+        }
+        return allJiraCardIDs.Distinct().ToList(); // Ensure unique IDs
+    }
 }

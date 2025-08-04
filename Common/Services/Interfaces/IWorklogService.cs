@@ -13,6 +13,8 @@ namespace Common.Services.Interfaces
         Task<List<TempoWorklog>> GetWorklogsByUserAsync(string accountId, DateTime? from = null, DateTime? to = null);
         Task<WorklogCreationResult> CreateWorklogFromCommitAsync(Commit commit, int timeSpentMinutes = 60);
         Task<WorklogCreationResult> CreateGMWorklogFromCommitAsync(Commit commit);
+        Task<WorklogCreationResult> CreateWorklogFromPullRequestAsync(PullRequest pullRequest, string jiraCardID, int timeSpentMinutes = 60);
+        Task<WorklogCreationResult> CreateGMPullRequestWorklogAsync(PullRequest pullRequest, string jiraCardID);
         Task DeleteWorklogAsync(string worklogId);
         Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null);
     }

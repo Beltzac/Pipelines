@@ -318,7 +318,10 @@ namespace Common.Services
                         SourceBranch = pr.SourceRefName,
                         TargetBranch = pr.TargetRefName,
                         ChangedFileCount = 0, // Needs separate API call to get changes
-                        CreatedDate = pr.CreationDate
+                        CreatedDate = pr.CreationDate,
+                        JiraCardIDs = PullRequest.ExtractJiraCardIDs(pr.Title, pr.Description),
+                        ProjectId = repo.ProjectReference.Id,
+                        RepositoryId = repo.Id
                     })
                     .ToList();
             }
