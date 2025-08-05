@@ -18,6 +18,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
+using TugboatCaptainsPlayground;
 using Vanara.Windows.Shell;
 
 internal class Program
@@ -48,6 +49,11 @@ internal class Program
         mainWindow.WindowMinimized += HandleWindowEvent;
         mainWindow.WindowCreated += HandleWindowEvent;
 
+        AppLifetime.ExitAction = () =>
+        {
+            forceClose = true;
+            mainWindow.Close();
+        };
 
         var hotKeyManager = new HotKeyManager();
 
@@ -275,7 +281,7 @@ internal class Program
         //trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Toggle Console", (s, e) => ToggleConsole()));
 
         // Add the "Exit" menu item
-        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => { forceClose = true; mainWindow.Close(); }/*source.Cancel()*/ /*Environment.Exit(0)*/));
+        trayIcon.ContextMenu.Items.Add(new PopupMenuItem("Exit", (s, e) => AppLifetime.Exit()));
 
         // Add a separator
         trayIcon.ContextMenu.Items.Add(new PopupMenuSeparator());
