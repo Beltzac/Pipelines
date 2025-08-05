@@ -9,5 +9,8 @@ namespace Common.Services.Interfaces
         Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName);
         Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema);
         Task<OracleDiffResult> GetViewDiffAsync(string viewName, string oldContent, string newContent);
+        Task<IEnumerable<string>> GetTablesAndViewsAsync(string connectionString, string schema);
+        Task<IEnumerable<OracleColumn>> GetTableOrViewColumnsAsync(string connectionString, string schema, string objectName);
+        Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className);
     }
 }

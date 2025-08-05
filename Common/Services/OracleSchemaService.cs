@@ -1,6 +1,7 @@
 using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
+using Common.Utils;
 using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
@@ -179,6 +180,77 @@ namespace Common.Services
 
             return text;
         }
-    }
+       public async Task<IEnumerable<string>> GetTablesAndViewsAsync(string connectionString, string schema)
+       {
+           return await _repo.GetFromSqlAsync<string>(
+               connectionString,
+               $"SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OWNER = {schema} AND OBJECT_TYPE IN ('TABLE', 'VIEW') ORDER BY OBJECT_NAME",
+               default);
+       }
 
+       public async Task<IEnumerable<OracleColumn>> GetTableOrViewColumnsAsync(string connectionString, string schema, string objectName)
+       {
+           return await _repo.GetFromSqlAsync<OracleColumn>(
+               connectionString,
+               $"SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE FROM ALL_TAB_COLUMNS WHERE OWNER = {schema} AND TABLE_NAME = {objectName} ORDER BY COLUMN_ID",
+               default);
+       }
+
+       public async Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className)
+        {
+            var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
+            var sb = new System.Text.StringBuilder();
+
+            foreach (var column in columns)
+            {
+                sb.AppendLine(GenerateProperty(column));
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+       private string GenerateProperty(OracleColumn column)
+        {
+            var propertyName = column.COLUMN_NAME.ToPascalCase();
+            var propertyChain = $"builder.Property(x => x.{propertyName})\n"
+                             + $"\t.HasColumnName(\"{column.COLUMN_NAME}\")\n"
+                             + $"\t.HasColumnType(\"{column.DATA_TYPE}\")";
+
+            if (column.DATA_TYPE == "NUMBER" && column.DATA_PRECISION.HasValue && column.DATA_SCALE.HasValue)
+            {
+                propertyChain += $"\n\t.HasPrecision({column.DATA_PRECISION.Value}, {column.DATA_SCALE.Value})";
+            }
+            else if (column.DATA_TYPE.Contains("VARCHAR") && column.DATA_LENGTH.HasValue)
+            {
+                propertyChain += $"\n\t.HasMaxLength({column.DATA_LENGTH.Value})";
+            }
+
+            return propertyChain + ";";
+        }
+
+       private string GetCSharpType(string oracleType)
+       {
+           if (oracleType.StartsWith("TIMESTAMP")) return "DateTime";
+
+           return oracleType switch
+           {
+               "DATE" => "DateTime",
+               "NUMBER" => "decimal",
+               "FLOAT" => "double",
+               "BINARY_FLOAT" => "float",
+               "BINARY_DOUBLE" => "double",
+               "VARCHAR2" => "string",
+               "NVARCHAR2" => "string",
+               "CHAR" => "string",
+               "NCHAR" => "string",
+               "CLOB" => "string",
+               "NCLOB" => "string",
+               "BLOB" => "byte[]",
+               "RAW" => "byte[]",
+               "LONG RAW" => "byte[]",
+               _ => "string"
+           };
+       }
+   }
 }

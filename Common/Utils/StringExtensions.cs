@@ -139,5 +139,18 @@ namespace Common.Utils
                 return new MarkupString($"[Error highlighting text: Invalid Pattern] {text}");
             }
         }
+
+        public static string ToPascalCase(this string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return str;
+
+            // Replace underscores with spaces and then capitalize each word.
+            var words = str.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
+            var result = string.Join("", words.Select(word =>
+                char.ToUpper(word[0]) + word.Substring(1).ToLower()));
+
+            return result;
+        }
     }
 }

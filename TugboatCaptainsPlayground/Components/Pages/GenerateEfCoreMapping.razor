@@ -1,0 +1,116 @@
+@page "/generate-efcore-mapping"
+@using Common.Models
+@using Common.Services
+@using Common.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using TugboatCaptainsPlayground.Services
+@inject IJSRuntime JSRuntime
+@inject IOracleSchemaService OracleSchemaService
+@inject ToastService toastService
+@inject IConfigurationService ConfigService
+
+<StickyFilter>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label" title="Ambiente de origem para comparação">Ambiente:</label>
+            <select class="form-select" @bind="SelectedEnvironment" @bind:after="EnvironmentChanged">
+                @foreach (var env in environments)
+                {
+                    <option value="@env.Name">@env.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" title="Tabela ou View">Tabela/View:</label>
+            <input type="text" class="form-control" list="tablesAndViews" @bind="SelectedTableOrView" />
+            <datalist id="tablesAndViews">
+                @foreach (var item in tablesAndViews)
+                {
+                    <option value="@item"></option>
+                }
+            </datalist>
+        </div>
+    </div>
+    <div class="row g-3 mt-2">
+        <div class="col-md-12">
+            <button class="btn btn-primary w-100" @onclick="GenerateCode">Gerar Código</button>
+        </div>
+    </div>
+</StickyFilter>
+
+@if (!string.IsNullOrEmpty(generatedCode))
+{
+    <div class="mt-4">
+        <textarea class="form-control" rows="20" readonly>@generatedCode</textarea>
+        <button class="btn btn-secondary mt-2" @onclick="() => CopyToClipboard(generatedCode)">Copiar</button>
+    </div>
+}
+
+@code {
+    private List<OracleEnvironment> environments = new();
+    private List<string> tablesAndViews = new();
+    private string SelectedEnvironment { get; set; }
+    private string SelectedTableOrView { get; set; }
+    private string generatedCode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var config = ConfigService.GetConfig();
+        environments = config.OracleEnvironments;
+        if (environments.Any())
+        {
+            SelectedEnvironment = environments.First().Name;
+            await LoadTablesAndViews();
+        }
+    }
+
+    private async Task EnvironmentChanged()
+    {
+        await LoadTablesAndViews();
+    }
+
+    private async Task LoadTablesAndViews()
+    {
+        if (string.IsNullOrEmpty(SelectedEnvironment)) return;
+
+        try
+        {
+            var env = environments.First(e => e.Name == SelectedEnvironment);
+            var result = await OracleSchemaService.GetTablesAndViewsAsync(env.ConnectionString, env.Schema);
+            tablesAndViews = result.ToList();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao carregar tabelas e views: {ex.Message}");
+        }
+    }
+
+    private async Task GenerateCode()
+    {
+        if (string.IsNullOrEmpty(SelectedEnvironment) || string.IsNullOrEmpty(SelectedTableOrView))
+        {
+            toastService.ShowError("Por favor, selecione o ambiente e a tabela/view.");
+            return;
+        }
+
+        try
+        {
+            var env = environments.First(e => e.Name == SelectedEnvironment);
+            generatedCode = await OracleSchemaService.GenerateEfCoreMappingClassAsync(env.ConnectionString, env.Schema, SelectedTableOrView, null);
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao gerar código: {ex.Message}");
+        }
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        if (!string.IsNullOrEmpty(text))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            toastService.ShowSuccess("Código copiado para a área de transferência!");
+        }
+    }
+}
