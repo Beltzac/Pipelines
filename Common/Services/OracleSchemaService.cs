@@ -213,20 +213,41 @@ namespace Common.Services
        private string GenerateProperty(OracleColumn column)
         {
             var propertyName = column.COLUMN_NAME.ToPascalCase();
-            var propertyChain = $"builder.Property(x => x.{propertyName})\n"
-                             + $"\t.HasColumnName(\"{column.COLUMN_NAME}\")\n"
-                             + $"\t.HasColumnType(\"{column.DATA_TYPE}\")";
+            var columnType = GetFullColumnType(column);
 
-            if (column.DATA_TYPE == "NUMBER" && column.DATA_PRECISION.HasValue && column.DATA_SCALE.HasValue)
+            var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
+                             + $"\t\t\t\t.HasColumnName(\"{column.COLUMN_NAME}\")\n"
+                             + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
+
+            if (column.NULLABLE == "N")
             {
-                propertyChain += $"\n\t.HasPrecision({column.DATA_PRECISION.Value}, {column.DATA_SCALE.Value})";
-            }
-            else if (column.DATA_TYPE.Contains("VARCHAR") && column.DATA_LENGTH.HasValue)
-            {
-                propertyChain += $"\n\t.HasMaxLength({column.DATA_LENGTH.Value})";
+                propertyChain += "\n\t\t\t\t.IsRequired()";
             }
 
             return propertyChain + ";";
+        }
+
+        private string GetFullColumnType(OracleColumn column)
+        {
+            switch (column.DATA_TYPE)
+            {
+                case "VARCHAR2":
+                case "NVARCHAR2":
+                case "CHAR":
+                    return $"{column.DATA_TYPE}({column.DATA_LENGTH})";
+                case "NUMBER":
+                    if (column.DATA_PRECISION.HasValue && column.DATA_SCALE.HasValue)
+                    {
+                        return $"NUMBER({column.DATA_PRECISION.Value}, {column.DATA_SCALE.Value})";
+                    }
+                    if (column.DATA_PRECISION.HasValue)
+                    {
+                        return $"NUMBER({column.DATA_PRECISION.Value})";
+                    }
+                    return "NUMBER";
+                default:
+                    return column.DATA_TYPE;
+            }
         }
 
        private string GetCSharpType(string oracleType)
