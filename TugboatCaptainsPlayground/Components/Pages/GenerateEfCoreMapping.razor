@@ -9,12 +9,14 @@
 @inject IOracleSchemaService OracleSchemaService
 @inject ToastService toastService
 @inject IConfigurationService ConfigService
+@inject GenerateEfCoreMappingStateService StateService
+@implements IDisposable
 
 <StickyFilter>
     <div class="row g-3 align-items-end">
         <div class="col-md-6">
             <label class="form-label" title="Ambiente de origem para comparação">Ambiente:</label>
-            <select class="form-select" @bind="SelectedEnvironment" @bind:after="EnvironmentChanged">
+            <select class="form-select" @bind="StateService.SelectedEnvironment" @bind:after="EnvironmentChanged">
                 @foreach (var env in environments)
                 {
                     <option value="@env.Name">@env.Name</option>
@@ -23,7 +25,7 @@
         </div>
         <div class="col-md-6">
             <label class="form-label" title="Tabela ou View">Tabela/View:</label>
-            <input type="text" class="form-control" list="tablesAndViews" @bind="SelectedTableOrView" />
+            <input type="text" class="form-control" list="tablesAndViews" @bind="StateService.SelectedTableOrView" />
             <datalist id="tablesAndViews">
                 @foreach (var item in tablesAndViews)
                 {
@@ -50,19 +52,22 @@
 @code {
     private List<OracleEnvironment> environments = new();
     private List<string> tablesAndViews = new();
-    private string SelectedEnvironment { get; set; }
-    private string SelectedTableOrView { get; set; }
     private string generatedCode;
 
     protected override async Task OnInitializedAsync()
     {
         var config = ConfigService.GetConfig();
         environments = config.OracleEnvironments;
-        if (environments.Any())
+
+        StateService.OnChange += StateHasChanged;
+        StateService.Load();
+
+        if (environments.Any() && string.IsNullOrEmpty(StateService.SelectedEnvironment))
         {
-            SelectedEnvironment = environments.First().Name;
-            await LoadTablesAndViews();
+            StateService.SelectedEnvironment = environments.First().Name;
         }
+
+        await LoadTablesAndViews();
     }
 
     private async Task EnvironmentChanged()
@@ -72,11 +77,11 @@
 
     private async Task LoadTablesAndViews()
     {
-        if (string.IsNullOrEmpty(SelectedEnvironment)) return;
+        if (string.IsNullOrEmpty(StateService.SelectedEnvironment)) return;
 
         try
         {
-            var env = environments.First(e => e.Name == SelectedEnvironment);
+            var env = environments.First(e => e.Name == StateService.SelectedEnvironment);
             var result = await OracleSchemaService.GetTablesAndViewsAsync(env.ConnectionString, env.Schema);
             tablesAndViews = result.ToList();
         }
@@ -88,7 +93,7 @@
 
     private async Task GenerateCode()
     {
-        if (string.IsNullOrEmpty(SelectedEnvironment) || string.IsNullOrEmpty(SelectedTableOrView))
+        if (string.IsNullOrEmpty(StateService.SelectedEnvironment) || string.IsNullOrEmpty(StateService.SelectedTableOrView))
         {
             toastService.ShowError("Por favor, selecione o ambiente e a tabela/view.");
             return;
@@ -96,8 +101,8 @@
 
         try
         {
-            var env = environments.First(e => e.Name == SelectedEnvironment);
-            generatedCode = await OracleSchemaService.GenerateEfCoreMappingClassAsync(env.ConnectionString, env.Schema, SelectedTableOrView, null);
+            var env = environments.First(e => e.Name == StateService.SelectedEnvironment);
+            generatedCode = await OracleSchemaService.GenerateEfCoreMappingClassAsync(env.ConnectionString, env.Schema, StateService.SelectedTableOrView, null);
         }
         catch (Exception ex)
         {
@@ -112,5 +117,11 @@
             await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
             toastService.ShowSuccess("Código copiado para a área de transferência!");
         }
+    }
+
+    public void Dispose()
+    {
+        StateService.OnChange -= StateHasChanged;
+        StateService.Save();
     }
 }
