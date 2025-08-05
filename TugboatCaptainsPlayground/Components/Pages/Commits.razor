@@ -75,6 +75,20 @@
                     }
                 </button>
             </div>
+            <div class="col-auto">
+                <button class="btn btn-primary text-nowrap" @onclick="async () => await RefreshPullRequestsFromAzureDevOps()" disabled="@CommitsStateService.IsLoading" title="Atualizar Pull Requests do Azure DevOps">
+                    @if (CommitsStateService.IsLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="ms-1">Atualizando PRs...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="ms-1">Atualizar PRs</span>
+                    }
+                </button>
+            </div>
             <div class="col">
                 <DatePresets OnDateRangeSelected="HandleDateRangeSelected" />
             </div>
@@ -107,15 +121,6 @@
             <strong>Erro ao carregar worklogs:</strong> @worklogLoadingError
         </div>
     </div>
-}
-
-@code {
-
-    private IEnumerable<DateTime> AllUniqueDates =>
-        commitDataList.Select(c => c.CommitDate.Date)
-            .Concat(pullRequestsByDate.Keys)
-            .Distinct()
-            .OrderByDescending(d => d);
 }
 
 @if (AllUniqueDates.Any())
@@ -316,6 +321,7 @@ else
     private string worklogLoadingError = null;
     private int worklogLoadingProgress = 0;
     private Dictionary<int, bool> retryLoadingStates = new Dictionary<int, bool>();
+    private (DateTime Start, DateTime End) WorklogDateRange;
 
     private List<Commit> commitsWithJira => commitDataList.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
 
@@ -357,16 +363,36 @@ else
         }
     }
 
+    private IEnumerable<DateTime> AllUniqueDates
+    {
+        get
+        {
+            var dates = commitDataList.Select(c => c.CommitDate.Date)
+                .Concat(pullRequestsByDate.Keys);
+
+            if (WorklogDateRange.End.Date != default)
+            {
+                dates = dates.Append(WorklogDateRange.End.Date);
+            }
+
+            return dates.Distinct().OrderByDescending(d => d);
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        WorklogDateRange = (DateTime.Today.AddDays(-30), DateTime.Today);
+        CommitsStateService.DataInicial = WorklogDateRange.Start;
+
         await FetchCommits();
         await LoadPullRequests();
     }
 
     private async Task HandleDateRangeSelected((DateTime? StartDate, DateTime? EndDate) args)
     {
-        if (args.StartDate != null && args.EndDate != null)
+        if (args.StartDate.HasValue && args.EndDate.HasValue)
         {
+            WorklogDateRange = (args.StartDate.Value, args.EndDate.Value);
             CommitsStateService.DataInicial = args.StartDate.Value;
             await FetchCommits();
         }
@@ -407,7 +433,7 @@ else
 
     private async Task FetchExistingWorklogs()
     {
-        if (!commitDataList.Any())
+        if (!AllUniqueDates.Any())
         {
             existingWorklogs = new List<TempoWorklog>();
             StateHasChanged();
@@ -423,12 +449,21 @@ else
         {
             var config = ConfigService.GetConfig();
             var accountId = config.TempoConfig?.AccountId;
+            var startDate = WorklogDateRange.Start;
+            var endDate = WorklogDateRange.End;
 
-            Logger.LogInformation("Fetching worklogs for {CommitCount} commits using accountId: {AccountId}",
-                commitDataList.Count, accountId ?? "fallback");
+            Logger.LogInformation("Fetching worklogs from {StartDate} to {EndDate} using accountId: {AccountId}",
+                startDate.ToShortDateString(), endDate.ToShortDateString(), accountId ?? "fallback");
 
-            // Use the new efficient method to fetch all worklogs at once
-            var allWorklogs = await WorklogService.GetWorklogsForCommitsAsync(commitDataList, accountId);
+            List<TempoWorklog> allWorklogs;
+            if (!string.IsNullOrEmpty(accountId))
+            {
+                allWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, startDate, endDate);
+            }
+            else
+            {
+                allWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(startDate, endDate);
+            }
 
             // Deduplicate worklogs by ID to prevent duplicates
             existingWorklogs = allWorklogs
@@ -515,78 +550,211 @@ else
         }
     }
 
-    private async Task DownloadCommits()
+    private async Task RefreshPullRequestsFromAzureDevOps()
     {
-        await CommitDataExportService.ExportCommitDataAsync();
+        CommitsStateService.IsLoading = true;
+        try
+        {
+            await RepositoryService.FetchBuildInfoAsync(); // This fetches and persists the latest PR data
+            await LoadPullRequests(); // This loads the fresh data into the UI
+            toastService.ShowSuccess("Pull Requests atualizados com sucesso!");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao atualizar Pull Requests: {ex.Message}");
+        }
+        finally
+        {
+            CommitsStateService.IsLoading = false;
+        }
     }
 
-    private async Task CopyToClipboard(string jiraCardID)
+    private async Task DownloadCommits()
     {
-        await JS.InvokeVoidAsync("navigator.clipboard.writeText", jiraCardID);
-        toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
+        var config = ConfigService.GetConfig();
+        var commitsToExport = commitDataList.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
+        if (!commitsToExport.Any())
+        {
+            toastService.ShowWarning("Nenhum commit com JIRA ID para exportar.");
+            return;
+        }
+
+        try
+        {
+            var excelBytes = CommitDataExportService.ExportToExcel(commitsToExport, existingWorklogs);
+            var fileName = $"Commits_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            await JS.InvokeVoidAsync("saveAsFile", fileName, Convert.ToBase64String(excelBytes));
+            toastService.ShowSuccess("Commits exportados com sucesso!");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao exportar commits: {ex.Message}");
+        }
     }
 
     private async Task SendWorklogsToTempo()
     {
-        if (!commitsWithJira.Any())
-        {
-            toastService.ShowWarning("No commits with JIRA cards found");
-            return;
-        }
-
         isSendingWorklogs = true;
+        worklogResults.Clear();
+        StateHasChanged();
+
         try
         {
-            worklogResults = await WorklogService.CreateWorklogsFromCommitsAsync(commitsWithJira);
+            var config = ConfigService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
 
-            var successful = worklogResults.Count(r => r.Success);
-            var failed = worklogResults.Count(r => !r.Success);
-
-            if (successful > 0)
+            foreach (var commit in commitsWithJira)
             {
-                toastService.ShowSuccess($"Successfully created {successful} worklogs");
+                var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+                worklogResults.Add(result);
+                StateHasChanged();
             }
-
-            if (failed > 0)
-            {
-                toastService.ShowWarning($"Failed to create {failed} worklogs");
-            }
+            toastService.ShowSuccess("Worklogs enviados com sucesso!");
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error sending worklogs: {ex.Message}");
+            toastService.ShowError($"Erro ao enviar worklogs: {ex.Message}");
         }
         finally
         {
             isSendingWorklogs = false;
+            await RefreshWorklogs();
         }
     }
 
-    private async Task SendSingleWorklogToTempo(Commit commit)
+    private async Task SendDailyWorklogsToTempo()
     {
-        if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
-        {
-            toastService.ShowWarning("No JIRA card found for this commit");
-            return;
-        }
+        isSendingWorklogs = true;
+        worklogResults.Clear();
+        StateHasChanged();
 
         try
         {
-            var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+            var config = ConfigService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
 
-            if (result.Success)
+            var dailyGroupedCommits = commitDataList
+                .Where(c => !string.IsNullOrEmpty(c.JiraCardID))
+                .GroupBy(c => c.CommitDate.Date)
+                .OrderByDescending(g => g.Key);
+
+            foreach (var dayGroup in dailyGroupedCommits)
             {
-                toastService.ShowSuccess($"Worklog created for {commit.JiraCardID}");
+                var result = await WorklogService.CreateDailyWorklogForCommitsAsync(dayGroup.ToList(), accountId);
+                worklogResults.Add(result);
+                StateHasChanged();
+            }
+            toastService.ShowSuccess("Worklogs diários enviados com sucesso!");
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao enviar worklogs diários: {ex.Message}");
+        }
+        finally
+        {
+            isSendingWorklogs = false;
+            await RefreshWorklogs();
+        }
+    }
+
+    private async Task SendDailyWorklogsForDate(DateTime date)
+    {
+        isSendingWorklogs = true;
+        worklogResults.Clear();
+        StateHasChanged();
+
+        try
+        {
+            var config = ConfigService.GetConfig();
+            var accountId = config.TempoConfig?.AccountId;
+
+            var dayCommits = commitDataList
+                .Where(c => !string.IsNullOrEmpty(c.JiraCardID) && c.CommitDate.Date == date)
+                .ToList();
+
+            if (dayCommits.Any())
+            {
+                var result = await WorklogService.CreateDailyWorklogForCommitsAsync(dayCommits, accountId);
+                worklogResults.Add(result);
+                toastService.ShowSuccess($"Worklog diário para {date.ToShortDateString()} enviado com sucesso!");
             }
             else
             {
-                toastService.ShowError($"Failed to create worklog: {result.Error}");
+                toastService.ShowWarning($"Nenhum commit com JIRA ID encontrado para {date.ToShortDateString()}.");
             }
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Error sending worklog: {ex.Message}");
+            toastService.ShowError($"Erro ao enviar worklog diário para {date.ToShortDateString()}: {ex.Message}");
         }
+        finally
+        {
+            isSendingWorklogs = false;
+            await RefreshWorklogs();
+        }
+    }
+
+    private async Task RefreshWorklogs()
+    {
+        await FetchExistingWorklogs();
+    }
+
+    private async Task DeleteWorklogsForDate(DateTime date)
+    {
+        try
+        {
+            var worklogsToDelete = existingWorklogs.Where(w => w.StartDate.Date == date).ToList();
+            if (!worklogsToDelete.Any())
+            {
+                toastService.ShowWarning($"Nenhum worklog encontrado para {date.ToShortDateString()}.");
+                return;
+            }
+
+            foreach (var worklog in worklogsToDelete)
+            {
+                await WorklogService.DeleteWorklogAsync(worklog.Id);
+            }
+            toastService.ShowSuccess($"Worklogs para {date.ToShortDateString()} deletados com sucesso!");
+            await RefreshWorklogs();
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"Erro ao deletar worklogs para {date.ToShortDateString()}: {ex.Message}");
+        }
+    }
+
+    private int GetResultKey(WorklogCreationResult result)
+    {
+        // Simple hash code for the result to use as a dictionary key
+        return HashCode.Combine(result.Commit?.Id, result.Commit?.JiraCardID, result.Success);
+    }
+
+    private async Task RetryWorklogAsync(WorklogCreationResult result)
+    {
+        var key = GetResultKey(result);
+        retryLoadingStates[key] = true;
+        StateHasChanged();
+
+        WorklogCreationResult newResult;
+        if (result.Commit != null)
+        {
+            newResult = await WorklogService.CreateWorklogFromCommitAsync(result.Commit);
+        }
+        else
+        {
+            // Assuming we will add PullRequest to WorklogCreationResult
+            // For now, this part is not implemented
+            newResult = new WorklogCreationResult { Success = false, Error = "Retry for Pull Request worklogs is not implemented." };
+        }
+
+        var index = worklogResults.FindIndex(r => GetResultKey(r) == key);
+        if (index != -1)
+        {
+            worklogResults[index] = newResult;
+        }
+
+        retryLoadingStates[key] = false;
+        StateHasChanged();
     }
 
     private async Task SendSingleWorklogToTempoForPullRequest(PullRequest pullRequest, string jiraCardID)
@@ -596,11 +764,9 @@ else
             toastService.ShowWarning("No JIRA card found for this pull request");
             return;
         }
-
         try
         {
             var result = await WorklogService.CreateWorklogFromPullRequestAsync(pullRequest, jiraCardID);
-
             if (result.Success)
             {
                 toastService.ShowSuccess($"Worklog created for PR {jiraCardID}");
@@ -615,399 +781,4 @@ else
             toastService.ShowError($"Error sending worklog for PR {jiraCardID}: {ex.Message}");
         }
     }
-
-    private async Task SendDailyWorklogsToTempo()
-    {
-        if (!commitsWithJira.Any())
-        {
-            toastService.ShowWarning("No commits with JIRA cards found");
-            return;
-        }
-
-        // Confirm with user before proceeding
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            "This will distribute 8 hours evenly between all commits for each day. Continue?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        isSendingWorklogs = true;
-        try
-        {
-            var groupedByDay = commitsWithJira
-                .GroupBy(c => c.CommitDate.Date)
-                .OrderByDescending(g => g.Key)
-                .ToList();
-
-            var allResults = new List<WorklogCreationResult>();
-            var affectedDates = new HashSet<DateTime>();
-
-            foreach (var dayGroup in groupedByDay)
-            {
-                var commitsForDay = dayGroup.ToList();
-                var totalCommits = commitsForDay.Count;
-
-                if (totalCommits == 0) continue;
-
-                // Split 8 hours (480 minutes) evenly between all commits for the day
-                // Use integer division with remainder distribution
-                var baseTimePerCommit = 480 / totalCommits;
-                var remainderMinutes = 480 % totalCommits;
-
-                // Create worklogs for each commit in the day
-                for (int i = 0; i < commitsForDay.Count; i++)
-                {
-                    var commit = commitsForDay[i];
-                    // Distribute remainder minutes to first commits
-                    var timeForThisCommit = baseTimePerCommit + (i < remainderMinutes ? 1 : 0);
-                    var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeForThisCommit);
-                    allResults.Add(result);
-                    affectedDates.Add(dayGroup.Key.Date);
-                }
-            }
-
-            worklogResults = allResults;
-
-            var successful = allResults.Count(r => r.Success);
-            var failed = allResults.Count(r => !r.Success);
-
-            if (successful > 0)
-            {
-                toastService.ShowSuccess($"Successfully created {successful} worklogs with distributed 8h daily time");
-                // Refresh only the affected dates
-                await RefreshWorklogsForDates(affectedDates);
-            }
-
-            if (failed > 0)
-            {
-                toastService.ShowWarning($"Failed to create {failed} worklogs");
-            }
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Error sending daily worklogs: {ex.Message}");
-        }
-        finally
-        {
-            isSendingWorklogs = false;
-        }
-    }
-
-    private async Task SendDailyWorklogsForDate(DateTime date)
-    {
-        var commitsForDate = commitsWithJira.Where(c => c.CommitDate.Date == date.Date).ToList();
-
-        if (!commitsForDate.Any())
-        {
-            toastService.ShowWarning("No commits with JIRA cards found for this date");
-            return;
-        }
-
-        // Confirm with user before proceeding
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            $"This will distribute 8 hours evenly between {commitsForDate.Count} commits for {date:dd/MM/yyyy}. Continue?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        isSendingWorklogs = true;
-        try
-        {
-            var totalCommits = commitsForDate.Count;
-            var baseTimePerCommit = 480 / totalCommits;
-            var remainderMinutes = 480 % totalCommits;
-
-            var results = new List<WorklogCreationResult>();
-
-            for (int i = 0; i < commitsForDate.Count; i++)
-            {
-                var commit = commitsForDate[i];
-                // Distribute remainder minutes to first commits
-                var timeForThisCommit = baseTimePerCommit + (i < remainderMinutes ? 1 : 0);
-                var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeForThisCommit);
-                results.Add(result);
-            }
-
-            worklogResults = results;
-
-            var successful = results.Count(r => r.Success);
-            var failed = results.Count(r => !r.Success);
-
-            if (successful > 0)
-            {
-                toastService.ShowSuccess($"Successfully created {successful} worklogs for {date:dd/MM/yyyy}");
-                // Refresh only the affected date
-                await RefreshWorklogsForDates(new HashSet<DateTime> { date.Date });
-            }
-
-            if (failed > 0)
-            {
-                toastService.ShowWarning($"Failed to create {failed} worklogs");
-            }
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Error sending worklogs for {date:dd/MM/yyyy}: {ex.Message}");
-        }
-        finally
-        {
-            isSendingWorklogs = false;
-        }
-    }
-
-    private async Task RefreshWorklogs()
-    {
-        if (isLoadingWorklogs) return;
-
-        isLoadingWorklogs = true;
-        try
-        {
-            await FetchExistingWorklogs();
-            toastService.ShowSuccess("Worklogs atualizados com sucesso!");
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Erro ao atualizar worklogs: {ex.Message}");
-        }
-        finally
-        {
-            isLoadingWorklogs = false;
-        }
-    }
-
-    private async Task RefreshWorklogsForDates(HashSet<DateTime> datesToRefresh)
-    {
-        if (isLoadingWorklogs || !datesToRefresh.Any()) return;
-
-        isLoadingWorklogs = true;
-        try
-        {
-            var config = ConfigService.GetConfig();
-            var accountId = config.TempoConfig?.AccountId;
-
-            Logger.LogInformation("Refreshing worklogs for {Count} specific dates", datesToRefresh.Count);
-
-            foreach (var date in datesToRefresh)
-            {
-                try
-                {
-                    List<TempoWorklog> dayWorklogs;
-
-                    if (!string.IsNullOrEmpty(accountId))
-                    {
-                        dayWorklogs = await WorklogService.GetWorklogsByUserAsync(accountId, date.Date, date.Date.AddDays(1).AddTicks(-1));
-                    }
-                    else
-                    {
-                        dayWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(date, date);
-                    }
-
-                    // Update only the specific date in existingWorklogs
-                    var worklogsToRemove = existingWorklogs.Where(w => w.StartDate.Date == date.Date).ToList();
-                    foreach (var worklog in worklogsToRemove)
-                    {
-                        existingWorklogs.Remove(worklog);
-                    }
-
-                    existingWorklogs.AddRange(dayWorklogs);
-                    Logger.LogDebug("Refreshed worklogs for date: {Date:yyyy-MM-dd}, found {Count} worklogs", date, dayWorklogs.Count);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Error refreshing worklogs for {Date:yyyy-MM-dd}: {Message}", date, ex.Message);
-                }
-            }
-
-            // Deduplicate worklogs by ID to prevent duplicates
-            existingWorklogs = existingWorklogs
-                .GroupBy(w => w.Id)
-                .Select(g => g.First())
-                .ToList();
-
-            StateHasChanged();
-            Logger.LogInformation("Successfully refreshed worklogs for {Count} dates", datesToRefresh.Count);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to refresh worklogs for specific dates: {Message}", ex.Message);
-            toastService.ShowError($"Error refreshing worklogs: {ex.Message}");
-        }
-        finally
-        {
-            isLoadingWorklogs = false;
-        }
-    }
-
-    private async Task DeleteWorklogsForDate(DateTime date)
-    {
-        var worklogsForDate = existingWorklogs.Where(w => w.StartDate.Date == date.Date).ToList();
-
-        if (!worklogsForDate.Any())
-        {
-            toastService.ShowWarning("Nenhum worklog encontrado para esta data");
-            return;
-        }
-
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            $"Tem certeza que deseja deletar todos os {worklogsForDate.Count} worklogs de {date:dd/MM/yyyy}?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        try
-        {
-            var config = ConfigService.GetConfig();
-            var accountId = config.TempoConfig?.AccountId;
-
-            if (string.IsNullOrEmpty(accountId))
-            {
-                toastService.ShowError("Account ID não configurado");
-                return;
-            }
-
-            var deleteResults = new List<bool>();
-            foreach (var worklog in worklogsForDate)
-            {
-                try
-                {
-                    await WorklogService.DeleteWorklogAsync(worklog.Id);
-                    deleteResults.Add(true);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Erro ao deletar worklog {WorklogId}: {Message}", worklog.Id, ex.Message);
-                    deleteResults.Add(false);
-                }
-            }
-
-            var successful = deleteResults.Count(r => r);
-            var failed = deleteResults.Count - successful;
-
-            if (successful > 0)
-            {
-                toastService.ShowSuccess($"Deletados {successful} worklogs com sucesso");
-            }
-
-            if (failed > 0)
-            {
-                toastService.ShowWarning($"Falha ao deletar {failed} worklogs");
-            }
-
-            // Refresh only the affected date
-            await RefreshWorklogsForDates(new HashSet<DateTime> { date.Date });
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Erro ao deletar worklogs: {ex.Message}");
-        }
-    }
-
-    private async Task DeleteSingleWorklog(TempoWorklog worklog)
-    {
-        if (worklog == null)
-        {
-            return;
-        }
-
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-            $"Tem certeza que deseja deletar o worklog para {worklog.Issue.Key} ({worklog.StartDate:dd/MM/yyyy HH:mm})?");
-
-        if (!confirmed)
-        {
-            return;
-        }
-
-        try
-        {
-            await WorklogService.DeleteWorklogAsync(worklog.Id);
-            toastService.ShowSuccess($"Worklog deletado com sucesso");
-
-            // Refresh only the affected date
-            await RefreshWorklogsForDates(new HashSet<DateTime> { worklog.StartDate.Date });
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Erro ao deletar worklog: {ex.Message}");
-        }
-    }
-
-    private async Task RetryWorklogAsync(WorklogCreationResult failedResult)
-    {
-        if (failedResult?.Commit == null)
-        {
-            toastService.ShowError("Invalid worklog data for retry");
-            return;
-        }
-
-        var resultKey = GetResultKey(failedResult);
-        retryLoadingStates[resultKey] = true;
-        StateHasChanged();
-
-        try
-        {
-            var newResult = await WorklogService.CreateWorklogFromCommitAsync(failedResult.Commit);
-
-            // Find and replace the failed result in the list
-            var index = worklogResults.FindIndex(r => GetResultKey(r) == resultKey);
-            if (index >= 0)
-            {
-                worklogResults[index] = newResult;
-
-                if (newResult.Success)
-                {
-                    toastService.ShowSuccess($"Worklog created successfully for {newResult.Commit.JiraCardID}");
-                    // Refresh worklogs for the affected date
-                    await RefreshWorklogsForDates(new HashSet<DateTime> { newResult.Commit.CommitDate.Date });
-                }
-                else
-                {
-                    toastService.ShowError($"Retry failed: {newResult.Error}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            toastService.ShowError($"Error during retry: {ex.Message}");
-        }
-        finally
-        {
-            retryLoadingStates[resultKey] = false;
-            StateHasChanged();
-        }
-    }
-
-    private int GetResultKey(WorklogCreationResult result)
-    {
-        if (result?.Commit == null) return 0;
-        return HashCode.Combine(
-            result.Commit.Id,
-            result.Commit.JiraCardID,
-            result.Commit.CommitDate
-        );
-    }
 }
-
-<style>
-    .progress {
-        position: relative;
-    }
-
-    .progress-text {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        color: black;
-        font-weight: bold;
-    }
-
-    .clickable-badge {
-        cursor: pointer;
-    }
-</style>

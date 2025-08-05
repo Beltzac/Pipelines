@@ -16,6 +16,7 @@ namespace Common.Services.Interfaces
         Task<WorklogCreationResult> CreateWorklogFromPullRequestAsync(PullRequest pullRequest, string jiraCardID, int timeSpentMinutes = 60);
         Task<WorklogCreationResult> CreateGMPullRequestWorklogAsync(PullRequest pullRequest, string jiraCardID);
         Task DeleteWorklogAsync(string worklogId);
-        Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null);
+        Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null, DateTime? endDate = null);
+        Task<WorklogCreationResult> CreateDailyWorklogForCommitsAsync(List<Commit> commits, string accountId);
     }
 }

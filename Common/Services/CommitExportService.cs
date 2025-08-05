@@ -166,21 +166,7 @@ namespace Common.Services
             return match.Success ? match.Value : string.Empty;
         }
 
-        private string GenerateExcelFilePath()
-        {
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
-            string fileName = $"CommitData_{timestamp}.xlsx";
-            string directory = Path.GetTempPath();
-
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            return Path.Combine(directory, fileName);
-        }
-
-        private void ExportToExcel(List<Commit> data, string filePath)
+        public byte[] ExportToExcel(List<Commit> commits, List<TempoWorklog> worklogs)
         {
             using (var workbook = new XLWorkbook())
             {
@@ -196,9 +182,9 @@ namespace Common.Services
                 worksheet.Cell(1, 9).Value = "Commit Date";
                 worksheet.Cell(1, 10).Value = "JIRA Card ID";
 
-                for (int i = 0; i < data.Count; i++)
+                for (int i = 0; i < commits.Count; i++)
                 {
-                    var commit = data[i];
+                    var commit = commits[i];
                     int row = i + 2;
 
                     worksheet.Cell(row, 1).Value = commit.Id;
@@ -214,7 +200,12 @@ namespace Common.Services
                 }
 
                 worksheet.Columns().AdjustToContents();
-                workbook.SaveAs(filePath);
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    return stream.ToArray();
+                }
             }
         }
         public async Task<List<Commit>> GetRecentCommitsAsync(string username, DateTime? dateFilter = null)
@@ -241,14 +232,15 @@ namespace Common.Services
                 if (commitDataList != null && commitDataList.Any())
                 {
                     // Export to Excel
-                    string filePath = GenerateExcelFilePath();
-                    ExportToExcel(commitDataList, filePath);
+                    // No longer exporting to a file, so this is commented out.
+                    // string filePath = GenerateExcelFilePath();
+                    // ExportToExcel(commitDataList, filePath);
 
                     // Open the file in the default application
-                    Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
+                    // Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true });
 
 
-                    _logger.LogInformation($"Dados do commit exportados para {filePath}");
+                    // _logger.LogInformation($"Dados do commit exportados para {filePath}");
                 }
                 else
                     _logger.LogInformation("Nenhum dado de commit disponível para exportação.");

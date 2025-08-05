@@ -32,5 +32,6 @@ namespace Common.Services.Interfaces
         Task<Guid> GetIdFromPathAsync(string? path);
         Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId, CancellationToken cancellationToken);
         Task<(int Successful, int Failed)> PullAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken);
+        Task FetchBuildInfoAsync();
     }
 }

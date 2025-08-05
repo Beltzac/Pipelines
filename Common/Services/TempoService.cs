@@ -56,44 +56,85 @@ namespace Common.Services
 
         public async Task<List<TempoWorklog>> GetWorklogsAsync(DateTime? from = null, DateTime? to = null)
         {
-            var queryParams = new List<string>();
-            if (from.HasValue)
-                queryParams.Add($"from={from.Value:yyyy-MM-dd}");
-            if (to.HasValue)
-                queryParams.Add($"to={to.Value:yyyy-MM-dd}");
+            var allWorklogs = new List<TempoWorklog>();
+            var offset = 0;
+            var limit = 50; // Tempo API default/max limit is often 50 or 1000
+            int totalCount;
 
-            var endpoint = $"worklogs" + (queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "");
-            var request = CreateRequest(HttpMethod.Get, endpoint);
+            do
+            {
+                var queryParams = new List<string>();
+                if (from.HasValue)
+                    queryParams.Add($"from={from.Value:yyyy-MM-dd}");
+                if (to.HasValue)
+                    queryParams.Add($"to={to.Value:yyyy-MM-dd}");
 
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+                queryParams.Add($"offset={offset}");
+                queryParams.Add($"limit={limit}");
 
-            var content = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(content, _jsonOptions);
-            return responseData?.Results ?? new List<TempoWorklog>();
+                var endpoint = $"worklogs?" + string.Join("&", queryParams);
+                var request = CreateRequest(HttpMethod.Get, endpoint);
+
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(content, _jsonOptions);
+
+                if (responseData?.Results != null)
+                {
+                    allWorklogs.AddRange(responseData.Results);
+                }
+
+                totalCount = responseData?.Metadata?.Count ?? 0;
+                offset += limit;
+
+            } while (offset < totalCount);
+
+            return allWorklogs;
         }
 
         public async Task<List<TempoWorklog>> GetWorklogsByUserAsync(string accountId, DateTime? from = null, DateTime? to = null)
         {
-            var requestBody = new
+            var allWorklogs = new List<TempoWorklog>();
+            var offset = 0;
+            var limit = 50;
+            int totalCount;
+
+            do
             {
-                authorIds = new[] { accountId },
-                from = from?.ToString("yyyy-MM-dd"),
-                to = to?.ToString("yyyy-MM-dd")
-            };
+                var requestBody = new
+                {
+                    authorIds = new[] { accountId },
+                    from = from?.ToString("yyyy-MM-dd"),
+                    to = to?.ToString("yyyy-MM-dd"),
+                    offset,
+                    limit
+                };
 
-            var json = JsonSerializer.Serialize(requestBody, _jsonOptions);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var json = JsonSerializer.Serialize(requestBody, _jsonOptions);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var request = CreateRequest(HttpMethod.Post, "worklogs/search");
-            request.Content = content;
+                var request = CreateRequest(HttpMethod.Post, "worklogs/search");
+                request.Content = content;
 
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
 
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(responseContent, _jsonOptions);
-            return responseData?.Results ?? new List<TempoWorklog>();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseData = JsonSerializer.Deserialize<TempoWorklogResponse>(responseContent, _jsonOptions);
+
+                if (responseData?.Results != null)
+                {
+                    allWorklogs.AddRange(responseData.Results);
+                }
+
+                totalCount = responseData?.Metadata?.Count ?? 0;
+                offset += limit;
+
+            } while (offset < totalCount);
+
+            return allWorklogs;
         }
 
         public async Task<TempoWorklog> CreateWorklogAsync(CreateWorklogRequest request)

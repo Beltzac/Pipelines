@@ -341,7 +341,7 @@ namespace Common.Services
             }
         }
 
-        public async Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null)
+        public async Task<List<TempoWorklog>> GetWorklogsForCommitsAsync(List<Commit> commits, string accountId = null, DateTime? endDate = null)
         {
             if (commits == null || !commits.Any())
             {
@@ -351,7 +351,7 @@ namespace Common.Services
             try
             {
                 var startDate = commits.Min(c => c.CommitDate.Date);
-                var endDate = commits.Max(c => c.CommitDate.Date);
+                var effectiveEndDate = endDate.HasValue ? endDate.Value.Date : commits.Max(c => c.CommitDate.Date);
 
                 // Use accountId if provided, otherwise use configured account
                 if (string.IsNullOrEmpty(accountId))
@@ -364,12 +364,12 @@ namespace Common.Services
                 if (!string.IsNullOrEmpty(accountId))
                 {
                     // Use user-specific endpoint if account ID is available
-                    worklogs = await GetWorklogsByUserAsync(accountId, startDate, endDate);
+                    worklogs = await GetWorklogsByUserAsync(accountId, startDate, effectiveEndDate);
                 }
                 else
                 {
                     // Fallback to date range endpoint
-                    worklogs = await GetExistingWorklogsForDateRangeAsync(startDate, endDate);
+                    worklogs = await GetExistingWorklogsForDateRangeAsync(startDate, effectiveEndDate);
                 }
 
                 return worklogs;
@@ -385,6 +385,24 @@ namespace Common.Services
         {
             var cleanMessage = commit.CommitMessage.Split('\n')[0]; // Take only first line
             return $"{cleanMessage} (Commit: {commit.Id.Substring(0, 8)} - {commit.RepoName}/{commit.BranchName})";
+        }
+        public async Task<WorklogCreationResult> CreateDailyWorklogForCommitsAsync(List<Commit> commits, string accountId)
+        {
+            if (commits == null || !commits.Any())
+            {
+                return new WorklogCreationResult
+                {
+                    Success = false,
+                    Message = "No commits provided for daily worklog",
+                    Error = "Commit list is empty"
+                };
+            }
+
+            var totalTimeSpentMinutes = 480; // 8 hours
+            var description = $"Daily worklog for {commits.Count} commits";
+            var representativeCommit = commits.First();
+
+            return await CreateWorklogInternalAsync(representativeCommit, totalTimeSpentMinutes, description);
         }
     }
 }
