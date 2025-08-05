@@ -212,14 +212,14 @@ namespace Common.Services
 
        private string GenerateProperty(OracleColumn column)
         {
-            var propertyName = column.COLUMN_NAME.ToPascalCase();
+            var propertyName = column.ColumnName.ToPascalCase();
             var columnType = GetFullColumnType(column);
 
             var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
-                             + $"\t\t\t\t.HasColumnName(\"{column.COLUMN_NAME}\")\n"
+                             + $"\t\t\t\t.HasColumnName(\"{column.ColumnName}\")\n"
                              + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
 
-            if (column.NULLABLE == "N")
+            if (column.Nullable == "N")
             {
                 propertyChain += "\n\t\t\t\t.IsRequired()";
             }
@@ -229,24 +229,24 @@ namespace Common.Services
 
         private string GetFullColumnType(OracleColumn column)
         {
-            switch (column.DATA_TYPE)
+            switch (column.DataType)
             {
                 case "VARCHAR2":
                 case "NVARCHAR2":
                 case "CHAR":
-                    return $"{column.DATA_TYPE}({column.DATA_LENGTH})";
+                    return $"{column.DataType}({column.DataLength})";
                 case "NUMBER":
-                    if (column.DATA_PRECISION.HasValue && column.DATA_SCALE.HasValue)
+                    if (column.DataPrecision.HasValue && column.DataScale.HasValue)
                     {
-                        return $"NUMBER({column.DATA_PRECISION.Value}, {column.DATA_SCALE.Value})";
+                        return $"NUMBER({column.DataPrecision.Value}, {column.DataScale.Value})";
                     }
-                    if (column.DATA_PRECISION.HasValue)
+                    if (column.DataPrecision.HasValue)
                     {
-                        return $"NUMBER({column.DATA_PRECISION.Value})";
+                        return $"NUMBER({column.DataPrecision.Value})";
                     }
                     return "NUMBER";
                 default:
-                    return column.DATA_TYPE;
+                    return column.DataType;
             }
         }
 
