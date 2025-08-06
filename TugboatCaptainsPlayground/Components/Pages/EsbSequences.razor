@@ -5,15 +5,16 @@
 @inject IEsbService EsbService
 @inject ILogger<EsbSequences> Logger
 @inject IConfigurationService ConfigService
+@inject EsbSequencesStateService EsbSequencesStateService
+@implements IDisposable
 
 <h3>ESB Sequences</h3>
-
-<div class="row g-3 mb-3">
+<div class="row g-3 mb-3 align-items-end">
     <div class="col-md-6">
         <div class="form-group">
             <label class="form-label">ESB Server:</label>
-            <select class="form-select" @bind="selectedEsbServerName" @bind:after="OnEsbServerChanged">
-                @foreach (var server in esbServers)
+            <select class="form-select" @bind="EsbSequencesStateService.SelectedEsbServerName" @bind:after="OnEsbServerChanged">
+                @foreach (var server in EsbSequencesStateService.EsbServers)
                 {
                     <option value="@server.Name">@server.Name</option>
                 }
@@ -23,8 +24,11 @@
     <div class="col-md-6">
         <div class="form-group">
             <label class="form-label">Search:</label>
-            <input type="text" class="form-control" @bind-value="searchTerm" @bind-value:event="oninput" placeholder="Search sequences..." />
+            <input type="text" class="form-control" @bind-value="EsbSequencesStateService.SearchTerm" @bind-value:event="oninput" placeholder="Search sequences..." />
         </div>
+    </div>
+    <div class="col-md-12">
+        <button class="btn btn-primary" @onclick="LoadEsbSequences">Reload Sequences</button>
     </div>
 </div>
 
@@ -32,7 +36,7 @@
     <div class="col-md-4">
         <div class="form-group">
             <label class="form-label">Enable Statistics:</label>
-            <select class="form-select" @bind="filterEnableStatistics">
+            <select class="form-select" @bind="EsbSequencesStateService.FilterEnableStatistics">
                 <option value="">All</option>
                 <option value="true">Yes</option>
                 <option value="false">No</option>
@@ -42,7 +46,7 @@
     <div class="col-md-4">
         <div class="form-group">
             <label class="form-label">Enable Tracing:</label>
-            <select class="form-select" @bind="filterEnableTracing">
+            <select class="form-select" @bind="EsbSequencesStateService.FilterEnableTracing">
                 <option value="">All</option>
                 <option value="true">Yes</option>
                 <option value="false">No</option>
@@ -52,7 +56,7 @@
     <div class="col-md-4">
         <div class="form-group">
             <label class="form-label">Is Edited:</label>
-            <select class="form-select" @bind="filterIsEdited">
+            <select class="form-select" @bind="EsbSequencesStateService.FilterIsEdited">
                 <option value="">All</option>
                 <option value="true">Yes</option>
                 <option value="false">No</option>
@@ -61,17 +65,17 @@
     </div>
 </div>
 
- @if (isLoading)
+@if (EsbSequencesStateService.IsLoading)
 {
     <div class="alert alert-info">Loading ESB sequences...</div>
 }
-else if (!string.IsNullOrEmpty(errorMessage))
+else if (!string.IsNullOrEmpty(EsbSequencesStateService.ErrorMessage))
 {
-    <div class="alert alert-danger">Error: @errorMessage</div>
+    <div class="alert alert-danger">Error: @EsbSequencesStateService.ErrorMessage</div>
 }
 else
 {
-    @if (sequences.Any())
+    @if (FilteredSequences.Any())
     {
         <table class="table table-striped">
             <thead>
@@ -106,47 +110,49 @@ else
 }
 
 @code {
-    private List<SequenceInfo> sequences = new List<SequenceInfo>();
-    private bool isLoading = true;
-    private string errorMessage;
-    private List<EsbServerConfig> esbServers = new List<EsbServerConfig>();
-    private string selectedEsbServerName;
-    private string searchTerm = string.Empty;
-    private string filterEnableStatistics = string.Empty;
-    private string filterEnableTracing = string.Empty;
-    private string filterIsEdited = string.Empty;
+    private ConfigModel config;
 
-    private IEnumerable<SequenceInfo> FilteredSequences => sequences.Where(s =>
-        (string.IsNullOrEmpty(searchTerm) ||
-        s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-        s.ArtifactContainerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-        (s.Description != null && s.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))) &&
-        (string.IsNullOrEmpty(filterEnableStatistics) || s.EnableStatistics.ToString().Equals(filterEnableStatistics, StringComparison.OrdinalIgnoreCase)) &&
-        (string.IsNullOrEmpty(filterEnableTracing) || s.EnableTracing.ToString().Equals(filterEnableTracing, StringComparison.OrdinalIgnoreCase)) &&
-        (string.IsNullOrEmpty(filterIsEdited) || s.IsEdited.ToString().Equals(filterIsEdited, StringComparison.OrdinalIgnoreCase))
+    private IEnumerable<SequenceInfo> FilteredSequences => EsbSequencesStateService.Sequences.Where(s =>
+        (string.IsNullOrEmpty(EsbSequencesStateService.SearchTerm) ||
+        s.Name.Contains(EsbSequencesStateService.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+        s.ArtifactContainerName.Contains(EsbSequencesStateService.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+        (s.Description != null && s.Description.Contains(EsbSequencesStateService.SearchTerm, StringComparison.OrdinalIgnoreCase))) &&
+        (string.IsNullOrEmpty(EsbSequencesStateService.FilterEnableStatistics) || s.EnableStatistics.ToString().Equals(EsbSequencesStateService.FilterEnableStatistics, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(EsbSequencesStateService.FilterEnableTracing) || s.EnableTracing.ToString().Equals(EsbSequencesStateService.FilterEnableTracing, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(EsbSequencesStateService.FilterIsEdited) || s.IsEdited.ToString().Equals(EsbSequencesStateService.FilterIsEdited, StringComparison.OrdinalIgnoreCase))
     );
 
-     protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        var config = ConfigService.GetConfig();
-        esbServers = config.EsbServers;
+        EsbSequencesStateService.OnChange += StateHasChanged;
+        EsbSequencesStateService.Load();
 
-        if (esbServers.Any())
+        config = ConfigService.GetConfig();
+
+        EsbSequencesStateService.InitializeState(state =>
         {
-            selectedEsbServerName = esbServers.First().Name;
+            state.EsbServers = config.EsbServers;
+            if (state.EsbServers.Any())
+            {
+                state.SelectedEsbServerName = state.EsbServers.First().Name;
+            }
+        });
+
+        if (EsbSequencesStateService.EsbServers.Any())
+        {
             await LoadEsbSequences();
         }
         else
         {
-            isLoading = false;
-            errorMessage = "No ESB servers configured. Please add ESB servers in the configuration.";
+            EsbSequencesStateService.IsLoading = false;
+            EsbSequencesStateService.ErrorMessage = "No ESB servers configured. Please add ESB servers in the configuration.";
         }
     }
 
     private async Task LoadEsbSequences()
     {
-        isLoading = true;
-        errorMessage = null;
+        EsbSequencesStateService.IsLoading = true;
+        EsbSequencesStateService.ErrorMessage = null;
         try
         {
             var soapRequest = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://org.apache.synapse/xsd"">
@@ -159,24 +165,24 @@ else
                </soapenv:Body>
             </soapenv:Envelope>";
 
-            var selectedServer = esbServers.FirstOrDefault(s => s.Name == selectedEsbServerName);
+            var selectedServer = EsbSequencesStateService.EsbServers.FirstOrDefault(s => s.Name == EsbSequencesStateService.SelectedEsbServerName);
             if (selectedServer == null)
             {
-                errorMessage = "Selected ESB server not found in configuration.";
+                EsbSequencesStateService.ErrorMessage = "Selected ESB server not found in configuration.";
                 return;
             }
 
             var soapResponse = await EsbService.GetEsbSequencesAsync(soapRequest, selectedServer);
-            sequences = ParseSoapResponse(soapResponse);
+            EsbSequencesStateService.Sequences = ParseSoapResponse(soapResponse);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading ESB sequences: {Message}", ex.Message);
-            errorMessage = ex.Message;
+            EsbSequencesStateService.ErrorMessage = ex.Message;
         }
         finally
         {
-            isLoading = false;
+            EsbSequencesStateService.IsLoading = false;
         }
     }
 
@@ -206,12 +212,18 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error parsing SOAP response: {Message}", ex.Message);
-            errorMessage = $"Error parsing SOAP response: {ex.Message}";
+            EsbSequencesStateService.ErrorMessage = $"Error parsing SOAP response: {ex.Message}";
         }
         return parsedSequences;
     }
     private async Task OnEsbServerChanged()
     {
         await LoadEsbSequences();
+    }
+
+    public void Dispose()
+    {
+        EsbSequencesStateService.OnChange -= StateHasChanged;
+        EsbSequencesStateService.Save();
     }
 }
