@@ -4,8 +4,23 @@
 @using System.Xml.Linq
 @inject IEsbService EsbService
 @inject ILogger<EsbSequences> Logger
+@inject IConfigurationService ConfigService
 
 <h3>ESB Sequences</h3>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="form-label">ESB Server:</label>
+            <select class="form-select" @bind="selectedEsbServerName" @bind:after="OnEsbServerChanged">
+                @foreach (var server in esbServers)
+                {
+                    <option value="@server.Name">@server.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
 
 @if (isLoading)
 {
@@ -55,10 +70,24 @@ else
     private List<SequenceInfo> sequences = new List<SequenceInfo>();
     private bool isLoading = true;
     private string errorMessage;
+    private List<EsbServerConfig> esbServers = new List<EsbServerConfig>();
+    private string selectedEsbServerName;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadEsbSequences();
+        var config = ConfigService.GetConfig();
+        esbServers = config.EsbServers;
+
+        if (esbServers.Any())
+        {
+            selectedEsbServerName = esbServers.First().Name;
+            await LoadEsbSequences();
+        }
+        else
+        {
+            isLoading = false;
+            errorMessage = "No ESB servers configured. Please add ESB servers in the configuration.";
+        }
     }
 
     private async Task LoadEsbSequences()
@@ -77,7 +106,14 @@ else
                </soapenv:Body>
             </soapenv:Envelope>";
 
-            var soapResponse = await EsbService.GetEsbSequencesAsync(soapRequest);
+            var selectedServer = esbServers.FirstOrDefault(s => s.Name == selectedEsbServerName);
+            if (selectedServer == null)
+            {
+                errorMessage = "Selected ESB server not found in configuration.";
+                return;
+            }
+
+            var soapResponse = await EsbService.GetEsbSequencesAsync(soapRequest, selectedServer);
             sequences = ParseSoapResponse(soapResponse);
         }
         catch (Exception ex)
@@ -120,5 +156,9 @@ else
             errorMessage = $"Error parsing SOAP response: {ex.Message}";
         }
         return parsedSequences;
+    }
+    private async Task OnEsbServerChanged()
+    {
+        await LoadEsbSequences();
     }
 }

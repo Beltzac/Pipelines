@@ -163,15 +163,13 @@ CROSS JOIN CountQuery c";
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
         }
 
-        public async Task<string> GetEsbSequencesAsync(string soapRequest)
+        public async Task<string> GetEsbSequencesAsync(string soapRequest, EsbServerConfig esbServer)
         {
-            var config = _configService.GetConfig();
-            var esbServer = config.EsbServers.FirstOrDefault(); // Assuming only one ESB server for now, or you can add logic to select one
-
             if (esbServer == null || string.IsNullOrEmpty(esbServer.Url))
             {
-                throw new InvalidOperationException("ESB Server URL is not configured. Please configure it in the Config Manager.");
+                throw new InvalidOperationException("ESB Server configuration is invalid or URL is missing.");
             }
+
 
             var handler = new HttpClientHandler
             {
@@ -185,9 +183,9 @@ CROSS JOIN CountQuery c";
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
             }
 
-            var url = esbServer.Url + "/services/SequenceAdminService.SequenceAdminServiceHttpsSoap11Endpoint";
+            var fullUrl = esbServer.Url + "/services/SequenceAdminService.SequenceAdminServiceHttpsSoap11Endpoint";
 
-            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            var request = new HttpRequestMessage(HttpMethod.Post, fullUrl);
             request.Headers.Add("SOAPAction", "urn:getSequences");
             request.Content = new StringContent(soapRequest, System.Text.Encoding.UTF8, "text/xml");
 

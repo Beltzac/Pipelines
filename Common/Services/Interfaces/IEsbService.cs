@@ -34,6 +34,6 @@ namespace Common.Services.Interfaces
             string? responseStatus,
             int? minDelaySeconds);
 
-        Task<string> GetEsbSequencesAsync(string soapRequest);
+        Task<string> GetEsbSequencesAsync(string soapRequest, EsbServerConfig esbServer);
     }
 }
