@@ -1,0 +1,124 @@
+@page "/esbsequences"
+@using Common.Models
+@using Common.Services.Interfaces
+@using System.Xml.Linq
+@inject IEsbService EsbService
+@inject ILogger<EsbSequences> Logger
+
+<h3>ESB Sequences</h3>
+
+@if (isLoading)
+{
+    <div class="alert alert-info">Loading ESB sequences...</div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">Error: @errorMessage</div>
+}
+else
+{
+    @if (sequences.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Artifact Container Name</th>
+                    <th>Description</th>
+                    <th>Enable Statistics</th>
+                    <th>Enable Tracing</th>
+                    <th>Is Edited</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var sequence in sequences)
+                {
+                    <tr>
+                        <td>@sequence.Name</td>
+                        <td>@sequence.ArtifactContainerName</td>
+                        <td>@sequence.Description</td>
+                        <td>@(sequence.EnableStatistics ? "Yes" : "No")</td>
+                        <td>@(sequence.EnableTracing ? "Yes" : "No")</td>
+                        <td>@(sequence.IsEdited ? "Yes" : "No")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning">No ESB sequences found.</div>
+    }
+}
+
+@code {
+    private List<SequenceInfo> sequences = new List<SequenceInfo>();
+    private bool isLoading = true;
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEsbSequences();
+    }
+
+    private async Task LoadEsbSequences()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var soapRequest = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://org.apache.synapse/xsd"">
+               <soapenv:Header/>
+               <soapenv:Body>
+                  <xsd:getSequences>
+                     <xsd:pageNumber>0</xsd:pageNumber>
+                     <xsd:sequencePerPage>100</xsd:sequencePerPage>
+                  </xsd:getSequences>
+               </soapenv:Body>
+            </soapenv:Envelope>";
+
+            var soapResponse = await EsbService.GetEsbSequencesAsync(soapRequest);
+            sequences = ParseSoapResponse(soapResponse);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading ESB sequences: {Message}", ex.Message);
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<SequenceInfo> ParseSoapResponse(string soapResponse)
+    {
+        var parsedSequences = new List<SequenceInfo>();
+        try
+        {
+            XDocument doc = XDocument.Parse(soapResponse);
+            XNamespace ns = "http://org.apache.synapse/xsd";
+            XNamespace ax2522 = "http://to.common.sequences.carbon.wso2.org/xsd";
+
+            foreach (var returnElement in doc.Descendants(ns + "return"))
+            {
+                var sequence = new SequenceInfo
+                {
+                    ArtifactContainerName = (string)returnElement.Element(ax2522 + "artifactContainerName"),
+                    Description = (string)returnElement.Element(ax2522 + "description"),
+                    EnableStatistics = (bool?)returnElement.Element(ax2522 + "enableStatistics") ?? false,
+                    EnableTracing = (bool?)returnElement.Element(ax2522 + "enableTracing") ?? false,
+                    IsEdited = (bool?)returnElement.Element(ax2522 + "isEdited") ?? false,
+                    Name = (string)returnElement.Element(ax2522 + "name")
+                };
+                parsedSequences.Add(sequence);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error parsing SOAP response: {Message}", ex.Message);
+            errorMessage = $"Error parsing SOAP response: {ex.Message}";
+        }
+        return parsedSequences;
+    }
+}

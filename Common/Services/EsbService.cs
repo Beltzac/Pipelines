@@ -3,13 +3,23 @@ using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using SQL.Formatter;
 using SQL.Formatter.Language;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Common.Services
 {
     public class EsbService : IEsbService
     {
         private readonly IOracleRepository _repo;
+        private readonly IConfigurationService _configService;
+
+        public EsbService(IOracleRepository repo, IConfigurationService configService)
+        {
+            _repo = repo;
+            _configService = configService;
+        }
 
         public EsbService(IOracleRepository repo)
         {
@@ -151,6 +161,39 @@ FROM PagedQuery q
 CROSS JOIN CountQuery c";
 
             return SqlFormatter.Of(Dialect.PlSql).Format(sql);
+        }
+
+        public async Task<string> GetEsbSequencesAsync(string soapRequest)
+        {
+            var config = _configService.GetConfig();
+            var esbServer = config.EsbServers.FirstOrDefault(); // Assuming only one ESB server for now, or you can add logic to select one
+
+            if (esbServer == null || string.IsNullOrEmpty(esbServer.Url))
+            {
+                throw new InvalidOperationException("ESB Server URL is not configured. Please configure it in the Config Manager.");
+            }
+
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            using var client = new HttpClient(handler);
+
+            if (!string.IsNullOrEmpty(esbServer.Username) && !string.IsNullOrEmpty(esbServer.Password))
+            {
+                var byteArray = Encoding.ASCII.GetBytes($"{esbServer.Username}:{esbServer.Password}");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+            }
+
+            var url = esbServer.Url + "/services/SequenceAdminService.SequenceAdminServiceHttpsSoap11Endpoint";
+
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Headers.Add("SOAPAction", "urn:getSequences");
+            request.Content = new StringContent(soapRequest, System.Text.Encoding.UTF8, "text/xml");
+
+            var response = await client.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
         }
     }
 }

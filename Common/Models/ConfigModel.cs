@@ -40,6 +40,7 @@ namespace Common.Models
         public List<SavedQuery> SavedQueries { get; set; } = new List<SavedQuery>();
         public TempoConfiguration TempoConfig { get; set; } = new TempoConfiguration();
         public JiraConfiguration JiraConfig { get; set; } = new JiraConfiguration();
+        public List<EsbServerConfig> EsbServers { get; set; } = new List<EsbServerConfig>();
     }
 
     public class OracleEnvironment

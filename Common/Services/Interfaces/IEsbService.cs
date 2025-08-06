@@ -33,5 +33,7 @@ namespace Common.Services.Interfaces
             string? httpStatusRange,
             string? responseStatus,
             int? minDelaySeconds);
+
+        Task<string> GetEsbSequencesAsync(string soapRequest);
     }
 }

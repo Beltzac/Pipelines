@@ -346,44 +346,87 @@
                             </div>
                         }
                     </div>
+                </div>
 
-                    <!-- MongoDB Environments -->
-                    <div class="card mb-4">
-                        <div
-                            class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Ambientes MongoDB</h5>
-                            <button type="button" class="btn btn-sm" @onclick="AddMongoEnvironment">
-                                <i class="fas fa-plus"></i> Adicionar Ambiente
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            @foreach (var env in config.MongoEnvironments)
-                            {
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <label class="form-label">Nome do Ambiente</label>
-                                            <InputText @bind-Value="env.Name" class="form-control" />
-                                            <ValidationMessage For="@(() => env.Name)" />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Connection String</label>
-                                            <InputText @bind-Value="env.ConnectionString" class="form-control" />
-                                            <ValidationMessage For="@(() => env.ConnectionString)" />
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Nome do Banco de Dados</label>
-                                            <InputText @bind-Value="env.DatabaseName" class="form-control" />
-                                            <ValidationMessage For="@(() => env.DatabaseName)" />
-                                        </div>
-                                        <button type="button" class="btn"
-                                            @onclick="() => RemoveMongoEnvironment(env)">
-                                            <i class="fas fa-trash"></i> Remover
-                                        </button>
+                <!-- ESB Servers -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Servidores ESB</h5>
+                        <button type="button" class="btn btn-sm" @onclick="AddEsbServer">
+                            <i class="fas fa-plus"></i> Adicionar Servidor
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var server in config.EsbServers)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome do Servidor</label>
+                                        <InputText @bind-Value="server.Name" class="form-control" />
+                                        <ValidationMessage For="@(() => server.Name)" />
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">URL</label>
+                                        <InputText @bind-Value="server.Url" class="form-control" />
+                                        <ValidationMessage For="@(() => server.Url)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Usuário</label>
+                                        <InputText @bind-Value="server.Username" class="form-control" />
+                                        <ValidationMessage For="@(() => server.Username)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Senha</label>
+                                        <InputText type="password" @bind-Value="server.Password" class="form-control" />
+                                        <ValidationMessage For="@(() => server.Password)" />
+                                    </div>
+                                    <button type="button" class="btn"
+                                        @onclick="() => RemoveEsbServer(server)">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- MongoDB Environments -->
+                <div class="card mb-4">
+                    <div
+                        class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Ambientes MongoDB</h5>
+                        <button type="button" class="btn btn-sm" @onclick="AddMongoEnvironment">
+                            <i class="fas fa-plus"></i> Adicionar Ambiente
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var env in config.MongoEnvironments)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome do Ambiente</label>
+                                        <InputText @bind-Value="env.Name" class="form-control" />
+                                        <ValidationMessage For="@(() => env.Name)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection String</label>
+                                        <InputText @bind-Value="env.ConnectionString" class="form-control" />
+                                        <ValidationMessage For="@(() => env.ConnectionString)" />
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome do Banco de Dados</label>
+                                        <InputText @bind-Value="env.DatabaseName" class="form-control" />
+                                        <ValidationMessage For="@(() => env.DatabaseName)" />
+                                    </div>
+                                    <button type="button" class="btn"
+                                        @onclick="() => RemoveMongoEnvironment(env)">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -412,6 +455,11 @@
         if (config.JiraConfig == null)
         {
             config.JiraConfig = new JiraConfiguration();
+        }
+        // Ensure EsbServers is initialized
+        if (config.EsbServers == null)
+        {
+            config.EsbServers = new List<EsbServerConfig>();
         }
         Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
         Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
@@ -460,6 +508,16 @@
     private void RemoveMongoEnvironment(MongoEnvironment env)
     {
         config.MongoEnvironments.Remove(env);
+    }
+
+    private void AddEsbServer()
+    {
+        config.EsbServers.Add(new EsbServerConfig());
+    }
+
+    private void RemoveEsbServer(EsbServerConfig server)
+    {
+        config.EsbServers.Remove(server);
     }
 
     private async Task TestOracleConnection(OracleEnvironment env)
@@ -514,9 +572,9 @@
             var isConnected = await jiraService.TestConnectionAsync();
 
             if (isConnected)
-            {
+    {
                 ToastService.ShowSuccess("Conexão com Jira bem-sucedida");
-            }
+    }
             else
             {
                 ToastService.ShowError("Falha na conexão com Jira");
@@ -527,7 +585,6 @@
             ToastService.ShowError($"Falha na conexão com Jira: {ex.Message}");
         }
     }
-
 
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {
@@ -546,8 +603,8 @@
             Common.Utils.RepositoryExtensions.MinUpdateTime = config.MinUpdateTime;
             Common.Utils.RepositoryExtensions.MaxUpdateTime = config.MaxUpdateTime;
 
-            ToastService.ShowSuccess("Configuração importada com sucesso");
-        }
+                ToastService.ShowSuccess("Configuração importada com sucesso");
+            }
         catch (ArgumentException ex)
         {
             ToastService.ShowError($"Arquivo de configuração inválido: {ex.Message}");
