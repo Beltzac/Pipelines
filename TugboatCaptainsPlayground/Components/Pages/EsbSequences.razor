@@ -20,9 +20,48 @@
             </select>
         </div>
     </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            <label class="form-label">Search:</label>
+            <input type="text" class="form-control" @bind-value="searchTerm" @bind-value:event="oninput" placeholder="Search sequences..." />
+        </div>
+    </div>
 </div>
 
-@if (isLoading)
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label class="form-label">Enable Statistics:</label>
+            <select class="form-select" @bind="filterEnableStatistics">
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label class="form-label">Enable Tracing:</label>
+            <select class="form-select" @bind="filterEnableTracing">
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label class="form-label">Is Edited:</label>
+            <select class="form-select" @bind="filterIsEdited">
+                <option value="">All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+ @if (isLoading)
 {
     <div class="alert alert-info">Loading ESB sequences...</div>
 }
@@ -46,7 +85,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var sequence in sequences)
+                @foreach (var sequence in FilteredSequences)
                 {
                     <tr>
                         <td>@sequence.Name</td>
@@ -72,8 +111,22 @@ else
     private string errorMessage;
     private List<EsbServerConfig> esbServers = new List<EsbServerConfig>();
     private string selectedEsbServerName;
+    private string searchTerm = string.Empty;
+    private string filterEnableStatistics = string.Empty;
+    private string filterEnableTracing = string.Empty;
+    private string filterIsEdited = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    private IEnumerable<SequenceInfo> FilteredSequences => sequences.Where(s =>
+        (string.IsNullOrEmpty(searchTerm) ||
+        s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+        s.ArtifactContainerName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+        (s.Description != null && s.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))) &&
+        (string.IsNullOrEmpty(filterEnableStatistics) || s.EnableStatistics.ToString().Equals(filterEnableStatistics, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(filterEnableTracing) || s.EnableTracing.ToString().Equals(filterEnableTracing, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(filterIsEdited) || s.IsEdited.ToString().Equals(filterIsEdited, StringComparison.OrdinalIgnoreCase))
+    );
+
+     protected override async Task OnInitializedAsync()
     {
         var config = ConfigService.GetConfig();
         esbServers = config.EsbServers;
@@ -101,7 +154,7 @@ else
                <soapenv:Body>
                   <xsd:getSequences>
                      <xsd:pageNumber>0</xsd:pageNumber>
-                     <xsd:sequencePerPage>100</xsd:sequencePerPage>
+                     <xsd:sequencePerPage>9999</xsd:sequencePerPage>
                   </xsd:getSequences>
                </soapenv:Body>
             </soapenv:Envelope>";
