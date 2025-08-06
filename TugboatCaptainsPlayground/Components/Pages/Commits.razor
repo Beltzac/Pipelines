@@ -321,7 +321,6 @@ else
     private string worklogLoadingError = null;
     private int worklogLoadingProgress = 0;
     private Dictionary<int, bool> retryLoadingStates = new Dictionary<int, bool>();
-    private (DateTime Start, DateTime End) WorklogDateRange;
 
     private List<Commit> commitsWithJira => commitDataList.Where(c => !string.IsNullOrEmpty(c.JiraCardID)).ToList();
 
@@ -370,9 +369,9 @@ else
             var dates = commitDataList.Select(c => c.CommitDate.Date)
                 .Concat(pullRequestsByDate.Keys);
 
-            if (WorklogDateRange.End.Date != default)
+            if (CommitsStateService.DataFinal.HasValue && CommitsStateService.DataFinal.Value.Date != default)
             {
-                dates = dates.Append(WorklogDateRange.End.Date);
+                dates = dates.Append(CommitsStateService.DataFinal.Value.Date);
             }
 
             return dates.Distinct().OrderByDescending(d => d);
@@ -381,8 +380,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        WorklogDateRange = (DateTime.Today.AddDays(-30), DateTime.Today);
-        CommitsStateService.DataInicial = WorklogDateRange.Start;
+        CommitsStateService.DataInicial = DateTime.Today.AddDays(-7);
+        CommitsStateService.DataFinal = DateTime.Today.AddDays(1);
 
         await FetchCommits();
         await LoadPullRequests();
@@ -392,8 +391,8 @@ else
     {
         if (args.StartDate.HasValue && args.EndDate.HasValue)
         {
-            WorklogDateRange = (args.StartDate.Value, args.EndDate.Value);
             CommitsStateService.DataInicial = args.StartDate.Value;
+            CommitsStateService.DataFinal = args.EndDate.Value;
             await FetchCommits();
         }
     }
@@ -449,8 +448,8 @@ else
         {
             var config = ConfigService.GetConfig();
             var accountId = config.TempoConfig?.AccountId;
-            var startDate = WorklogDateRange.Start;
-            var endDate = WorklogDateRange.End;
+            var startDate = CommitsStateService.DataInicial ?? DateTime.Today.AddDays(-7);
+            var endDate = CommitsStateService.DataFinal ?? DateTime.Today;
 
             Logger.LogInformation("Fetching worklogs from {StartDate} to {EndDate} using accountId: {AccountId}",
                 startDate.ToShortDateString(), endDate.ToShortDateString(), accountId ?? "fallback");
@@ -462,7 +461,10 @@ else
             }
             else
             {
-                allWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(startDate, endDate);
+                // Ensure non-nullable DateTime values for GetExistingWorklogsForDateRangeAsync
+                var nonNullStartDate = CommitsStateService.DataInicial ?? DateTime.Today.AddDays(-7);
+                var nonNullEndDate = CommitsStateService.DataFinal ?? DateTime.Today;
+                allWorklogs = await WorklogService.GetExistingWorklogsForDateRangeAsync(nonNullStartDate, nonNullEndDate);
             }
 
             // Deduplicate worklogs by ID to prevent duplicates

@@ -63,10 +63,10 @@ namespace Common.Services
                 conditions.Add($"EXTRACT(SECOND FROM (RE.DATA_FIM - RE.DATA_INICIO)) + EXTRACT(MINUTE FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
 
             if (startDate.HasValue)
-                conditions.Add($"RE.DATA_INICIO >= TO_DATE('{startDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+                conditions.Add($"RE.DATA_INICIO >= TO_DATE('{startDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
 
             if (endDate.HasValue)
-                conditions.Add($"RE.DATA_INICIO <= TO_DATE('{endDate:yy-MM-dd HH:mm:ss}', 'YY-MM-DD HH24:MI:SS')");
+                conditions.Add($"RE.DATA_INICIO <= TO_DATE('{endDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
 
             if (!string.IsNullOrEmpty(urlFilter))
                 conditions.Add($"(RE.URL LIKE '%{urlFilter}%' OR RE.NOME_FLUXO LIKE '%{urlFilter}%')");
