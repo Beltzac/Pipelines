@@ -41,6 +41,7 @@ namespace Common.Models
         public TempoConfiguration TempoConfig { get; set; } = new TempoConfiguration();
         public JiraConfiguration JiraConfig { get; set; } = new JiraConfiguration();
         public List<EsbServerConfig> EsbServers { get; set; } = new List<EsbServerConfig>();
+        public string TeamsWebhookUrl { get; set; } = string.Empty;
     }
 
     public class OracleEnvironment
@@ -49,6 +50,7 @@ namespace Common.Models
         public string ConnectionString { get; set; }
         public string Schema { get; set; }
     }
+
     public class MongoEnvironment
     {
         public string Name { get; set; }

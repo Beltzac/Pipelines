@@ -35,5 +35,6 @@ namespace Common.Services.Interfaces
             int? minDelaySeconds);
 
         Task<string> GetEsbSequencesAsync(string soapRequest, EsbServerConfig esbServer);
+        Task<List<SequenceInfo>> GetSequencesAsync(EsbServerConfig esbServer);
     }
 }

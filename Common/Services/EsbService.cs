@@ -193,5 +193,52 @@ CROSS JOIN CountQuery c";
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }
+
+         public async Task<List<SequenceInfo>> GetSequencesAsync(EsbServerConfig esbServer)
+         {
+             var soapRequest = @"<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://org.apache.synapse/xsd"">
+                <soapenv:Header/>
+                <soapenv:Body>
+                   <xsd:getSequences>
+                      <xsd:pageNumber>0</xsd:pageNumber>
+                      <xsd:sequencePerPage>9999</xsd:sequencePerPage>
+                   </xsd:getSequences>
+                </soapenv:Body>
+             </soapenv:Envelope>";
+
+             var soapResponse = await GetEsbSequencesAsync(soapRequest, esbServer);
+             return ParseSoapResponse(soapResponse);
+         }
+
+         private List<SequenceInfo> ParseSoapResponse(string soapResponse)
+         {
+             var parsedSequences = new List<SequenceInfo>();
+             try
+             {
+                 System.Xml.Linq.XDocument doc = System.Xml.Linq.XDocument.Parse(soapResponse);
+                 System.Xml.Linq.XNamespace ns = "http://org.apache.synapse/xsd";
+                 System.Xml.Linq.XNamespace ax2522 = "http://to.common.sequences.carbon.wso2.org/xsd";
+
+                 foreach (var returnElement in doc.Descendants(ns + "return"))
+                 {
+                     var sequence = new SequenceInfo
+                     {
+                         ArtifactContainerName = (string)returnElement.Element(ax2522 + "artifactContainerName"),
+                         Description = (string)returnElement.Element(ax2522 + "description"),
+                         EnableStatistics = (bool?)returnElement.Element(ax2522 + "enableStatistics") ?? false,
+                         EnableTracing = (bool?)returnElement.Element(ax2522 + "enableTracing") ?? false,
+                         IsEdited = (bool?)returnElement.Element(ax2522 + "isEdited") ?? false,
+                         Name = (string)returnElement.Element(ax2522 + "name")
+                     };
+                     parsedSequences.Add(sequence);
+                 }
+             }
+             catch (Exception ex)
+             {
+                 // Log the error, but don't re-throw to allow partial parsing
+                 Console.WriteLine($"Error parsing SOAP response: {ex.Message}");
+             }
+             return parsedSequences;
+         }
     }
 }

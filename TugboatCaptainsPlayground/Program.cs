@@ -138,6 +138,13 @@ internal class Program
                 job => job.WithIdentity("ConsulBackupJob-hourly")
             );
 
+            // Schedule job to send edited ESB sequences every 4 hours
+            q.ScheduleJob<SendEditedEsbSequencesJob>(trigger => trigger
+                .WithIdentity("SendEditedEsbSequencesJob-trigger")
+                .WithCronSchedule("0 0 0/4 * * ?"), // Every 4 hours
+                job => job.WithIdentity("SendEditedEsbSequencesJob")
+            );
+
             var databasePath = DBUtils.MainDBPath;
             var connectionString = $"Data Source={databasePath}"; //;Journal Mode=WAL
 
