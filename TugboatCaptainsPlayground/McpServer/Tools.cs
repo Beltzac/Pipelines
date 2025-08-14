@@ -75,6 +75,77 @@ namespace TugboatCaptainsPlayground.McpServer
             return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
         }
 
+        [McpServerTool, Description("Compares view definitions between two Oracle environments.")]
+        public static async Task<IEnumerable<OracleDiffResult>> CompareOracleViewDefinitionsAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string sourceEnvironmentName,
+            string targetEnvironmentName)
+        {
+            var config = configurationService.GetConfig();
+            var sourceOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvironmentName);
+            if (sourceOracleEnv == null)
+            {
+                throw new ArgumentException($"Source Oracle environment '{sourceEnvironmentName}' not found.");
+            }
+            var targetOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvironmentName);
+            if (targetOracleEnv == null)
+            {
+                throw new ArgumentException($"Target Oracle environment '{targetEnvironmentName}' not found.");
+            }
+            return await oracleSchemaService.Compare(sourceEnvironmentName, targetEnvironmentName);
+        }
+
+        [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
+        public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName,
+            string viewName)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+            return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, oracleEnv.Schema, viewName);
+        }
+
+        [McpServerTool, Description("Generates an EF Core mapping class for a given Oracle table or view.")]
+        public static async Task<string> GenerateOracleEfCoreMappingClassAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName,
+            string objectName,
+            string className)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+            return await oracleSchemaService.GenerateEfCoreMappingClassAsync(oracleEnv.ConnectionString, oracleEnv.Schema, objectName, className);
+        }
+
+        [McpServerTool, Description("Generates a C# class for a given Oracle table or view.")]
+        public static async Task<string> GenerateOracleCSharpClassAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName,
+            string objectName,
+            string className)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+            return await oracleSchemaService.GenerateCSharpClassAsync(oracleEnv.ConnectionString, oracleEnv.Schema, objectName, className);
+        }
+
         // Environment listing methods
         [McpServerTool, Description("Get a list of all configured Oracle environments.")]
         public static List<string> GetOracleEnvironments(
