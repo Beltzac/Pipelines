@@ -19,6 +19,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using TugboatCaptainsPlayground;
+using TugboatCaptainsPlayground.Components;
+using TugboatCaptainsPlayground.McpServer;
 using Vanara.Windows.Shell;
 
 internal class Program
@@ -43,7 +45,7 @@ internal class Program
                .SetTitle(title)
                .SetMaximized(true)
                .RegisterWindowClosingHandler(WindowIsClosing);
-               //.SetLogVerbosity(5);
+        //.SetLogVerbosity(5);
 
         mainWindow.WindowMaximized += HandleWindowEvent;
         mainWindow.WindowMinimized += HandleWindowEvent;
@@ -166,11 +168,13 @@ internal class Program
         builder.Services.AddStateServices();
 
         builder.Services.AddSingleton<LocalEmbedder>();
-
-        builder.Services.AddDirectoryBrowser();
-
+        builder.Services.AddMcpServer()
+            .WithHttpTransport()
+            .WithToolsFromAssembly(typeof(Tools).Assembly);
 
         var app = builder.Build();
+
+        app.MapMcp("mcp");
 
         if (!app.Environment.IsDevelopment())
         {
@@ -184,7 +188,7 @@ internal class Program
 
         app.UseAntiforgery();
 
-        app.MapRazorComponents<TugboatCaptainsPlayground.Components.App>()
+        app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
 
         var startupEnabled = IsStartupEnabled();
@@ -457,7 +461,7 @@ internal class Program
         Console.WriteLine("Manifest resource names:");
         foreach (var name in Assembly.GetExecutingAssembly().GetManifestResourceNames())
         {
-            Console.WriteLine("Manifest: "+ name);
+            Console.WriteLine("Manifest: " + name);
         }
 
         Console.WriteLine("Composite resource names:");

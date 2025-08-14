@@ -15,7 +15,7 @@ namespace Common.Models
         public string Status { get; set; }
         public double? MinDelay { get; set; }
         public string CodigoBarras { get; set; }
-        public string RequestId { get; set; } // Added RequestId
+        public string RequestId { get; set; }
         public int PageSize { get; set; } = 10;
         public int PageNumber { get; set; } = 1;
     }
