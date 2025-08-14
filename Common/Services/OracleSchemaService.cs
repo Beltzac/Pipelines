@@ -197,35 +197,71 @@ namespace Common.Services
        }
 
        public async Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className)
-        {
-            var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
-            var sb = new System.Text.StringBuilder();
+       {
+           var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
+           var sb = new System.Text.StringBuilder();
 
-            foreach (var column in columns)
-            {
-                sb.AppendLine(GenerateProperty(column));
-                sb.AppendLine();
-            }
+           foreach (var column in columns)
+           {
+               sb.AppendLine(GenerateProperty(column));
+               sb.AppendLine();
+           }
 
-            return sb.ToString();
-        }
+           return sb.ToString();
+       }
+
+       public async Task<string> GenerateCSharpClassAsync(string connectionString, string schema, string objectName, string className)
+       {
+           var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
+           var sb = new System.Text.StringBuilder();
+
+           var actualClassName = string.IsNullOrEmpty(className) ? objectName.ToPascalCase() : className;
+
+           sb.AppendLine($"public class {actualClassName}");
+           sb.AppendLine("{");
+
+           foreach (var column in columns)
+           {
+               var cSharpType = GetCSharpType(column.DataType, column.ColumnName);
+               var propertyName = column.ColumnName.ToPascalCase();
+               var nullableIndicator = column.Nullable == "Y" && IsNullableType(cSharpType) ? "?" : "";
+               sb.AppendLine($"    public {cSharpType}{nullableIndicator} {propertyName} {{ get; set; }}");
+           }
+
+           sb.AppendLine("}");
+
+           return sb.ToString();
+       }
+
+       private bool IsNullableType(string cSharpType)
+       {
+           return cSharpType switch
+           {
+               "string" => true,
+               "byte[]" => true,
+               _ => false
+           };
+       }
 
        private string GenerateProperty(OracleColumn column)
-        {
-            var propertyName = column.ColumnName.ToPascalCase();
-            var columnType = GetFullColumnType(column);
+       {
+           var propertyName = column.ColumnName.ToPascalCase();
+           var columnType = GetFullColumnType(column);
 
-            var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
-                             + $"\t\t\t\t.HasColumnName(\"{column.ColumnName}\")\n"
-                             + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
+           var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
+                            + $"\t\t\t\t.HasColumnName(\"{column.ColumnName}\")\n"
+                            + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
 
-            if (column.Nullable == "N")
-            {
-                propertyChain += "\n\t\t\t\t.IsRequired()";
-            }
+           if (column.Nullable == "N")
+           {
+               propertyChain += "\n\t\t\t\t.IsRequired()";
+           }
 
-            return propertyChain + ";";
-        }
+           return propertyChain + ";";
+       }
+
+
+
 
         private string GetFullColumnType(OracleColumn column)
         {
@@ -250,8 +286,20 @@ namespace Common.Services
             }
         }
 
-       private string GetCSharpType(string oracleType)
+       private string GetCSharpType(string oracleType, string columnName)
        {
+           // Rule: "Is*** should be bools"
+           if (columnName.StartsWith("IS", StringComparison.OrdinalIgnoreCase))
+           {
+               return "bool";
+           }
+
+           // Rule: "ids should be long"
+           if (columnName.Contains("ID", StringComparison.OrdinalIgnoreCase) && oracleType == "NUMBER")
+           {
+               return "long";
+           }
+
            if (oracleType.StartsWith("TIMESTAMP")) return "DateTime";
 
            return oracleType switch

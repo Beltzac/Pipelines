@@ -248,11 +248,11 @@
             toastService.ShowSuccess($"Switched to branch {branchName}");
             _logger.LogInformation("Switched to branch {BranchName}", branchName);
             await ReloadById(currentBranchRepo.Id);
+        }
         else
         {
             toastService.ShowError($"Failed to checkout branch {branchName}: {result.ErrorMessage}");
             _logger.LogError("Failed to checkout branch {BranchName}: {ErrorMessage}", branchName, result.ErrorMessage);
-        }
         }
     }
 

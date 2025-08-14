@@ -45,12 +45,30 @@
 
 @if (!string.IsNullOrEmpty(generatedCode))
 {
-    <div class="mt-3 position-relative" style="height: calc(100vh - 250px);">
-        <textarea class="form-control h-100"
-                  style="resize: none; font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; font-size: 14px; padding-bottom: 50px;"
-                  readonly>@generatedCode</textarea>
-        <div class="position-absolute bottom-0 end-0 m-2">
-            <button class="btn btn-secondary" @onclick="() => CopyToClipboard(generatedCode)">Copiar</button>
+    <div class="mt-3">
+        <h5>EF Core Mapping Class</h5>
+        <div class="position-relative" style="height: calc(100vh - 250px);">
+            <textarea class="form-control h-100"
+                      style="resize: none; font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; font-size: 14px; padding-bottom: 50px;"
+                      readonly>@generatedCode</textarea>
+            <div class="position-absolute bottom-0 end-0 m-2">
+                <button class="btn btn-secondary" @onclick="() => CopyToClipboard(generatedCode)">Copiar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(generatedViewClassCode))
+{
+    <div class="mt-3">
+        <h5>View C# Class</h5>
+        <div class="position-relative" style="height: calc(100vh - 250px);">
+            <textarea class="form-control h-100"
+                      style="resize: none; font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; font-size: 14px; padding-bottom: 50px;"
+                      readonly>@generatedViewClassCode</textarea>
+            <div class="position-absolute bottom-0 end-0 m-2">
+                <button class="btn btn-secondary" @onclick="() => CopyToClipboard(generatedViewClassCode)">Copiar</button>
+            </div>
         </div>
     </div>
 }
@@ -59,6 +77,7 @@
     private List<OracleEnvironment> environments = new();
     private List<string> tablesAndViews = new();
     private string generatedCode;
+    private string generatedViewClassCode;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,6 +128,7 @@
         {
             var env = environments.First(e => e.Name == StateService.SelectedEnvironment);
             generatedCode = await OracleSchemaService.GenerateEfCoreMappingClassAsync(env.ConnectionString, env.Schema, StateService.SelectedTableOrView, null);
+            generatedViewClassCode = await OracleSchemaService.GenerateCSharpClassAsync(env.ConnectionString, env.Schema, StateService.SelectedTableOrView, null);
         }
         catch (Exception ex)
         {
