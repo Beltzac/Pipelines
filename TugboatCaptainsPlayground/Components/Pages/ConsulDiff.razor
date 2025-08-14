@@ -10,11 +10,13 @@
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
 @inject IConsulService ConsulService
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject ConsulDiffStateService ConsulDiffStateService
+@inject ILogger<ConsulDiff> _logger
 @implements IDisposable
 
 <CustomProgressBar ProgressValue="@ConsulDiffStateService.ProgressValue" Label="@ConsulDiffStateService.ProgressLabel" IsLoading="@ConsulDiffStateService.IsLoading" />
@@ -142,9 +144,9 @@
                 }
                 else
                 {
-                    toastService.ShowError($"Chave {key} não encontrada em {envName}");
+                    _logger.LogWarning("Chave {Key} não encontrada em {Environment}", key, envName);
+                    toastService.ShowWarning($"Chave {key} não encontrada em {envName}");
                 }
-
                 return;
             }
 
@@ -156,17 +158,19 @@
                 }
                 else
                 {
-                    toastService.ShowError($"Chave {key} não encontrada em {envName}");
+                    _logger.LogWarning("Chave {Key} não encontrada em {Environment}", key, envName);
+                    toastService.ShowWarning($"Chave {key} não encontrada em {envName}");
                 }
-
                 return;
             }
 
+           _logger.LogError("Ambiente {Environment} não encontrado", envName);
            toastService.ShowError($"Ambiente {envName} não encontrado");
 
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Erro ao abrir valor no Consul: {Message}", ex.Message);
             toastService.ShowError($"Erro ao abrir valor no Consul: {ex.Message}");
         }
     }
@@ -175,10 +179,12 @@
     {
         if (string.IsNullOrEmpty(ConsulDiffStateService.SelectedSourceEnv) || string.IsNullOrEmpty(ConsulDiffStateService.SelectedTargetEnv))
         {
-            toastService.ShowError("Por favor, selecione ambos os ambientes");
+            _logger.LogWarning("Tentativa de comparar ambientes sem selecionar ambos os ambientes.");
+            toastService.ShowWarning("Tentativa de comparar ambientes sem selecionar ambos os ambientes.");
             return;
         }
-
+        _logger.LogInformation("Comparando ambientes Consul: {SourceEnv} vs {TargetEnv}", ConsulDiffStateService.SelectedSourceEnv, ConsulDiffStateService.SelectedTargetEnv);
+        toastService.ShowInfo($"Comparando ambientes Consul: {ConsulDiffStateService.SelectedSourceEnv} vs {ConsulDiffStateService.SelectedTargetEnv}");
         try
         {
             // Initialize pagination service
@@ -189,6 +195,7 @@
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Erro ao comparar ambientes: {Message}", ex.Message);
             toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
         }
     }
@@ -201,7 +208,8 @@
         }
         catch (Exception ex)
         {
-            toastService.ShowError($"Erro ao comparar ambientes: {ex.Message}");
+            _logger.LogError(ex, "Erro ao carregar diferenças da página: {Message}", ex.Message);
+            toastService.ShowError($"Erro ao carregar diferenças da página: {ex.Message}");
         }
     }
 

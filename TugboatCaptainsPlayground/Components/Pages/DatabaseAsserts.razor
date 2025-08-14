@@ -5,10 +5,12 @@
 @using System.Globalization
 @using Common.Models
 @using Common.Services
+@using Microsoft.Extensions.Logging
 @inject DatabaseAssertsStateService State
 @inject DatabaseAssertsService DatabaseAssertsService
 @inject ToastService toastService
 @inject IConfigurationService ConfigService
+@inject ILogger<DatabaseAsserts> _logger
 @implements IDisposable
 
 <CustomProgressBar IsLoading="@State.IsLoading" Label="@State.ProgressLabel" ProgressValue="@State.ProgressValue" />

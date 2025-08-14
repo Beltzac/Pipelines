@@ -5,12 +5,14 @@
 @using Common.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
 @inject IJSRuntime JSRuntime
 @inject IMongoMessageService MongoMessageService
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject MongoMessageDiffStateService MongoMessageDiffStateService
+@inject ILogger<MongoMessageDiff> _logger
 @implements IDisposable
 
 <CustomProgressBar ProgressValue="@MongoMessageDiffStateService.ProgressValue" Label="@MongoMessageDiffStateService.ProgressLabel" IsLoading="@MongoMessageDiffStateService.IsLoading" />

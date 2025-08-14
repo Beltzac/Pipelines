@@ -5,11 +5,13 @@
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
+@using Microsoft.Extensions.Logging
 @inject ISggService LtdbService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ToastService toastService
 @inject ConsultaSggStateService ConsultaSggStateService
+@inject ILogger<ConsultaSgg> _logger
 @implements IDisposable
 
 <StickyFilter>
@@ -360,9 +362,10 @@
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(env => env.Name == ConsultaSggStateService.SelectedEnvironment);
             if (oracleEnv == null)
             {
-                toastService.ShowError("Por favor, selecione um ambiente Oracle.");
+                _logger.LogWarning("Tentativa de executar consulta SGG sem ambiente Oracle selecionado.");
                 return;
             }
+            _logger.LogInformation("Executando consulta SGG para o ambiente: {Environment}", oracleEnv.Name);
 
             ConsultaSggStateService.ProgressValue = 0;
             ConsultaSggStateService.IsLoading = true;
@@ -412,7 +415,7 @@
         }
         catch (Exception ex)
         {
-            toastService.ShowError(ex.Message);
+            _logger.LogError(ex, "Erro ao executar consulta SGG: {Message}", ex.Message);
         }
         finally
         {

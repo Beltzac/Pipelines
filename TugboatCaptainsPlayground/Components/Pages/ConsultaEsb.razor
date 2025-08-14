@@ -7,12 +7,14 @@
 @using Common.Services.Interfaces
 @using Common.Utils
 @using Humanizer
+@using Microsoft.Extensions.Logging
 @inject IEsbService RequisicaoService
 @inject ICadastroService CadastroService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ConsultaEsbStateService ConsultaEsbStateService
 @inject ToastService toastService
+@inject ILogger<ConsultaEsb> _logger
 @implements IDisposable
 
 <StickyFilter>

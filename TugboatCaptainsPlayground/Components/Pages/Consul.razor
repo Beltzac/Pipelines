@@ -12,12 +12,14 @@
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Linq
 @using TugboatCaptainsPlayground.Services
+@using Microsoft.Extensions.Logging
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
 @inject IConfigurationService ConfigService
 @inject ICommitExportService CommitDataExportService
 @inject ConsulStateService ConsulStateService
+@inject ILogger<Consul> _logger
 @implements IDisposable
 
 <CustomProgressBar ProgressValue="@ConsulStateService.ProgressValue" Label="@ConsulStateService.ProgressLabel" IsLoading="@ConsulStateService.IsLoading" />
@@ -228,9 +230,12 @@
             var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
             if (consulEnv == null)
             {
+                _logger.LogError("Por favor, selecione um ambiente Consul.");
                 toastService.ShowError("Por favor, selecione um ambiente Consul.");
                 return;
             }
+            _logger.LogInformation("Carregando Consul para o ambiente: {Environment}", ConsulStateService.SelectedConsulEnv);
+            toastService.ShowInfo($"Carregando Consul para o ambiente: {ConsulStateService.SelectedConsulEnv}");
 
             ConsulStateService.ProgressValue = 0;
             ConsulStateService.IsLoading = true;
@@ -255,7 +260,8 @@
         catch (Exception ex)
         {
             ConsulStateService.ProgressValue = 0;
-            toastService.ShowError(ex.Message);
+            _logger.LogError(ex, "Erro ao carregar Consul: {Message}", ex.Message);
+            toastService.ShowError($"Erro ao carregar Consul: {ex.Message}");
         }
         finally
         {
@@ -280,9 +286,12 @@
         var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
         if (consulEnv == null)
         {
+            _logger.LogError("Por favor, selecione um ambiente Consul.");
             toastService.ShowError("Por favor, selecione um ambiente Consul.");
             return;
         }
+        _logger.LogInformation("Salvando conteúdo do Consul para o ambiente: {Environment}", consulEnv.Name);
+        toastService.ShowInfo($"Salvando conteúdo do Consul para o ambiente: {consulEnv.Name}");
 
         try
         {
@@ -301,6 +310,7 @@
         catch (Exception ex)
         {
             ConsulStateService.ProgressValue = 0;
+            _logger.LogError(ex, "Falha ao salvar conteúdo do Consul: {Message}", ex.Message);
             toastService.ShowError($"Falha ao salvar conteúdo do Consul: {ex.Message}");
         }
         finally
@@ -313,24 +323,30 @@
     {
         if (ConsulStateService.SelectedConsulEnv == null)
         {
-            toastService.ShowError("Por favor, selecione um ambiente Consul.");
+            _logger.LogError("Tentativa de salvar chave-valor sem ambiente Consul selecionado.");
+            toastService.ShowError("Tentativa de salvar chave-valor sem ambiente Consul selecionado.");
             return;
         }
+        _logger.LogInformation("Salvando chave '{Key}' no Consul para o ambiente: {Environment}", key, ConsulStateService.SelectedConsulEnv);
+        toastService.ShowInfo($"Salvando chave '{key}' no Consul para o ambiente: {ConsulStateService.SelectedConsulEnv}");
 
         try
         {
             var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
             if (consulEnv == null)
             {
-                toastService.ShowError("Por favor, selecione um ambiente Consul válido.");
+                _logger.LogError("Ambiente Consul '{Environment}' não encontrado para salvar chave '{Key}'.", ConsulStateService.SelectedConsulEnv, key);
+                toastService.ShowError($"Ambiente Consul '{ConsulStateService.SelectedConsulEnv}' não encontrado para salvar chave '{key}'.");
                 return;
             }
 
             await ConsulService.UpdateConsulKeyValue(consulEnv, key, value);
-            toastService.ShowSuccess($"Chave '{key}' salva com sucesso!");
+            _logger.LogInformation("Chave '{Key}' salva com sucesso no Consul.", key);
+            toastService.ShowSuccess($"Chave '{key}' salva com sucesso no Consul.");
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Falha ao salvar chave '{Key}': {Message}", key, ex.Message);
             toastService.ShowError($"Falha ao salvar chave '{key}': {ex.Message}");
         }
     }
@@ -345,9 +361,12 @@
         var consulEnv = config.ConsulEnvironments.FirstOrDefault(env => env.Name == ConsulStateService.SelectedConsulEnv);
         if (consulEnv == null)
         {
-            toastService.ShowError("Por favor, selecione um ambiente Consul.");
+            _logger.LogError("Tentativa de abrir pasta no VS Code sem ambiente Consul selecionado.");
+            toastService.ShowError("Tentativa de abrir pasta no VS Code sem ambiente Consul selecionado.");
             return;
         }
+        _logger.LogInformation("Abrindo pasta do Consul no VS Code para o ambiente: {Environment}", consulEnv.Name);
+        toastService.ShowInfo($"Abrindo pasta do Consul no VS Code para o ambiente: {consulEnv.Name}");
 
         try
         {
@@ -358,6 +377,7 @@
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Falha ao abrir pasta / salvar conteúdo do Consul: {Message}", ex.Message);
             toastService.ShowError($"Falha ao abrir pasta / salvar conteúdo do Consul: {ex.Message}");
         }
         finally

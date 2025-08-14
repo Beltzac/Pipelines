@@ -10,11 +10,13 @@
 @using Markdig
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
 @inject IOracleSchemaService OracleSchemaService
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject OracleDiffStateService OracleDiffStateService
+@inject ILogger<OracleDiff> _logger
 @implements IDisposable
 
 <CustomProgressBar ProgressValue="@OracleDiffStateService.ProgressValue" Label="@OracleDiffStateService.ProgressLabel" IsLoading="@OracleDiffStateService.IsLoading" />

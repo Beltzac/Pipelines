@@ -482,6 +482,7 @@ else
             Logger.LogError(ex, "Failed to fetch existing worklogs: {Message}", ex.Message);
             worklogLoadingError = ex.Message;
             toastService.ShowError($"Error fetching worklogs: {ex.Message}");
+            Logger.LogError(ex, "Error fetching worklogs: {Message}", ex.Message);
             existingWorklogs = new List<TempoWorklog>();
             StateHasChanged();
         }

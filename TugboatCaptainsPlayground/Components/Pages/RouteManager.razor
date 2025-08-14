@@ -13,9 +13,11 @@
 @using DnsClient
 @using Microsoft.JSInterop
 @using System.Text.Json
+@using Microsoft.Extensions.Logging
 @inject IJSRuntime JS
 @inject ToastService ToastService
 @inject IConfigurationService ConfigService
+@inject ILogger<RouteManager> _logger
 
 <PageTitle>Route Manager</PageTitle>
 

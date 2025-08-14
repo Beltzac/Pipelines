@@ -5,12 +5,14 @@
 @using Common.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
 @inject IJSRuntime JSRuntime
 @inject IOracleMessageService OracleMessageService
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConfigurationService ConfigService
 @inject MessageDiffStateService MessageDiffStateService
+@inject ILogger<MessageDiff> _logger
 @implements IDisposable
 
 <CustomProgressBar ProgressValue="@MessageDiffStateService.ProgressValue" Label="@MessageDiffStateService.ProgressLabel" IsLoading="@MessageDiffStateService.IsLoading" />

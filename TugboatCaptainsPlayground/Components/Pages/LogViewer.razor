@@ -1,8 +1,10 @@
 @page "/log-viewer"
 @using Common.Models
 @using Common.Services
+@using Microsoft.Extensions.Logging
 @inject LogViewerService LogService
 @inject ToastService ToastService
+@inject ILogger<LogViewer> _logger
 
 <h3>Log Viewer</h3>
 

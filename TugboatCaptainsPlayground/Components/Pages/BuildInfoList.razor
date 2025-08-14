@@ -240,16 +240,19 @@
     private async Task CheckoutBranch(string branchName)
     {
         toastService.ShowInfo($"Checking out branch {branchName}...");
+        _logger.LogInformation("Checking out branch {BranchName}", branchName);
 
         var result = await BuildInfoService.CheckoutBranch(currentBranchRepo, branchName);
         if (result.Success)
         {
             toastService.ShowSuccess($"Switched to branch {branchName}");
+            _logger.LogInformation("Switched to branch {BranchName}", branchName);
             await ReloadById(currentBranchRepo.Id);
-        }
         else
         {
             toastService.ShowError($"Failed to checkout branch {branchName}: {result.ErrorMessage}");
+            _logger.LogError("Failed to checkout branch {BranchName}: {ErrorMessage}", branchName, result.ErrorMessage);
+        }
         }
     }
 
@@ -293,6 +296,7 @@
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error getting next run time for repository {RepositoryId}", info.Id);
+                            toastService.ShowError($"Error getting next run time for repository {info.Id}: {ex.Message}");
                             _nextRunTimes[info.Id] = "Unknown";
                         }
                     }
@@ -354,20 +358,24 @@
             if (result.Failed > 0)
             {
                 toastService.ShowWarning($"Clone completed with {result.Successful} successful and {result.Failed} failed repositories.");
+                _logger.LogWarning("Clone completed with {Successful} successful and {Failed} failed repositories.", result.Successful, result.Failed);
             }
             else
             {
                 toastService.ShowSuccess($"Clone completed successfully for {result.Successful} repositories.");
+                _logger.LogInformation("Clone completed successfully for {Successful} repositories.", result.Successful);
             }
         }
         catch (OperationCanceledException)
         {
             toastService.ShowInfo("Clone operation canceled.");
+            _logger.LogInformation("Clone operation canceled.");
         }
         catch (Exception ex)
         {
             toastService.ShowError($"Error during clone all: {ex.Message}");
             _logger.LogError(ex, "CloneAll error");
+            _logger.LogError(ex, "Error during clone all: {Message}", ex.Message);
         }
         finally
         {
@@ -409,9 +417,11 @@
     async Task CloneRepoAsync(Repository e)
     {
         this.toastService.ShowInfo("Clonando repositório");
+        _logger.LogInformation("Cloning repository {RepositoryId}", e.Id);
         await BuildInfoService.CloneRepositoryByBuildInfoIdAsync(e.Id);
         await ReloadById(e.Id);
         this.toastService.ShowSuccess("Clonado");
+        _logger.LogInformation("Repository {RepositoryId} cloned successfully", e.Id);
     }
 
     async Task DeleteClickAsync(ItemClickEventArgs e)
@@ -452,6 +462,7 @@
     async Task OpenExternalCommitClickAsync(ItemClickEventArgs e)
     {
         this.toastService.ShowInfo("Atualizando informações da pipeline");
+        _logger.LogInformation("Updating pipeline information for repository {RepositoryId}", (e.Data as Repository)?.Id);
         var repo = e.Data as Repository;
         repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
         await ReloadById(repo.Id);
@@ -478,6 +489,7 @@ async Task OpenAzureRepositoryClickAsync(ItemClickEventArgs e)
 async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
 {
     this.toastService.ShowInfo("Atualizando informações da pipeline");
+    _logger.LogInformation("Updating pipeline information for repository {RepositoryId}", (e.Data as Repository)?.Id);
     var repo = e.Data as Repository;
     repo = await BuildInfoService.FetchRepoBuildInfoAsync(repo.Id);
     await ReloadById(repo.Id);
