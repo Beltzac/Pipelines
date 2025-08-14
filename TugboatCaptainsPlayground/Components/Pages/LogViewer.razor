@@ -59,7 +59,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var entry in logEntries)
+                @foreach (var entry in logEntries.OrderByDescending(e => e.Timestamp))
                 {
                     <tr class="@GetRowClass(entry.Level)">
                         <td>@entry.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff")</td>
