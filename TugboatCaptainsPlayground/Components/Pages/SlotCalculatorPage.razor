@@ -1,0 +1,432 @@
+@page "/slot-calculator"
+@using System.Globalization
+@using BlazorDateRangePicker
+@using Common.Models
+@using Common.Utils
+@using TugboatCaptainsPlayground.Services
+@using Microsoft.Extensions.Logging
+@inject SlotCalculatorStateService StateService
+@inject IJSRuntime JSRuntime
+@inject ILogger<SlotCalculatorPage> _logger
+@implements IDisposable
+@implements IAsyncDisposable
+
+<StickyFilter>
+    <div class="d-flex flex-wrap gap-3">
+        <div class="col-md-4">
+            <label class="form-label">Period</label>
+            <DateRangePicker
+                Culture="@CultureInfo.GetCultureInfo("en-US")"
+                TimePicker="true"
+                TimePicker24Hour="true"
+                TimePickerSeconds="true"
+                AutoApply="true"
+                DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
+                StartDate="StateService.StartDate"
+                EndDate="StateService.EndDate"
+                OnRangeSelect="OnRangeSelect"
+                class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Initial Yard TEU</label>
+            <input type="number" class="form-control" @bind="StateService.InitialYardTeu" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Vessel Plan Count</label>
+            <input type="number" class="form-control" @bind="StateService.VesselPlanCount" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Rail Plan Count</label>
+            <input type="number" class="form-control" @bind="StateService.RailPlanCount" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Ops Caps</label>
+            <input type="number" class="form-control" @bind="StateService.OpsCaps" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Yard Band Count</label>
+            <input type="number" class="form-control" @bind="StateService.YardBandCount" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Avg TEU per Truck</label>
+            <input type="number" class="form-control" @bind="StateService.AvgTeuPerTruck" step="0.1" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Reserve Rho</label>
+            <input type="number" class="form-control" @bind="StateService.ReserveRho" step="0.01" min="0" max="0.99" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Min Yard TEU</label>
+            <input type="number" class="form-control" @bind="StateService.MinYardTeu" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Target Yard TEU</label>
+            <input type="number" class="form-control" @bind="StateService.TargetYardTeu" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Max Yard TEU</label>
+            <input type="number" class="form-control" @bind="StateService.MaxYardTeu" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Gate Trucks/h</label>
+            <input type="number" class="form-control" @bind="StateService.GateTrucksPerHour" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Yard Moves/h</label>
+            <input type="number" class="form-control" @bind="StateService.YardMovesPerHour" />
+        </div>
+        <div class="col-md-12 mt-2">
+            @if (StateService.IsLoading)
+            {
+                <button class="btn btn-secondary" @onclick="CancelCalculation">Cancel</button>
+            }
+            else
+            {
+                <button class="btn btn-primary" @onclick="CalculateSlots">Calculate</button>
+            }
+        </div>
+    </div>
+</StickyFilter>
+
+<CustomProgressBar IsLoading="@StateService.IsLoading" Label="Calculating..." />
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Hour Window Analysis</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="slotChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+    </div>
+</div>
+
+@if (StateService.HourWindows != null && StateService.HourWindows.Any())
+{
+    <div class="mt-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Hour</th>
+                    <th>Total Slots</th>
+                    <th>Slots In</th>
+                    <th>Slots Out</th>
+                    @foreach (var moveClass in Enum.GetValues(typeof(MoveClass)))
+                    {
+                        <th>@moveClass.ToString()</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var window in StateService.HourWindows)
+                {
+                    <tr>
+                        <td>@window.T.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@window.TotalSlots</td>
+                        <td>@window.SlotsIn</td>
+                        <td>@window.SlotsOut</td>
+                        @foreach (MoveClass moveClass in Enum.GetValues(typeof(MoveClass)))
+                        {
+                            <td>@(window.ByClass.TryGetValue(moveClass, out var count) ? count : 0)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private CancellationTokenSource cts;
+    private DotNetObjectReference<SlotCalculatorPage>? objRef;
+
+    protected override void OnInitialized()
+    {
+        StateService.OnChange += () => InvokeAsync(StateHasChanged);
+        StateService.Load(); // Load state from persistent storage
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("addKeyboardShortcuts", objRef); // Assuming this is a global JS function
+        }
+
+        if (StateService.HourWindows != null && StateService.HourWindows.Any())
+        {
+            await UpdateChart();
+        }
+    }
+
+    public void Dispose()
+    {
+        StateService.OnChange -= () => InvokeAsync(StateHasChanged);
+        StateService.Save(); // Save state to persistent storage
+        cts?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (objRef != null)
+        {
+            objRef.Dispose();
+        }
+
+        await JSRuntime.InvokeVoidAsync("destroyChart", "slotChart");
+    }
+
+
+    private void OnRangeSelect(DateRange range)
+    {
+        StateService.StartDate = range.Start.DateTime;
+        StateService.EndDate = range.End.DateTime;
+    }
+
+    [JSInvokable]
+    public async Task HandleKeyPress(string key)
+    {
+        if (key == "Enter")
+        {
+            await CalculateSlots();
+        }
+        StateHasChanged();
+    }
+
+    private async Task CalculateSlots()
+    {
+        try
+        {
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+
+            StateService.ProgressValue = 0;
+            StateService.IsLoading = true;
+
+            // Dummy data for VesselPlan, RailPlan, OpsCaps for demonstration
+            // In a real application, these would be fetched from a service
+            var vessels = new Dictionary<DateTime, VesselPlan>();
+            var rails = new Dictionary<DateTime, RailPlan>();
+            var caps = new Dictionary<DateTime, OpsCaps>();
+
+            // Populate dummy data for a few hours
+            for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
+            {
+                vessels[t] = new VesselPlan(t, 100, 50);
+                rails[t] = new RailPlan(t, 70, 30);
+                caps[t] = new OpsCaps(t, StateService.GateTrucksPerHour, StateService.YardMovesPerHour);
+            }
+
+            var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
+
+            // Dummy backlog functions
+            Func<DateTime, int> backlogInTrucks = (t) => 100;
+            Func<DateTime, int> backlogOutTrucks = (t) => 80;
+
+            // Dummy special caps and class weights
+            Func<DateTime, Dictionary<MoveClass, int>> specialCaps = (t) => new Dictionary<MoveClass, int>();
+            Func<MoveClass, int> classWeights = (mc) => 1;
+
+            StateService.HourWindows = SlotCalculator.ComputeHourWindows(
+                StateService.StartDate,
+                StateService.EndDate,
+                StateService.InitialYardTeu,
+                vessels,
+                rails,
+                caps,
+                band,
+                StateService.AvgTeuPerTruck,
+                StateService.ReserveRho,
+                backlogInTrucks,
+                backlogOutTrucks,
+                specialCaps,
+                classWeights
+            ).ToList();
+
+            // Prepare data for chart (reusing DelayMetric for simplicity, adjust as needed)
+            StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData
+            {
+                Timestamp = hw.T.ToString("o"),
+                TotalSlots = hw.TotalSlots,
+                SlotsIn = hw.SlotsIn,
+                SlotsOut = hw.SlotsOut,
+                MinYardTeu = StateService.MinYardTeu,
+                TargetYardTeu = StateService.TargetYardTeu,
+                MaxYardTeu = StateService.MaxYardTeu,
+                ByClass = hw.ByClass,
+                YardTeuProjection = hw.YardTeuProjection
+            }).ToList();
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Slot calculation cancelled.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating slots: {Message}", ex.Message);
+        }
+        finally
+        {
+            StateService.IsLoading = false;
+        }
+    }
+
+    private void CancelCalculation()
+    {
+        cts?.Cancel();
+    }
+
+    private async Task UpdateChart()
+    {
+        if (StateService.ChartData == null || !StateService.ChartData.Any()) return;
+
+        var labels = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp).ToString("yyyy-MM-dd HH:mm")).ToArray();
+        var dataTotalSlots = StateService.ChartData.Select(d => d.TotalSlots).ToArray();
+        var dataSlotsIn = StateService.ChartData.Select(d => d.SlotsIn).ToArray();
+        var dataSlotsOut = StateService.ChartData.Select(d => d.SlotsOut).ToArray();
+        var minYardTeu = StateService.ChartData.Select(d => d.MinYardTeu).ToArray();
+        var targetYardTeu = StateService.ChartData.Select(d => d.TargetYardTeu).ToArray();
+        var maxYardTeu = StateService.ChartData.Select(d => d.MaxYardTeu).ToArray();
+        var yardTeuProjection = StateService.ChartData.Select(d => d.YardTeuProjection).ToArray();
+
+        // Per-class data
+        var classDatasets = new List<object>();
+        foreach (MoveClass mc in Enum.GetValues(typeof(MoveClass)))
+        {
+            var series = StateService.ChartData.Select(d => d.ByClass.TryGetValue(mc, out var c) ? c : 0).ToArray();
+            classDatasets.Add(new {
+                label = mc.ToString(),
+                data = series,
+                borderColor = "rgba(100,100,200,0.5)",
+                tension = 0.4,
+                cubicInterpolationMode = "monotone"
+            });
+        }
+
+        var chartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = new object[]
+                {
+                    new
+                    {
+                        label = "Total Slots",
+                        data = dataTotalSlots,
+                        borderColor = "rgb(75, 192, 192)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                    },
+                    new
+                    {
+                        label = "Slots In",
+                        data = dataSlotsIn,
+                        borderColor = "rgb(235, 64, 52)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                    },
+                    new
+                    {
+                        label = "Slots Out",
+                        data = dataSlotsOut,
+                        borderColor = "rgb(153, 102, 255)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Max Yard TEU",
+                        data = maxYardTeu,
+                        borderColor = "rgba(255,0,0,0.5)",
+                        borderDash = new[] {5,5},
+                        fill = false
+                    },
+                    new
+                    {
+                        label = "Yard TEU Projection",
+                        data = yardTeuProjection,
+                        borderColor = "rgb(0, 128, 255)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone"
+                    },
+                    new
+                    {
+                        label = "Min Yard TEU",
+                        data = minYardTeu,
+                        borderColor = "rgba(0,0,0,0.3)",
+                        borderDash = new[] {5,5},
+                        fill = false
+                    },
+                    new
+                    {
+                        label = "Target Yard TEU",
+                        data = targetYardTeu,
+                        borderColor = "rgba(0,128,0,0.5)",
+                        borderDash = new[] {5,5},
+                        fill = false
+                    },
+                    new
+                    {
+                        label = "Max Yard TEU",
+                        data = maxYardTeu,
+                        borderColor = "rgba(255,0,0,0.5)",
+                        borderDash = new[] {5,5},
+                        fill = false
+                    }
+                }
+            },
+            options = new
+            {
+                responsive = true,
+                scales = new
+                {
+                    y = new
+                    {
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Number of Slots"
+                        }
+                    },
+                    y1 = new
+                    {
+                        type = "linear",
+                        display = true,
+                        position = "right",
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Count"
+                        },
+                        grid = new
+                        {
+                            drawOnChartArea = false
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Time"
+                        }
+                    }
+                },
+                plugins = new
+                {
+                    tooltip = new
+                    {
+                        mode = "index",
+                        intersect = false
+                    }
+                }
+            }
+        };
+
+        await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
+    }
+}

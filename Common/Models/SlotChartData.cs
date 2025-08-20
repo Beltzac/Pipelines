@@ -1,0 +1,19 @@
+using System;
+using System.Collections.Generic;
+
+namespace Common.Models
+{
+    public class SlotChartData
+    {
+        public string Timestamp { get; set; } = string.Empty;
+        public int TotalSlots { get; set; }
+        public int SlotsIn { get; set; }
+        public int SlotsOut { get; set; }
+        public int YardTEU { get; set; }
+        public int MinYardTeu { get; set; }
+        public int TargetYardTeu { get; set; }
+        public int MaxYardTeu { get; set; }
+        public Dictionary<MoveClass, int> ByClass { get; set; } = new();
+        public int YardTeuProjection { get; set; }
+    }
+}
