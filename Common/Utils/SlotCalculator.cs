@@ -15,7 +15,14 @@ public record HourWindow(
     int SlotsIn,
     int SlotsOut,
     Dictionary<MoveClass,int> ByClass,
-    int YardTeuProjection
+    int YardTeuProjection,
+    int YardTeuNoGate,
+    int TruckIn,
+    int TruckOut,
+    int VesselIn,
+    int VesselOut,
+    int RailIn,
+    int RailOut
 );
 
 public static class SlotCalculator
@@ -61,18 +68,20 @@ public static class SlotCalculator
     {
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
         if (reserveRho < 0 || reserveRho >= 1) throw new ArgumentOutOfRangeException(nameof(reserveRho));
-
-        // 1) Forecast yard occupancy *without trucks* (O_noGate[t])
+        // Forecast yard occupancy *without trucks*
         var O_noGate = ForecastYardNoGate(start, end, initialYardTeu, vessels, rails);
 
-        // 2) For each hour: compute TotalSlots and IN/OUT split, then split by class
+        // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
+        int currentYard = initialYardTeu;
+
         for (var t = start; t <= end; t = t.AddHours(1))
         {
+
             if (!caps.TryGetValue(t, out var cap))
             {
                 // No caps for this hour → publish zero slots
-                results.Add(new HourWindow(t, 0, 0, 0, new(), O_noGate[t]));
+                results.Add(new HourWindow(t, 0, 0, 0, new(), currentYard, O_noGate[t], 0, 0, 0, 0, 0, 0));
                 continue;
             }
 
@@ -82,7 +91,7 @@ public static class SlotCalculator
             int totalSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawSlots));
 
             // Yard steering: desired net TEU to nudge toward target
-            int diffTEU = band.TargetTEU - O_noGate[t]; // + wants IN, - wants OUT
+            int diffTEU = band.TargetTEU - currentYard; // + wants IN, - wants OUT
             int maxNudgeTEU = Math.Max(1, (int)Math.Round(0.03 * band.MaxTEU)); // 3%/h guard
             diffTEU = Math.Clamp(diffTEU, -maxNudgeTEU, maxNudgeTEU);
 
@@ -102,7 +111,25 @@ public static class SlotCalculator
             // Per-class caps/weights
             var perClass = SplitIntoClasses(t, wantIn, wantOut, specialCaps, classWeights);
 
-            results.Add(new HourWindow(t, totalSlots, wantIn, wantOut, perClass, O_noGate[t]));
+            // Update yard occupancy using allocated slots
+            currentYard += (int)(wantIn * avgTeuPerTruck);
+            currentYard -= (int)(wantOut * avgTeuPerTruck);
+
+            results.Add(new HourWindow(
+                t,
+                totalSlots,
+                wantIn,
+                wantOut,
+                perClass,
+                currentYard,
+                O_noGate[t],
+                wantIn,
+                wantOut,
+                vessels[t].DischargeTEU,
+                vessels[t].LoadTEU,
+                rails[t].InTEU,
+                rails[t].OutTEU
+            ));
         }
 
         return results;

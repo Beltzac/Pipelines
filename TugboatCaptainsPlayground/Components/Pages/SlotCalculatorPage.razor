@@ -253,7 +253,14 @@
                 TargetYardTeu = StateService.TargetYardTeu,
                 MaxYardTeu = StateService.MaxYardTeu,
                 ByClass = hw.ByClass,
-                YardTeuProjection = hw.YardTeuProjection
+                YardTeuProjection = hw.YardTeuProjection,
+                YardTeuNoGate = hw.YardTeuNoGate,
+                TruckIn = hw.TruckIn,
+                TruckOut = hw.TruckOut,
+                VesselIn = hw.VesselIn,
+                VesselOut = hw.VesselOut,
+                RailIn = hw.RailIn,
+                RailOut = hw.RailOut
             }).ToList();
         }
         catch (OperationCanceledException)
@@ -288,6 +295,16 @@
         var maxYardTeu = StateService.ChartData.Select(d => d.MaxYardTeu).ToArray();
         var yardTeuProjection = StateService.ChartData.Select(d => d.YardTeuProjection).ToArray();
 
+        var yardTeuNoGate = StateService.ChartData.Select(d => d.YardTeuNoGate).ToArray();
+
+        var truckIn = StateService.ChartData.Select(d => d.TruckIn).ToArray();
+        var truckOut = StateService.ChartData.Select(d => d.TruckOut).ToArray();
+        var vesselIn = StateService.ChartData.Select(d => d.VesselIn).ToArray();
+        var vesselOut = StateService.ChartData.Select(d => d.VesselOut).ToArray();
+
+        var railIn = StateService.ChartData.Select(d => d.RailIn).ToArray();
+        var railOut = StateService.ChartData.Select(d => d.RailOut).ToArray();
+
         // Per-class data
         var classDatasets = new List<object>();
         foreach (MoveClass mc in Enum.GetValues(typeof(MoveClass)))
@@ -301,6 +318,7 @@
                 cubicInterpolationMode = "monotone"
             });
         }
+        
 
         var chartData = new
         {
@@ -374,6 +392,76 @@
                         borderColor = "rgba(255,0,0,0.5)",
                         borderDash = new[] {5,5},
                         fill = false
+                    },
+                    new
+                    {
+                        label = "Yard TEU Projection (No Trucks)",
+                        data = yardTeuNoGate,
+                        borderColor = "rgb(128,128,128)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone"
+                    },
+                    new
+                    {
+                        label = "Yard TEU Projection (With Trucks)",
+                        data = yardTeuProjection,
+                        borderColor = "rgb(0, 128, 255)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone"
+                    },
+                    new
+                    {
+                        label = "Truck In",
+                        data = truckIn,
+                        borderColor = "rgb(0,200,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Truck Out",
+                        data = truckOut,
+                        borderColor = "rgb(200,0,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Vessel In",
+                        data = vesselIn,
+                        borderColor = "rgb(0,0,200)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Vessel Out",
+                        data = vesselOut,
+                        borderColor = "rgb(200,0,200)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Rail In",
+                        data = railIn,
+                        borderColor = "rgb(0,150,150)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
+                    },
+                    new
+                    {
+                        label = "Rail Out",
+                        data = railOut,
+                        borderColor = "rgb(150,75,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        yAxisID = "y1"
                     }
                 }
             },
