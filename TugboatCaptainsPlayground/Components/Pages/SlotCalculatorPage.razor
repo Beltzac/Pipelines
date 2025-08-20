@@ -2,6 +2,7 @@
 @using System.Globalization
 @using BlazorDateRangePicker
 @using Common.Models
+@using Common.Services
 @using Common.Utils
 @using TugboatCaptainsPlayground.Services
 @using Microsoft.Extensions.Logging
@@ -10,7 +11,7 @@
 @inject ILogger<SlotCalculatorPage> _logger
 @implements IDisposable
 @implements IAsyncDisposable
-
+@inject OracleOpsService OracleOpsService
 <StickyFilter>
     <div class="d-flex flex-wrap gap-3">
         <div class="col-md-4">
@@ -172,7 +173,7 @@
             objRef.Dispose();
         }
 
-        await JSRuntime.InvokeVoidAsync("destroyChart", "slotChart");
+        //await JSRuntime.InvokeVoidAsync("destroyChart", "slotChart");
     }
 
 
@@ -204,15 +205,13 @@
 
             // Dummy data for VesselPlan, RailPlan, OpsCaps for demonstration
             // In a real application, these would be fetched from a service
-            var vessels = new Dictionary<DateTime, VesselPlan>();
-            var rails = new Dictionary<DateTime, RailPlan>();
+            var vessels = await OracleOpsService.FetchVesselPlansAsync(StateService.StartDate, StateService.EndDate);
+            var rails = await OracleOpsService.FetchRailPlansAsync(StateService.StartDate, StateService.EndDate);
             var caps = new Dictionary<DateTime, OpsCaps>();
 
             // Populate dummy data for a few hours
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
-                vessels[t] = new VesselPlan(t, 100, 50);
-                rails[t] = new RailPlan(t, 70, 30);
                 caps[t] = new OpsCaps(t, StateService.GateTrucksPerHour, StateService.YardMovesPerHour);
             }
 
@@ -236,8 +235,8 @@
                 band,
                 StateService.AvgTeuPerTruck,
                 StateService.ReserveRho,
-                backlogInTrucks,
-                backlogOutTrucks,
+                @* backlogInTrucks,
+                backlogOutTrucks, *@
                 specialCaps,
                 classWeights
             ).ToList();
@@ -318,7 +317,7 @@
                 cubicInterpolationMode = "monotone"
             });
         }
-        
+
 
         var chartData = new
         {

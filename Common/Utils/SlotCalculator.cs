@@ -60,8 +60,8 @@ public static class SlotCalculator
         YardBand band,
         double avgTeuPerTruck,
         double reserveRho,
-        Func<DateTime, int> backlogInTrucks,
-        Func<DateTime, int> backlogOutTrucks,
+        // Func<DateTime, int> backlogInTrucks,
+        // Func<DateTime, int> backlogOutTrucks,
         Func<DateTime, Dictionary<MoveClass, int>> specialCaps,
         Func<MoveClass, int> classWeights
     )
@@ -90,9 +90,13 @@ public static class SlotCalculator
             int rawSlots = Math.Min(cap.GateTrucksPerHour, yardTrucks);
             int totalSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawSlots));
 
+            // First apply vessel and rail flows
+            currentYard += vessels[t].DischargeTEU + rails[t].InTEU;
+            currentYard -= vessels[t].LoadTEU + rails[t].OutTEU;
+
             // Yard steering: desired net TEU to nudge toward target
             int diffTEU = band.TargetTEU - currentYard; // + wants IN, - wants OUT
-            int maxNudgeTEU = Math.Max(1, (int)Math.Round(0.03 * band.MaxTEU)); // 3%/h guard
+            int maxNudgeTEU = Math.Max(1, (int)Math.Round(1.0 * band.MaxTEU)); // 3%/h guard
             diffTEU = Math.Clamp(diffTEU, -maxNudgeTEU, maxNudgeTEU);
 
             // Convert TEU to truck counts
@@ -104,9 +108,10 @@ public static class SlotCalculator
             wantOut = Math.Min(wantOut, totalSlots - wantIn);
             int remaining = totalSlots - wantIn - wantOut;
 
-            // Allocate remainder to side with larger backlog
-            if (backlogInTrucks(t) >= backlogOutTrucks(t)) wantIn += remaining;
-            else wantOut += remaining;
+            // Allocate remainder evenly
+
+             wantIn += remaining / 2;
+             wantOut += remaining / 2;
 
             // Per-class caps/weights
             var perClass = SplitIntoClasses(t, wantIn, wantOut, specialCaps, classWeights);
@@ -123,8 +128,8 @@ public static class SlotCalculator
                 perClass,
                 currentYard,
                 O_noGate[t],
-                wantIn,
-                wantOut,
+                (int)(wantIn * avgTeuPerTruck),
+                (int)(wantOut * avgTeuPerTruck),
                 vessels[t].DischargeTEU,
                 vessels[t].LoadTEU,
                 rails[t].InTEU,

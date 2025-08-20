@@ -14,26 +14,29 @@ namespace TugboatCaptainsPlayground.McpServer
     public static class Tools
     {
         // OracleSchemaService methods
-        [McpServerTool, Description("Get all view definitions for a given Oracle schema.")]
-        public static async Task<IEnumerable<OracleViewDefinition>> GetOracleViewDefinitionsAsync(
-            IOracleSchemaService oracleSchemaService,
-            IConfigurationService configurationService,
-            string environmentName)
-        {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
-            return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
-        }
+        // [McpServerTool, Description("Get all view definitions for a given Oracle schema.")]
+        // public static async Task<IEnumerable<OracleViewDefinition>> GetOracleViewDefinitionsAsync(
+        //     IOracleSchemaService oracleSchemaService,
+        //     IConfigurationService configurationService,
+        //     string environmentName)
+        // {
+        //     var config = configurationService.GetConfig();
+        //     var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+        //     if (oracleEnv == null)
+        //     {
+        //         throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+        //     }
+        //     return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
+        // }
 
-        [McpServerTool, Description("Get a list of all tables and views in a given Oracle schema.")]
-        public static async Task<IEnumerable<string>> GetOracleTablesAndViewsAsync(
+        [McpServerTool(Name = "get_oracle_tables_and_views"), Description("Get a list of all tables and views in a given Oracle schema, with optional search and pagination.")]
+        public static async Task<OracleTablesAndViewsResult> GetOracleTablesAndViewsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName)
+            string environmentName,
+            string? search = null,
+            int pageSize = 20,
+            int pageNumber = 1)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
@@ -41,7 +44,13 @@ namespace TugboatCaptainsPlayground.McpServer
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
             }
-            return await oracleSchemaService.GetTablesAndViewsAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
+
+            return await oracleSchemaService.GetTablesAndViewsAsync(
+                oracleEnv.ConnectionString,
+                oracleEnv.Schema,
+                search,
+                pageSize,
+                pageNumber);
         }
 
         [McpServerTool, Description("Get column details for a specific table or view.")]
@@ -75,26 +84,26 @@ namespace TugboatCaptainsPlayground.McpServer
             return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
         }
 
-        [McpServerTool, Description("Compares view definitions between two Oracle environments.")]
-        public static async Task<IEnumerable<OracleDiffResult>> CompareOracleViewDefinitionsAsync(
-            IOracleSchemaService oracleSchemaService,
-            IConfigurationService configurationService,
-            string sourceEnvironmentName,
-            string targetEnvironmentName)
-        {
-            var config = configurationService.GetConfig();
-            var sourceOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvironmentName);
-            if (sourceOracleEnv == null)
-            {
-                throw new ArgumentException($"Source Oracle environment '{sourceEnvironmentName}' not found.");
-            }
-            var targetOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvironmentName);
-            if (targetOracleEnv == null)
-            {
-                throw new ArgumentException($"Target Oracle environment '{targetEnvironmentName}' not found.");
-            }
-            return await oracleSchemaService.Compare(sourceEnvironmentName, targetEnvironmentName);
-        }
+        // [McpServerTool, Description("Compares view definitions between two Oracle environments.")]
+        // public static async Task<IEnumerable<OracleDiffResult>> CompareOracleViewDefinitionsAsync(
+        //     IOracleSchemaService oracleSchemaService,
+        //     IConfigurationService configurationService,
+        //     string sourceEnvironmentName,
+        //     string targetEnvironmentName)
+        // {
+        //     var config = configurationService.GetConfig();
+        //     var sourceOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvironmentName);
+        //     if (sourceOracleEnv == null)
+        //     {
+        //         throw new ArgumentException($"Source Oracle environment '{sourceEnvironmentName}' not found.");
+        //     }
+        //     var targetOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvironmentName);
+        //     if (targetOracleEnv == null)
+        //     {
+        //         throw new ArgumentException($"Target Oracle environment '{targetEnvironmentName}' not found.");
+        //     }
+        //     return await oracleSchemaService.Compare(sourceEnvironmentName, targetEnvironmentName);
+        // }
 
         [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
         public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(

@@ -98,6 +98,7 @@ namespace Common.Utils
             services.AddScoped<LogViewerService>();
             services.AddScoped<WindowsRoutesManager>();
             services.AddScoped<ThemeService>();
+            services.AddScoped<OracleOpsService>();
 
             // Register Tempo services
             services.AddScoped<ITempoService, TempoService>();
