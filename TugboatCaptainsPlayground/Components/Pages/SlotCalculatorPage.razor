@@ -16,16 +16,9 @@
     <div class="d-flex flex-wrap gap-3">
         <div class="col-md-4">
             <label class="form-label">Period</label>
-            <DateRangePicker
-                Culture="@CultureInfo.GetCultureInfo("en-US")"
-                TimePicker="true"
-                TimePicker24Hour="true"
-                TimePickerSeconds="true"
-                AutoApply="true"
-                DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
-                StartDate="StateService.StartDate"
-                EndDate="StateService.EndDate"
-                OnRangeSelect="OnRangeSelect"
+            <DateRangePicker Culture="@CultureInfo.GetCultureInfo("en-US")" TimePicker="true" TimePicker24Hour="true"
+                TimePickerSeconds="true" AutoApply="true" DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
+                StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
                 class="form-control" />
         </div>
         <div class="col-md-2">
@@ -100,6 +93,15 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Move Class Analysis</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="moveClassChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+    </div>
+</div>
+
 @if (StateService.HourWindows != null && StateService.HourWindows.Any())
 {
     <div class="mt-4">
@@ -110,6 +112,18 @@
                     <th>Total Slots</th>
                     <th>Slots In</th>
                     <th>Slots Out</th>
+                  @*   <th>Yard TEU</th>
+                    <th>Min Yard TEU</th>
+                    <th>Target Yard TEU</th>
+                    <th>Max Yard TEU</th> *@
+                    <th>Yard TEU Projection</th>
+                    <th>Yard TEU No Gate</th>
+                    <th>Truck In</th>
+                    <th>Truck Out</th>
+                    <th>Vessel In</th>
+                    <th>Vessel Out</th>
+                    <th>Rail In</th>
+                    <th>Rail Out</th>
                     @foreach (var moveClass in Enum.GetValues(typeof(MoveClass)))
                     {
                         <th>@moveClass.ToString()</th>
@@ -124,6 +138,18 @@
                         <td>@window.TotalSlots</td>
                         <td>@window.SlotsIn</td>
                         <td>@window.SlotsOut</td>
+                       @*  <td>@window.YardTEU</td>
+                        <td>@window.MinYardTeu</td>
+                        <td>@window.TargetYardTeu</td>
+                        <td>@window.MaxYardTeu</td> *@
+                        <td>@window.YardTeuProjection</td>
+                        <td>@window.YardTeuNoGate</td>
+                        <td>@window.TruckIn</td>
+                        <td>@window.TruckOut</td>
+                        <td>@window.VesselIn</td>
+                        <td>@window.VesselOut</td>
+                        <td>@window.RailIn</td>
+                        <td>@window.RailOut</td>
                         @foreach (MoveClass moveClass in Enum.GetValues(typeof(MoveClass)))
                         {
                             <td>@(window.ByClass.TryGetValue(moveClass, out var count) ? count : 0)</td>
@@ -226,19 +252,19 @@
             Func<MoveClass, int> classWeights = (mc) => 1;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
-                StateService.StartDate,
-                StateService.EndDate,
-                StateService.InitialYardTeu,
-                vessels,
-                rails,
-                caps,
-                band,
-                StateService.AvgTeuPerTruck,
-                StateService.ReserveRho,
-                @* backlogInTrucks,
+            StateService.StartDate,
+            StateService.EndDate,
+            StateService.InitialYardTeu,
+            vessels,
+            rails,
+            caps,
+            band,
+            StateService.AvgTeuPerTruck,
+            StateService.ReserveRho,
+            @* backlogInTrucks,
                 backlogOutTrucks, *@
-                specialCaps,
-                classWeights
+            specialCaps,
+            classWeights
             ).ToList();
 
             // Prepare data for chart (reusing DelayMetric for simplicity, adjust as needed)
@@ -309,7 +335,8 @@
         foreach (MoveClass mc in Enum.GetValues(typeof(MoveClass)))
         {
             var series = StateService.ChartData.Select(d => d.ByClass.TryGetValue(mc, out var c) ? c : 0).ToArray();
-            classDatasets.Add(new {
+            classDatasets.Add(new
+            {
                 label = mc.ToString(),
                 data = series,
                 borderColor = "rgba(100,100,200,0.5)",
@@ -326,143 +353,143 @@
             {
                 labels = labels,
                 datasets = new object[]
-                {
-                    new
-                    {
-                        label = "Total Slots",
-                        data = dataTotalSlots,
-                        borderColor = "rgb(75, 192, 192)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                    },
-                    new
-                    {
-                        label = "Slots In",
-                        data = dataSlotsIn,
-                        borderColor = "rgb(235, 64, 52)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                    },
-                    new
-                    {
-                        label = "Slots Out",
-                        data = dataSlotsOut,
-                        borderColor = "rgb(153, 102, 255)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Max Yard TEU",
-                        data = maxYardTeu,
-                        borderColor = "rgba(255,0,0,0.5)",
-                        borderDash = new[] {5,5},
-                        fill = false
-                    },
-                    new
-                    {
-                        label = "Yard TEU Projection",
-                        data = yardTeuProjection,
-                        borderColor = "rgb(0, 128, 255)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone"
-                    },
-                    new
-                    {
-                        label = "Min Yard TEU",
-                        data = minYardTeu,
-                        borderColor = "rgba(0,0,0,0.3)",
-                        borderDash = new[] {5,5},
-                        fill = false
-                    },
-                    new
-                    {
-                        label = "Target Yard TEU",
-                        data = targetYardTeu,
-                        borderColor = "rgba(0,128,0,0.5)",
-                        borderDash = new[] {5,5},
-                        fill = false
-                    },
-                    new
-                    {
-                        label = "Max Yard TEU",
-                        data = maxYardTeu,
-                        borderColor = "rgba(255,0,0,0.5)",
-                        borderDash = new[] {5,5},
-                        fill = false
-                    },
-                    new
-                    {
-                        label = "Yard TEU Projection (No Trucks)",
-                        data = yardTeuNoGate,
-                        borderColor = "rgb(128,128,128)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone"
-                    },
-                    new
-                    {
-                        label = "Yard TEU Projection (With Trucks)",
-                        data = yardTeuProjection,
-                        borderColor = "rgb(0, 128, 255)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone"
-                    },
-                    new
-                    {
-                        label = "Truck In",
-                        data = truckIn,
-                        borderColor = "rgb(0,200,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Truck Out",
-                        data = truckOut,
-                        borderColor = "rgb(200,0,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Vessel In",
-                        data = vesselIn,
-                        borderColor = "rgb(0,0,200)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Vessel Out",
-                        data = vesselOut,
-                        borderColor = "rgb(200,0,200)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Rail In",
-                        data = railIn,
-                        borderColor = "rgb(0,150,150)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    },
-                    new
-                    {
-                        label = "Rail Out",
-                        data = railOut,
-                        borderColor = "rgb(150,75,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        yAxisID = "y1"
-                    }
-                }
+        {
+new
+{
+label = "Total Slots",
+data = dataTotalSlots,
+borderColor = "rgb(75, 192, 192)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+},
+new
+{
+label = "Slots In",
+data = dataSlotsIn,
+borderColor = "rgb(235, 64, 52)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+},
+new
+{
+label = "Slots Out",
+data = dataSlotsOut,
+borderColor = "rgb(153, 102, 255)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Max Yard TEU",
+data = maxYardTeu,
+borderColor = "rgba(255,0,0,0.5)",
+borderDash = new[] {5,5},
+fill = false
+},
+new
+{
+label = "Yard TEU Projection",
+data = yardTeuProjection,
+borderColor = "rgb(0, 128, 255)",
+tension = 0.4,
+cubicInterpolationMode = "monotone"
+},
+new
+{
+label = "Min Yard TEU",
+data = minYardTeu,
+borderColor = "rgba(0,0,0,0.3)",
+borderDash = new[] {5,5},
+fill = false
+},
+new
+{
+label = "Target Yard TEU",
+data = targetYardTeu,
+borderColor = "rgba(0,128,0,0.5)",
+borderDash = new[] {5,5},
+fill = false
+},
+new
+{
+label = "Max Yard TEU",
+data = maxYardTeu,
+borderColor = "rgba(255,0,0,0.5)",
+borderDash = new[] {5,5},
+fill = false
+},
+new
+{
+label = "Yard TEU Projection (No Trucks)",
+data = yardTeuNoGate,
+borderColor = "rgb(128,128,128)",
+tension = 0.4,
+cubicInterpolationMode = "monotone"
+},
+new
+{
+label = "Yard TEU Projection (With Trucks)",
+data = yardTeuProjection,
+borderColor = "rgb(0, 128, 255)",
+tension = 0.4,
+cubicInterpolationMode = "monotone"
+},
+new
+{
+label = "Truck In",
+data = truckIn,
+borderColor = "rgb(0,200,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Truck Out",
+data = truckOut,
+borderColor = "rgb(200,0,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Vessel In",
+data = vesselIn,
+borderColor = "rgb(0,0,200)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Vessel Out",
+data = vesselOut,
+borderColor = "rgb(200,0,200)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Rail In",
+data = railIn,
+borderColor = "rgb(0,150,150)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+},
+new
+{
+label = "Rail Out",
+data = railOut,
+borderColor = "rgb(150,75,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+yAxisID = "y1"
+}
+        }
             },
             options = new
             {
@@ -513,7 +540,41 @@
                 }
             }
         };
-
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
+
+        var moveClassChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = classDatasets
+            },
+            options = new
+            {
+                responsive = true,
+                scales = new
+                {
+                    y = new
+                    {
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Count by Move Class"
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Hour"
+                        }
+                    }
+                }
+            }
+        };
+        await JSRuntime.InvokeVoidAsync("renderChart", "moveClassChart", moveClassChartData);
     }
 }
