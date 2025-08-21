@@ -108,7 +108,7 @@
         {
             var env = environments.First(e => e.Name == StateService.SelectedEnvironment);
             var result = await OracleSchemaService.GetTablesAndViewsAsync(env.ConnectionString, env.Schema);
-            tablesAndViews = result.Results.ToList();
+            tablesAndViews = result.Results.Select(x => $"{x.Owner}.{x.Name}").ToList();
         }
         catch (Exception ex)
         {

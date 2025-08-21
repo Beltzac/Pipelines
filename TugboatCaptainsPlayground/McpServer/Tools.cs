@@ -13,27 +13,12 @@ namespace TugboatCaptainsPlayground.McpServer
     [McpServerToolType]
     public static class Tools
     {
-        // OracleSchemaService methods
-        // [McpServerTool, Description("Get all view definitions for a given Oracle schema.")]
-        // public static async Task<IEnumerable<OracleViewDefinition>> GetOracleViewDefinitionsAsync(
-        //     IOracleSchemaService oracleSchemaService,
-        //     IConfigurationService configurationService,
-        //     string environmentName)
-        // {
-        //     var config = configurationService.GetConfig();
-        //     var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
-        //     if (oracleEnv == null)
-        //     {
-        //         throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-        //     }
-        //     return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
-        // }
-
-        [McpServerTool(Name = "get_oracle_tables_and_views"), Description("Get a list of all tables and views in a given Oracle schema, with optional search and pagination.")]
+        [McpServerTool, Description("Get a list of all tables and views in a given Oracle schema, with optional search and pagination.")]
         public static async Task<OracleTablesAndViewsResult> GetOracleTablesAndViewsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
             string environmentName,
+            string? schema = null,
             string? search = null,
             int pageSize = 20,
             int pageNumber = 1)
@@ -47,7 +32,7 @@ namespace TugboatCaptainsPlayground.McpServer
 
             return await oracleSchemaService.GetTablesAndViewsAsync(
                 oracleEnv.ConnectionString,
-                oracleEnv.Schema,
+                schema,
                 search,
                 pageSize,
                 pageNumber);
@@ -58,6 +43,7 @@ namespace TugboatCaptainsPlayground.McpServer
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
             string environmentName,
+            string schema,
             string objectName)
         {
             var config = configurationService.GetConfig();
@@ -66,7 +52,8 @@ namespace TugboatCaptainsPlayground.McpServer
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
             }
-            return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, oracleEnv.Schema, objectName);
+
+            return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, schema, objectName);
         }
 
         [McpServerTool, Description("Test the connection to an Oracle database.")]
@@ -84,32 +71,12 @@ namespace TugboatCaptainsPlayground.McpServer
             return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
         }
 
-        // [McpServerTool, Description("Compares view definitions between two Oracle environments.")]
-        // public static async Task<IEnumerable<OracleDiffResult>> CompareOracleViewDefinitionsAsync(
-        //     IOracleSchemaService oracleSchemaService,
-        //     IConfigurationService configurationService,
-        //     string sourceEnvironmentName,
-        //     string targetEnvironmentName)
-        // {
-        //     var config = configurationService.GetConfig();
-        //     var sourceOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == sourceEnvironmentName);
-        //     if (sourceOracleEnv == null)
-        //     {
-        //         throw new ArgumentException($"Source Oracle environment '{sourceEnvironmentName}' not found.");
-        //     }
-        //     var targetOracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == targetEnvironmentName);
-        //     if (targetOracleEnv == null)
-        //     {
-        //         throw new ArgumentException($"Target Oracle environment '{targetEnvironmentName}' not found.");
-        //     }
-        //     return await oracleSchemaService.Compare(sourceEnvironmentName, targetEnvironmentName);
-        // }
-
         [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
         public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
             string environmentName,
+            string schema,
             string viewName)
         {
             var config = configurationService.GetConfig();
@@ -118,7 +85,7 @@ namespace TugboatCaptainsPlayground.McpServer
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
             }
-            return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, oracleEnv.Schema, viewName);
+            return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, schema, viewName);
         }
 
         [McpServerTool, Description("Generates an EF Core mapping class for a given Oracle table or view.")]

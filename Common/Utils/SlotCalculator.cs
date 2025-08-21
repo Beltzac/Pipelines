@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public enum MoveClass { ImpPick, ExpDrop, EmpPick, EmpDrop /* add Reefer/DG variants if needed */ }
-
+public enum MoveClass { ImpPick, ExpDrop, EmpPick, EmpDrop }
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU);
 public record RailPlan(DateTime T, int InTEU, int OutTEU);
 public record OpsCaps(DateTime T, int GateTrucksPerHour, int YardMovesPerHour);
@@ -14,7 +13,7 @@ public record HourWindow(
     int TotalSlots,
     int SlotsIn,
     int SlotsOut,
-    Dictionary<MoveClass,int> ByClass,
+    Dictionary<MoveClass, int> ByClass,
     int YardTeuProjection,
     int YardTeuNoGate,
     int TruckIn,
@@ -24,6 +23,12 @@ public record HourWindow(
     int RailIn,
     int RailOut
 );
+
+// Problemas:
+//  Yard tem areas definidas pra Vazios / Cheios / Reefers. Teria que rodar o algoritimo pra cada um deles
+//  Esses fluxos tem gate e operacao compartilhados, temos que ver o que é fixo ou o que podemos remanejar
+//  verificar quantas lanes são entradas e quantas são saida
+//  adicionar entradas e saidas para o armazem
 
 public static class SlotCalculator
 {
@@ -41,8 +46,6 @@ public static class SlotCalculator
     /// <param name="band">Yard band (min/target/max TEU)</param>
     /// <param name="avgTeuPerTruck">Average TEU handled per truck (≈1.3–1.6)</param>
     /// <param name="reserveRho">Operational reserve fraction (e.g., 0.10)</param>
-    /// <param name="backlogInTrucks">Function: feasible IN backlog at hour t (trucks)</param>
-    /// <param name="backlogOutTrucks">Function: feasible OUT backlog at hour t (trucks)</param>
     /// <param name="specialCaps">
     /// Function: per-class max trucks allowed at hour t (e.g., reefers/DG/block windows).
     /// If none, return empty dict.
@@ -60,8 +63,6 @@ public static class SlotCalculator
         YardBand band,
         double avgTeuPerTruck,
         double reserveRho,
-        // Func<DateTime, int> backlogInTrucks,
-        // Func<DateTime, int> backlogOutTrucks,
         Func<DateTime, Dictionary<MoveClass, int>> specialCaps,
         Func<MoveClass, int> classWeights
     )
@@ -110,8 +111,8 @@ public static class SlotCalculator
 
             // Allocate remainder evenly
 
-             wantIn += remaining / 2;
-             wantOut += remaining / 2;
+            wantIn += remaining / 2;
+            wantOut += remaining / 2;
 
             // Per-class caps/weights
             var perClass = SplitIntoClasses(t, wantIn, wantOut, specialCaps, classWeights);
@@ -139,8 +140,6 @@ public static class SlotCalculator
 
         return results;
     }
-
-    // === helpers ===
 
     private static Dictionary<DateTime, int> ForecastYardNoGate(
         DateTime start, DateTime end, int O0,

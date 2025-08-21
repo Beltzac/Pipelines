@@ -2,6 +2,7 @@ using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using Common.Utils;
+using System.Runtime.CompilerServices;
 using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
@@ -182,51 +183,54 @@ namespace Common.Services
         }
        public async Task<OracleTablesAndViewsResult> GetTablesAndViewsAsync(
            string connectionString,
-           string schema,
+           string? schema = null,
            string? search = null,
            int pageSize = 50,
            int pageNumber = 1)
        {
-           var searchFilter = "";
+           var whereClauses = new List<string>();
+           if (!string.IsNullOrWhiteSpace(schema))
+           {
+               whereClauses.Add($"OWNER = '{schema.ToUpperInvariant()}'");
+           }
            if (!string.IsNullOrWhiteSpace(search))
            {
-               searchFilter = $" AND LOWER(OBJECT_NAME) LIKE '%{search.ToLowerInvariant()}%'";
+               whereClauses.Add($"LOWER(OBJECT_NAME) LIKE '%{search.ToLowerInvariant()}%'");
            }
 
+           var whereClause = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
+
            var baseQuery = $@"
-               SELECT TABLE_NAME AS OBJECT_NAME FROM ALL_TABLES WHERE OWNER = '{schema.ToUpperInvariant()}'
-               UNION ALL
-               SELECT VIEW_NAME AS OBJECT_NAME FROM ALL_VIEWS WHERE OWNER = '{schema.ToUpperInvariant()}'
+               FROM (
+                   SELECT TABLE_NAME AS OBJECT_NAME, OWNER FROM ALL_TABLES
+                   UNION ALL
+                   SELECT VIEW_NAME AS OBJECT_NAME, OWNER FROM ALL_VIEWS
+               ) {whereClause}
            ";
 
-           var searchParam = string.IsNullOrWhiteSpace(search) ? null : $"%{search.ToLowerInvariant()}%";
-
-           var dataQuery = (FormattableString)$@"
-               SELECT OBJECT_NAME
+           var dataQuery = $@"
+               SELECT OBJECT_NAME AS Name, OWNER
                FROM (
-                   SELECT OBJECT_NAME, ROW_NUMBER() OVER (ORDER BY OBJECT_NAME) AS rn
-                   FROM (
-                       SELECT TABLE_NAME AS OBJECT_NAME FROM ALL_TABLES WHERE OWNER = {schema.ToUpperInvariant()}
-                       UNION ALL
-                       SELECT VIEW_NAME AS OBJECT_NAME FROM ALL_VIEWS WHERE OWNER = {schema.ToUpperInvariant()}
-                   )
-                   WHERE ({searchParam} IS NULL OR LOWER(OBJECT_NAME) LIKE {searchParam})
-               )
+                   SELECT OBJECT_NAME, OWNER, ROW_NUMBER() OVER (ORDER BY OBJECT_NAME) AS rn
+                   {baseQuery}
+               ) ranked
                WHERE rn BETWEEN {(pageNumber - 1) * pageSize + 1} AND {pageNumber * pageSize}
            ";
 
-           var results = await _repo.GetFromSqlAsync<string>(connectionString, dataQuery, default);
+           var results = await _repo.GetFromSqlAsync<OracleTableOrViewInfo>(
+               connectionString,
+               FormattableStringFactory.Create(dataQuery),
+               default
+           );
 
-           var countQuery = (FormattableString)$@"
-               SELECT COUNT(*) FROM (
-                   SELECT TABLE_NAME AS OBJECT_NAME FROM ALL_TABLES WHERE OWNER = {schema.ToUpperInvariant()}
-                   UNION ALL
-                   SELECT VIEW_NAME AS OBJECT_NAME FROM ALL_VIEWS WHERE OWNER = {schema.ToUpperInvariant()}
-               )
-               WHERE ({searchParam} IS NULL OR LOWER(OBJECT_NAME) LIKE {searchParam})
-           ";
+           var countQuery = $"SELECT COUNT(*) {baseQuery}";
 
-           var totalCountResult = await _repo.GetFromSqlAsync<int>(connectionString, countQuery, default);
+           var totalCountResult = await _repo.GetFromSqlAsync<int>(
+               connectionString,
+               FormattableStringFactory.Create(countQuery),
+               default
+           );
+
            var totalCount = totalCountResult.FirstOrDefault();
 
            return new OracleTablesAndViewsResult

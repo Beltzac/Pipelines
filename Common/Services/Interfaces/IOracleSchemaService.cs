@@ -11,7 +11,7 @@ namespace Common.Services.Interfaces
         Task<OracleDiffResult> GetViewDiffAsync(string viewName, string oldContent, string newContent);
         Task<OracleTablesAndViewsResult> GetTablesAndViewsAsync(
             string connectionString,
-            string schema,
+            string? schema = null,
             string? search = null,
             int pageSize = 50,
             int pageNumber = 1);

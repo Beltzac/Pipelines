@@ -4,7 +4,7 @@ namespace Common.Models
 {
     public class OracleTablesAndViewsResult
     {
-        public IEnumerable<string> Results { get; set; } = new List<string>();
+        public IEnumerable<OracleTableOrViewInfo> Results { get; set; } = new List<OracleTableOrViewInfo>();
         public int TotalCount { get; set; }
     }
 }
