@@ -337,5 +337,25 @@ namespace TugboatCaptainsPlayground.McpServer
                 throw new Exception($"Error getting SGG delay metrics: {ex.Message}", ex);
             }
         }
+    
+        [McpServerTool, Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
+        public static async Task<string> AnalyzeOracleQueryPerformanceAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName,
+            string schema,
+            string sql)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+            return await oracleSchemaService.AnalyzeQueryPerformanceAsync(
+                oracleEnv.ConnectionString,
+                schema,
+                sql);
+        }
     }
 }

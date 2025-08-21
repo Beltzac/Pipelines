@@ -373,5 +373,40 @@ namespace Common.Services
                _ => "string"
            };
        }
+
+       public async Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql)
+       {
+           try
+           {
+               var block = $@"
+                    DECLARE
+                    l_cursor SYS_REFCURSOR;
+                    BEGIN
+                    -- Run the EXPLAIN PLAN
+                    EXECUTE IMMEDIATE 'EXPLAIN PLAN FOR {sql.Replace("'", "''")}';
+
+                    -- Return the plan in the same call
+                    OPEN l_cursor FOR
+                        SELECT PLAN_TABLE_OUTPUT
+                        FROM   TABLE(DBMS_XPLAN.DISPLAY());
+
+                    DBMS_SQL.RETURN_RESULT(l_cursor);
+                    END;";
+
+               var planLines = await _repo.GetFromSqlAsync<string>(
+                   connectionString,
+                   FormattableStringFactory.Create(block),
+                   default);
+
+               var planText = string.Join(Environment.NewLine, planLines);
+
+               return $"Execution Plan:\n{planText}";
+           }
+           catch (Exception ex)
+           {
+               _logger.LogError(ex, "Error analyzing Oracle query performance");
+               return $"Error analyzing query performance: {ex.Message}";
+           }
+       }
    }
 }

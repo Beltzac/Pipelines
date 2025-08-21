@@ -18,5 +18,6 @@ namespace Common.Services.Interfaces
         Task<IEnumerable<OracleColumn>> GetTableOrViewColumnsAsync(string connectionString, string schema, string objectName);
         Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className);
         Task<string> GenerateCSharpClassAsync(string connectionString, string schema, string objectName, string className);
+        Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql);
     }
 }
