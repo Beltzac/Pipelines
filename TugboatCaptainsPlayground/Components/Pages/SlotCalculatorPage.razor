@@ -199,6 +199,9 @@
             StateService.ProgressValue = 0;
             StateService.IsLoading = true;
 
+            // Get current yard TEU to initialize the algorithm
+            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync();
+
             var vessels = await OracleOpsService.FetchVesselPlansAsync(StateService.StartDate, StateService.EndDate);
             var rails = await OracleOpsService.FetchRailPlansAsync(StateService.StartDate, StateService.EndDate);
             var caps = new Dictionary<DateTime, OpsCaps>();

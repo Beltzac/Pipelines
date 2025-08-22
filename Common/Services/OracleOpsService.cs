@@ -32,23 +32,23 @@ namespace Common.Services
            var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
                env.ConnectionString,
                (FormattableString)$@"
-                   SELECT TRUNC(CNTR_YARD_TIME_IN,'HH24') as Hour,
-                          SUM(CASE WHEN SUBSTR(CNTR_ISO,1,2)='40' THEN 2 ELSE 1 END) as Teus
-                   FROM V_CNTRS
-                   WHERE CNTR_IB_VISIT_ID IS NOT NULL
-                     AND CNTR_YARD_TIME_IN BETWEEN {startDate} AND {endDate}
-                   GROUP BY TRUNC(CNTR_YARD_TIME_IN,'HH24')",
+                   SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+                          SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+                   FROM V_CNTRS c
+                   INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
+                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                   GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                default);
 
            var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
                env.ConnectionString,
                (FormattableString)$@"
-                   SELECT TRUNC(CNTR_TIME_OUT,'HH24') as Hour,
-                          SUM(CASE WHEN SUBSTR(CNTR_ISO,1,2)='40' THEN 2 ELSE 1 END) as Teus
-                   FROM V_CNTRS
-                   WHERE CNTR_OB_VISIT_ID IS NOT NULL
-                     AND CNTR_TIME_OUT BETWEEN {startDate} AND {endDate}
-                   GROUP BY TRUNC(CNTR_TIME_OUT,'HH24')",
+                   SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+                          SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+                   FROM V_CNTRS c
+                   INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
+                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                   GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                default);
 
            // Merge results into VesselPlan dictionary using counters
@@ -92,34 +92,49 @@ namespace Common.Services
             var result = new Dictionary<DateTime, RailPlan>();
 
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+var railIns = await _repo.GetFromSqlAsync<HourlyTeu>(
+    env.ConnectionString,
+    (FormattableString)$@"
+        SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
+               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+        FROM TOSBRIDGE.TOS_CNTRS c
+        INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
+        WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
+        GROUP BY TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24')",
+    default);
 
-            var railIns = await _repo.GetFromSqlAsync<DateTime>(
-                env.ConnectionString,
-                (FormattableString)$@"
-                    SELECT CNTR_YARD_TIME_IN
-                    FROM TOSBRIDGE.TOS_CNTRS
-                    WHERE CNTR_IB_TYPE IN ('R','U')
-                      AND CNTR_STATUS = 'YA'
-                      AND CNTR_YARD_TIME_IN BETWEEN {startDate} AND {endDate}",
-                default);
-
-            var railOuts = await _repo.GetFromSqlAsync<DateTime>(
-                env.ConnectionString,
-                (FormattableString)$@"
-                    SELECT EVENT_DATE
-                    FROM TOSBRIDGE.TOS_CNTR_EVENTS
-                    WHERE EVENT_TYPE_CODE = 'UNIT_YARD_MOVE'
-                      AND EVENT_DATE BETWEEN {startDate} AND {endDate}",
-                default);
+var railOuts = await _repo.GetFromSqlAsync<HourlyTeu>(
+    env.ConnectionString,
+    (FormattableString)$@"
+        SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
+               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+        FROM TOSBRIDGE.TOS_CNTRS c
+        INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
+        WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
+        GROUP BY TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24')",
+    default);
+            // Create dictionaries for easy access
+            var railInsDict = railIns.ToDictionary(x => x.Hour, x => x.Teus);
+            var railOutsDict = railOuts.ToDictionary(x => x.Hour, x => x.Teus);
 
             for (var hour = startDate; hour <= endDate; hour = hour.AddHours(1))
             {
-                var inCount = railIns.Count(t => t >= hour && t < hour.AddHours(1));
-                var outCount = railOuts.Count(t => t >= hour && t < hour.AddHours(1));
-                result[hour] = new RailPlan(hour, inCount, outCount);
+                var inTeus = railInsDict.TryGetValue(hour, out var inVal) ? inVal : 0;
+                var outTeus = railOutsDict.TryGetValue(hour, out var outVal) ? outVal : 0;
+                result[hour] = new RailPlan(hour, inTeus, outTeus);
             }
 
             return result;
+        }
+
+        public async Task<int> GetCurrentYardTeuAsync()
+        {
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var teusList = await _repo.GetFromSqlAsync<int>(
+                env.ConnectionString,
+                (FormattableString)$@"SELECT SUM(CASE WHEN SUBSTR(CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as TotalTeus FROM V_CNTRS WHERE CNTR_STATUS = 'YA'",
+                default);
+            return teusList.FirstOrDefault();
         }
     }
 }
