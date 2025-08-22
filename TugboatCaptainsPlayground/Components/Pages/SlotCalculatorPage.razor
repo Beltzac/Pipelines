@@ -34,6 +34,10 @@
             <input type="number" class="form-control" @bind="StateService.ReserveRho" step="0.01" min="0" max="0.99" />
         </div>
         <div class="col-md-2">
+            <label class="form-label">Easing Strength</label>
+            <input type="number" class="form-control" @bind="StateService.EasingStrength" step="0.1" min="0" max="0.99" />
+        </div>
+        <div class="col-md-2">
             <label class="form-label">Min Yard TEU</label>
             <input type="number" class="form-control" @bind="StateService.MinYardTeu" />
         </div>
@@ -130,6 +134,7 @@
 }
 
 @code {
+
     private CancellationTokenSource cts;
     private DotNetObjectReference<SlotCalculatorPage>? objRef;
 
@@ -145,12 +150,12 @@
         {
             objRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("addKeyboardShortcuts", objRef);
-        }
-
-        if (StateService.HourWindows != null && StateService.HourWindows.Any())
-        {
             await UpdateChart();
         }
+
+        // if (StateService.HourWindows != null && StateService.HourWindows.Any())
+        // {
+        // }
     }
 
     public void Dispose()
@@ -182,8 +187,6 @@
         {
             await CalculateSlots();
         }
-
-        StateHasChanged();
     }
 
     private async Task CalculateSlots()
@@ -217,7 +220,8 @@
                 caps,
                 band,
                 StateService.AvgTeuPerTruck,
-                StateService.ReserveRho
+                StateService.ReserveRho,
+                StateService.EasingStrength
             ).ToList();
 
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData
@@ -238,6 +242,8 @@
                 RailIn = hw.RailIn,
                 RailOut = hw.RailOut
             }).ToList();
+
+            await UpdateChart();
         }
         catch (OperationCanceledException)
         {
@@ -308,15 +314,15 @@
                 labels = labels,
                 datasets = new object[]
         {
-            new
-            {
-            label = "Min Yard TEU",
-            data = minYardTeu,
-            borderColor = "rgba(0,0,0,0.3)",
-            borderDash = new[] {5,5},
-            pointRadius = 0,
-            fill = false
-            },
+            // new
+            // {
+            // label = "Min Yard TEU",
+            // data = minYardTeu,
+            // borderColor = "rgba(0,0,0,0.3)",
+            // borderDash = new[] {5,5},
+            // pointRadius = 0,
+            // fill = false
+            // },
             new
             {
             label = "Target Yard TEU",
@@ -326,15 +332,15 @@
             pointRadius = 0,
             fill = false
             },
-            new
-            {
-            label = "Max Yard TEU",
-            data = maxYardTeu,
-            borderColor = "rgba(255,0,0,0.5)",
-            borderDash = new[] {5,5},
-            pointRadius = 0,
-            fill = false
-            },
+            // new
+            // {
+            // label = "Max Yard TEU",
+            // data = maxYardTeu,
+            // borderColor = "rgba(255,0,0,0.5)",
+            // borderDash = new[] {5,5},
+            // pointRadius = 0,
+            // fill = false
+            // },
             new
             {
             label = "Yard TEU Projection (No Trucks)",

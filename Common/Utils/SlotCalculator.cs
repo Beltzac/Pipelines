@@ -54,7 +54,8 @@ public static class SlotCalculator
         Dictionary<DateTime, OpsCaps> caps,
         YardBand band,
         double avgTeuPerTruck,
-        double reserveRho
+        double reserveRho,
+        double easingStrength
     )
     {
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
@@ -64,55 +65,55 @@ public static class SlotCalculator
 
         // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
-        int currentYard = initialYardTeu;
+        int currentYardTeus = initialYardTeu;
 
         for (var t = start; t <= end; t = t.AddHours(1))
         {
             if (!caps.TryGetValue(t, out var cap))
             {
                 // No caps for this hour → publish zero slots
-                results.Add(new HourWindow(t, 0, 0, 0, currentYard, O_noGate[t], 0, 0, 0, 0, 0, 0));
+                results.Add(new HourWindow(t, 0, 0, 0, currentYardTeus, O_noGate[t], 0, 0, 0, 0, 0, 0));
                 continue;
             }
 
             // Gate vs Yard handling bottleneck (convert YardMoves to trucks)
             int yardTrucks = (int)Math.Floor(cap.YardMovesPerHour / avgTeuPerTruck);
-            int rawSlots = Math.Min(cap.GateTrucksPerHour, yardTrucks);
-            int totalSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawSlots));
+            int rawTruckSlots = Math.Min(cap.GateTrucksPerHour, yardTrucks);
+            int totalTruckSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawTruckSlots));
 
             // First apply vessel and rail flows
-            currentYard += vessels[t].DischargeTEU + rails[t].InTEU;
-            currentYard -= vessels[t].LoadTEU + rails[t].OutTEU;
+            currentYardTeus += vessels[t].DischargeTEU + rails[t].InTEU;
+            currentYardTeus -= vessels[t].LoadTEU + rails[t].OutTEU;
 
             // Yard steering: desired net TEU to nudge toward target
-            int diffTEU = band.TargetTEU - currentYard; // + wants IN, - wants OUT
-            int maxNudgeTEU = Math.Max(1, (int)Math.Round(1.0 * band.MaxTEU)); // 3%/h guard
-            diffTEU = Math.Clamp(diffTEU, -maxNudgeTEU, maxNudgeTEU);
+            int diffTEU = band.TargetTEU - currentYardTeus; // + wants IN, - wants OUT
 
-            // Convert TEU to truck counts
-            int wantIn = diffTEU > 0 ? (int)Math.Round(diffTEU / avgTeuPerTruck) : 0;
-            int wantOut = diffTEU < 0 ? (int)Math.Round(-diffTEU / avgTeuPerTruck) : 0;
+            // biasFactor in range [-1, 1]
+            var biasFactor = 0.0;
+            if (band.MaxTEU != band.MinTEU)
+            {
+                biasFactor = (double)diffTEU / (band.MaxTEU - band.MinTEU);
+            }
 
-            // Fit into available slots
-            wantIn = Math.Min(wantIn, totalSlots);
-            wantOut = Math.Min(wantOut, totalSlots - wantIn);
-            int remaining = totalSlots - wantIn - wantOut;
+            // Distribute slots using easing
+            var (allocatedIn, allocatedOut) = ApplyEasing(totalTruckSlots, biasFactor, easingStrength);
 
-            // Allocate remainder evenly
+            int wantIn = allocatedIn;
+            int wantOut = allocatedOut;
 
-            wantIn += remaining / 2;
-            wantOut += remaining / 2;
+            if (wantIn < 0) wantIn = 0;
+            if (wantOut < 0) wantOut = 0;
 
             // Update yard occupancy using allocated slots
-            currentYard += (int)(wantIn * avgTeuPerTruck);
-            currentYard -= (int)(wantOut * avgTeuPerTruck);
+            currentYardTeus += (int)(wantIn * avgTeuPerTruck);
+            currentYardTeus -= (int)(wantOut * avgTeuPerTruck);
 
             results.Add(new HourWindow(
                 t,
-                totalSlots,
+                totalTruckSlots,
                 wantIn,
                 wantOut,
-                currentYard,
+                currentYardTeus,
                 O_noGate[t],
                 (int)(wantIn * avgTeuPerTruck),
                 (int)(wantOut * avgTeuPerTruck),
@@ -126,6 +127,9 @@ public static class SlotCalculator
         return results;
     }
 
+    /// <summary>
+    /// Forecasts yard occupancy without considering gate operations.
+    /// </summary>
     private static Dictionary<DateTime, int> ForecastYardNoGate(
         DateTime start, DateTime end, int O0,
         IReadOnlyDictionary<DateTime, VesselPlan> vessels,
@@ -142,4 +146,90 @@ public static class SlotCalculator
         }
         return res;
     }
+
+    /// <summary>
+    /// Applies an easing function to distribute remaining slots based on a bias factor.
+    /// The bias factor skews allocation towards 'in' or 'out' slots, with adjustable easing strength.
+    /// </summary>
+    /// <param name="teusToDistribute">The number of slots to distribute.</param>
+    /// <param name="biasFactor">A value between -1 (favor out) and +1 (favor in).</param>
+    /// <param name="easingStrength">
+    /// A value between 0 (linear, no easing) and 1 (full cosine easing).
+    /// Values in between blend linear and eased allocation.
+    /// </param>
+    /// <returns>A tuple containing the allocated 'in' slots and 'out' slots.</returns>
+    private static (int inSlots, int outSlots) ApplyEasing(int teusToDistribute, double biasFactor, double easingStrength)
+    {
+        // Clamp inputs
+        biasFactor = Math.Clamp(biasFactor, -1.0, 1.0);
+        easingStrength = Math.Clamp(easingStrength, 0.0, 1.0);
+
+        // Convert bias [-1,1] → [0,1]
+        double t = (biasFactor + 1.0) / 2.0;
+
+        // Linear share: direct proportion to t
+        //double shareInLinear = t;
+
+        // Cosine easing share: smooth nonlinear curve
+        double shareInEased = PowerRatio(t, (1-easingStrength) * 10);
+
+        // Blend linear and eased shares
+        double shareIn = shareInEased;
+        double shareOut = 1.0 - shareIn;
+
+        int allocIn = (int)Math.Round(teusToDistribute * shareIn);
+        int allocOut = teusToDistribute - allocIn; // ensure sum is exact
+
+        return (allocIn, allocOut);
+    }
+
+    // 1) Linear (baseline)
+    static double Lin(double t) => t;
+
+    // 2) Smoothstep (gentle S-curve)
+    static double Smoothstep(double t) => t * t * (3 - 2 * t);
+
+    // 3) Smootherstep (stronger S-curve, flatter ends)
+    static double Smootherstep(double t) => t * t * t * (t * (6 * t - 15) + 10);
+
+    // 4) Power-ratio (adjustable steepness; p=1 linear, p>1 steeper)
+    static double PowerRatio(double t, double p)
+    {
+        t = Math.Clamp(t, 0, 1);
+        p = Math.Max(1e-6, p);
+        double a = Math.Pow(t, p);
+        double b = Math.Pow(1 - t, p);
+        return a / (a + b);
+    }
+
+    // 5) Tanh (sigmoid; k controls steepness, exact 0/1 at ends via normalization)
+    static double TanhEase(double t, double k)
+    {
+        t = Math.Clamp(t, 0, 1);
+        k = Math.Max(1e-6, k);
+        return 0.5 * (Math.Tanh(k * (2 * t - 1)) / Math.Tanh(k) + 1);
+    }
+
+    // 6) Arctan (sigmoid; k controls steepness, normalized to 0/1)
+    static double AtanEase(double t, double k)
+    {
+        t = Math.Clamp(t, 0, 1);
+        k = Math.Max(1e-6, k);
+        return 0.5 * (Math.Atan(k * (2 * t - 1)) / Math.Atan(k) + 1);
+    }
+
+    // 7) Exponential in/out (very aggressive near the middle)
+    static double EaseInOutExpo(double t)
+    {
+        if (t <= 0) return 0;
+        if (t >= 1) return 1;
+        return t < 0.5
+            ? 0.5 * Math.Pow(2, 20 * t - 10)
+            : 1 - 0.5 * Math.Pow(2, -20 * t + 10);
+    }
+
+    // 8) Cubic (classic easing)
+    static double EaseInOutQuad(double t) => t < 0.5 ? 2 * t * t : 1 - Math.Pow(-2 * t + 2, 2) / 2;
+    static double EaseInOutCubic(double t) => t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
+
 }
