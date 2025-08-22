@@ -13,7 +13,6 @@ namespace Common.Models
         public int MinYardTeu { get; set; }
         public int TargetYardTeu { get; set; }
         public int MaxYardTeu { get; set; }
-        public Dictionary<MoveClass, int> ByClass { get; set; } = new();
         public int YardTeuProjection { get; set; }
         public int YardTeuNoGate { get; set; }
         public int TruckIn { get; set; }

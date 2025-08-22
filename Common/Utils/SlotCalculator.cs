@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-public enum MoveClass { ImpPick, ExpDrop, EmpPick, EmpDrop }
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU);
 public record RailPlan(DateTime T, int InTEU, int OutTEU);
 public record OpsCaps(DateTime T, int GateTrucksPerHour, int YardMovesPerHour);
@@ -13,7 +8,6 @@ public record HourWindow(
     int TotalSlots,
     int SlotsIn,
     int SlotsOut,
-    Dictionary<MoveClass, int> ByClass,
     int YardTeuProjection,
     int YardTeuNoGate,
     int TruckIn,
@@ -45,8 +39,6 @@ public static class SlotCalculator
     /// <param name="caps">Ops caps per hour</param>
     /// <param name="band">Yard band (min/target/max TEU)</param>
     /// <param name="avgTeuPerTruck">Average TEU handled per truck (≈1.3–1.6)</param>
-    /// <param name="reserveRho">Operational reserve fraction (e.g., 0.10)</param>
-    /// <param name="specialCaps">
     /// Function: per-class max trucks allowed at hour t (e.g., reefers/DG/block windows).
     /// If none, return empty dict.
     /// </param>
@@ -62,9 +54,7 @@ public static class SlotCalculator
         Dictionary<DateTime, OpsCaps> caps,
         YardBand band,
         double avgTeuPerTruck,
-        double reserveRho,
-        Func<DateTime, Dictionary<MoveClass, int>> specialCaps,
-        Func<MoveClass, int> classWeights
+        double reserveRho
     )
     {
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
@@ -78,11 +68,10 @@ public static class SlotCalculator
 
         for (var t = start; t <= end; t = t.AddHours(1))
         {
-
             if (!caps.TryGetValue(t, out var cap))
             {
                 // No caps for this hour → publish zero slots
-                results.Add(new HourWindow(t, 0, 0, 0, new(), currentYard, O_noGate[t], 0, 0, 0, 0, 0, 0));
+                results.Add(new HourWindow(t, 0, 0, 0, currentYard, O_noGate[t], 0, 0, 0, 0, 0, 0));
                 continue;
             }
 
@@ -114,9 +103,6 @@ public static class SlotCalculator
             wantIn += remaining / 2;
             wantOut += remaining / 2;
 
-            // Per-class caps/weights
-            var perClass = SplitIntoClasses(t, wantIn, wantOut, specialCaps, classWeights);
-
             // Update yard occupancy using allocated slots
             currentYard += (int)(wantIn * avgTeuPerTruck);
             currentYard -= (int)(wantOut * avgTeuPerTruck);
@@ -126,7 +112,6 @@ public static class SlotCalculator
                 totalSlots,
                 wantIn,
                 wantOut,
-                perClass,
                 currentYard,
                 O_noGate[t],
                 (int)(wantIn * avgTeuPerTruck),
@@ -156,66 +141,5 @@ public static class SlotCalculator
             res[t] = cur;
         }
         return res;
-    }
-
-    private static Dictionary<MoveClass, int> SplitIntoClasses(
-        DateTime t,
-        int inSlots,
-        int outSlots,
-        Func<DateTime, Dictionary<MoveClass, int>> specialCaps,
-        Func<MoveClass, int> classWeights)
-    {
-        var caps = specialCaps?.Invoke(t) ?? new Dictionary<MoveClass, int>();
-
-        var result = new Dictionary<MoveClass, int>();
-        // Define IN/OUT sets (adjust to your move taxonomy)
-        var inOrder = new[] { MoveClass.ExpDrop, MoveClass.EmpDrop }; // IN increases yard
-        var outOrder = new[] { MoveClass.ImpPick, MoveClass.EmpPick }; // OUT decreases yard
-
-        AllocateWeightedRoundRobin(inSlots, inOrder, caps, classWeights, result);
-        AllocateWeightedRoundRobin(outSlots, outOrder, caps, classWeights, result);
-
-        return result;
-    }
-
-    private static void AllocateWeightedRoundRobin(
-        int slots,
-        MoveClass[] order,
-        Dictionary<MoveClass, int> caps,
-        Func<MoveClass, int> classWeights,
-        Dictionary<MoveClass, int> sink)
-    {
-        if (slots <= 0 || order.Length == 0) return;
-
-        var weights = order.ToDictionary(c => c, c => Math.Max(1, classWeights?.Invoke(c) ?? 1));
-        var allocated = order.ToDictionary(c => c, c => 0);
-
-        // Simple weighted RR honoring per-class caps
-        // We cycle until slots consumed or no capacity remains.
-        while (slots > 0)
-        {
-            bool any = false;
-            foreach (var c in order)
-            {
-                if (slots == 0) break;
-
-                int cap = caps.TryGetValue(c, out var v) ? v : int.MaxValue;
-                int w = weights[c];
-
-                for (int i = 0; i < w && slots > 0; i++)
-                {
-                    if (allocated[c] >= cap) break;
-                    allocated[c]++;
-                    slots--;
-                    any = true;
-                }
-            }
-            if (!any) break; // no class could take more
-        }
-
-        foreach (var kv in allocated)
-        {
-            sink[kv.Key] = (sink.TryGetValue(kv.Key, out var cur) ? cur : 0) + kv.Value;
-        }
     }
 }
