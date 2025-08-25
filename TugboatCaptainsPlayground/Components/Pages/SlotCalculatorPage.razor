@@ -86,6 +86,15 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Inbound / Outbound by Mode</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="inOutChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+    </div>
+</div>
+
 @if (StateService.HourWindows != null && StateService.HourWindows.Any())
 {
     <div class="mt-4">
@@ -152,6 +161,7 @@
             objRef = DotNetObjectReference.Create(this);
             await JSRuntime.InvokeVoidAsync("addKeyboardShortcuts", objRef);
             await UpdateChart();
+            await UpdateCapacityChart();
         }
     }
 
@@ -384,60 +394,6 @@
             cubicInterpolationMode = "monotone",
             pointRadius = 0
             },
-            new
-            {
-            label = "Truck In",
-            data = truckIn,
-            borderColor = "rgb(0,200,0)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Truck Out",
-            data = truckOut,
-            borderColor = "rgb(200,0,0)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Vessel In",
-            data = vesselIn,
-            borderColor = "rgb(0,0,200)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Vessel Out",
-            data = vesselOut,
-            borderColor = "rgb(200,0,200)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Rail In",
-            data = railIn,
-            borderColor = "rgb(0,150,150)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Rail Out",
-            data = railOut,
-            borderColor = "rgb(150,75,0)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            }
         }
             },
             options = new
@@ -474,6 +430,104 @@
             }
         };
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
+
+        var inOutChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = new object[]
+                {
+                    new
+                    {
+                        label = "Truck In",
+                        data = truckIn,
+                        borderColor = "rgb(0,200,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Truck Out",
+                        data = truckOut,
+                        borderColor = "rgb(200,0,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Vessel In",
+                        data = vesselIn,
+                        borderColor = "rgb(0,0,200)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Vessel Out",
+                        data = vesselOut,
+                        borderColor = "rgb(200,0,200)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Rail In",
+                        data = railIn,
+                        borderColor = "rgb(0,150,150)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Rail Out",
+                        data = railOut,
+                        borderColor = "rgb(150,75,0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    }
+                }
+            },
+            options = new
+            {
+                responsive = true,
+                scales = new
+                {
+                    y = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "TEUs"
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Time"
+                        }
+                    }
+                },
+                plugins = new
+                {
+                    tooltip = new
+                    {
+                        mode = "index",
+                        intersect = false
+                    }
+                }
+            }
+        };
+        await JSRuntime.InvokeVoidAsync("renderChart", "inOutChart", inOutChartData);
 
         var slotsSummaryChartData = new
         {
@@ -515,20 +569,24 @@
             options = new
             {
                 responsive = true,
-                scales = new
+                plugins = new
                 {
-                    y = new
+                    tooltip = new
                     {
-                        //beginAtZero = true,
-                        title = new
-                        {
-                            display = true,
-                            text = "Slots Count"
-                        }
-                    },
+                        mode = "index",
+                        intersect = false,
+                        enabled = true
+                    }
+                },
+                interaction = new
+                {
+                    mode = "nearest",
+                    axis = "x",
+                    intersect = false
                 }
             }
         };
+                      
         await JSRuntime.InvokeVoidAsync("renderChart", "slotsSummaryChart", slotsSummaryChartData);
     }
 
