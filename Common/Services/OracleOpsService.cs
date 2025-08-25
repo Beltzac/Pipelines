@@ -35,59 +35,59 @@ namespace Common.Services
         {
             var result = new Dictionary<DateTime, VesselPlan>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
-           // Query CNTRS via view V_CNTRS to compute TEUs in/out per hour
-           var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
-               env.ConnectionString,
-               (FormattableString)$@"
+            // Query CNTRS via view V_CNTRS to compute TEUs in/out per hour
+            var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
+                env.ConnectionString,
+                (FormattableString)$@"
                    SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                           SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
                    FROM V_CNTRS c
                    INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
                    WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                    GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
-               default);
+                default);
 
-           var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
-               env.ConnectionString,
-               (FormattableString)$@"
+            var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
+                env.ConnectionString,
+                (FormattableString)$@"
                    SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                           SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
                    FROM V_CNTRS c
                    INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
                    WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                    GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
-               default);
+                default);
 
-           // Merge results into VesselPlan dictionary using counters
-           var temp = new Dictionary<DateTime,(int InTeus,int OutTeus)>();
+            // Merge results into VesselPlan dictionary using counters
+            var temp = new Dictionary<DateTime, (int InTeus, int OutTeus)>();
 
-           foreach (var entry in ins)
-           {
-               if (!temp.ContainsKey(entry.Hour))
-                   temp[entry.Hour] = (entry.Teus, 0);
-               else
-                   temp[entry.Hour] = (temp[entry.Hour].InTeus + entry.Teus, temp[entry.Hour].OutTeus);
-           }
-           foreach (var entry in outs)
-           {
-               if (!temp.ContainsKey(entry.Hour))
-                   temp[entry.Hour] = (0, entry.Teus);
-               else
-                   temp[entry.Hour] = (temp[entry.Hour].InTeus, temp[entry.Hour].OutTeus + entry.Teus);
-           }
+            foreach (var entry in ins)
+            {
+                if (!temp.ContainsKey(entry.Hour))
+                    temp[entry.Hour] = (entry.Teus, 0);
+                else
+                    temp[entry.Hour] = (temp[entry.Hour].InTeus + entry.Teus, temp[entry.Hour].OutTeus);
+            }
+            foreach (var entry in outs)
+            {
+                if (!temp.ContainsKey(entry.Hour))
+                    temp[entry.Hour] = (0, entry.Teus);
+                else
+                    temp[entry.Hour] = (temp[entry.Hour].InTeus, temp[entry.Hour].OutTeus + entry.Teus);
+            }
 
-           foreach (var kv in temp)
-           {
-               result[kv.Key] = new VesselPlan(kv.Key, kv.Value.InTeus, kv.Value.OutTeus);
-           }
-           // Fill missing hours with zero TEU entries
-           for (var h = startDate; h <= endDate; h = h.AddHours(1))
-           {
-               if (!result.ContainsKey(h))
-                   result[h] = new VesselPlan(h, 0, 0);
-           }
+            foreach (var kv in temp)
+            {
+                result[kv.Key] = new VesselPlan(kv.Key, kv.Value.InTeus, kv.Value.OutTeus);
+            }
+            // Fill missing hours with zero TEU entries
+            for (var h = startDate; h <= endDate; h = h.AddHours(1))
+            {
+                if (!result.ContainsKey(h))
+                    result[h] = new VesselPlan(h, 0, 0);
+            }
 
-           return result;
+            return result;
         }
 
         /// <summary>
@@ -99,27 +99,27 @@ namespace Common.Services
             var result = new Dictionary<DateTime, RailPlan>();
 
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
-var railIns = await _repo.GetFromSqlAsync<HourlyTeu>(
-    env.ConnectionString,
-    (FormattableString)$@"
+            var railIns = await _repo.GetFromSqlAsync<HourlyTeu>(
+                env.ConnectionString,
+                (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
                SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
         GROUP BY TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24')",
-    default);
+                default);
 
-var railOuts = await _repo.GetFromSqlAsync<HourlyTeu>(
-    env.ConnectionString,
-    (FormattableString)$@"
+            var railOuts = await _repo.GetFromSqlAsync<HourlyTeu>(
+                env.ConnectionString,
+                (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
                SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
         GROUP BY TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24')",
-    default);
+                default);
             // Create dictionaries for easy access
             var railInsDict = railIns.ToDictionary(x => x.Hour, x => x.Teus);
             var railOutsDict = railOuts.ToDictionary(x => x.Hour, x => x.Teus);
