@@ -144,9 +144,15 @@ namespace Common.Services
             return teusList.FirstOrDefault();
         }
 
-        public async Task<Dictionary<DateTime, (int InCount, int OutCount)>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
+        public class InOut
         {
-            var result = new Dictionary<DateTime, (int InCount, int OutCount)>();
+            public int In { get; set; }
+            public int Out { get; set; }
+        }
+
+        public async Task<Dictionary<DateTime, InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
+        {
+            var result = new Dictionary<DateTime, InOut>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
 
             var trucksInCap = await _repo.GetFromSqlAsync<HourlyCount>(
@@ -179,7 +185,7 @@ namespace Common.Services
                 var hourKey = h.Hour;
                 var inCap = trucksInCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
                 var outCap = trucksOutCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
-                result[h] = (inCap, outCap);
+                result[h] = new InOut { In = inCap, Out = outCap };
             }
 
             return result;

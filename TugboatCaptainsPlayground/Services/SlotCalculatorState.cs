@@ -1,5 +1,6 @@
 using Common.Models;
 using Common.Services.Interfaces;
+using static Common.Services.OracleOpsService;
 
 namespace TugboatCaptainsPlayground.Services
 {
@@ -28,5 +29,12 @@ namespace TugboatCaptainsPlayground.Services
         public int GateTrucksPerHour { get; set; } = 100;
         public int YardMovesPerHour { get; set; } = 300;
         public double EasingStrength { get; set; } = 0.1;
+
+        // Cached data
+        public Dictionary<DateTime, InOut> GateTrucks { get; set; } = new();
+        public Dictionary<DateTime, int> YardMoves { get; set; } = new();
+
+        public DateTime? CachedStartDate { get; set; }
+        public DateTime? CachedEndDate { get; set; }
     }
 }
