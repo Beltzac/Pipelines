@@ -45,11 +45,11 @@ namespace Common.Services
                 (FormattableString)$@"
             SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
-                   MAX(vv.VESSEL_VISIT_VESSEL_ID) as Name
-            FROM V_CNTRS c
-            INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-            WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
-            GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+                   MAX(vv.VESSEL_NAME) as Name
+             FROM V_CNTRS c
+             INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
+             WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 
             var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
@@ -57,11 +57,11 @@ namespace Common.Services
                 (FormattableString)$@"
             SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
-                   MAX(vv.VESSEL_VISIT_VESSEL_ID) as Name
-            FROM V_CNTRS c
-            INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-            WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
-            GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+                   MAX(vv.VESSEL_NAME) as Name
+             FROM V_CNTRS c
+             INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
+             WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 
             var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();
@@ -118,7 +118,7 @@ namespace Common.Services
                 (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
                SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
-               MAX(tv.TRAIN_VISIT_ID) as Name
+               MAX(tv.TRAIN_VISIT_NAME) as Name
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
@@ -130,7 +130,7 @@ namespace Common.Services
                 (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
                SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
-               MAX(tv.TRAIN_VISIT_ID) as Name
+               MAX(tv.TRAIN_VISIT_NAME) as Name
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}

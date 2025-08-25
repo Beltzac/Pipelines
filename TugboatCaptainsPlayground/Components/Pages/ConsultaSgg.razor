@@ -416,6 +416,7 @@
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao executar consulta SGG: {Message}", ex.Message);
+            toastService.ShowError($"Erro ao executar consulta SGG: {ex.Message}");
         }
         finally
         {

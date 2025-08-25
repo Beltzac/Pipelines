@@ -9,6 +9,7 @@
 @inject SlotCalculatorStateService StateService
 @inject IJSRuntime JSRuntime
 @inject ILogger<SlotCalculatorPage> _logger
+@inject ToastService toastService
 @implements IDisposable
 @inject OracleOpsService OracleOpsService
 <StickyFilter>
@@ -97,7 +98,7 @@
 
 @if (StateService.HourWindows != null && StateService.HourWindows.Any())
 {
-    <div class="mt-4">
+    @* <div class="mt-4">
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -135,7 +136,7 @@
                 }
             </tbody>
         </table>
-    </div>
+    </div> *@
 }
 
 @code {
@@ -150,7 +151,7 @@
 
         StateService.InitializeState(state =>
         {
-           
+
         });
     }
 
@@ -207,7 +208,7 @@
 
             StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
             StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
-            
+
             // Fetch actual gate trucks and yard moves data
             if (StateService.GateTrucks.Count == 0
                 || StateService.CachedStartDate != StateService.StartDate
@@ -229,7 +230,7 @@
             {
                 var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : new OracleOpsService.InOut();
                 var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : 0;
-                
+
                 // Use separate in and out gate trucks for the hour
                 caps[t] = new OpsCaps(t, gateTruckData.In, gateTruckData.Out, yardMoveCount);
             }
@@ -282,11 +283,12 @@
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Slot calculation cancelled.");
+
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calculating slots: {Message}", ex.Message);
+            toastService.ShowError($"Error calculating slots: {ex.Message}");
         }
         finally
         {
@@ -341,6 +343,22 @@
 
 
 
+        // Convert vessels and rails data to JavaScript-compatible format
+        var vesselsData = new Dictionary<string, string[]>();
+        var railsData = new Dictionary<string, string[]>();
+
+        foreach (var kvp in StateService.Vessels)
+        {
+            var key = kvp.Key.ToString("yyyy-MM-dd HH:mm");
+            vesselsData[key] = kvp.Value.VesselNames.ToArray();
+        }
+
+        foreach (var kvp in StateService.Rails)
+        {
+            var key = kvp.Key.ToString("yyyy-MM-dd HH:mm");
+            railsData[key] = kvp.Value.TrainNames.ToArray();
+        }
+
         var chartData = new
         {
             type = "line",
@@ -349,15 +367,6 @@
                 labels = labels,
                 datasets = new object[]
         {
-            // new
-            // {
-            // label = "Min Yard TEU",
-            // data = minYardTeu,
-            // borderColor = "rgba(0,0,0,0.3)",
-            // borderDash = new[] {5,5},
-            // pointRadius = 0,
-            // fill = false
-            // },
             new
             {
             label = "Target Yard TEU",
@@ -367,15 +376,6 @@
             pointRadius = 0,
             fill = false
             },
-            // new
-            // {
-            // label = "Max Yard TEU",
-            // data = maxYardTeu,
-            // borderColor = "rgba(255,0,0,0.5)",
-            // borderDash = new[] {5,5},
-            // pointRadius = 0,
-            // fill = false
-            // },
             new
             {
             label = "Yard TEU Projection (No Trucks)",
@@ -428,31 +428,8 @@
                     }
                 }
             },
-            plugins = new
-            {
-                tooltip = new
-                {
-                    callbacks = new
-                    {
-                        label = (Func<ChartTooltipItem, object>)(item =>
-                        {
-                            var label = item.Dataset.Label ?? "";
-                            if (label.Contains("Vessel"))
-                            {
-                                // Lookup vessel names from server-provided data
-                                return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Vessels[item.Parsed.X]) + ")";
-                            }
-                            if (label.Contains("Rail"))
-                            {
-                                return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Rails[item.Parsed.X]) + ")";
-                            }
-                            return label + ": " + item.FormattedValue;
-                        })
-                    },
-                    mode = "index",
-                    intersect = false
-                }
-            },
+            vessels = vesselsData,
+            rails = railsData
         };
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
 
@@ -504,7 +481,7 @@
                     {
                         label = "Rail In",
                         data = railIn,
-                        borderColor = "rgb(0,150,150)",
+                        borderColor = "rgb(128,128,0)",
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
                         pointRadius = 0
@@ -513,7 +490,7 @@
                     {
                         label = "Rail Out",
                         data = railOut,
-                        borderColor = "rgb(150,75,0)",
+                        borderColor = "rgb(0,128,128)",
                         tension = 0.4,
                         cubicInterpolationMode = "monotone",
                         pointRadius = 0
@@ -527,18 +504,8 @@
                 {
                     tooltip = new
                     {
-                        callbacks = new
-                        {
-                            label = (Func<ChartTooltipItem, object>)(item =>
-                            {
-                                var label = item.Dataset.Label ?? "";
-                                if (label.Contains("Vessel"))
-                                    return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Vessels[item.Parsed.X]) + ")";
-                                if (label.Contains("Rail"))
-                                    return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Rails[item.Parsed.X]) + ")";
-                                return label + ": " + item.FormattedValue;
-                            })
-                        }
+                        mode = "index",
+                        intersect = false
                     }
                 },
                 scales = new
@@ -560,7 +527,9 @@
                         }
                     }
                 }
-            }
+            },
+            vessels = vesselsData,
+            rails = railsData
         };
 
         await JSRuntime.InvokeVoidAsync("renderChart", "inOutChart", inOutChartData);
@@ -622,26 +591,10 @@
                 }
             }
         };
-                      
+
         await JSRuntime.InvokeVoidAsync("renderChart", "slotsSummaryChart", slotsSummaryChartData);
     }
 
-    // local helper for tooltip callback
-    class ChartTooltipItem
-    {
-        public DatasetModel Dataset { get; set; } = new();
-        public string FormattedValue { get; set; } = "";
-        public ParsedModel Parsed { get; set; } = new();
-
-        public class DatasetModel
-        {
-            public string? Label { get; set; }
-        }
-        public class ParsedModel
-        {
-            public DateTime X { get; set; }
-        }
-    }
 
     private async Task UpdateCapacityChart()
     {
