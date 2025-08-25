@@ -14,5 +14,6 @@ namespace Common.Services.Interfaces
         Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className);
         Task<string> GenerateCSharpClassAsync(string connectionString, string schema, string objectName, string className);
         Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql);
+        Task<OracleQueryResult> ExecuteSelectQueryAsync(string connectionString, string sql);
     }
 }

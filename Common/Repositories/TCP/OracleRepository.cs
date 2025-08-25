@@ -30,5 +30,48 @@ namespace Common.Repositories.TCP
                 .SqlQuery<T>(sql)
                 .FirstOrDefaultAsync(cancellationToken);
         }
+
+        public async Task<List<Dictionary<string, object>>> GetFromSqlDynamicAsync(string connectionString, FormattableString sql, CancellationToken cancellationToken)
+        {
+            using var context = _connectionFactory.CreateContext(connectionString);
+            
+            // Use raw SQL query and map to dictionary
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync(cancellationToken);
+            
+            var result = new List<Dictionary<string, object>>();
+            
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = sql.Format;
+                
+                // Add parameters if any
+                for (int i = 0; i < sql.ArgumentCount; i++)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"p{i}";
+                    parameter.Value = sql.GetArgument(i);
+                    command.Parameters.Add(parameter);
+                }
+                
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+                {
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        var row = new Dictionary<string, object>();
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            var value = reader.GetValue(i);
+                            row[reader.GetName(i)] = value == DBNull.Value ? null : value;
+                        }
+                        result.Add(row);
+                    }
+                }
+            }
+            
+            await connection.CloseAsync();
+            
+            return result;
+        }
     }
 }

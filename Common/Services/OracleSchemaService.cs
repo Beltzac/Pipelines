@@ -421,5 +421,33 @@ namespace Common.Services
                return $"Error analyzing query performance: {ex.Message}";
            }
        }
+
+       public async Task<OracleQueryResult> ExecuteSelectQueryAsync(string connectionString, string sql)
+       {
+           if (string.IsNullOrWhiteSpace(sql) || !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+           {
+               throw new ArgumentException("Only SELECT statements are allowed.");
+           }
+
+           try
+           {
+               var rows = await _repo.GetFromSqlDynamicAsync(
+                   connectionString,
+                   FormattableStringFactory.Create(sql),
+                   default
+               );
+
+               return new OracleQueryResult
+               {
+                   Rows = rows.ToList(),
+                   TotalCount = rows.Count()
+               };
+           }
+           catch (Exception ex)
+           {
+               _logger.LogError(ex, "Error executing Oracle SELECT query");
+               throw;
+           }
+       }
    }
 }

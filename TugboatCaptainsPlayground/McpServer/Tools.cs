@@ -357,5 +357,25 @@ namespace TugboatCaptainsPlayground.McpServer
                 schema,
                 sql);
         }
+
+        [McpServerTool, Description("Execute a custom SELECT query against Oracle returning dynamic rows.")]
+        public static async Task<OracleQueryResult> ExecuteOracleSelectAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName,
+            string sql)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+
+            return await oracleSchemaService.ExecuteSelectQueryAsync(
+                oracleEnv.ConnectionString,
+                sql
+            );
+        }
     }
 }
