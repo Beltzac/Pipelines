@@ -3,6 +3,7 @@
 @using BlazorDateRangePicker
 @using Common.Models
 @using Common.Services
+@using Common.Services.Interfaces
 @using Common.Utils
 @using TugboatCaptainsPlayground.Services
 @using Microsoft.Extensions.Logging
@@ -228,7 +229,7 @@
             // Use actual data for caps
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
-                var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : new OracleOpsService.InOut();
+                var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : new InOut();
                 var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : 0;
 
                 // Use separate in and out gate trucks for the hour
@@ -236,6 +237,14 @@
             }
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
+            
+            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync();
+            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync();
+
+            double vesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
+            double vesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
+            double trainLoadRate = trainRates?.LoadRateTeusPerHour ?? 0;
+            double trainUnloadRate = trainRates?.UnloadRateTeusPerHour ?? 0;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
                 StateService.StartDate,
@@ -247,7 +256,11 @@
                 band,
                 StateService.AvgTeuPerTruck,
                 StateService.ReserveRho,
-                StateService.EasingStrength
+                StateService.EasingStrength,
+                vesselLoadRate,
+                vesselUnloadRate,
+                trainLoadRate,
+                trainUnloadRate
             ).ToList();
 
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData

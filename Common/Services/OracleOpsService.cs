@@ -7,7 +7,7 @@ using Common.Services.Interfaces;
 
 namespace Common.Services
 {
-    public class OracleOpsService
+    public class OracleOpsService : IOracleOpsService
     {
         private readonly IOracleRepository _repo;
         private readonly IConfigurationService _config;
@@ -191,15 +191,10 @@ namespace Common.Services
             return teusList.FirstOrDefault();
         }
 
-        public class InOut
-        {
-            public int In { get; set; }
-            public int Out { get; set; }
-        }
 
-        public async Task<Dictionary<DateTime, InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
         {
-            var result = new Dictionary<DateTime, InOut>();
+            var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
 
             var trucksInCap = await _repo.GetFromSqlAsync<HourlyCount>(
@@ -232,7 +227,7 @@ namespace Common.Services
                 var hourKey = h.Hour;
                 var inCap = trucksInCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
                 var outCap = trucksOutCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
-                result[h] = new InOut { In = inCap, Out = outCap };
+                result[h] = new Common.Services.Interfaces.InOut { In = inCap, Out = outCap };
             }
 
             return result;
@@ -262,6 +257,102 @@ namespace Common.Services
                 result[h] = cap;
             }
             return result;
+        }
+
+
+        /// <summary>
+        /// Get vessel loading/unloading rates from the last year
+        /// </summary>
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync()
+        {
+            var endDate = DateTime.Now;
+            var startDate = endDate.AddYears(-1);
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+
+            var vesselRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT
+                   'Average Vessel' as NAME,
+                   CAST(AVG(LoadTeus) AS NUMBER) as TOTAL_LOAD_TEUS,
+                   CAST(AVG(UnloadTeus) AS NUMBER) as TOTAL_UNLOAD_TEUS,
+                   CAST(AVG(DurationHours) AS NUMBER) as TOTAL_DURATION_HOURS,
+                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(LoadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
+                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(UnloadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
+                FROM (
+                   SELECT vv.VESSEL_VISIT_ID,
+                          SUM(CASE WHEN c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
+                                   AND c.CNTR_CATEGORY != 'H'
+                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
+                                              THEN 2 ELSE 1 END)
+                              ELSE 0 END) as LoadTeus,
+                          SUM(CASE WHEN c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
+                                   AND c.CNTR_CATEGORY != 'H'
+                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
+                                              THEN 2 ELSE 1 END)
+                              ELSE 0 END) as UnloadTeus,
+                          ((vv.VESSEL_VISIT_ETD - vv.VESSEL_VISIT_ETB) * 24) as DurationHours
+                   FROM TOSBRIDGE.TOS_VESSEL_VISIT vv
+                   LEFT JOIN V_CNTRS c
+                          ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
+                          OR c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
+                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                   GROUP BY vv.VESSEL_VISIT_ID, vv.VESSEL_VISIT_ETB, vv.VESSEL_VISIT_ETD
+                )",
+               default);
+
+           if (vesselRate != null && vesselRate.Any())
+           {
+               return vesselRate.First();
+           }
+
+            return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Vessel" };
+        }
+        /// <summary>
+        /// Get train loading/unloading rates from the last year
+        /// </summary>
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync()
+        {
+            var endDate = DateTime.Now;
+            var startDate = endDate.AddYears(-1);
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+
+            var trainRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT
+                   'Average Train' as NAME,
+                   CAST(AVG(LoadTeus) AS NUMBER) as TOTAL_LOAD_TEUS,
+                   CAST(AVG(UnloadTeus) AS NUMBER) as TOTAL_UNLOAD_TEUS,
+                   CAST(AVG(DurationHours) AS NUMBER) as TOTAL_DURATION_HOURS,
+                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(LoadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
+                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(UnloadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
+                FROM (
+                   SELECT tv.TRAIN_VISIT_ID,
+                          SUM(CASE WHEN c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
+                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
+                                              THEN 2 ELSE 1 END)
+                              ELSE 0 END) as LoadTeus,
+                          SUM(CASE WHEN c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
+                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
+                                              THEN 2 ELSE 1 END)
+                              ELSE 0 END) as UnloadTeus,
+                          ((tv.TRAIN_VISIT_DEPART - tv.TRAIN_VISIT_ARRIVE) * 24) as DurationHours
+                   FROM TOSBRIDGE.TOS_TRAIN_VISIT tv
+                   LEFT JOIN TOSBRIDGE.TOS_CNTRS c
+                          ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
+                          OR c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
+                   WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
+                   GROUP BY tv.TRAIN_VISIT_ID, tv.TRAIN_VISIT_ARRIVE, tv.TRAIN_VISIT_DEPART
+                )",
+               default);
+
+           if (trainRate != null && trainRate.Any())
+           {
+               return trainRate.First();
+           }
+
+            return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Train" };
         }
     }
 }

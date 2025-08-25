@@ -24,7 +24,8 @@ namespace TugboatCaptainsPlayground.McpServer
             int pageNumber = 1)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -47,7 +48,8 @@ namespace TugboatCaptainsPlayground.McpServer
             string objectName)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -63,7 +65,8 @@ namespace TugboatCaptainsPlayground.McpServer
             string environmentName)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -80,7 +83,8 @@ namespace TugboatCaptainsPlayground.McpServer
             string viewName)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -97,7 +101,8 @@ namespace TugboatCaptainsPlayground.McpServer
             string className)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -114,7 +119,8 @@ namespace TugboatCaptainsPlayground.McpServer
             string className)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -176,14 +182,15 @@ namespace TugboatCaptainsPlayground.McpServer
             int? minDelaySeconds)
         {
             var config = configurationService.GetConfig();
-            var esbEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
-            if (esbEnv == null)
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
+            if (oracleEnv == null)
             {
                 throw new ArgumentException($"ESB environment '{environmentName}' not found.");
             }
 
             var (results, totalCount) = await esbService.ExecuteQueryAsync(
-                esbEnv.ConnectionString,
+                oracleEnv.ConnectionString,
                 startDate,
                 endDate,
                 urlFilter,
@@ -255,15 +262,16 @@ namespace TugboatCaptainsPlayground.McpServer
             int pageNumber)
         {
             var config = configurationService.GetConfig();
-            var sggEnv = config.OracleEnvironments.FirstOrDefault(o => o.Name == environmentName);
-            if (sggEnv == null)
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
+            if (oracleEnv == null)
             {
                 throw new ArgumentException($"SGG environment '{environmentName}' not found.");
             }
 
             var filter = new SggQueryFilter
             {
-                Environment = sggEnv.ConnectionString,
+                Environment = oracleEnv.ConnectionString,
                 StartDate = startDate,
                 EndDate = endDate,
                 GenericText = genericText,
@@ -307,15 +315,16 @@ namespace TugboatCaptainsPlayground.McpServer
             string? requestId)
         {
             var config = configurationService.GetConfig();
-            var sggEnv = config.OracleEnvironments.FirstOrDefault(o => o.Name == environmentName);
-            if (sggEnv == null)
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
+            if (oracleEnv == null)
             {
                 throw new ArgumentException($"SGG environment '{environmentName}' not found.");
             }
 
             var filter = new SggQueryFilter
             {
-                Environment = sggEnv.ConnectionString,
+                Environment = oracleEnv.ConnectionString,
                 StartDate = startDate,
                 EndDate = endDate,
                 GenericText = genericText,
@@ -347,7 +356,7 @@ namespace TugboatCaptainsPlayground.McpServer
             string sql)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
@@ -366,7 +375,7 @@ namespace TugboatCaptainsPlayground.McpServer
             string sql)
         {
             var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name == environmentName);
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
             if (oracleEnv == null)
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");

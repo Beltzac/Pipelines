@@ -3,6 +3,7 @@ public record RailPlan(DateTime T, int InTEU, int OutTEU, List<string> TrainName
 public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour);
 public record YardBand(int MinTEU, int TargetTEU, int MaxTEU);
 
+public record DistributeLoadUnload(DateTime T, int DischargeTEU, int LoadTEU);
 public record HourWindow(
     DateTime T,
     int TotalSlots,
@@ -55,13 +56,25 @@ public static class SlotCalculator
         YardBand band,
         double avgTeuPerTruck,
         double reserveRho,
-        double easingStrength
+        double easingStrength,
+        double vesselLoadRate,
+        double vesselUnloadRate,
+        double railLoadRate,
+        double railUnloadRate
     )
     {
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
         if (reserveRho < 0 || reserveRho >= 1) throw new ArgumentOutOfRangeException(nameof(reserveRho));
+
+        var vesselTeus = vessels.ToDictionary(kv => kv.Key, kv => (kv.Value.DischargeTEU, kv.Value.LoadTEU));
+        var distributedVessels = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end);
+
+        var railTeus = rails.ToDictionary(kv => kv.Key, kv => (kv.Value.InTEU, kv.Value.OutTEU));
+        var distributedRails = DistributeTeusOverTime(railTeus, railLoadRate, railUnloadRate, start, end);
+
+
         // Forecast yard occupancy *without trucks*
-        var O_noGate = ForecastYardNoGate(start, end, initialYardTeu, vessels, rails);
+        var O_noGate = ForecastYardNoGate(start, end, initialYardTeu, distributedVessels, distributedRails);
 
         // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
@@ -79,10 +92,14 @@ public static class SlotCalculator
             int totalGateTrucks = cap.GateTrucksInPerHour + cap.GateTrucksOutPerHour;
             int rawTruckSlots = Math.Min(totalGateTrucks, yardTrucks);
             int totalTruckSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawTruckSlots));
+            
+            var vesselFlow = distributedVessels.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
+            var railFlow = distributedRails.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
+
 
             // First apply vessel and rail flows
-            currentYardTeus += vessels[t].DischargeTEU + rails[t].InTEU;
-            currentYardTeus -= vessels[t].LoadTEU + rails[t].OutTEU;
+            currentYardTeus += vesselFlow.DischargeTEU + railFlow.DischargeTEU;
+            currentYardTeus -= vesselFlow.LoadTEU + railFlow.LoadTEU;
 
             // Yard steering: desired net TEU to nudge toward target
             int diffTEU = band.TargetTEU - currentYardTeus; // + wants IN, - wants OUT
@@ -114,13 +131,13 @@ public static class SlotCalculator
                 wantIn,
                 wantOut,
                 currentYardTeus,
-                O_noGate[t],
+                O_noGate.TryGetValue(t, out var gate) ? gate : 0,
                 (int)(wantIn * avgTeuPerTruck),
                 (int)(wantOut * avgTeuPerTruck),
-                vessels[t].DischargeTEU,
-                vessels[t].LoadTEU,
-                rails[t].InTEU,
-                rails[t].OutTEU
+                vesselFlow.DischargeTEU,
+                vesselFlow.LoadTEU,
+                railFlow.DischargeTEU,
+                railFlow.LoadTEU
             ));
         }
 
@@ -217,17 +234,17 @@ public static class SlotCalculator
     /// Forecasts yard occupancy without considering gate operations.
     /// </summary>
     private static Dictionary<DateTime, int> ForecastYardNoGate(
-        DateTime start, DateTime end, int O0,
-        IReadOnlyDictionary<DateTime, VesselPlan> vessels,
-        IReadOnlyDictionary<DateTime, RailPlan> rails)
+    DateTime start, DateTime end, int O0,
+    IReadOnlyDictionary<DateTime, DistributeLoadUnload> vessels,
+    IReadOnlyDictionary<DateTime, DistributeLoadUnload> rails)
     {
         var res = new Dictionary<DateTime, int>();
         int cur = O0;
         for (var t = start; t <= end; t = t.AddHours(1))
         {
-            var v = vessels.TryGetValue(t, out var vp) ? vp : new VesselPlan(t, 0, 0, []);
-            var r = rails.TryGetValue(t, out var rp) ? rp : new RailPlan(t, 0, 0, []);
-            cur = cur + v.DischargeTEU + r.InTEU - v.LoadTEU - r.OutTEU;
+            var v = vessels.TryGetValue(t, out var vp) ? vp : new DistributeLoadUnload(t, 0, 0);
+            var r = rails.TryGetValue(t, out var rp) ? rp : new DistributeLoadUnload(t, 0, 0);
+            cur = cur + v.DischargeTEU + r.DischargeTEU - v.LoadTEU - r.LoadTEU;
             res[t] = cur;
         }
         return res;
@@ -317,5 +334,59 @@ public static class SlotCalculator
     // 8) Cubic (classic easing)
     static double EaseInOutQuad(double t) => t < 0.5 ? 2 * t * t : 1 - Math.Pow(-2 * t + 2, 2) / 2;
     static double EaseInOutCubic(double t) => t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2;
+    private static Dictionary<DateTime, DistributeLoadUnload> DistributeTeusOverTime(
+        Dictionary<DateTime, (int In, int Out)> hourlyInputs,
+        double loadRate, // teus per hour
+        double unloadRate, // teus per hour
+        DateTime start,
+        DateTime end
+    )
+    {
+        var distributed = new Dictionary<DateTime, DistributeLoadUnload>();
+    
+        foreach (var entry in hourlyInputs)
+        {
+            var time = entry.Key;
+            var (inTeus, outTeus) = entry.Value;
+    
+            // Distribute incoming TEUs
+            int remainingIn = inTeus;
+            int hourOffsetIn = 0;
+            while (remainingIn > 0)
+            {
+                var currentHour = time.AddHours(hourOffsetIn);
+                if (currentHour > end) break;
+    
+                int teusThisHour = (int)Math.Min(remainingIn, unloadRate);
+                if (!distributed.ContainsKey(currentHour))
+                {
+                    distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                }
+                distributed[currentHour] = distributed[currentHour] with { DischargeTEU = distributed[currentHour].DischargeTEU + teusThisHour };
+                remainingIn -= teusThisHour;
+                hourOffsetIn++;
+            }
+    
+            // Distribute outgoing TEUs
+            int remainingOut = outTeus;
+            int hourOffsetOut = 0;
+            while (remainingOut > 0)
+            {
+                var currentHour = time.AddHours(hourOffsetOut);
+                if (currentHour > end) break;
+    
+                int teusThisHour = (int)Math.Min(remainingOut, loadRate);
+                if (!distributed.ContainsKey(currentHour))
+                {
+                    distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                }
+                distributed[currentHour] = distributed[currentHour] with { LoadTEU = distributed[currentHour].LoadTEU + teusThisHour };
+                remainingOut -= teusThisHour;
+                hourOffsetOut++;
+            }
+        }
+    
+        return distributed;
+    }
 
 }
