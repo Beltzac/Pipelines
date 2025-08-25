@@ -14,6 +14,7 @@ namespace TugboatCaptainsPlayground.Services
         public int YardBandCount { get; set; } = 1;
         public List<HourWindow> HourWindows { get; set; } = new List<HourWindow>();
         public List<SlotChartData> ChartData { get; set; } = new List<SlotChartData>();
+        public List<CapacityChartData> CapacityData { get; set; } = new List<CapacityChartData>();
         public bool IsLoading { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
         public int? ProgressValue { get; set; }

@@ -90,6 +90,15 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Capacity Data (Gate Trucks & Yard Moves)</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="capacityChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+    </div>
+</div>
+
 @if (StateService.HourWindows != null && StateService.HourWindows.Any())
 {
     <div class="mt-4">
@@ -204,12 +213,21 @@
 
             var vessels = await OracleOpsService.FetchVesselPlansAsync(StateService.StartDate, StateService.EndDate);
             var rails = await OracleOpsService.FetchRailPlansAsync(StateService.StartDate, StateService.EndDate);
+            
+            // Fetch actual gate trucks and yard moves data
+            var gateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate);
+            var yardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate);
+            
             var caps = new Dictionary<DateTime, OpsCaps>();
 
-            // Caps fixos por enquanto
+            // Use actual data for caps
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
-                caps[t] = new OpsCaps(t, StateService.GateTrucksPerHour, StateService.YardMovesPerHour);
+                var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : (0, 0);
+                var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : 0;
+                
+                // Use separate in and out gate trucks for the hour
+                caps[t] = new OpsCaps(t, gateTruckData.Item1, gateTruckData.Item2, yardMoveCount);
             }
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
@@ -246,7 +264,17 @@
                 RailOut = hw.RailOut
             }).ToList();
 
+            // Store capacity data for charting
+            StateService.CapacityData = caps.Select(kvp => new CapacityChartData
+            {
+                Timestamp = kvp.Key.ToString("o"),
+                GateTrucksIn = kvp.Value.GateTrucksInPerHour,
+                GateTrucksOut = kvp.Value.GateTrucksOutPerHour,
+                YardMoves = kvp.Value.YardMovesPerHour
+            }).ToList();
+
             await UpdateChart();
+            await UpdateCapacityChart();
         }
         catch (OperationCanceledException)
         {
@@ -507,5 +535,88 @@
             }
         };
         await JSRuntime.InvokeVoidAsync("renderChart", "slotsSummaryChart", slotsSummaryChartData);
+    }
+
+    private async Task UpdateCapacityChart()
+    {
+        if (StateService.CapacityData == null || !StateService.CapacityData.Any()) return;
+
+        var labels = StateService.CapacityData.Select(d => DateTime.Parse(d.Timestamp).ToString("yyyy-MM-dd HH:mm")).ToArray();
+        var gateTrucksIn = StateService.CapacityData.Select(d => d.GateTrucksIn).ToArray();
+        var gateTrucksOut = StateService.CapacityData.Select(d => d.GateTrucksOut).ToArray();
+        var yardMoves = StateService.CapacityData.Select(d => d.YardMoves).ToArray();
+
+        var capacityChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = new object[]
+                {
+                    new
+                    {
+                        label = "Gate Trucks In",
+                        data = gateTrucksIn,
+                        borderColor = "rgb(0, 200, 0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Gate Trucks Out",
+                        data = gateTrucksOut,
+                        borderColor = "rgb(200, 0, 0)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    },
+                    new
+                    {
+                        label = "Yard Moves",
+                        data = yardMoves,
+                        borderColor = "rgb(0, 0, 200)",
+                        tension = 0.4,
+                        cubicInterpolationMode = "monotone",
+                        pointRadius = 0
+                    }
+                }
+            },
+            options = new
+            {
+                responsive = true,
+                scales = new
+                {
+                    y = new
+                    {
+                        beginAtZero = true,
+                        title = new
+                        {
+                            display = true,
+                            text = "Count"
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Time"
+                        }
+                    }
+                },
+                plugins = new
+                {
+                    tooltip = new
+                    {
+                        mode = "index",
+                        intersect = false
+                    }
+                }
+            }
+        };
+
+        await JSRuntime.InvokeVoidAsync("renderChart", "capacityChart", capacityChartData);
     }
 }

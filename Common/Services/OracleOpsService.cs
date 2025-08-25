@@ -24,6 +24,13 @@ namespace Common.Services
             public int Teus { get; set; }
         }
 
+        private class HourlyCount
+        {
+            public int Weekday { get; set; }
+            public int HourOfDay { get; set; }
+            public int Count { get; set; }
+        }
+
         public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansAsync(DateTime startDate, DateTime endDate)
         {
             var result = new Dictionary<DateTime, VesselPlan>();
@@ -135,6 +142,73 @@ var railOuts = await _repo.GetFromSqlAsync<HourlyTeu>(
                 (FormattableString)$@"SELECT SUM(CASE WHEN SUBSTR(CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as TotalTeus FROM V_CNTRS WHERE CNTR_STATUS = 'YA'",
                 default);
             return teusList.FirstOrDefault();
+        }
+
+        public async Task<Dictionary<DateTime, (int InCount, int OutCount)>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
+        {
+            var result = new Dictionary<DateTime, (int InCount, int OutCount)>();
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+
+            var trucksInCap = await _repo.GetFromSqlAsync<HourlyCount>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                    SELECT TO_NUMBER(TO_CHAR(DATA_ENTRADA_GATE, 'D')) - 1 AS WEEKDAY,
+                            TO_NUMBER(TO_CHAR(DATA_ENTRADA_GATE, 'HH24')) AS HOUR_OF_DAY,
+                            TRUNC(COUNT(*) / COUNT(DISTINCT TRUNC(DATA_ENTRADA_GATE))) AS COUNT
+                    FROM TOSBRIDGE.V_RPT_MOVIMENTO_GATES_CNTR
+                    WHERE DATA_ENTRADA_GATE BETWEEN {startDate.AddYears(-1)} AND {endDate}
+                    GROUP BY TO_CHAR(DATA_ENTRADA_GATE, 'D'), TO_CHAR(DATA_ENTRADA_GATE, 'HH24')",
+                default);
+
+            var trucksOutCap = await _repo.GetFromSqlAsync<HourlyCount>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                    SELECT TO_NUMBER(TO_CHAR(DATA_SAIDA_GATE, 'D')) - 1 AS WEEKDAY,
+                            TO_NUMBER(TO_CHAR(DATA_SAIDA_GATE, 'HH24')) AS HOUR_OF_DAY,
+                            TRUNC(COUNT(*) / COUNT(DISTINCT TRUNC(DATA_SAIDA_GATE))) AS COUNT
+                    FROM TOSBRIDGE.V_RPT_MOVIMENTO_GATES_CNTR
+                    WHERE DATA_SAIDA_GATE BETWEEN {startDate.AddYears(-1)} AND {endDate}
+                    GROUP BY TO_CHAR(DATA_SAIDA_GATE, 'D'), TO_CHAR(DATA_SAIDA_GATE, 'HH24')",
+                default);
+
+            // Map result capacity as maximum avg per weekday-hour slot
+            // Map each requested hour to the matching weekday-hour slot
+            for (var h = startDate; h <= endDate; h = h.AddHours(1))
+            {
+                var weekday = (int)h.DayOfWeek; // Sunday=0
+                var hourKey = h.Hour;
+                var inCap = trucksInCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
+                var outCap = trucksOutCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
+                result[h] = (inCap, outCap);
+            }
+
+            return result;
+        }
+
+        public async Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate)
+        {
+            var result = new Dictionary<DateTime, int>();
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+
+            var yardMovesCap = await _repo.GetFromSqlAsync<HourlyCount>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                    SELECT TO_NUMBER(TO_CHAR(MOV_TIME_PUT, 'D')) - 1 as WEEKDAY,
+                            TO_NUMBER(TO_CHAR(MOV_TIME_PUT, 'HH24')) as HOUR_OF_DAY,
+                            COUNT(*) / COUNT(DISTINCT TRUNC(MOV_TIME_PUT)) as COUNT
+                    FROM TOSBRIDGE.TOS_CNTR_MOV
+                    WHERE MOV_TIME_PUT BETWEEN {startDate.AddYears(-1)} AND {endDate}
+                    GROUP BY TO_CHAR(MOV_TIME_PUT, 'D'), TO_CHAR(MOV_TIME_PUT, 'HH24')",
+                default);
+
+            for (var h = startDate; h <= endDate; h = h.AddHours(1))
+            {
+                var weekday = (int)h.DayOfWeek;
+                var hourKey = h.Hour;
+                var cap = yardMovesCap.Where(x => x.Weekday == (int)h.DayOfWeek && x.HourOfDay == hourKey).Select(x => x.Count).DefaultIfEmpty(0).Max();
+                result[h] = cap;
+            }
+            return result;
         }
     }
 }

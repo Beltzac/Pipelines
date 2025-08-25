@@ -1,6 +1,6 @@
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU);
 public record RailPlan(DateTime T, int InTEU, int OutTEU);
-public record OpsCaps(DateTime T, int GateTrucksPerHour, int YardMovesPerHour);
+public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour);
 public record YardBand(int MinTEU, int TargetTEU, int MaxTEU);
 
 public record HourWindow(
@@ -67,18 +67,17 @@ public static class SlotCalculator
         var results = new List<HourWindow>();
         int currentYardTeus = initialYardTeu;
 
+        // Interpolate missing caps
+        var interpolatedCaps = InterpolateCaps(caps, start, end);
+
         for (var t = start; t <= end; t = t.AddHours(1))
         {
-            if (!caps.TryGetValue(t, out var cap))
-            {
-                // No caps for this hour → publish zero slots
-                results.Add(new HourWindow(t, 0, 0, 0, currentYardTeus, O_noGate[t], 0, 0, 0, 0, 0, 0));
-                continue;
-            }
+            var cap = interpolatedCaps[t];
 
             // Gate vs Yard handling bottleneck (convert YardMoves to trucks)
             int yardTrucks = (int)Math.Floor(cap.YardMovesPerHour / avgTeuPerTruck);
-            int rawTruckSlots = Math.Min(cap.GateTrucksPerHour, yardTrucks);
+            int totalGateTrucks = cap.GateTrucksInPerHour + cap.GateTrucksOutPerHour;
+            int rawTruckSlots = Math.Min(totalGateTrucks, yardTrucks);
             int totalTruckSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawTruckSlots));
 
             // First apply vessel and rail flows
@@ -98,8 +97,10 @@ public static class SlotCalculator
             // Distribute slots using easing
             var (allocatedIn, allocatedOut) = ApplyEasing(totalTruckSlots, biasFactor, easingStrength);
 
-            int wantIn = allocatedIn;
-            int wantOut = allocatedOut;
+            //int wantIn = allocatedIn;
+            // Cap allocated slots to individual capacities
+            int wantIn = Math.Min(allocatedIn, cap.GateTrucksInPerHour);
+            int wantOut = Math.Min(allocatedOut, cap.GateTrucksOutPerHour);
 
             if (wantIn < 0) wantIn = 0;
             if (wantOut < 0) wantOut = 0;
@@ -107,7 +108,6 @@ public static class SlotCalculator
             // Update yard occupancy using allocated slots
             currentYardTeus += (int)(wantIn * avgTeuPerTruck);
             currentYardTeus -= (int)(wantOut * avgTeuPerTruck);
-
             results.Add(new HourWindow(
                 t,
                 totalTruckSlots,
@@ -125,6 +125,92 @@ public static class SlotCalculator
         }
 
         return results;
+    }
+
+    private static Dictionary<DateTime, OpsCaps> InterpolateCaps(Dictionary<DateTime, OpsCaps> originalCaps, DateTime start, DateTime end)
+    {
+        var interpolatedCaps = new Dictionary<DateTime, OpsCaps>();
+        
+        // Copy existing caps
+        foreach (var kvp in originalCaps)
+        {
+            interpolatedCaps[kvp.Key] = kvp.Value;
+        }
+
+        // Fill missing hours with interpolated values
+        for (var t = start; t <= end; t = t.AddHours(1))
+        {
+            if (!interpolatedCaps.ContainsKey(t))
+            {
+                // Find previous and next available caps
+                OpsCaps? previousCap = null;
+                OpsCaps? nextCap = null;
+                
+                // Search backwards
+                var prevTime = t.AddHours(-1);
+                while (prevTime >= start && previousCap == null)
+                {
+                    if (interpolatedCaps.TryGetValue(prevTime, out var cap))
+                    {
+                        previousCap = cap;
+                    }
+                    else
+                    {
+                        prevTime = prevTime.AddHours(-1);
+                    }
+                }
+
+                // Search forwards
+                var nextTime = t.AddHours(1);
+                while (nextTime <= end && nextCap == null)
+                {
+                    if (interpolatedCaps.TryGetValue(nextTime, out var cap))
+                    {
+                        nextCap = cap;
+                    }
+                    else
+                    {
+                        nextTime = nextTime.AddHours(1);
+                    }
+                }
+
+                if (previousCap != null && nextCap != null)
+                {
+                    // Linear interpolation
+                    double totalHours = (nextCap.T - previousCap.T).TotalHours;
+                    double hoursFromPrevious = (t - previousCap.T).TotalHours;
+                    double factor = hoursFromPrevious / totalHours;
+
+                    int gateIn = InterpolateValue(previousCap.GateTrucksInPerHour, nextCap.GateTrucksInPerHour, factor);
+                    int gateOut = InterpolateValue(previousCap.GateTrucksOutPerHour, nextCap.GateTrucksOutPerHour, factor);
+                    int yardMoves = InterpolateValue(previousCap.YardMovesPerHour, nextCap.YardMovesPerHour, factor);
+
+                    interpolatedCaps[t] = new OpsCaps(t, gateIn, gateOut, yardMoves);
+                }
+                else if (previousCap != null)
+                {
+                    // Use previous cap values
+                    interpolatedCaps[t] = new OpsCaps(t, previousCap.GateTrucksInPerHour, previousCap.GateTrucksOutPerHour, previousCap.YardMovesPerHour);
+                }
+                else if (nextCap != null)
+                {
+                    // Use next cap values
+                    interpolatedCaps[t] = new OpsCaps(t, nextCap.GateTrucksInPerHour, nextCap.GateTrucksOutPerHour, nextCap.YardMovesPerHour);
+                }
+                else
+                {
+                    // No caps available, use defaults
+                    interpolatedCaps[t] = new OpsCaps(t, 0, 0, 0);
+                }
+            }
+        }
+
+        return interpolatedCaps;
+    }
+
+    private static int InterpolateValue(int a, int b, double factor)
+    {
+        return (int)Math.Round(a + (b - a) * factor);
     }
 
     /// <summary>
