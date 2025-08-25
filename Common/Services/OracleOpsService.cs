@@ -22,6 +22,7 @@ namespace Common.Services
         {
             public DateTime Hour { get; set; }
             public int Teus { get; set; }
+            public string Name { get; set; } = string.Empty;
         }
 
         private class HourlyCount
@@ -31,79 +32,93 @@ namespace Common.Services
             public int Count { get; set; }
         }
 
-        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansAsync(DateTime startDate, DateTime endDate)
+        /// <summary>
+        /// Fetch vessel plans with vessel names
+        /// </summary>
+        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate)
         {
             var result = new Dictionary<DateTime, VesselPlan>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
-            // Query CNTRS via view V_CNTRS to compute TEUs in/out per hour
+
             var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                   SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
-                          SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
-                   FROM V_CNTRS c
-                   INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
-                   GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+                   SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
+                   MAX(vv.VESSEL_VISIT_VESSEL_ID) as Name
+            FROM V_CNTRS c
+            INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
+            WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+            GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 
             var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                   SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
-                          SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
-                   FROM V_CNTRS c
-                   INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
-                   GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+                   SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
+                   MAX(vv.VESSEL_VISIT_VESSEL_ID) as Name
+            FROM V_CNTRS c
+            INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
+            WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+            GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 
-            // Merge results into VesselPlan dictionary using counters
-            var temp = new Dictionary<DateTime, (int InTeus, int OutTeus)>();
+            var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();
 
             foreach (var entry in ins)
             {
                 if (!temp.ContainsKey(entry.Hour))
-                    temp[entry.Hour] = (entry.Teus, 0);
+                    temp[entry.Hour] = (entry.Teus, 0, new List<string> { entry.Name }, new List<string>());
                 else
-                    temp[entry.Hour] = (temp[entry.Hour].InTeus + entry.Teus, temp[entry.Hour].OutTeus);
+                {
+                    var t = temp[entry.Hour];
+                    t.InTeus += entry.Teus;
+                    t.InNames.Add(entry.Name);
+                    temp[entry.Hour] = t;
+                }
             }
             foreach (var entry in outs)
             {
                 if (!temp.ContainsKey(entry.Hour))
-                    temp[entry.Hour] = (0, entry.Teus);
+                    temp[entry.Hour] = (0, entry.Teus, new List<string>(), new List<string> { entry.Name });
                 else
-                    temp[entry.Hour] = (temp[entry.Hour].InTeus, temp[entry.Hour].OutTeus + entry.Teus);
+                {
+                    var t = temp[entry.Hour];
+                    t.OutTeus += entry.Teus;
+                    t.OutNames.Add(entry.Name);
+                    temp[entry.Hour] = t;
+                }
             }
 
             foreach (var kv in temp)
             {
-                result[kv.Key] = new VesselPlan(kv.Key, kv.Value.InTeus, kv.Value.OutTeus);
+                result[kv.Key] = new VesselPlan(kv.Key, kv.Value.InTeus, kv.Value.OutTeus, kv.Value.InNames.Concat(kv.Value.OutNames).Distinct().ToList());
             }
-            // Fill missing hours with zero TEU entries
+
             for (var h = startDate; h <= endDate; h = h.AddHours(1))
             {
                 if (!result.ContainsKey(h))
-                    result[h] = new VesselPlan(h, 0, 0);
+                    result[h] = new VesselPlan(h, 0, 0, new List<string>());
             }
 
             return result;
         }
 
         /// <summary>
-        /// Fetch rail plans from base tables used in V_OPER_REEFER_PAINEL_RAIL_IN_PENDING
-        /// (TOSBRIDGE.TOS_CNTRS, TOSBRIDGE.TOS_TRAIN_VISIT, TCPOPER.CADASTRO_CONTEINER, etc.)
+        /// Fetch rail plans with names
         /// </summary>
-        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate)
         {
             var result = new Dictionary<DateTime, RailPlan>();
-
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+
             var railIns = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
-               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
+               MAX(tv.TRAIN_VISIT_ID) as Name
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
@@ -114,21 +129,51 @@ namespace Common.Services
                 env.ConnectionString,
                 (FormattableString)$@"
         SELECT TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24') as Hour,
-               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus
+               SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
+               MAX(tv.TRAIN_VISIT_ID) as Name
         FROM TOSBRIDGE.TOS_CNTRS c
         INNER JOIN TOSBRIDGE.TOS_TRAIN_VISIT tv ON c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
         WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
         GROUP BY TRUNC(tv.TRAIN_VISIT_ARRIVE,'HH24')",
                 default);
-            // Create dictionaries for easy access
-            var railInsDict = railIns.ToDictionary(x => x.Hour, x => x.Teus);
-            var railOutsDict = railOuts.ToDictionary(x => x.Hour, x => x.Teus);
+
+            var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();
+
+            foreach (var entry in railIns)
+            {
+                if (!temp.ContainsKey(entry.Hour))
+                    temp[entry.Hour] = (entry.Teus, 0, new List<string> { entry.Name }, new List<string>());
+                else
+                {
+                    var t = temp[entry.Hour];
+                    t.InTeus += entry.Teus;
+                    t.InNames.Add(entry.Name);
+                    temp[entry.Hour] = t;
+                }
+            }
+            foreach (var entry in railOuts)
+            {
+                if (!temp.ContainsKey(entry.Hour))
+                    temp[entry.Hour] = (0, entry.Teus, new List<string>(), new List<string> { entry.Name });
+                else
+                {
+                    var t = temp[entry.Hour];
+                    t.OutTeus += entry.Teus;
+                    t.OutNames.Add(entry.Name);
+                    temp[entry.Hour] = t;
+                }
+            }
 
             for (var hour = startDate; hour <= endDate; hour = hour.AddHours(1))
             {
-                var inTeus = railInsDict.TryGetValue(hour, out var inVal) ? inVal : 0;
-                var outTeus = railOutsDict.TryGetValue(hour, out var outVal) ? outVal : 0;
-                result[hour] = new RailPlan(hour, inTeus, outTeus);
+                if (temp.TryGetValue(hour, out var t))
+                {
+                    result[hour] = new RailPlan(hour, t.InTeus, t.OutTeus, t.InNames.Concat(t.OutNames).Distinct().ToList());
+                }
+                else
+                {
+                    result[hour] = new RailPlan(hour, 0, 0, new List<string>());
+                }
             }
 
             return result;

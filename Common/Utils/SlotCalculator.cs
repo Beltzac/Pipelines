@@ -1,5 +1,5 @@
-public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU);
-public record RailPlan(DateTime T, int InTEU, int OutTEU);
+public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU, List<string> VesselNames);
+public record RailPlan(DateTime T, int InTEU, int OutTEU, List<string> TrainNames);
 public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour);
 public record YardBand(int MinTEU, int TargetTEU, int MaxTEU);
 
@@ -225,8 +225,8 @@ public static class SlotCalculator
         int cur = O0;
         for (var t = start; t <= end; t = t.AddHours(1))
         {
-            var v = vessels.TryGetValue(t, out var vp) ? vp : new VesselPlan(t, 0, 0);
-            var r = rails.TryGetValue(t, out var rp) ? rp : new RailPlan(t, 0, 0);
+            var v = vessels.TryGetValue(t, out var vp) ? vp : new VesselPlan(t, 0, 0, []);
+            var r = rails.TryGetValue(t, out var rp) ? rp : new RailPlan(t, 0, 0, []);
             cur = cur + v.DischargeTEU + r.InTEU - v.LoadTEU - r.OutTEU;
             res[t] = cur;
         }

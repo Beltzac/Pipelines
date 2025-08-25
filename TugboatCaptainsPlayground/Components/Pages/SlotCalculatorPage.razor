@@ -205,8 +205,8 @@
             // Get current yard TEU to initialize the algorithm
             StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync();
 
-            var vessels = await OracleOpsService.FetchVesselPlansAsync(StateService.StartDate, StateService.EndDate);
-            var rails = await OracleOpsService.FetchRailPlansAsync(StateService.StartDate, StateService.EndDate);
+            StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
+            StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
             
             // Fetch actual gate trucks and yard moves data
             if (StateService.GateTrucks.Count == 0
@@ -240,8 +240,8 @@
                 StateService.StartDate,
                 StateService.EndDate,
                 StateService.InitialYardTeu,
-                vessels,
-                rails,
+                StateService.Vessels,
+                StateService.Rails,
                 caps,
                 band,
                 StateService.AvgTeuPerTruck,
@@ -427,7 +427,32 @@
                         intersect = false
                     }
                 }
-            }
+            },
+            plugins = new
+            {
+                tooltip = new
+                {
+                    callbacks = new
+                    {
+                        label = (Func<ChartTooltipItem, object>)(item =>
+                        {
+                            var label = item.Dataset.Label ?? "";
+                            if (label.Contains("Vessel"))
+                            {
+                                // Lookup vessel names from server-provided data
+                                return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Vessels[item.Parsed.X]) + ")";
+                            }
+                            if (label.Contains("Rail"))
+                            {
+                                return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Rails[item.Parsed.X]) + ")";
+                            }
+                            return label + ": " + item.FormattedValue;
+                        })
+                    },
+                    mode = "index",
+                    intersect = false
+                }
+            },
         };
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
 
@@ -498,6 +523,24 @@
             options = new
             {
                 responsive = true,
+                plugins = new
+                {
+                    tooltip = new
+                    {
+                        callbacks = new
+                        {
+                            label = (Func<ChartTooltipItem, object>)(item =>
+                            {
+                                var label = item.Dataset.Label ?? "";
+                                if (label.Contains("Vessel"))
+                                    return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Vessels[item.Parsed.X]) + ")";
+                                if (label.Contains("Rail"))
+                                    return label + ": " + item.FormattedValue + " (" + string.Join(",", StateService.Rails[item.Parsed.X]) + ")";
+                                return label + ": " + item.FormattedValue;
+                            })
+                        }
+                    }
+                },
                 scales = new
                 {
                     y = new
@@ -516,17 +559,10 @@
                             text = "Time"
                         }
                     }
-                },
-                plugins = new
-                {
-                    tooltip = new
-                    {
-                        mode = "index",
-                        intersect = false
-                    }
                 }
             }
         };
+
         await JSRuntime.InvokeVoidAsync("renderChart", "inOutChart", inOutChartData);
 
         var slotsSummaryChartData = new
@@ -588,6 +624,23 @@
         };
                       
         await JSRuntime.InvokeVoidAsync("renderChart", "slotsSummaryChart", slotsSummaryChartData);
+    }
+
+    // local helper for tooltip callback
+    class ChartTooltipItem
+    {
+        public DatasetModel Dataset { get; set; } = new();
+        public string FormattedValue { get; set; } = "";
+        public ParsedModel Parsed { get; set; } = new();
+
+        public class DatasetModel
+        {
+            public string? Label { get; set; }
+        }
+        public class ParsedModel
+        {
+            public DateTime X { get; set; }
+        }
     }
 
     private async Task UpdateCapacityChart()
