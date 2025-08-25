@@ -38,7 +38,7 @@ namespace TugboatCaptainsPlayground.McpServer
                 pageNumber);
         }
 
-        [McpServerTool, Description("Get column details for a specific table or view.")]
+        [McpServerTool, Description("Get column details (including description/comment) for a specific table or view.")]
         public static async Task<IEnumerable<OracleColumn>> GetOracleTableOrViewColumnsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -337,7 +337,7 @@ namespace TugboatCaptainsPlayground.McpServer
                 throw new Exception($"Error getting SGG delay metrics: {ex.Message}", ex);
             }
         }
-    
+
         [McpServerTool, Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
         public static async Task<string> AnalyzeOracleQueryPerformanceAsync(
             IOracleSchemaService oracleSchemaService,

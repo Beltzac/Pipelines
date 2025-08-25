@@ -49,6 +49,7 @@ namespace Common.Services
              FROM V_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+               AND c.CNTR_CATEGORY != 'H'
              GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 
@@ -61,6 +62,7 @@ namespace Common.Services
              FROM V_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+               AND c.CNTR_CATEGORY != 'H'
              GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 default);
 

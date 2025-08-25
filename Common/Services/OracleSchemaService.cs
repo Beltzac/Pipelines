@@ -244,7 +244,20 @@ namespace Common.Services
        {
            return await _repo.GetFromSqlAsync<OracleColumn>(
                connectionString,
-               $"SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, DATA_PRECISION, DATA_SCALE, NULLABLE FROM ALL_TAB_COLUMNS WHERE OWNER = {schema} AND TABLE_NAME = {objectName} ORDER BY COLUMN_ID",
+               $@"SELECT col.COLUMN_NAME,
+                         col.DATA_TYPE,
+                         col.DATA_LENGTH,
+                         col.DATA_PRECISION,
+                         col.DATA_SCALE,
+                         col.NULLABLE,
+                         com.COMMENTS
+                  FROM ALL_TAB_COLUMNS col
+                  LEFT JOIN ALL_COL_COMMENTS com
+                         ON col.OWNER = com.OWNER
+                        AND col.TABLE_NAME = com.TABLE_NAME
+                        AND col.COLUMN_NAME = com.COLUMN_NAME
+                  WHERE col.OWNER = {schema} AND col.TABLE_NAME = {objectName}
+                  ORDER BY col.COLUMN_ID",
                default);
        }
 

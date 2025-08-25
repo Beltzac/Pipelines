@@ -10,5 +10,6 @@ namespace Common.Models
         public int? DataPrecision { get; set; }
         public int? DataScale { get; set; }
         public string Nullable { get; set; }
+        public string? Comments { get; set; }
     }
 }
