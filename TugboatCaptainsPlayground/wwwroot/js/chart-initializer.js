@@ -43,9 +43,39 @@ window.renderChart = (canvasId, chartData) => {
                 }
             }
         };
+
+
     }
 
+    // Ensure zoom plugin is enabled
+    if (!chartData.options) chartData.options = {};
+    if (!chartData.options.plugins) chartData.options.plugins = {};
+    chartData.options.plugins.zoom = {
+        zoom: {
+            wheel: {
+                enabled: true
+            },
+            pinch: {
+                enabled: true
+            },
+            mode: 'xy'
+        },
+        pan: {
+            enabled: true,
+            mode: 'xy'
+        }
+    };
+
     window.slotCharts[canvasId] = new Chart(ctx, chartData);
+};
+
+// Reset function for all charts
+window.resetAllZooms = () => {
+    for (const id in window.slotCharts) {
+        if (window.slotCharts[id] && window.slotCharts[id].resetZoom) {
+            window.slotCharts[id].resetZoom();
+        }
+    }
 };
 
 window.destroyChart = (canvasId) => {

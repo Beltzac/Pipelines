@@ -55,6 +55,10 @@
             {
                 <button class="btn btn-primary" @onclick="CalculateSlots">Calculate</button>
             }
+
+
+            <button class="btn btn-secondary" @onclick="ResetAllZoom">Reset Zoom</button>
+
         </div>
     </div>
 </StickyFilter>
@@ -116,7 +120,6 @@
         <canvas id="inOutChart" width="400" height="100" style='width:100%;height:100px'></canvas>
     </div>
 </div>
-
 
 
 @code {
@@ -291,6 +294,11 @@
     {
         StateService.IsLoading = false;
         cts?.Cancel();
+    }
+
+    private async Task ResetAllZoom()
+    {
+        await JSRuntime.InvokeVoidAsync("resetAllZooms");
     }
 
     private async Task UpdateChart()
@@ -655,6 +663,8 @@
                             display = true,
                             text = "Time"
                         }
+
+
                     }
                 },
                 plugins = new
