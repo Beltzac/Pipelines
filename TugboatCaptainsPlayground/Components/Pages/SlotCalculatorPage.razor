@@ -63,6 +63,26 @@
 
 <div class="card mb-3">
     <div class="card-header">
+        <h5 class="mb-0">Calculated Rates</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Vessel Rates</h6>
+                <p>Load Rate: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
+                <p>Unload Rate: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Train Rates</h6>
+                <p>Load Rate: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
+                <p>Unload Rate: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
         <h5 class="mb-0">Hour Window Analysis</h5>
     </div>
     <div class="card-body">
@@ -97,30 +117,7 @@
     </div>
 </div>
 
-<div class="card mb-3">
-    <div class="card-header">
-        <h5 class="mb-0">Calculated Rates</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h6>Vessel Rates</h6>
-                <p>Load Rate: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
-                <p>Unload Rate: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
-            </div>
-            <div class="col-md-6">
-                <h6>Train Rates</h6>
-                <p>Load Rate: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
-                <p>Unload Rate: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-@if (StateService.HourWindows != null && StateService.HourWindows.Any())
-{
-    @* The table is commented out, so no changes are needed here. *@
-}
 
 @code {
 
