@@ -50,6 +50,7 @@ window.renderChart = (canvasId, chartData) => {
     // Ensure zoom plugin is enabled
     if (!chartData.options) chartData.options = {};
     if (!chartData.options.plugins) chartData.options.plugins = {};
+
     chartData.options.plugins.zoom = {
         zoom: {
             wheel: {
@@ -65,6 +66,13 @@ window.renderChart = (canvasId, chartData) => {
             mode: 'xy'
         }
     };
+
+    chartData.options.plugins.decimation = {
+        enabled: true,
+        algorithm: 'lttb'
+    };
+
+    // Create and store the chart instance
 
     window.slotCharts[canvasId] = new Chart(ctx, chartData);
 };
