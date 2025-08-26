@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
 using Common.Models;
 
 namespace Common.Services.Interfaces
 {
     public interface IOracleOpsService
     {
-        Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate);
-        Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate);
-        Task<int> GetCurrentYardTeuAsync();
-        Task<Dictionary<DateTime, InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate);
-        Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate);
-        Task<LoadUnloadRate> GetVesselLoadUnloadRatesAsync();
-        Task<LoadUnloadRate> GetTrainLoadUnloadRatesAsync();
+        Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+        Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+        Task<int> GetCurrentYardTeuAsync(CancellationToken cancellationToken = default);
+        Task<Dictionary<DateTime, InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+        Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
+        Task<LoadUnloadRate> GetVesselLoadUnloadRatesAsync(CancellationToken cancellationToken = default);
+        Task<LoadUnloadRate> GetTrainLoadUnloadRatesAsync(CancellationToken cancellationToken = default);
     }
 
     public class LoadUnloadRate

@@ -35,7 +35,7 @@ namespace Common.Services
         /// <summary>
         /// Fetch vessel plans with vessel names
         /// </summary>
-        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, VesselPlan>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
@@ -51,7 +51,7 @@ namespace Common.Services
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                AND c.CNTR_CATEGORY != 'H'
              GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
-                default);
+                cancellationToken);
 
             var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
@@ -64,7 +64,7 @@ namespace Common.Services
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                AND c.CNTR_CATEGORY != 'H'
              GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
-                default);
+                cancellationToken);
 
             var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();
 
@@ -110,7 +110,7 @@ namespace Common.Services
         /// <summary>
         /// Fetch rail plans with names
         /// </summary>
-        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, RailPlan>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
@@ -181,7 +181,7 @@ namespace Common.Services
             return result;
         }
 
-        public async Task<int> GetCurrentYardTeuAsync()
+        public async Task<int> GetCurrentYardTeuAsync(CancellationToken cancellationToken = default)
         {
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
             var teusList = await _repo.GetFromSqlAsync<int>(
@@ -192,7 +192,7 @@ namespace Common.Services
         }
 
 
-        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
@@ -233,7 +233,7 @@ namespace Common.Services
             return result;
         }
 
-        public async Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate)
+        public async Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, int>();
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
@@ -263,7 +263,7 @@ namespace Common.Services
         /// <summary>
         /// Get vessel loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync()
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(CancellationToken cancellationToken = default)
         {
             var endDate = DateTime.Now;
             var startDate = endDate.AddYears(-1);
@@ -291,13 +291,18 @@ namespace Common.Services
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
                               ELSE 0 END) as UnloadTeus,
-                          ((vv.VESSEL_VISIT_ETD - vv.VESSEL_VISIT_ETB) * 24) as DurationHours
+                          ( ( vv.VESSEL_VISIT_END_WORK - vv.VESSEL_VISIT_START_WORK ) * 24 ) AS DurationHours
                    FROM TOSBRIDGE.TOS_VESSEL_VISIT vv
                    LEFT JOIN V_CNTRS c
                           ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
                           OR c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
-                   GROUP BY vv.VESSEL_VISIT_ID, vv.VESSEL_VISIT_ETB, vv.VESSEL_VISIT_ETD
+                   WHERE
+                    vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                        AND vv.VESSEL_VISIT_END_WORK IS NOT NULL
+                        AND vv.VESSEL_VISIT_START_WORK IS NOT NULL
+                   GROUP BY vv.VESSEL_VISIT_ID,
+                        vv.VESSEL_VISIT_END_WORK,
+                        vv.VESSEL_VISIT_START_WORK
                 )",
                default);
 
@@ -311,7 +316,7 @@ namespace Common.Services
         /// <summary>
         /// Get train loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync()
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(CancellationToken cancellationToken = default)
         {
             var endDate = DateTime.Now;
             var startDate = endDate.AddYears(-1);
@@ -337,13 +342,15 @@ namespace Common.Services
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
                               ELSE 0 END) as UnloadTeus,
-                          ((tv.TRAIN_VISIT_DEPART - tv.TRAIN_VISIT_ARRIVE) * 24) as DurationHours
+                          ((tv.TRAIN_VISIT_END_WORK - tv.TRAIN_VISIT_START_WORK) * 24) as DurationHours
                    FROM TOSBRIDGE.TOS_TRAIN_VISIT tv
                    LEFT JOIN TOSBRIDGE.TOS_CNTRS c
                           ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
                           OR c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
                    WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
-                   GROUP BY tv.TRAIN_VISIT_ID, tv.TRAIN_VISIT_ARRIVE, tv.TRAIN_VISIT_DEPART
+                        AND tv.TRAIN_VISIT_END_WORK IS NOT NULL
+                        AND tv.TRAIN_VISIT_START_WORK IS NOT NULL
+                   GROUP BY tv.TRAIN_VISIT_ID, tv.TRAIN_VISIT_START_WORK, tv.TRAIN_VISIT_END_WORK
                 )",
                default);
 

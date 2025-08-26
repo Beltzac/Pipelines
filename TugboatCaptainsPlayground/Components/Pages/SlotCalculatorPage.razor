@@ -97,47 +97,29 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Calculated Rates</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Vessel Rates</h6>
+                <p>Load Rate: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
+                <p>Unload Rate: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Train Rates</h6>
+                <p>Load Rate: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
+                <p>Unload Rate: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if (StateService.HourWindows != null && StateService.HourWindows.Any())
 {
-    @* <div class="mt-4">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Hour</th>
-                    <th>Total Slots</th>
-                    <th>Slots In</th>
-                    <th>Slots Out</th>
-                    <th>Yard TEU Projection</th>
-                    <th>Yard TEU No Gate</th>
-                    <th>Truck In</th>
-                    <th>Truck Out</th>
-                    <th>Vessel In</th>
-                    <th>Vessel Out</th>
-                    <th>Rail In</th>
-                    <th>Rail Out</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var window in StateService.HourWindows)
-                {
-                    <tr>
-                        <td>@window.T.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>@window.TotalSlots</td>
-                        <td>@window.SlotsIn</td>
-                        <td>@window.SlotsOut</td>
-                        <td>@window.YardTeuProjection</td>
-                        <td>@window.YardTeuNoGate</td>
-                        <td>@window.TruckIn</td>
-                        <td>@window.TruckOut</td>
-                        <td>@window.VesselIn</td>
-                        <td>@window.VesselOut</td>
-                        <td>@window.RailIn</td>
-                        <td>@window.RailOut</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div> *@
+    @* The table is commented out, so no changes are needed here. *@
 }
 
 @code {
@@ -205,18 +187,17 @@
             StateService.IsLoading = true;
 
             // Get current yard TEU to initialize the algorithm
-            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync();
-
-            StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
-            StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate);
+            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(cts.Token);
 
             // Fetch actual gate trucks and yard moves data
             if (StateService.GateTrucks.Count == 0
                 || StateService.CachedStartDate != StateService.StartDate
                 || StateService.CachedEndDate != StateService.EndDate)
             {
-                StateService.GateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate);
-                StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate);
+                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
+                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
+                StateService.GateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, cts.Token);
+                StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
                 StateService.CachedStartDate = StateService.StartDate;
                 StateService.CachedEndDate = StateService.EndDate;
             }
@@ -237,14 +218,14 @@
             }
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
-            
-            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync();
-            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync();
 
-            double vesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
-            double vesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
-            double trainLoadRate = trainRates?.LoadRateTeusPerHour ?? 0;
-            double trainUnloadRate = trainRates?.UnloadRateTeusPerHour ?? 0;
+            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(cts.Token);
+            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(cts.Token);
+
+            StateService.VesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
+            StateService.VesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
+            StateService.TrainLoadRate = trainRates?.LoadRateTeusPerHour ?? 0;
+            StateService.TrainUnloadRate = trainRates?.UnloadRateTeusPerHour ?? 0;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
                 StateService.StartDate,
@@ -257,10 +238,10 @@
                 StateService.AvgTeuPerTruck,
                 StateService.ReserveRho,
                 StateService.EasingStrength,
-                vesselLoadRate,
-                vesselUnloadRate,
-                trainLoadRate,
-                trainUnloadRate
+                StateService.VesselLoadRate,
+                StateService.VesselUnloadRate,
+                StateService.TrainLoadRate,
+                StateService.TrainUnloadRate
             ).ToList();
 
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData
@@ -311,6 +292,7 @@
 
     private void CancelCalculation()
     {
+        StateService.IsLoading = false;
         cts?.Cancel();
     }
 

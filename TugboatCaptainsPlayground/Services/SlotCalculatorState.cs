@@ -39,5 +39,10 @@ namespace TugboatCaptainsPlayground.Services
 
         public Dictionary<DateTime, VesselPlan> Vessels { get; set; } = new();
         public Dictionary<DateTime, RailPlan> Rails { get; set; } = new();
+
+        public double VesselLoadRate { get; set; }
+        public double VesselUnloadRate { get; set; }
+        public double TrainLoadRate { get; set; }
+        public double TrainUnloadRate { get; set; }
     }
 }
