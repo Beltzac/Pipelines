@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
 	<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	<Platforms>AnyCPU;x64</Platforms>
+	  <InvariantGlobalization>true</InvariantGlobalization>
+	  <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>

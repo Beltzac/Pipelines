@@ -277,7 +277,7 @@
                     _nextRunTimes = new();
                     _activePrCounts = new();
                     var scheduler = await _schedulerFactory.GetScheduler();
-                    var culture = new CultureInfo("pt-BR");
+                    //var culture = new CultureInfo("pt-BR");
 
                     foreach (var info in infos)
                     {
@@ -290,7 +290,7 @@
                             if (triggers != null && triggers.Any())
                             {
                                 var nextRun = triggers.Min(t => t.GetNextFireTimeUtc());
-                                _nextRunTimes[info.Id] = nextRun?.Humanize(culture: culture) ?? string.Empty;
+                                _nextRunTimes[info.Id] = nextRun?.Humanize() ?? string.Empty;
                             }
                         }
                         catch (Exception ex)

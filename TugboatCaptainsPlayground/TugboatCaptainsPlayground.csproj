@@ -30,6 +30,9 @@
 
     <!--<EnableDefaultContentItems>false</EnableDefaultContentItems>-->
     <IsWebConfigTransformDisabled>true</IsWebConfigTransformDisabled>
+
+	<InvariantGlobalization>true</InvariantGlobalization>
+	<SatelliteResourceLanguages>none</SatelliteResourceLanguages>  
   </PropertyGroup>
 
   <PropertyGroup>

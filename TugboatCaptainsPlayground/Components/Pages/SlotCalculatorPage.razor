@@ -17,7 +17,8 @@
     <div class="d-flex flex-wrap gap-3">
         <div class="col-md-4">
             <label class="form-label">Period</label>
-            <DateRangePicker Culture="@CultureInfo.GetCultureInfo("en-US")" TimePicker="true" TimePicker24Hour="true"
+            <DateRangePicker 
+                TimePicker="true" TimePicker24Hour="true"
                 TimePickerSeconds="true" AutoApply="true" DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
                 StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
                 class="form-control" />

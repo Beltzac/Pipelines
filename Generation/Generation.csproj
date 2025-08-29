@@ -8,6 +8,9 @@
     <!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 	<CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)/generated</CompilerGeneratedFilesOutputPath>-->
     <Platforms>AnyCPU;x64</Platforms>
+
+	  <InvariantGlobalization>true</InvariantGlobalization>
+	  <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
