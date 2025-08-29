@@ -68,7 +68,7 @@ namespace Common.Services
         {
             return await _repo.GetSingleFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} AND VIEW_NAME = {viewName} ",
+                $"SELECT Owner, VIEW_NAME AS Name, TO_LOB(TEXT) AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} AND VIEW_NAME = {viewName} ",
                 default);
         }
 
@@ -81,11 +81,65 @@ namespace Common.Services
             );
         }
 
-        public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema)
+/*SELECT Owner, Name, Definition
+FROM (
+    SELECT
+        av.Owner,
+        av.VIEW_NAME AS Name,
+        DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition,
+        ROW_NUMBER() OVER (ORDER BY av.VIEW_NAME) AS rn
+    FROM ALL_VIEWS av
+    WHERE av.OWNER = 'TCPAPI'
+) ranked
+WHERE rn BETWEEN 1 AND 200
+AND (
+    LOWER(ranked.Name) LIKE '%container%'
+    OR
+    dbms_lob.instr( ranked.Definition ,'container') > 0
+);
+*/
+        public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema, string? search = null, int pageSize = 9999, int pageNumber = 1)
         {
+            var whereClauses = new List<string>();
+            whereClauses.Add($"rn BETWEEN {(pageNumber - 1) * pageSize + 1} AND {pageNumber * pageSize}");
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchStrings = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                foreach (var searchString in searchStrings)
+                {
+                    whereClauses.Add(@$"(
+                       dbms_lob.instr( ranked.Definition, '{searchString.ToLowerInvariant()}') > 0
+                       OR dbms_lob.instr( ranked.Definition, '{searchString.ToUpperInvariant()}') > 0
+                    )");
+                }
+            }
+
+            var whereClause = "WHERE " + string.Join(" AND ", whereClauses);
+
+
+            var query = $@"
+                    SELECT Owner, Name, Definition
+                    FROM (
+                        SELECT
+                                av.Owner,
+                                av.VIEW_NAME AS Name,
+                                DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition,
+                                ROW_NUMBER() OVER (ORDER BY av.VIEW_NAME) AS rn
+                            FROM 
+                                ALL_VIEWS av
+                            WHERE 
+                                av.OWNER = '{schema.ToUpperInvariant()}'
+
+                    ) ranked
+                    {whereClause}
+
+                    ";
+
+
             return await _repo.GetFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                $"SELECT Owner, VIEW_NAME AS Name, TEXT AS Definition FROM ALL_VIEWS WHERE OWNER = {schema}",
+                FormattableStringFactory.Create(query),
                 default);
         }
 
@@ -448,6 +502,17 @@ namespace Common.Services
                _logger.LogError(ex, "Error executing Oracle SELECT query");
                throw;
            }
+       }
+
+       public async Task<IEnumerable<string>> GetSchemasAsync(string connectionString)
+       {
+           var query = "SELECT DISTINCT USERNAME FROM ALL_USERS ORDER BY USERNAME";
+           var schemas = await _repo.GetFromSqlAsync<string>(
+               connectionString,
+               FormattableStringFactory.Create(query),
+               default
+           );
+           return schemas;
        }
    }
 }

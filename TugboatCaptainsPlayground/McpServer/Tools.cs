@@ -143,5 +143,67 @@ namespace TugboatCaptainsPlayground.McpServer
                 sql
             );
         }
+
+        [McpServerTool, Description("Get a list of all schemas in a given Oracle environment.")]
+        public static async Task<IEnumerable<string>> GetOracleSchemasAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            string environmentName)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+
+            if (oracleEnv == null)
+            {
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            }
+
+            return await oracleSchemaService.GetSchemasAsync(oracleEnv.ConnectionString);
+        }
+
+        [McpServerTool, Description("Search for text inside view definitions")]
+        public static async Task<List<OracleViewSearchResult>> SearchInOracleViewDefinitionsAsync(
+            IOracleSchemaService oracleSchemaService,
+            IConfigurationService configurationService,
+            SmartComponents.LocalEmbeddings.LocalEmbedder embedder,
+            string environmentName,
+            string schema,
+            string searchQuery,
+            int maxResults = 20)
+        {
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+            if (oracleEnv == null)
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+
+            // Fetch a reasonable number of views (10x maxResults) for embedding search
+            var viewDefinitions = await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, searchQuery, maxResults * 10, 1);
+
+            var allCandidates = new List<(string ViewName, string Line, int LineNumber)>();
+
+            foreach (var def in viewDefinitions)
+            {
+                var lines = def.Definition.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    allCandidates.Add((def.Name, lines[i], i + 1));
+                }
+            }
+
+            var queryVec = embedder.Embed(searchQuery);
+
+            var embeddingPairs = allCandidates
+                .Select(c => (Item: c, Embedding: embedder.Embed(c.Line)))
+                .ToList();
+
+            var results = SmartComponents.LocalEmbeddings.LocalEmbedder.FindClosestWithScore(queryVec, embeddingPairs, maxResults, 0.6f);
+
+            return results.Select(r => new OracleViewSearchResult
+            {
+                ViewName = r.Item.ViewName,
+                MatchingLines = new List<string> { $"Line {r.Item.LineNumber}: {r.Item.Line}" },
+                Similarity = r.Similarity
+            }).ToList();
+        }
     }
 }
