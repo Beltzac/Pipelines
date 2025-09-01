@@ -43,18 +43,4 @@ namespace Common.Models
         public List<EsbServerConfig> EsbServers { get; set; } = new List<EsbServerConfig>();
         public string TeamsWebhookUrl { get; set; } = string.Empty;
     }
-
-    public class OracleEnvironment
-    {
-        public string Name { get; set; }
-        public string ConnectionString { get; set; }
-        public string Schema { get; set; }
-    }
-
-    public class MongoEnvironment
-    {
-        public string Name { get; set; }
-        public string ConnectionString { get; set; }
-        public string DatabaseName { get; set; }
-    }
 }

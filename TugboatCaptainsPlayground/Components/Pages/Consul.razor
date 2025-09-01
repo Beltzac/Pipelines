@@ -13,6 +13,7 @@
 @using Newtonsoft.Json.Linq
 @using TugboatCaptainsPlayground.Services
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject ToastService toastService
 @inject IJSRuntime JS
 @inject IConsulService ConsulService
@@ -28,12 +29,9 @@
    <div class="row g-3 align-items-end">
        <div class="col-md-6 col-lg-3">
            <label for="consulEnvSelect" class="form-label">Selecionar Ambiente Consul</label>
-           <select id="consulEnvSelect" class="form-select" @bind="ConsulStateService.SelectedConsulEnv">
-               @foreach (var env in config.ConsulEnvironments)
-               {
-                   <option value="@env.Name">@env.Name</option>
-               }
-           </select>
+           <EnvironmentSelector
+               Environments="config.ConsulEnvironments"
+               @bind-SelectedEnvironmentName="ConsulStateService.SelectedConsulEnv" />
        </div>
 
        <div class="col-md-6 col-lg-3">

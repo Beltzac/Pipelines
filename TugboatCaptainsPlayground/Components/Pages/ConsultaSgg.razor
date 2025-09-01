@@ -6,6 +6,7 @@
 @using Common.Services.Interfaces
 @using Common.Utils
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject ISggService LtdbService
 @inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
@@ -18,12 +19,9 @@
     <div class="row g-3">
         <div class="col-md-3">
             <label class="form-label">Ambiente</label>
-            <select class="form-select" @bind="ConsultaSggStateService.SelectedEnvironment">
-                @foreach (var env in config.OracleEnvironments)
-                {
-                    <option value="@env.Name">@env.Name</option>
-                }
-            </select>
+            <EnvironmentSelector
+                Environments="config.OracleEnvironments"
+                @bind-SelectedEnvironmentName="ConsultaSggStateService.SelectedEnvironment" />
         </div>
 
         <div class="col-md-6">

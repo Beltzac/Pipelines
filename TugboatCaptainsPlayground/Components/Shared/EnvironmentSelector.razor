@@ -1,0 +1,77 @@
+@using Common.Models
+@using System.Collections.Generic
+
+<div class="environment-selector">
+    <select @bind="SelectedEnvironmentName" class="form-select environment-dropdown" aria-label="Select environment">
+        <option value="">Select Environment</option>
+        @foreach (var env in Environments)
+        {
+            <option value="@env.Name" class="@GetEnvironmentClass(env)">
+                @env.Name @(env.IsProduction ? " (Production)" : " (Non-Production)")
+            </option>
+        }
+    </select>
+</div>
+
+<style>
+    .environment-selector {
+        position: relative;
+        display: inline-block;
+        min-width: 200px;
+    }
+
+    .environment-dropdown {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 0.375rem;
+        background-color: white;
+        font-size: 0.875rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .environment-dropdown:focus {
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .production-env {
+        background-color: #f8d7da !important;
+        color: #721c24 !important;
+        font-weight: 500;
+    }
+
+    .non-production-env {
+        background-color: #d1e7dd !important;
+        color: #0f5132 !important;
+    }
+
+    .production-env:hover,
+    .production-env:focus {
+        background-color: #f1aeb5 !important;
+        color: #721c24 !important;
+    }
+
+    .non-production-env:hover,
+    .non-production-env:focus {
+        background-color: #a3cfbb !important;
+        color: #0f5132 !important;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public IEnumerable<dynamic> Environments { get; set; } = new List<dynamic>();
+
+    [Parameter]
+    public string SelectedEnvironmentName { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> SelectedEnvironmentNameChanged { get; set; }
+
+    private string GetEnvironmentClass(dynamic env)
+    {
+        return env?.IsProduction == true ? "production-env" : "non-production-env";
+    }
+}

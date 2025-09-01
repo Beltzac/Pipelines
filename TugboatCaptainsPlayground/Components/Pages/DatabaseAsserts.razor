@@ -6,6 +6,7 @@
 @using Common.Models
 @using Common.Services
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject DatabaseAssertsStateService State
 @inject DatabaseAssertsService DatabaseAssertsService
 @inject ToastService toastService
@@ -16,31 +17,24 @@
 <CustomProgressBar IsLoading="@State.IsLoading" Label="@State.ProgressLabel" ProgressValue="@State.ProgressValue" />
 
 <StickyFilter>
-    <div class="row g-3">
-        <div class="col-md-3">
-            <div class="form-group">
-                <label class="form-label">Oracle Environment:</label>
-                <select class="form-select" @bind="@State.SelectedOracleEnvironment">
-                    <option value="">Select Environment</option>
-                    @foreach (var env in oracleEnvironments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
-            </div>
+  <div class="row g-3">
+    <div class="col-md-3">
+        <div class="form-group">
+            <label class="form-label">Oracle Environment:</label>
+            <EnvironmentSelector
+                Environments="oracleEnvironments"
+                @bind-SelectedEnvironmentName="State.SelectedOracleEnvironment" />
         </div>
-         <div class="col-md-3">
+    </div>
+
+    <div class="col-md-3">
             <div class="form-group">
                 <label class="form-label">MongoDB Environment:</label>
-                <select class="form-select" @bind="@State.SelectedMongoEnvironment">
-                     <option value="">Select Environment</option>
-                    @foreach (var env in mongoEnvironments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
+                <EnvironmentSelector
+                    Environments="mongoEnvironments"
+                    @bind-SelectedEnvironmentName="State.SelectedMongoEnvironment" />
             </div>
-        </div>
+    </div>
         <div class="col-md-6">
             <label class="form-label">Período</label>
             <div class="d-flex gap-2 mb-2">
@@ -54,8 +48,8 @@
                 DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
                 class="form-control" />
         </div>
-    </div>
 
+    </div>
     <div class="row g-3 mt-2">
         <div class="col-md-6">
             <div class="form-group">

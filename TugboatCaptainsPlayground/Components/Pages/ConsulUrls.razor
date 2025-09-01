@@ -19,12 +19,9 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label for="consulEnvSelect">Select Consul Environment</label>
-                <select id="consulEnvSelect" class="form-control" @bind="SelectedConsulEnv">
-                    @foreach (var env in ConsulEnvironments)
-                    {
-                        <option value="@env.Name">@env.Name</option>
-                    }
-                </select>
+                <EnvironmentSelector
+                    Environments="ConsulEnvironments"
+                    SelectedEnvironmentName="SelectedConsulEnv" />
             </div>
 
         </div>

@@ -3,6 +3,7 @@
 @using Common.Services.Interfaces
 @using System.Xml.Linq
 @using Quartz
+@using TugboatCaptainsPlayground.Components.Shared
 @inject IEsbService EsbService
 @inject ILogger<EsbSequences> Logger
 @inject IConfigurationService ConfigService
@@ -15,12 +16,10 @@
     <div class="col-md-6">
         <div class="form-group">
             <label class="form-label">ESB Server:</label>
-            <select class="form-select" @bind="EsbSequencesStateService.SelectedEsbServerName" @bind:after="OnEsbServerChanged">
-                @foreach (var server in EsbSequencesStateService.EsbServers)
-                {
-                    <option value="@server.Name">@server.Name</option>
-                }
-            </select>
+            <EnvironmentSelector
+                Environments="EsbSequencesStateService.EsbServers"
+                SelectedEnvironmentName="EsbSequencesStateService.SelectedEsbServerName"
+                SelectedEnvironmentNameChanged="OnEsbServerChanged" />
         </div>
     </div>
     <div class="col-md-6">

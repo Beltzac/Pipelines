@@ -297,6 +297,10 @@
                                         <InputText @bind-Value="env.ConsulToken" class="form-control" />
                                         <ValidationMessage For="@(() => env.ConsulToken)" />
                                     </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <InputCheckbox class="form-check-input" @bind-Value="env.IsProduction" />
+                                        <label class="form-check-label">Ambiente de Produção</label>
+                                    </div>
                                     <button type="button" class="btn"
                                         @onclick="() => RemoveConsulEnvironment(env)">
                                         <i class="fas fa-trash"></i> Remover
@@ -331,6 +335,10 @@
                                     <div class="mb-3">
                                         <label class="form-label">Esquema</label>
                                         <InputText @bind-Value="env.Schema" class="form-control" />
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <InputCheckbox class="form-check-input" @bind-Value="env.IsProduction" />
+                                        <label class="form-check-label">Ambiente de Produção</label>
                                     </div>
                                     <div class="d-flex gap-2">
                                         <button type="button" class="btn"
@@ -381,6 +389,10 @@
                                         <InputText type="password" @bind-Value="server.Password" class="form-control" />
                                         <ValidationMessage For="@(() => server.Password)" />
                                     </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <InputCheckbox class="form-check-input" @bind-Value="server.IsProduction" />
+                                        <label class="form-check-label">Servidor de Produção</label>
+                                    </div>
                                     <button type="button" class="btn"
                                         @onclick="() => RemoveEsbServer(server)">
                                         <i class="fas fa-trash"></i> Remover
@@ -419,6 +431,10 @@
                                         <label class="form-label">Nome do Banco de Dados</label>
                                         <InputText @bind-Value="env.DatabaseName" class="form-control" />
                                         <ValidationMessage For="@(() => env.DatabaseName)" />
+                                    </div>
+                                    <div class="form-check form-switch mb-3">
+                                        <InputCheckbox class="form-check-input" @bind-Value="env.IsProduction" />
+                                        <label class="form-check-label">Ambiente de Produção</label>
                                     </div>
                                     <button type="button" class="btn"
                                         @onclick="() => RemoveMongoEnvironment(env)">
