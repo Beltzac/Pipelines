@@ -7,7 +7,9 @@
 @using Common.Utils
 @using TugboatCaptainsPlayground.Services
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject SlotCalculatorStateService StateService
+@inject IConfigurationService ConfigService
 @inject IJSRuntime JSRuntime
 @inject ILogger<SlotCalculatorPage> _logger
 @inject ToastService toastService
@@ -17,11 +19,17 @@
     <div class="d-flex flex-wrap gap-3">
         <div class="col-md-4">
             <label class="form-label">Period</label>
-            <DateRangePicker 
+            <DateRangePicker
                 TimePicker="true" TimePicker24Hour="true"
                 TimePickerSeconds="true" AutoApply="true" DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
                 StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
                 class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Oracle Environment:</label>
+            <EnvironmentSelector
+                Environments="oracleEnvironments"
+                @bind-SelectedEnvironmentName="StateService.SelectedOracleEnvironment" />
         </div>
         <div class="col-md-2">
             <label class="form-label">Initial Yard TEU</label>
@@ -128,14 +136,22 @@
     private CancellationTokenSource cts;
     private DotNetObjectReference<SlotCalculatorPage>? objRef;
 
+    private List<OracleEnvironment> oracleEnvironments = new();
+
     protected override async Task OnInitializedAsync()
     {
         StateService.OnChange += StateHasChanged;
         StateService.Load();
 
+        var config = ConfigService.GetConfig();
+        oracleEnvironments = config.OracleEnvironments ?? new List<OracleEnvironment>();
+
         StateService.InitializeState(state =>
         {
-
+            if (string.IsNullOrEmpty(state.SelectedOracleEnvironment) && oracleEnvironments.Any())
+            {
+                state.SelectedOracleEnvironment = oracleEnvironments.First().Name;
+            }
         });
     }
 

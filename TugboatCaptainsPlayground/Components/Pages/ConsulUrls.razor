@@ -13,6 +13,7 @@
 @using System.Threading
 @using System.Collections.Concurrent
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 
 <StickyFilter>
     <div class="row g-3">
@@ -21,7 +22,7 @@
                 <label for="consulEnvSelect">Select Consul Environment</label>
                 <EnvironmentSelector
                     Environments="ConsulEnvironments"
-                    SelectedEnvironmentName="SelectedConsulEnv" />
+                    @bind-SelectedEnvironmentName="SelectedConsulEnv" />
             </div>
 
         </div>

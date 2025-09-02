@@ -6,6 +6,7 @@
 @using Microsoft.JSInterop
 @using TugboatCaptainsPlayground.Services
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject IJSRuntime JSRuntime
 @inject IOracleSchemaService OracleSchemaService
 @inject ToastService toastService
@@ -18,12 +19,10 @@
     <div class="row g-3 align-items-end">
         <div class="col-md-6">
             <label class="form-label" title="Ambiente de origem para comparação">Ambiente:</label>
-            <select class="form-select" @bind="StateService.SelectedEnvironment" @bind:after="EnvironmentChanged">
-                @foreach (var env in environments)
-                {
-                    <option value="@env.Name">@env.Name</option>
-                }
-            </select>
+            <EnvironmentSelector
+                Environments="environments"
+                SelectedEnvironmentName="StateService.SelectedEnvironment"
+                SelectedEnvironmentNameChanged="EnvironmentChanged" />
         </div>
         <div class="col-md-6">
             <label class="form-label" title="Tabela ou View">Tabela/View:</label>

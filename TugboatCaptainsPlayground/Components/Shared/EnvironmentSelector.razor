@@ -1,8 +1,12 @@
 @using Common.Models
 @using System.Collections.Generic
+@using System.Linq
 
-<div class="environment-selector">
-    <select @bind="SelectedEnvironmentName" class="form-select environment-dropdown" aria-label="Select environment">
+<div class="input-group mb-3">
+    <span class="input-group-text">
+        <i class="bi bi-server me-2"></i>@GetServiceType()
+    </span>
+    <select @bind="SelectedEnvironmentName" class="form-select environment-dropdown @GetSelectedEnvironmentClass()" aria-label="Select environment">
         <option value="">Select Environment</option>
         @foreach (var env in Environments)
         {
@@ -14,55 +18,71 @@
 </div>
 
 <style>
-    .environment-selector {
-        position: relative;
-        display: inline-block;
-        min-width: 200px;
+    .input-group .form-select {
+        border-radius: 0;
+    }
+
+    .input-group .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+        font-weight: 600;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group .input-group-text i {
+        color: #6c757d;
     }
 
     .environment-dropdown {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 0.375rem;
-        background-color: white;
         font-size: 0.875rem;
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
     .environment-dropdown:focus {
         border-color: #86b7fe;
-        outline: 0;
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
     }
 
+    .form-select.production-env {
+        background-color: #fff3cd;
+        color: #856404;
+        font-weight: 500;
+    }
+
+    .form-select.non-production-env {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
     .production-env {
-        background-color: #f8d7da !important;
-        color: #721c24 !important;
+        background-color: #fff3cd !important;
+        color: #856404 !important;
         font-weight: 500;
     }
 
     .non-production-env {
-        background-color: #d1e7dd !important;
-        color: #0f5132 !important;
+        background-color: #d4edda !important;
+        color: #155724 !important;
     }
 
     .production-env:hover,
     .production-env:focus {
-        background-color: #f1aeb5 !important;
-        color: #721c24 !important;
+        background-color: #ffeaa7 !important;
+        color: #856404 !important;
     }
 
     .non-production-env:hover,
     .non-production-env:focus {
-        background-color: #a3cfbb !important;
-        color: #0f5132 !important;
+        background-color: #c3e6cb !important;
+        color: #155724 !important;
     }
 </style>
 
 @code {
     [Parameter]
-    public IEnumerable<dynamic> Environments { get; set; } = new List<dynamic>();
+    public IEnumerable<IEnvironment> Environments { get; set; } = new List<IEnvironment>();
 
     [Parameter]
     public string SelectedEnvironmentName { get; set; } = string.Empty;
@@ -70,8 +90,20 @@
     [Parameter]
     public EventCallback<string> SelectedEnvironmentNameChanged { get; set; }
 
-    private string GetEnvironmentClass(dynamic env)
+    private string GetServiceType()
+    {
+        var env = Environments.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
+        return env?.ServiceType ?? "None";
+    }
+
+    private string GetEnvironmentClass(IEnvironment env)
     {
         return env?.IsProduction == true ? "production-env" : "non-production-env";
+    }
+
+    private string GetSelectedEnvironmentClass()
+    {
+        var env = Environments.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
+        return env != null ? GetEnvironmentClass(env) : string.Empty;
     }
 }

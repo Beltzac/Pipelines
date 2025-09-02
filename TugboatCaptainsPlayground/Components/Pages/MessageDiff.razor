@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.JSInterop
 @using Microsoft.Extensions.Logging
+@using TugboatCaptainsPlayground.Components.Shared
 @inject IJSRuntime JSRuntime
 @inject IOracleMessageService OracleMessageService
 @inject ToastService toastService
@@ -21,21 +22,15 @@
    <div class="row g-3 align-items-end">
        <div class="col-md-6 col-lg-4">
            <label class="form-label" title="Ambiente de origem para comparação">Ambiente Origem:</label>
-           <select class="form-select" @bind="MessageDiffStateService.SelectedSourceEnv">
-               @foreach (var env in environments)
-               {
-                   <option value="@env.Name">@env.Name</option>
-               }
-           </select>
+           <EnvironmentSelector
+               Environments="environments"
+               @bind-SelectedEnvironmentName="MessageDiffStateService.SelectedSourceEnv" />
        </div>
        <div class="col-md-6 col-lg-4">
            <label class="form-label" title="Ambiente de destino para comparação">Ambiente Destino:</label>
-           <select class="form-select" @bind="MessageDiffStateService.SelectedTargetEnv">
-               @foreach (var env in environments)
-               {
-                   <option value="@env.Name">@env.Name</option>
-               }
-           </select>
+           <EnvironmentSelector
+               Environments="environments"
+               @bind-SelectedEnvironmentName="MessageDiffStateService.SelectedTargetEnv" />
        </div>
        <div class="col-md-12 col-lg-4">
            <button class="btn btn-primary w-100" @onclick="CompareEnvironments">Comparar</button>
