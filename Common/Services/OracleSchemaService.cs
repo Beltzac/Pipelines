@@ -2,12 +2,12 @@ using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using Common.Utils;
-using System.Runtime.CompilerServices;
 using CSharpDiff.Diffs.Models;
 using CSharpDiff.Patches;
 using CSharpDiff.Patches.Models;
 using Microsoft.Extensions.Logging;
 using SQL.Formatter.Language;
+using System.Runtime.CompilerServices;
 using static SQL.Formatter.SqlFormatter;
 
 namespace Common.Services
@@ -46,13 +46,13 @@ namespace Common.Services
             return await CompareViewDefinitions(sourceViews, targetViews);
         }
 
-        public async Task<bool> TestConnectionAsync(string connectionString, string schema)
+        public async Task<bool> TestConnectionAsync(string connectionString)
         {
             try
             {
                 await _repo.GetSingleFromSqlAsync<int>(
                     connectionString,
-                    $"SELECT COUNT(*) FROM ALL_VIEWS WHERE OWNER = {schema}",
+                    $"SELECT 1 FROM DUAL",
                     default);
 
                 return true;
@@ -66,9 +66,20 @@ namespace Common.Services
 
         public async Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName)
         {
+            var query = $@"
+                SELECT Owner, Name, Definition
+                FROM (
+                    SELECT
+                        av.Owner,
+                        av.VIEW_NAME AS Name,
+                        DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition
+                    FROM ALL_VIEWS av
+                    WHERE av.OWNER = '{schema.ToUpperInvariant()}' AND av.VIEW_NAME = '{viewName.ToUpperInvariant()}'
+                )";
+
             return await _repo.GetSingleFromSqlAsync<OracleViewDefinition>(
                 connectionString,
-                $"SELECT Owner, VIEW_NAME AS Name, TO_LOB(TEXT) AS Definition FROM ALL_VIEWS WHERE OWNER = {schema} AND VIEW_NAME = {viewName} ",
+                FormattableStringFactory.Create(query),
                 default);
         }
 
@@ -126,9 +137,9 @@ AND (
                                 av.VIEW_NAME AS Name,
                                 DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition,
                                 ROW_NUMBER() OVER (ORDER BY av.VIEW_NAME) AS rn
-                            FROM 
+                            FROM
                                 ALL_VIEWS av
-                            WHERE 
+                            WHERE
                                 av.OWNER = '{schema.ToUpperInvariant()}'
 
                     ) ranked
@@ -455,7 +466,7 @@ AND (
                     -- Return the plan in the same call
                     OPEN l_cursor FOR
                         SELECT PLAN_TABLE_OUTPUT
-                        FROM   TABLE(DBMS_XPLAN.DISPLAY());
+                        FROM TABLE(DBMS_XPLAN.DISPLAY(NULL, NULL, 'BASIC +NOTE +OUTLINE +ALIAS +PROJECTION +PREDICATE +BYTES +COST +PARTITION +PARALLEL'));
 
                     DBMS_SQL.RETURN_RESULT(l_cursor);
                     END;";

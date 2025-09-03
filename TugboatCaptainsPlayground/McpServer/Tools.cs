@@ -17,11 +17,11 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<OracleTablesAndViewsResult> GetOracleTablesAndViewsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName,
-            string? schema = null,
-            string? search = null,
-            int pageSize = 20,
-            int pageNumber = 1)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The optional schema name to filter tables and views. Use get_oracle_schemas to get available schemas. If null, all schemas are considered.")] string? schema = null,
+            [Description("The optional search term to filter tables and views by name.")] string? search = null,
+            [Description("The number of items to return per page. Default is 20.")] int pageSize = 20,
+            [Description("The page number to retrieve. Default is 1.")] int pageNumber = 1)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -43,9 +43,9 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<IEnumerable<OracleColumn>> GetOracleTableOrViewColumnsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName,
-            string schema,
-            string objectName)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The schema name where the table or view is located. Use get_oracle_schemas to get available schemas.")] string schema,
+            [Description("The name of the table or view to get column details for. Use get_oracle_tables_and_views to get available tables and views.")] string objectName)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -62,7 +62,7 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<bool> TestOracleConnectionAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName)
+            [Description("The name of the Oracle environment to test the connection for. Use get_oracle_environments to get available environments.")] string environmentName)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -71,16 +71,17 @@ namespace TugboatCaptainsPlayground.McpServer
             {
                 throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
             }
-            return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString, oracleEnv.Schema);
+
+            return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString);
         }
 
         [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
         public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName,
-            string schema,
-            string viewName)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The schema name where the view is located. Use get_oracle_schemas to get available schemas.")] string schema,
+            [Description("The name of the view to get the definition for. Use get_oracle_tables_and_views to get available views.")] string viewName)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -108,9 +109,9 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<string> AnalyzeOracleQueryPerformanceAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName,
-            string schema,
-            string sql)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The schema name to execute the query in. Use get_oracle_schemas to get available schemas.")] string schema,
+            [Description("The SQL query to analyze for performance.")] string sql)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -128,8 +129,8 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<OracleQueryResult> ExecuteOracleSelectAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName,
-            string sql)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The SELECT SQL query to execute.")] string sql)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -148,7 +149,7 @@ namespace TugboatCaptainsPlayground.McpServer
         public static async Task<IEnumerable<string>> GetOracleSchemasAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
-            string environmentName)
+            [Description("The name of the Oracle environment to get schemas from. Use get_oracle_environments to get available environments.")] string environmentName)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
@@ -166,10 +167,10 @@ namespace TugboatCaptainsPlayground.McpServer
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
             SmartComponents.LocalEmbeddings.LocalEmbedder embedder,
-            string environmentName,
-            string schema,
-            string searchQuery,
-            int maxResults = 20)
+            [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+            [Description("The schema name to search view definitions in. Use get_oracle_schemas to get available schemas.")] string schema,
+            [Description("The search query to find matching text in view definitions.")] string searchQuery,
+            [Description("The maximum number of results to return. Default is 20.")] int maxResults = 20)
         {
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());

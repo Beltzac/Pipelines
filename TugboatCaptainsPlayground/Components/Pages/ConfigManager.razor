@@ -541,7 +541,7 @@
     {
         try
         {
-            var result = await OracleService.TestConnectionAsync(env.ConnectionString, env.Schema);
+            var result = await OracleService.TestConnectionAsync(env.ConnectionString);
             if (result)
             {
                 ToastService.ShowSuccess("Teste de conexão bem-sucedido");
