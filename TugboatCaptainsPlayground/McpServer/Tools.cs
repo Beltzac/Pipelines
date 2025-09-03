@@ -18,13 +18,7 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The number of items to return per page. Default is 20.")] int pageSize = 20,
             [Description("The page number to retrieve. Default is 1.")] int pageNumber = 1)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
             return await oracleSchemaService.GetTablesAndViewsAsync(
                 oracleEnv.ConnectionString,
@@ -42,13 +36,12 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name where the table or view is located. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The name of the table or view to get column details for. Use get_oracle_tables_and_views to get available tables and views.")] string objectName)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+            if (string.IsNullOrWhiteSpace(schema))
+                throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+            if (string.IsNullOrWhiteSpace(objectName))
+                throw new ArgumentException("Object name cannot be null or empty.", nameof(objectName));
 
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
             return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, schema, objectName);
         }
@@ -62,13 +55,12 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name where the view is located. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The name of the view to get the definition for. Use get_oracle_tables_and_views to get available views.")] string viewName)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
+            if (string.IsNullOrWhiteSpace(schema))
+                throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+            if (string.IsNullOrWhiteSpace(viewName))
+                throw new ArgumentException("View name cannot be null or empty.", nameof(viewName));
 
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
             return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, schema, viewName);
         }
 
@@ -109,12 +101,12 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name to execute the query in. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The SQL query to analyze for performance.")] string sql)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            if (string.IsNullOrWhiteSpace(schema))
+                throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+            if (string.IsNullOrWhiteSpace(sql))
+                throw new ArgumentException("SQL query cannot be null or empty.", nameof(sql));
+
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
             return await oracleSchemaService.AnalyzeQueryPerformanceAsync(
                 oracleEnv.ConnectionString,
                 schema,
@@ -128,12 +120,10 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
             [Description("The SELECT SQL query to execute.")] string sql)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            if (string.IsNullOrWhiteSpace(sql))
+                throw new ArgumentException("SQL query cannot be null or empty.", nameof(sql));
+
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
             return await oracleSchemaService.ExecuteSelectQueryAsync(
                 oracleEnv.ConnectionString,
@@ -147,13 +137,7 @@ namespace TugboatCaptainsPlayground.McpServer
             IConfigurationService configurationService,
             [Description("The name of the Oracle environment to get schemas from. Use get_oracle_environments to get available environments.")] string environmentName)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
             return await oracleSchemaService.GetSchemasAsync(oracleEnv.ConnectionString);
         }
@@ -168,10 +152,12 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The search query to find matching text in view definitions.")] string searchQuery,
             [Description("The maximum number of results to return. Default is 20.")] int maxResults = 20)
         {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-            if (oracleEnv == null)
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+            if (string.IsNullOrWhiteSpace(schema))
+                throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+            if (string.IsNullOrWhiteSpace(searchQuery))
+                throw new ArgumentException("Search query cannot be null or empty.", nameof(searchQuery));
+
+            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
             // Fetch a reasonable number of views (10x maxResults) for embedding search
             var viewDefinitions = await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, searchQuery, maxResults * 10, 1);
@@ -201,6 +187,20 @@ namespace TugboatCaptainsPlayground.McpServer
                 MatchingLines = new List<string> { $"Line {r.Item.LineNumber}: {r.Item.Line}" },
                 Similarity = r.Similarity
             }).ToList();
+        }
+
+        private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
+        {
+            if (string.IsNullOrWhiteSpace(environmentName))
+                throw new ArgumentException("Environment name cannot be null or empty.", nameof(environmentName));
+
+            var config = configurationService.GetConfig();
+            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
+
+            if (oracleEnv == null)
+                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+
+            return oracleEnv;
         }
     }
 }
