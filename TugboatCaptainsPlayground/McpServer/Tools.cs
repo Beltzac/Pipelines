@@ -1,19 +1,14 @@
 using Common.Models;
 using Common.Services.Interfaces;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System;
-using System.ComponentModel;
 using ModelContextProtocol.Server;
-using Common.Services;
-using System.Linq; // Added for LINQ methods
+using System.ComponentModel;
 
 namespace TugboatCaptainsPlayground.McpServer
 {
     [McpServerToolType]
     public static class Tools
     {
-        [McpServerTool, Description("Get a list of all tables and views in a given Oracle schema, with optional search and pagination.")]
+        [McpServerTool(ReadOnly = true), Description("Get a list of all tables and views in a given Oracle schema, with optional search and pagination.")]
         public static async Task<OracleTablesAndViewsResult> GetOracleTablesAndViewsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -39,7 +34,7 @@ namespace TugboatCaptainsPlayground.McpServer
                 pageNumber);
         }
 
-        [McpServerTool, Description("Get column details (including description/comment) for a specific table or view.")]
+        [McpServerTool(ReadOnly = true), Description("Get column details (including description/comment) for a specific table or view.")]
         public static async Task<IEnumerable<OracleColumn>> GetOracleTableOrViewColumnsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -59,7 +54,7 @@ namespace TugboatCaptainsPlayground.McpServer
         }
 
 
-        [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
+        [McpServerTool(ReadOnly = true), Description("Get a single view definition for a given Oracle schema.")]
         public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -78,7 +73,7 @@ namespace TugboatCaptainsPlayground.McpServer
         }
 
         // Environment listing methods
-        [McpServerTool, Description("Get a list of all configured Oracle environments with connection status and environment type.")]
+        [McpServerTool(ReadOnly = true), Description("Get a list of all configured Oracle environments with connection status and environment type.")]
         public static async Task<List<OracleEnvironmentInfo>> GetOracleEnvironmentsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService)
@@ -106,7 +101,7 @@ namespace TugboatCaptainsPlayground.McpServer
             return result;
         }
 
-        [McpServerTool, Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
+        [McpServerTool(ReadOnly = true), Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
         public static async Task<string> AnalyzeOracleQueryPerformanceAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -126,7 +121,7 @@ namespace TugboatCaptainsPlayground.McpServer
                 sql);
         }
 
-        [McpServerTool, Description("Execute a custom SELECT query against Oracle returning dynamic rows.")]
+        [McpServerTool(ReadOnly = true), Description("Execute a custom SELECT query against Oracle returning dynamic rows.")]
         public static async Task<OracleQueryResult> ExecuteOracleSelectAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -146,7 +141,7 @@ namespace TugboatCaptainsPlayground.McpServer
             );
         }
 
-        [McpServerTool, Description("Get a list of all schemas in a given Oracle environment.")]
+        [McpServerTool(ReadOnly = true), Description("Get a list of all schemas in a given Oracle environment.")]
         public static async Task<IEnumerable<string>> GetOracleSchemasAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
@@ -163,7 +158,7 @@ namespace TugboatCaptainsPlayground.McpServer
             return await oracleSchemaService.GetSchemasAsync(oracleEnv.ConnectionString);
         }
 
-        [McpServerTool, Description("Search for text inside view definitions")]
+        [McpServerTool(ReadOnly = true), Description("Search for text inside view definitions")]
         public static async Task<List<OracleViewSearchResult>> SearchInOracleViewDefinitionsAsync(
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService,
