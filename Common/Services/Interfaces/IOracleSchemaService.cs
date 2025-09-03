@@ -5,7 +5,7 @@ namespace Common.Services.Interfaces
     public interface IOracleSchemaService
     {
         Task<IEnumerable<OracleDiffResult>> Compare(string sourceEnvName, string targetEnvName);
-        Task<bool> TestConnectionAsync(string connectionString);
+        Task<OracleConnectionTestResult> TestConnectionAsync(string connectionString);
         Task<OracleViewDefinition> GetViewDefinitionAsync(string connectionString, string schema, string viewName);
         Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema, string? search = null, int pageSize = 9999, int pageNumber = 1);
         Task<OracleDiffResult> GetViewDiffAsync(string viewName, string oldContent, string newContent);

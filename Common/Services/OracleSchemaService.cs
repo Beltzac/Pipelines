@@ -46,21 +46,31 @@ namespace Common.Services
             return await CompareViewDefinitions(sourceViews, targetViews);
         }
 
-        public async Task<bool> TestConnectionAsync(string connectionString)
+        public async Task<OracleConnectionTestResult> TestConnectionAsync(string connectionString)
         {
             try
             {
                 await _repo.GetSingleFromSqlAsync<int>(
                     connectionString,
-                    $"SELECT 1 FROM DUAL",
+                    $"SELECT 1 as \"Value\" FROM DUAL",
                     default);
 
-                return true;
+                return new OracleConnectionTestResult
+                {
+                    IsConnected = true,
+                    ErrorMessage = null,
+                    ConnectionDetails = "Connection successful"
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao testar conexão do Oracle");
-                return false;
+                return new OracleConnectionTestResult
+                {
+                    IsConnected = false,
+                    ErrorMessage = ex.Message,
+                    ConnectionDetails = $"Connection failed: {ex.GetType().Name}"
+                };
             }
         }
 

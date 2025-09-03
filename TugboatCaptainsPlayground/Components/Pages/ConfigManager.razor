@@ -539,21 +539,14 @@
 
     private async Task TestOracleConnection(OracleEnvironment env)
     {
-        try
+        var result = await OracleService.TestConnectionAsync(env.ConnectionString);
+        if (result.IsConnected)
         {
-            var result = await OracleService.TestConnectionAsync(env.ConnectionString);
-            if (result)
-            {
-                ToastService.ShowSuccess("Teste de conexão bem-sucedido");
-            }
-            else
-            {
-                ToastService.ShowError("Teste de conexão falhou");
-            }
+            ToastService.ShowSuccess(result.ConnectionDetails);
         }
-        catch (Exception ex)
+        else
         {
-            ToastService.ShowError($"Teste de conexão falhou: {ex.Message}");
+            ToastService.ShowError(result.ErrorMessage);
         }
     }
 

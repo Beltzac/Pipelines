@@ -58,22 +58,6 @@ namespace TugboatCaptainsPlayground.McpServer
             return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, schema, objectName);
         }
 
-        [McpServerTool, Description("Test the connection to an Oracle database.")]
-        public static async Task<bool> TestOracleConnectionAsync(
-            IOracleSchemaService oracleSchemaService,
-            IConfigurationService configurationService,
-            [Description("The name of the Oracle environment to test the connection for. Use get_oracle_environments to get available environments.")] string environmentName)
-        {
-            var config = configurationService.GetConfig();
-            var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.ToLower() == environmentName.ToLower());
-
-            if (oracleEnv == null)
-            {
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
-            }
-
-            return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString);
-        }
 
         [McpServerTool, Description("Get a single view definition for a given Oracle schema.")]
         public static async Task<OracleViewDefinition> GetOracleViewDefinitionAsync(
@@ -94,15 +78,32 @@ namespace TugboatCaptainsPlayground.McpServer
         }
 
         // Environment listing methods
-        [McpServerTool, Description("Get a list of all configured Oracle environments.")]
-        public static List<string> GetOracleEnvironments(
+        [McpServerTool, Description("Get a list of all configured Oracle environments with connection status and environment type.")]
+        public static async Task<List<OracleEnvironmentInfo>> GetOracleEnvironmentsAsync(
+            IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService)
         {
             var config = configurationService.GetConfig();
-            return config.OracleEnvironments
-                         .Where(e => !string.IsNullOrWhiteSpace(e.Name))
-                         .Select(e => e.Name)
-                         .ToList();
+            var environments = config.OracleEnvironments
+                                   .Where(e => !string.IsNullOrWhiteSpace(e.Name))
+                                   .ToList();
+
+            var result = new List<OracleEnvironmentInfo>();
+
+            foreach (var env in environments)
+            {
+                var connectionTest = await oracleSchemaService.TestConnectionAsync(env.ConnectionString);
+
+                result.Add(new OracleEnvironmentInfo
+                {
+                    Name = env.Name,
+                    IsConnected = connectionTest.IsConnected,
+                    IsProduction = env.IsProduction,
+                    ConnectionError = connectionTest.ErrorMessage
+                });
+            }
+
+            return result;
         }
 
         [McpServerTool, Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
