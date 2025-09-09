@@ -35,10 +35,10 @@ namespace Tests.Common.Services
                 .ReturnsAsync(1);
 
             // Act
-            var result = await _service.TestConnectionAsync("mock-connection-string", "MOCK_SCHEMA");
+            var result = await _service.TestConnectionAsync("mock-connection-string");
 
             // Assert
-            result.Should().BeTrue();
+            result.IsConnected.Should().BeTrue();
         }
 
         [Test]
@@ -186,11 +186,10 @@ namespace Tests.Common.Services
         public async Task TestConnectionAsync_ShouldReturnTrue_WhenConnectionIsSuccessful()
         {
             var connectionString = "ValidConnectionString";
-            var schema = "ValidSchema";
 
-            var result = await _service.TestConnectionAsync(connectionString, schema);
+            var result = await _service.TestConnectionAsync(connectionString);
 
-            result.Should().BeTrue();
+            result.IsConnected.Should().BeTrue();
         }
 
         [Test]
