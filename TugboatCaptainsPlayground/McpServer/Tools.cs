@@ -189,7 +189,25 @@ namespace TugboatCaptainsPlayground.McpServer
             }).ToList();
         }
 
-        private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
+       [McpServerTool(ReadOnly = true), Description("Get object dependencies (tables/views) for a given Oracle object.")]
+       public static async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(
+           IOracleSchemaService oracleSchemaService,
+           IConfigurationService configurationService,
+           [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+           [Description("The schema name where the object is located. Use get_oracle_schemas to get available schemas.")] string schema,
+           [Description("The name of the object (table or view).")] string objectName,
+           [Description("The type of the object (TABLE or VIEW).")] string objectType)
+       {
+           var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+           return await oracleSchemaService.GetOracleDependenciesAsync(
+               oracleEnv.ConnectionString,
+               schema,
+               objectName,
+               objectType
+           );
+       }
+
+       private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
         {
             if (string.IsNullOrWhiteSpace(environmentName))
                 throw new ArgumentException("Environment name cannot be null or empty.", nameof(environmentName));

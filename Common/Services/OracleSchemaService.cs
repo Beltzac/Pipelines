@@ -535,5 +535,29 @@ AND (
            );
            return schemas;
        }
+
+       public async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(string connectionString, string schema, string objectName, string objectType)
+       {
+           if (string.IsNullOrWhiteSpace(schema))
+               throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+           if (string.IsNullOrWhiteSpace(objectName))
+               throw new ArgumentException("Object name cannot be null or empty.", nameof(objectName));
+           if (string.IsNullOrWhiteSpace(objectType))
+               throw new ArgumentException("Object type cannot be null or empty.", nameof(objectType));
+
+           var query = $@"
+               SELECT CONNECT_BY_ROOT d.type as Type, d.name AS Referencee, d.referenced_owner as ReferencedSchema, d.referenced_name as ReferencedName
+               FROM all_dependencies d
+               WHERE d.owner = '{schema.ToUpperInvariant()}'
+                 AND d.referenced_type in ('TABLE', 'VIEW')
+               START WITH d.name = '{objectName.ToUpperInvariant()}' AND d.type = '{objectType.ToUpperInvariant()}'
+               CONNECT BY PRIOR d.referenced_name = d.name AND PRIOR d.referenced_type = d.type";
+
+           return await _repo.GetFromSqlAsync<OracleDependency>(
+               connectionString,
+               FormattableStringFactory.Create(query),
+               default
+           );
+       }
    }
 }

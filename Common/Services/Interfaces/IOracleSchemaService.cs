@@ -16,5 +16,6 @@ namespace Common.Services.Interfaces
         Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql);
         Task<OracleQueryResult> ExecuteSelectQueryAsync(string connectionString, string sql);
         Task<IEnumerable<string>> GetSchemasAsync(string connectionString);
+        Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(string connectionString, string schema, string objectName, string objectType);
     }
 }
