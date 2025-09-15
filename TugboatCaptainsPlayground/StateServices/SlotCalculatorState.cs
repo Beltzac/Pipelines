@@ -36,6 +36,7 @@ namespace TugboatCaptainsPlayground.Services
 
         public DateTime? CachedStartDate { get; set; }
         public DateTime? CachedEndDate { get; set; }
+        public string CachedEnvironment { get; set; }
 
         public Dictionary<DateTime, VesselPlan> Vessels { get; set; } = new();
         public Dictionary<DateTime, RailPlan> Rails { get; set; } = new();

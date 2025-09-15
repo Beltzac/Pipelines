@@ -35,10 +35,10 @@ namespace Common.Services
         /// <summary>
         /// Fetch vessel plans with vessel names
         /// </summary>
-        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<DateTime, VesselPlan>> FetchVesselPlansWithNamesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, VesselPlan>();
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
@@ -110,10 +110,10 @@ namespace Common.Services
         /// <summary>
         /// Fetch rail plans with names
         /// </summary>
-        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<DateTime, RailPlan>> FetchRailPlansWithNamesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, RailPlan>();
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var railIns = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
@@ -181,9 +181,9 @@ namespace Common.Services
             return result;
         }
 
-        public async Task<int> GetCurrentYardTeuAsync(CancellationToken cancellationToken = default)
+        public async Task<int> GetCurrentYardTeuAsync(string envName, CancellationToken cancellationToken = default)
         {
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
             var teusList = await _repo.GetFromSqlAsync<int>(
                 env.ConnectionString,
                 (FormattableString)$@"SELECT SUM(CASE WHEN SUBSTR(CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as TotalTeus FROM V_CNTRS WHERE CNTR_STATUS = 'YA'",
@@ -192,10 +192,10 @@ namespace Common.Services
         }
 
 
-        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var trucksInCap = await _repo.GetFromSqlAsync<HourlyCount>(
                 env.ConnectionString,
@@ -233,10 +233,10 @@ namespace Common.Services
             return result;
         }
 
-        public async Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var result = new Dictionary<DateTime, int>();
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var yardMovesCap = await _repo.GetFromSqlAsync<HourlyCount>(
                 env.ConnectionString,
@@ -263,11 +263,11 @@ namespace Common.Services
         /// <summary>
         /// Get vessel loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(CancellationToken cancellationToken = default)
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default)
         {
             var endDate = DateTime.Now;
             var startDate = endDate.AddYears(-1);
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var vesselRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
                 env.ConnectionString,
@@ -316,11 +316,11 @@ namespace Common.Services
         /// <summary>
         /// Get train loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(CancellationToken cancellationToken = default)
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default)
         {
             var endDate = DateTime.Now;
             var startDate = endDate.AddYears(-1);
-            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == "CTOS OPS");
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var trainRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
                 env.ConnectionString,

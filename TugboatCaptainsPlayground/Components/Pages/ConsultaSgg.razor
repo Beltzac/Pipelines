@@ -280,9 +280,15 @@
 
         ConsultaSggStateService.InitializeState(x =>
         {
-            x.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-            x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-            x.StartDate = x.EndDate?.AddHours(-24).AddTicks(1);
+            if (string.IsNullOrEmpty(x.SelectedEnvironment) && config.OracleEnvironments.Any())
+            {
+                x.SelectedEnvironment = config.OracleEnvironments.First().Name;
+            }
+            if (x.EndDate == null)
+            {
+                x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+                x.StartDate = x.EndDate?.AddHours(-24).AddTicks(1);
+            }
         });
     }
 

@@ -8,11 +8,14 @@
     </span>
     <select @bind="SelectedEnvironmentName" class="form-select environment-dropdown @GetSelectedEnvironmentClass()" aria-label="Select environment">
         <option value="">Select Environment</option>
-        @foreach (var env in Environments)
+        @if (Environments != null)
         {
-            <option value="@env.Name" class="@GetEnvironmentClass(env)">
-                @env.Name @(env.IsProduction ? " (Production)" : " (Non-Production)")
-            </option>
+            @foreach (var env in Environments)
+            {
+                <option value="@env.Name" class="@GetEnvironmentClass(env)">
+                    @env.Name @(env.IsProduction ? " (Production)" : " (Non-Production)")
+                </option>
+            }
         }
     </select>
 </div>
@@ -82,7 +85,7 @@
 
 @code {
     [Parameter]
-    public IEnumerable<IEnvironment> Environments { get; set; } = new List<IEnvironment>();
+    public IEnumerable<IEnvironment> Environments { get; set; }
 
     [Parameter]
     public string SelectedEnvironmentName { get; set; } = string.Empty;
@@ -92,7 +95,7 @@
 
     private string GetServiceType()
     {
-        var env = Environments.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
+        var env = Environments?.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
         return env?.ServiceType ?? "None";
     }
 
@@ -103,7 +106,7 @@
 
     private string GetSelectedEnvironmentClass()
     {
-        var env = Environments.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
+        var env = Environments?.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
         return env != null ? GetEnvironmentClass(env) : string.Empty;
     }
 }

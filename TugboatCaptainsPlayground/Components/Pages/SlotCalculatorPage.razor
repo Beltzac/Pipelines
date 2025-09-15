@@ -204,19 +204,21 @@
             StateService.IsLoading = true;
 
             // Get current yard TEU to initialize the algorithm
-            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(cts.Token);
+            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(StateService.SelectedOracleEnvironment, cts.Token);
 
             // Fetch actual gate trucks and yard moves data
             if (StateService.GateTrucks.Count == 0
                 || StateService.CachedStartDate != StateService.StartDate
-                || StateService.CachedEndDate != StateService.EndDate)
+                || StateService.CachedEndDate != StateService.EndDate
+                || StateService.CachedEnvironment != StateService.SelectedOracleEnvironment)
             {
-                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
-                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
-                StateService.GateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, cts.Token);
-                StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, cts.Token);
+                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                StateService.GateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
                 StateService.CachedStartDate = StateService.StartDate;
                 StateService.CachedEndDate = StateService.EndDate;
+                StateService.CachedEnvironment = StateService.SelectedOracleEnvironment;
             }
 
             var gateTrucks = StateService.GateTrucks;
@@ -236,8 +238,8 @@
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
 
-            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(cts.Token);
-            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(cts.Token);
+            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.SelectedOracleEnvironment, cts.Token);
+            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.SelectedOracleEnvironment, cts.Token);
 
             StateService.VesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
             StateService.VesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;

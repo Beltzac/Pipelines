@@ -165,7 +165,7 @@
                         </td>
                         <td class="align-middle ">@(GetResponseStatus(item.Resposta))</td>
                         <td class="align-middle " title="@((item.Url ?? item.NomeFluxo))" style="max-width: 300px; white-space: break-spaces; word-break: break-word;"><span class="badge bg-primary align-middle" style="cursor: pointer;" @onclick="() => ToggleUrlFilter(item.Url ?? item.NomeFluxo)">@((item.Url ?? item.NomeFluxo)?.Truncate(30, "..."))</span></td>
-                        <td class="align-middle ">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td class="align-middle" style="cursor: pointer;" @onclick="(e) => ToggleDateFilter(item.DataInicio, e.CtrlKey)" title="Click to set as start date, Ctrl+Click to set as end date">@item.DataInicio.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td class="align-middle "><span class="badge bg-success align-middle" style="cursor: pointer;" @onclick="() => ToggleUserFilter(item.IdUsuarioInclusao, item.UserLogin)">@(item.UserLogin ?? item.IdUsuarioInclusao.ToString())</span></td>
                         <td class="align-middle ">@(item.Duration?.TotalSeconds.ToString("F3"))</td>
                         <td class="align-middle ">
@@ -300,6 +300,19 @@
         ExecuteQuery();
     }
 
+    private void ToggleDateFilter(DateTime date, bool isEndDate)
+    {
+        if (isEndDate)
+        {
+            ConsultaEsbStateService.EndDate = date;
+        }
+        else
+        {
+            ConsultaEsbStateService.StartDate = date;
+        }
+        ExecuteQuery();
+    }
+
     protected override void OnInitialized()
     {
         ConsultaEsbStateService.OnChange += () => InvokeAsync(StateHasChanged);
@@ -338,9 +351,15 @@
 
         ConsultaEsbStateService.InitializeState(x =>
         {
-            x.SelectedEnvironment = config.OracleEnvironments.FirstOrDefault()?.Name;
-            x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
-            x.StartDate = x.EndDate?.AddHours(-24).AddTicks(1);
+            if (string.IsNullOrEmpty(x.SelectedEnvironment) && config.OracleEnvironments.Any())
+            {
+                x.SelectedEnvironment = config.OracleEnvironments.First().Name;
+            }
+            if (x.EndDate == null)
+            {
+                x.EndDate = DateTime.Now.Date.AddDays(1).AddTicks(-1);
+                x.StartDate = x.EndDate?.AddHours(-24).AddTicks(1);
+            }
         });
     }
 
