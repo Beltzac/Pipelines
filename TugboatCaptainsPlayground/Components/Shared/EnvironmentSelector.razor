@@ -6,7 +6,7 @@
     <span class="input-group-text">
         <i class="bi bi-server me-2"></i>@GetServiceType()
     </span>
-    <select @bind="SelectedEnvironmentName" class="form-select environment-dropdown @GetSelectedEnvironmentClass()" aria-label="Select environment">
+    <select value="@SelectedEnvironmentName" @onchange="OnEnvironmentChanged" class="form-select environment-dropdown @GetSelectedEnvironmentClass()" aria-label="Select environment">
         <option value="">Select Environment</option>
         @if (Environments != null)
         {
@@ -108,5 +108,15 @@
     {
         var env = Environments?.FirstOrDefault(e => e.Name == SelectedEnvironmentName);
         return env != null ? GetEnvironmentClass(env) : string.Empty;
+    }
+
+    private async Task OnEnvironmentChanged(ChangeEventArgs e)
+    {
+        var newValue = e.Value?.ToString() ?? string.Empty;
+        if (SelectedEnvironmentName != newValue)
+        {
+            SelectedEnvironmentName = newValue;
+            await SelectedEnvironmentNameChanged.InvokeAsync(newValue);
+        }
     }
 }
