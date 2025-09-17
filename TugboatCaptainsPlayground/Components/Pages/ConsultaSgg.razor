@@ -108,15 +108,6 @@
 
 <CustomProgressBar IsLoading="@ConsultaSggStateService.IsLoading" Label="Carregando..." />
 
-<div class="card mb-3">
-    <div class="card-header">
-        <h5 class="mb-0">Análise de Tempo de Resposta</h5>
-    </div>
-    <div class="card-body">
-        <canvas id="delayChart" width="400" height="100" style='width:100%;height:100px'></canvas>
-    </div>
-</div>
-
 @if (ConsultaSggStateService.Results != null)
 {
     <div class="mt-4">
@@ -166,6 +157,15 @@
 }
 
 <CustomPagination State="@ConsultaSggStateService" OnPageChange="@(async (page) => { ConsultaSggStateService.CurrentPage = page; await ExecuteQuery(true); })" />
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Análise de Tempo de Resposta</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="delayChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+    </div>
+</div>
 
 @if (ConsultaSggStateService.SelectedItem != null)
 {

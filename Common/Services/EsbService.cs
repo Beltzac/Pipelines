@@ -67,57 +67,115 @@ namespace Common.Services
             string? responseStatus,
             int? minDelaySeconds)
         {
-            var conditions = new List<string>();
+            var requisicaoConditions = new List<string>();
+            var execucaoConditions = new List<string>();
+            var unionConditions = new List<string>();
 
+            // Common conditions for both REQUISICAO and EXECUCAO
             if (minDelaySeconds.HasValue)
-                conditions.Add($"EXTRACT(SECOND FROM (RE.DATA_FIM - RE.DATA_INICIO)) + EXTRACT(MINUTE FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
-
-            if (startDate.HasValue)
-                conditions.Add($"RE.DATA_INICIO >= TO_DATE('{startDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
-
-            if (endDate.HasValue)
-                conditions.Add($"RE.DATA_INICIO <= TO_DATE('{endDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+            {
+                requisicaoConditions.Add($"EXTRACT(SECOND FROM (E.DATA_FIM - E.DATA_INICIO)) + EXTRACT(MINUTE FROM (E.DATA_FIM - E.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (E.DATA_FIM - E.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
+                execucaoConditions.Add($"EXTRACT(SECOND FROM (E.DATA_FIM - E.DATA_INICIO)) + EXTRACT(MINUTE FROM (E.DATA_FIM - E.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (E.DATA_FIM - E.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
+                unionConditions.Add($"EXTRACT(SECOND FROM (RE.DATA_FIM - RE.DATA_INICIO)) + EXTRACT(MINUTE FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 60 + EXTRACT(HOUR FROM (RE.DATA_FIM - RE.DATA_INICIO)) * 3600 >= {minDelaySeconds.Value}");
+            }
 
             if (!string.IsNullOrEmpty(urlFilter))
-                conditions.Add($"(RE.URL LIKE '%{urlFilter}%' OR RE.NOME_FLUXO LIKE '%{urlFilter}%')");
+            {
+                requisicaoConditions.Add($"(E.URL LIKE '%{urlFilter}%' OR E.NOME_FLUXO LIKE '%{urlFilter}%')");
+                execucaoConditions.Add($"(E.URL LIKE '%{urlFilter}%' OR E.NOME_FLUXO LIKE '%{urlFilter}%')");
+                unionConditions.Add($"(RE.URL LIKE '%{urlFilter}%' OR RE.NOME_FLUXO LIKE '%{urlFilter}%')");
+            }
 
             if (!string.IsNullOrEmpty(httpMethod))
-                conditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
-
-            if (!string.IsNullOrEmpty(genericText))
-                conditions.Add($@"
-                    (
-                        REGEXP_LIKE(RE.REQUISICAO, '{genericText}')
-                        OR
-                        REGEXP_LIKE(RE.RESPOSTA, '{genericText}')
-                        OR
-                        REGEXP_LIKE(RE.ERRO, '{genericText}')
-                    )");
+            {
+                requisicaoConditions.Add($"E.HTTP_METHOD = '{httpMethod}'");
+                execucaoConditions.Add($"E.HTTP_METHOD = '{httpMethod}'");
+                unionConditions.Add($"RE.HTTP_METHOD = '{httpMethod}'");
+            }
 
             if (userId.HasValue)
-                conditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");
+            {
+                requisicaoConditions.Add($"E.ID_USUARIO_INCLUSAO = {userId}");
+                execucaoConditions.Add($"E.ID_USUARIO_INCLUSAO = {userId}");
+                unionConditions.Add($"RE.ID_USUARIO_INCLUSAO = {userId}");
+            }
 
             if (execucaoId.HasValue)
-                conditions.Add($"RE.ID_EXECUCAO = {execucaoId}");
+            {
+                requisicaoConditions.Add($"E.ID_EXECUCAO = {execucaoId}");
+                execucaoConditions.Add($"E.ID_EXECUCAO = {execucaoId}");
+                unionConditions.Add($"RE.ID_EXECUCAO = {execucaoId}");
+            }
 
             if (!string.IsNullOrEmpty(httpStatusRange))
             {
                 var range = httpStatusRange.Replace("xx", "");
-                conditions.Add($"RE.HTTP_STATUS_CODE LIKE '{range}%'");
+                requisicaoConditions.Add($"E.HTTP_STATUS_CODE LIKE '{range}%'");
+                execucaoConditions.Add($"E.HTTP_STATUS_CODE LIKE '{range}%'");
+                unionConditions.Add($"RE.HTTP_STATUS_CODE LIKE '{range}%'");
             }
+
+            // Specific conditions for REQUISICAO table (using DATA_INCLUSAO for index IX_REQUISICAO_DATA_STATUS)
+            if (startDate.HasValue)
+                requisicaoConditions.Add($"E.DATA_INCLUSAO >= TO_DATE('{startDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+            if (endDate.HasValue)
+                requisicaoConditions.Add($"E.DATA_INCLUSAO <= TO_DATE('{endDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+            requisicaoConditions.Add("E.HTTP_STATUS_CODE IS NOT NULL"); // Ensure index usage
+
+            if (!string.IsNullOrEmpty(genericText))
+                requisicaoConditions.Add($@"
+                    (
+                        REGEXP_LIKE(REQ.CONTEUDO, '{genericText}')
+                        OR
+                        REGEXP_LIKE(RESP.CONTEUDO, '{genericText}')
+                    )");
 
             if (!string.IsNullOrEmpty(responseStatus))
             {
-                conditions.Add(@"
+                requisicaoConditions.Add($@"
                     (
-                        (REGEXP_LIKE(RE.RESPOSTA, '<Status>' || '" + responseStatus + @"'  || '</Status>'))
+                        (REGEXP_LIKE(RESP.CONTEUDO, '<Status>' || '{responseStatus}'  || '</Status>'))
                         OR
-                        (REGEXP_LIKE(RE.RESPOSTA, '""Status""\s*:\s*' || '" + responseStatus + @"'))
+                        (REGEXP_LIKE(RESP.CONTEUDO, '""Status""\\s*:\\s*' || '{responseStatus}'))
                     )");
             }
 
-            var whereClause = conditions.Any()
-                ? $"WHERE {string.Join(" AND ", conditions)}"
+            // Specific conditions for EXECUCAO table (using DATA_INICIO for index IX_PESQUISA)
+            if (startDate.HasValue)
+                execucaoConditions.Add($"E.DATA_INICIO >= TO_DATE('{startDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+            if (endDate.HasValue)
+                execucaoConditions.Add($"E.DATA_INICIO <= TO_DATE('{endDate:yyyy-MM-dd HH:mm:ss}', 'YYYY-MM-DD HH24:MI:SS')");
+
+            if (!string.IsNullOrEmpty(genericText))
+                execucaoConditions.Add($@"
+                    (
+                        REGEXP_LIKE(REQ.CONTEUDO, '{genericText}')
+                        OR
+                        REGEXP_LIKE(RESP.CONTEUDO, '{genericText}')
+                        OR
+                        REGEXP_LIKE(ERRO.CONTEUDO, '{genericText}')
+                    )");
+
+            if (!string.IsNullOrEmpty(responseStatus))
+            {
+                execucaoConditions.Add($@"
+                    (
+                        (REGEXP_LIKE(RESP.CONTEUDO, '<Status>' || '{responseStatus}'  || '</Status>'))
+                        OR
+                        (REGEXP_LIKE(RESP.CONTEUDO, '""Status""\\s*:\\s*' || '{responseStatus}'))
+                    )");
+            }
+
+            var requisicaoWhereClause = requisicaoConditions.Any()
+                ? $"WHERE {string.Join(" AND ", requisicaoConditions)}"
+                : "WHERE 1=1";
+
+            var execucaoWhereClause = execucaoConditions.Any()
+                ? $"WHERE {string.Join(" AND ", execucaoConditions)}"
+                : "WHERE 1=1";
+
+            var unionWhereClause = unionConditions.Any()
+                ? $"WHERE {string.Join(" AND ", unionConditions)}"
                 : "WHERE 1=1";
 
             var sql = @$"
@@ -130,6 +188,7 @@ WITH RequisicaoExecucao AS (
     LEFT JOIN TCPCAD.LOGIN L ON E.ID_USUARIO_INCLUSAO = L.ID_USUARIO
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM RESP ON E.ID_MSG_SAIDA = RESP.ID_MENSAGEM
+    {requisicaoWhereClause}
 
     UNION ALL
 
@@ -143,16 +202,16 @@ WITH RequisicaoExecucao AS (
     LEFT JOIN TCPESB.MENSAGEM REQ ON E.ID_MSG_ENTRADA = REQ.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM RESP ON E.ID_MSG_SAIDA = RESP.ID_MENSAGEM
     LEFT JOIN TCPESB.MENSAGEM ERRO ON E.ID_MSG_ERRO = ERRO.ID_MENSAGEM
+    {execucaoWhereClause}
 ),
 CountQuery AS (
-    SELECT COUNT(*) as TOTAL_COUNT
-    FROM RequisicaoExecucao RE
-    {whereClause}
+    SELECT COUNT(*) as TOTAL_COUNT FROM RequisicaoExecucao RE
+    {unionWhereClause}
 ),
 PagedQuery AS (
     SELECT RE.*
     FROM RequisicaoExecucao RE
-    {whereClause}
+    {unionWhereClause}
     ORDER BY RE.DATA_INICIO DESC
     OFFSET {(pageNumber - 1) * pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY
 )
