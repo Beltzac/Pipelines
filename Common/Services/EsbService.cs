@@ -111,7 +111,7 @@ namespace Common.Services
             {
                 var range = httpStatusRange.Replace("xx", "");
                 requisicaoConditions.Add($"E.HTTP_STATUS_CODE LIKE '{range}%'");
-                execucaoConditions.Add($"E.HTTP_STATUS_CODE LIKE '{range}%'");
+                // EXECUCAO table doesn't have HTTP_STATUS_CODE column
                 unionConditions.Add($"RE.HTTP_STATUS_CODE LIKE '{range}%'");
             }
 
