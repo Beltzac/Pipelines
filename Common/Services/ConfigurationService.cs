@@ -1,6 +1,12 @@
 using Common.Models;
 using System.Text.Json;
 using System.IO;
+using System.Linq;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Reflection;
 
 public class ConfigurationService : IConfigurationService
 {
@@ -229,48 +235,60 @@ public class ConfigurationService : IConfigurationService
             {
                 try
                 {
-                    // Handle lists by finding all indexed properties
                     var listType = prop.PropertyType.GetGenericArguments()[0];
-                    var list = (System.Collections.IList)Activator.CreateInstance(prop.PropertyType);
+                    var list = (IList)Activator.CreateInstance(prop.PropertyType);
 
-                    // Find all properties that start with propName[index] (case-insensitive)
-                    var indexedProps = properties.Where(kvp => kvp.Key.StartsWith($"{propName}[", StringComparison.OrdinalIgnoreCase) && kvp.Key.Contains("]"))
-                                                .GroupBy(kvp =>
-                                                {
-                                                    var startIndex = kvp.Key.IndexOf('[') + 1;
-                                                    var endIndex = kvp.Key.IndexOf(']');
-                                                    return kvp.Key.Substring(startIndex, endIndex - startIndex);
-                                                });
+                    // Find all entries that target this list (start with propName[)
+                    var relevant = properties
+                        .Where(kvp => kvp.Key.StartsWith($"{propName}[", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
 
-                    foreach (var group in indexedProps.OrderBy(g => int.Parse(g.Key)))
+                    // Group by top-level index
+                    var grouped = relevant.GroupBy(kvp =>
                     {
+                        var startIndex = kvp.Key.IndexOf('[') + 1;
+                        var endIndex = kvp.Key.IndexOf(']');
+                        return kvp.Key.Substring(startIndex, endIndex - startIndex);
+                    }).OrderBy(g => int.Parse(g.Key));
+
+                    foreach (var group in grouped)
+                    {
+                        var index = group.Key;
+
+                        if (listType == typeof(string) || listType.IsPrimitive)
+                        {
+                            // Expect direct key: propName[index]=value
+                            var directKey = $"{propName}[{index}]";
+                            var direct = group.FirstOrDefault(kvp => kvp.Key.Equals(directKey, StringComparison.OrdinalIgnoreCase));
+                            if (!string.IsNullOrEmpty(direct.Value))
+                            {
+                                list.Add(direct.Value);
+                            }
+                            else
+                            {
+                                // No other formats allowed for primitive list items
+                                list.Add(string.Empty);
+                            }
+
+                            continue;
+                        }
+
+                        // Complex item - build object and populate using recursive key parsing
                         var item = Activator.CreateInstance(listType);
+
+                        var prefix = $"{propName}[{index}].";
                         foreach (var kvp in group)
                         {
-                            var keyParts = kvp.Key.Split('.');
-                            if (keyParts.Length >= 2)
-                            {
-                                var itemPropName = keyParts[1];
-                                var itemProp = listType.GetProperty(itemPropName, System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                                if (itemProp != null)
-                                {
-                                    if (itemProp.PropertyType == typeof(string))
-                                    {
-                                        itemProp.SetValue(item, kvp.Value);
-                                    }
-                                    else if (itemProp.PropertyType == typeof(int) && int.TryParse(kvp.Value, out var intVal))
-                                    {
-                                        itemProp.SetValue(item, intVal);
-                                    }
-                                    else if (itemProp.PropertyType == typeof(bool) && bool.TryParse(kvp.Value, out var boolVal))
-                                    {
-                                        itemProp.SetValue(item, boolVal);
-                                    }
-                                }
-                            }
+                            if (!kvp.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                                continue; // skip keys that aren't nested properties
+
+                            var remainder = kvp.Key.Substring(prefix.Length); // e.g. "child[1].grand.prop"
+                            SetValueOnObject(item, remainder, kvp.Value);
                         }
+
                         list.Add(item);
                     }
+
                     prop.SetValue(config, list);
                 }
                 catch
@@ -316,6 +334,113 @@ public class ConfigurationService : IConfigurationService
         }
 
         return config;
+    }
+
+    // Recursively set a value on a target object given a dotted path which may include indexed lists (e.g. "child[1].prop.sub[0].name")
+    private void SetValueOnObject(object target, string path, string value)
+    {
+        if (target == null || string.IsNullOrEmpty(path)) return;
+
+        var dotIndex = path.IndexOf('.');
+        var segment = dotIndex >= 0 ? path.Substring(0, dotIndex) : path;
+        var remainder = dotIndex >= 0 ? path.Substring(dotIndex + 1) : string.Empty;
+
+        // segment could be like "name" or "name[2]"
+        var listBracket = segment.IndexOf('[');
+        if (listBracket >= 0)
+        {
+            // list property on target
+            var propName = segment.Substring(0, listBracket);
+            var endBracket = segment.IndexOf(']', listBracket);
+            if (endBracket < 0) return; // malformed
+            var idxStr = segment.Substring(listBracket + 1, endBracket - listBracket - 1);
+            if (!int.TryParse(idxStr, out var idx)) return;
+
+            var propInfo = target.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            if (propInfo == null) return;
+
+            // Ensure list instance
+            var listObj = propInfo.GetValue(target) as IList;
+            if (listObj == null)
+            {
+                var listType = typeof(List<>).MakeGenericType(propInfo.PropertyType.GetGenericArguments()[0]);
+                listObj = (IList)Activator.CreateInstance(listType);
+                propInfo.SetValue(target, listObj);
+            }
+
+            var elemType = propInfo.PropertyType.GetGenericArguments()[0];
+
+            // Ensure list has enough items
+            while (listObj.Count <= idx)
+            {
+                object newItem = elemType.IsValueType && elemType != typeof(string) ? Activator.CreateInstance(elemType) : Activator.CreateInstance(elemType);
+                listObj.Add(newItem);
+            }
+
+            var element = listObj[idx];
+
+            if (string.IsNullOrEmpty(remainder))
+            {
+                // setting the list element itself to a primitive value isn't supported for complex types
+                // ignore
+                return;
+            }
+
+            // Recurse into element
+            SetValueOnObject(element, remainder, value);
+            return;
+        }
+        else
+        {
+            // simple property on target
+            var propInfo = target.GetType().GetProperty(segment, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+            if (propInfo == null) return;
+
+            if (string.IsNullOrEmpty(remainder))
+            {
+                // Set value on this property, converting to the correct type
+                object converted = ConvertToType(value, propInfo.PropertyType);
+                propInfo.SetValue(target, converted);
+                return;
+            }
+            else
+            {
+                // Need to recurse into nested property
+                var nestedObj = propInfo.GetValue(target);
+                if (nestedObj == null)
+                {
+                    nestedObj = Activator.CreateInstance(propInfo.PropertyType);
+                    propInfo.SetValue(target, nestedObj);
+                }
+
+                SetValueOnObject(nestedObj, remainder, value);
+                return;
+            }
+        }
+    }
+
+    private object ConvertToType(string value, Type targetType)
+    {
+        if (targetType == typeof(string)) return value;
+        if (targetType == typeof(int) && int.TryParse(value, out var i)) return i;
+        if (targetType == typeof(bool) && bool.TryParse(value, out var b)) return b;
+        if (targetType == typeof(Guid) && Guid.TryParse(value, out var g)) return g;
+
+        // Try enum
+        if (targetType.IsEnum)
+        {
+            try { return Enum.Parse(targetType, value, true); } catch { }
+        }
+
+        // Try TypeConverter
+        var converter = TypeDescriptor.GetConverter(targetType);
+        if (converter != null && converter.IsValid(value))
+        {
+            try { return converter.ConvertFromInvariantString(value); } catch { }
+        }
+
+        // Fallback: return default
+        return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
     }
 
     private bool IsKnownProperty(string key)
@@ -364,32 +489,27 @@ public class ConfigurationService : IConfigurationService
                 else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
                 {
                     // Handle lists by flattening each item
-                    var list = (System.Collections.IList)value;
+                    var list = (IList)value;
+                    var itemType = prop.PropertyType.GetGenericArguments()[0];
+
                     for (int i = 0; i < list.Count; i++)
                     {
                         var item = list[i];
-                        var itemType = item.GetType();
-                        var itemProps = itemType.GetProperties();
 
-                        foreach (var itemProp in itemProps)
+                        // For primitive/string list items, write as propName[index]=value
+                        if (itemType == typeof(string) || itemType.IsPrimitive)
                         {
-                            // Skip internal .NET properties and read-only properties
-                            if (ShouldSkipProperty(itemProp.Name) || !itemProp.CanWrite)
-                                continue;
-
-                            var itemValue = itemProp.GetValue(item);
-                            if (itemValue != null)
-                            {
-                                var key = $"{propName}[{i}].{itemProp.Name.ToLower()}";
-                                properties[key] = itemValue.ToString();
-                            }
+                            properties[$"{propName}[{i}]"] = item?.ToString() ?? string.Empty;
+                            continue;
                         }
+
+                        // For complex items, flatten their properties recursively
+                        FlattenObjectProperties(properties, item, $"{propName}[{i}]");
                     }
                 }
                 else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(HashSet<>))
                 {
-                    // Handle HashSet by converting to array notation
-                    var hashSet = (System.Collections.IEnumerable)value;
+                    var hashSet = (IEnumerable)value;
                     int i = 0;
                     foreach (var item in hashSet)
                     {
@@ -419,6 +539,48 @@ public class ConfigurationService : IConfigurationService
         }
 
         return properties;
+    }
+
+    // Recursively flatten object properties into the properties dictionary using prefix like "parent[0]" or "parent[0].child[1]"
+    private void FlattenObjectProperties(Dictionary<string, string> properties, object obj, string prefix)
+    {
+        if (obj == null) return;
+
+        var type = obj.GetType();
+        var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var p in props)
+        {
+            if (ShouldSkipProperty(p.Name) || !p.CanWrite) continue;
+            var val = p.GetValue(obj);
+            if (val == null) continue;
+
+            if (p.PropertyType == typeof(string) || p.PropertyType.IsPrimitive)
+            {
+                properties[$"{prefix}.{p.Name.ToLower()}"] = val.ToString();
+            }
+            else if (p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                var list = (IList)val;
+                var elemType = p.PropertyType.GetGenericArguments()[0];
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var item = list[i];
+                    if (elemType == typeof(string) || elemType.IsPrimitive)
+                    {
+                        properties[$"{prefix}.{p.Name.ToLower()}[{i}]"] = item?.ToString() ?? string.Empty;
+                    }
+                    else
+                    {
+                        FlattenObjectProperties(properties, item, $"{prefix}.{p.Name.ToLower()}[{i}]");
+                    }
+                }
+            }
+            else
+            {
+                FlattenObjectProperties(properties, val, $"{prefix}.{p.Name.ToLower()}");
+            }
+        }
     }
 
     private bool ShouldSkipProperty(string propertyName)
