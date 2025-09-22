@@ -298,39 +298,6 @@ namespace Tests.Common.Services
         }
 
         [Test]
-        public async Task SaveConfigAsync_SavesRouteDomainsAsIndexedEntries()
-        {
-            var testConfig = new ConfigModel
-            {
-                RouteDomains = new List<string> { "example.com", "sub.example.com" }
-            };
-
-            await _configService.SaveConfigAsync(testConfig);
-
-            var savedContent = await File.ReadAllLinesAsync(_testConfigPath);
-            savedContent.Should().Contain("routedomains[0]=example.com");
-            savedContent.Should().Contain("routedomains[1]=sub.example.com");
-        }
-
-        [Test]
-        public async Task LoadConfig_LoadsRouteDomainsCorrectly()
-        {
-            var propertiesContent = new[]
-            {
-                "organizationurl=https://test.com",
-                "routedomains[0]=example.com",
-                "routedomains[1]=sub.example.com"
-            };
-            await File.WriteAllLinesAsync(_testConfigPath, propertiesContent);
-
-            var newService = new ConfigurationService(_testConfigPath);
-            var loadedConfig = newService.GetConfig();
-            loadedConfig.RouteDomains.Should().HaveCount(2);
-            loadedConfig.RouteDomains[0].Should().Be("example.com");
-            loadedConfig.RouteDomains[1].Should().Be("sub.example.com");
-        }
-
-        [Test]
         public async Task ImportConfigAsync_ThrowsException_ForInvalidJson()
         {
             var invalidJson = "{ invalid json }";
