@@ -7,48 +7,138 @@
 <div class="list-group list-group-flush">
 @foreach (var commit in Commits.OrderByDescending(c => c.CommitDate))
 {
-    <div class="list-group-item">
+    var showPresets = _selectedCommitForPresets == commit.Id;
+    
+    <div class="list-group-item @(SelectedCommitIds?.Contains(commit.Id) == true ? "list-group-item-primary" : "")">
         <div class="d-flex justify-content-between align-items-start">
-            <div class="flex-grow-1">
-                <div class="d-flex align-items-center mb-1">
-                    <strong class="text-primary">@commit.ProjectName</strong>
-                    <span class="text-muted mx-1">•</span>
-                    <span class="text-muted">@commit.RepoName</span>
-                    <span class="text-muted mx-1">•</span>
-                    <span class="badge bg-light text-dark">@commit.BranchName</span>
-                </div>
-                <div class="text-muted small mb-1">
-                    <i class="fas fa-clock me-1"></i>
-                    @commit.CommitDate.ToString("dd/MM/yyyy HH:mm:ss")
-                    <span class="mx-1">by</span>
-                    <strong>@commit.AuthorName</strong>
-                </div>
-                <div class="commit-message">
-                    @((MarkupString)commit.ToHtml(ConfigService.GetConfig()))
+            <div class="d-flex align-items-start">
+                @if (SelectedCommitIds != null)
+                {
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" 
+                               checked="@(SelectedCommitIds.Contains(commit.Id))"
+                               @onchange="() => ToggleSelection(commit.Id)">
+                    </div>
+                }
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <strong class="text-primary">@commit.ProjectName</strong>
+                        <span class="text-muted mx-1">•</span>
+                        <span class="text-muted">@commit.RepoName</span>
+                        <span class="text-muted mx-1">•</span>
+                        <span class="badge bg-light text-dark">@commit.BranchName</span>
+                    </div>
+                    <div class="text-muted small mb-1">
+                        <i class="fas fa-clock me-1"></i>
+                        @commit.CommitDate.ToString("dd/MM/yyyy HH:mm:ss")
+                        <span class="mx-1">by</span>
+                        <strong>@commit.AuthorName</strong>
+                    </div>
+                    <div class="commit-message">
+                        @((MarkupString)commit.ToHtml(ConfigService.GetConfig()))
+                    </div>
                 </div>
             </div>
-            <div class="ms-3 d-flex gap-1 align-items-center">
+            <div class="ms-3 d-flex gap-1 align-items-center flex-shrink-0">
                 @if (!string.IsNullOrEmpty(commit.JiraCardID))
                 {
                     <span class="badge bg-secondary clickable-badge" @onclick="() => CopyToClipboard(commit.JiraCardID)" title="Copiar JIRA card">
                         @commit.JiraCardID
                     </span>
-                    <button class="btn btn-sm btn-outline-primary"
-                            @onclick="() => SendSingleWorklogToTempo(commit)"
-                            title="Enviar worklog (1h)"
-                            disabled="@IsCommitLoading(commit.Id)">
-                        @if (IsCommitLoading(commit.Id))
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        }
-                        else
-                        {
-                            <i class="fas fa-clock"></i>
-                        }
-                    </button>
+                    
+                    <!-- Time Presets Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                type="button" 
+                                id="timePresetDropdown_@commit.Id" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false"
+                                disabled="@IsCommitLoading(commit.Id)"
+                                title="Selecionar tempo">
+                            @if (IsCommitLoading(commit.Id))
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-stopwatch"></i>
+                            }
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timePresetDropdown_@commit.Id" style="min-width: 250px;">
+                            <li><h6 class="dropdown-header"><i class="fas fa-code me-1"></i>Desenvolvimento</h6></li>
+                            @foreach (var preset in WorklogPresets.DefaultPresets)
+                            {
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                                       href="javascript:void(0)" 
+                                       @onclick="() => SendWorklogWithTime(commit, preset.TimeInMinutes, preset.Description)">
+                                        <span>
+                                            <i class="@preset.IconClass me-2"></i>
+                                            @preset.Name
+                                        </span>
+                                        <small class="text-muted">@preset.Description</small>
+                                    </a>
+                                </li>
+                            }
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header"><i class="fas fa-tools me-1"></i>Suporte/GM</h6></li>
+                            @foreach (var preset in WorklogPresets.GMPresets)
+                            {
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                                       href="javascript:void(0)" 
+                                       @onclick="() => SendWorklogWithTime(commit, preset.TimeInMinutes, preset.Description)">
+                                        <span>
+                                            <i class="@preset.IconClass me-2"></i>
+                                            @preset.Name
+                                        </span>
+                                        <small class="text-muted">@preset.Description</small>
+                                    </a>
+                                </li>
+                            }
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header"><i class="fas fa-users me-1"></i>Reuniões</h6></li>
+                            @foreach (var preset in WorklogPresets.MeetingPresets)
+                            {
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                                       href="javascript:void(0)" 
+                                       @onclick="() => SendWorklogWithTime(commit, preset.TimeInMinutes, preset.Description)">
+                                        <span>
+                                            <i class="@preset.IconClass me-2"></i>
+                                            @preset.Name
+                                        </span>
+                                        <small class="text-muted">@preset.Description</small>
+                                    </a>
+                                </li>
+                            }
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header"><i class="fas fa-search-plus me-1"></i>Code Review</h6></li>
+                            @foreach (var preset in WorklogPresets.ReviewPresets)
+                            {
+                                <li>
+                                    <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                                       href="javascript:void(0)" 
+                                       @onclick="() => SendWorklogWithTime(commit, preset.TimeInMinutes, preset.Description)">
+                                        <span>
+                                            <i class="@preset.IconClass me-2"></i>
+                                            @preset.Name
+                                        </span>
+                                        <small class="text-muted">@preset.Description</small>
+                                    </a>
+                                </li>
+                            }
+
+                        </ul>
+                    </div>
+
+                    <!-- Quick Actions (kept for backward compatibility) -->
                     <button class="btn btn-sm btn-outline-success"
                             @onclick="() => SendGMWorklogToTempo(commit)"
-                            title="Acompanhamento de GM"
+                            title="Acompanhamento de GM (2h)"
                             disabled="@IsCommitLoading(commit.Id)">
                         @if (IsCommitLoading(commit.Id))
                         {
@@ -56,7 +146,7 @@
                         }
                         else
                         {
-                            <i class="fas fa-tools"></i> <span>GM</span>
+                            <i class="fas fa-tools"></i>
                         }
                     </button>
                 }
@@ -79,9 +169,33 @@
     [Parameter]
     public EventCallback OnWorklogCreated { get; set; }
 
+    [Parameter]
+    public HashSet<string> SelectedCommitIds { get; set; }
+
+    [Parameter]
+    public EventCallback OnCommitSelectionChanged { get; set; }
+
     private readonly HashSet<string> _loadingCommits = new HashSet<string>();
+    private string _selectedCommitForPresets = null;
 
     private bool IsCommitLoading(string commitId) => _loadingCommits.Contains(commitId);
+
+
+    private async Task ToggleSelection(string commitId)
+    {
+        if (SelectedCommitIds == null) return;
+
+        if (SelectedCommitIds.Contains(commitId))
+        {
+            SelectedCommitIds.Remove(commitId);
+        }
+        else
+        {
+            SelectedCommitIds.Add(commitId);
+        }
+
+        await OnCommitSelectionChanged.InvokeAsync();
+    }
 
     private async Task CopyToClipboard(string jiraCardID)
     {
@@ -90,9 +204,10 @@
         toastService.ShowSuccess($"Copiado {jiraCardID} para a área de transferência!");
     }
 
-    private async Task SendSingleWorklogToTempo(Commit commit)
+    private async Task SendWorklogWithTime(Commit commit, int timeInMinutes, string description)
     {
-        Logger.LogInformation("SendSingleWorklogToTempo called for commit: {CommitId} - {JiraCardID}", commit?.Id, commit?.JiraCardID);
+        Logger.LogInformation("SendWorklogWithTime called for commit: {CommitId} - {JiraCardID} - {Minutes}min", 
+            commit?.Id, commit?.JiraCardID, timeInMinutes);
 
         if (commit == null || string.IsNullOrEmpty(commit.JiraCardID))
         {
@@ -103,11 +218,11 @@
         _loadingCommits.Add(commit.Id);
         try
         {
-            var result = await WorklogService.CreateWorklogFromCommitAsync(commit);
+            var result = await WorklogService.CreateWorklogFromCommitAsync(commit, timeInMinutes);
 
             if (result.Success)
             {
-                toastService.ShowSuccess($"Worklog created for {commit.JiraCardID}");
+                toastService.ShowSuccess($"Worklog de {timeInMinutes}min criado para {commit.JiraCardID}");
                 await OnWorklogCreated.InvokeAsync();
             }
             else
@@ -124,6 +239,11 @@
         {
             _loadingCommits.Remove(commit.Id);
         }
+    }
+
+    private async Task SendSingleWorklogToTempo(Commit commit)
+    {
+        await SendWorklogWithTime(commit, 60, "Desenvolvimento padrão");
     }
 
     private async Task SendGMWorklogToTempo(Commit commit)
