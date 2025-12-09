@@ -84,5 +84,34 @@ namespace Common.Repositories.TCP
 
             return result;
         }
+
+        public async Task<int> ExecuteAsync(string connectionString, FormattableString sql, CancellationToken cancellationToken)
+        {
+            using var context = _connectionFactory.CreateContext(connectionString);
+
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync(cancellationToken);
+
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = sql.Format;
+
+                // Add parameters if any
+                for (int i = 0; i < sql.ArgumentCount; i++)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"p{i}";
+                    parameter.Value = sql.GetArgument(i) ?? DBNull.Value;
+                    command.Parameters.Add(parameter);
+                }
+
+                return await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            finally
+            {
+                await connection.CloseAsync();
+            }
+        }
     }
 }

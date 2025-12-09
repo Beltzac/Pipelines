@@ -1,17 +1,11 @@
 ﻿@page "/commits"
-@using System.Reactive.Linq
-@using System.Reactive.Subjects
-@using System.Text.RegularExpressions
 @using Common
 @using Common.Models
 @using Common.Services
 @using Common.Services.Interfaces
 @using Common.Utils
-@using Markdig
-@using Microsoft.AspNetCore.Components.Forms
 @inject ToastService toastService
 @inject IJSRuntime JS
-@inject IConsulService ConsulService
 @inject ICommitExportService CommitDataExportService
 @inject IConfigurationService ConfigService
 @inject CommitsStateService CommitsStateService
@@ -146,7 +140,7 @@
                                 </span>
                                 <button class="btn btn-sm btn-danger" @onclick="() => DeleteWorklogsForDate(date)"
                                         title="Deletar todos os worklogs deste dia">
-                                    <i class="fas fa-trash"></i> Delete All
+                                    <i class="fas fa-trash"></i> Deletar Todos
                                 </button>
                             }
                             else if (isLoadingWorklogs)

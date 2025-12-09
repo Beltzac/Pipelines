@@ -1,4 +1,4 @@
-using Common.Models;
+﻿using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using Common.Utils;
@@ -102,23 +102,23 @@ namespace Common.Services
             );
         }
 
-/*SELECT Owner, Name, Definition
-FROM (
-    SELECT
-        av.Owner,
-        av.VIEW_NAME AS Name,
-        DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition,
-        ROW_NUMBER() OVER (ORDER BY av.VIEW_NAME) AS rn
-    FROM ALL_VIEWS av
-    WHERE av.OWNER = 'TCPAPI'
-) ranked
-WHERE rn BETWEEN 1 AND 200
-AND (
-    LOWER(ranked.Name) LIKE '%container%'
-    OR
-    dbms_lob.instr( ranked.Definition ,'container') > 0
-);
-*/
+        /*SELECT Owner, Name, Definition
+        FROM (
+            SELECT
+                av.Owner,
+                av.VIEW_NAME AS Name,
+                DBMS_METADATA.GET_DDL('VIEW', av.VIEW_NAME, av.OWNER) AS Definition,
+                ROW_NUMBER() OVER (ORDER BY av.VIEW_NAME) AS rn
+            FROM ALL_VIEWS av
+            WHERE av.OWNER = 'TCPAPI'
+        ) ranked
+        WHERE rn BETWEEN 1 AND 200
+        AND (
+            LOWER(ranked.Name) LIKE '%container%'
+            OR
+            dbms_lob.instr( ranked.Definition ,'container') > 0
+        );
+        */
         public async Task<IEnumerable<OracleViewDefinition>> GetViewDefinitionsAsync(string connectionString, string schema, string? search = null, int pageSize = 9999, int pageNumber = 1)
         {
             var whereClauses = new List<string>();
@@ -256,26 +256,26 @@ AND (
 
             return text;
         }
-       public async Task<OracleTablesAndViewsResult> GetTablesAndViewsAsync(
-           string connectionString,
-           string? schema = null,
-           string? search = null,
-           int pageSize = 50,
-           int pageNumber = 1)
-       {
-           var whereClauses = new List<string>();
-           if (!string.IsNullOrWhiteSpace(schema))
-           {
-               whereClauses.Add($"OWNER = '{schema.ToUpperInvariant()}'");
-           }
-           if (!string.IsNullOrWhiteSpace(search))
-           {
-               whereClauses.Add($"LOWER(OBJECT_NAME) LIKE '%{search.ToLowerInvariant()}%'");
-           }
+        public async Task<OracleTablesAndViewsResult> GetTablesAndViewsAsync(
+            string connectionString,
+            string? schema = null,
+            string? search = null,
+            int pageSize = 50,
+            int pageNumber = 1)
+        {
+            var whereClauses = new List<string>();
+            if (!string.IsNullOrWhiteSpace(schema))
+            {
+                whereClauses.Add($"OWNER = '{schema.ToUpperInvariant()}'");
+            }
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                whereClauses.Add($"LOWER(OBJECT_NAME) LIKE '%{search.ToLowerInvariant()}%'");
+            }
 
-           var whereClause = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
+            var whereClause = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
 
-           var baseQuery = $@"
+            var baseQuery = $@"
                FROM (
                    SELECT TABLE_NAME AS OBJECT_NAME, OWNER FROM ALL_TABLES
                    UNION ALL
@@ -283,7 +283,7 @@ AND (
                ) {whereClause}
            ";
 
-           var dataQuery = $@"
+            var dataQuery = $@"
                SELECT OBJECT_NAME AS Name, OWNER
                FROM (
                    SELECT OBJECT_NAME, OWNER, ROW_NUMBER() OVER (ORDER BY OBJECT_NAME) AS rn
@@ -292,34 +292,34 @@ AND (
                WHERE rn BETWEEN {(pageNumber - 1) * pageSize + 1} AND {pageNumber * pageSize}
            ";
 
-           var results = await _repo.GetFromSqlAsync<OracleTableOrViewInfo>(
-               connectionString,
-               FormattableStringFactory.Create(dataQuery),
-               default
-           );
+            var results = await _repo.GetFromSqlAsync<OracleTableOrViewInfo>(
+                connectionString,
+                FormattableStringFactory.Create(dataQuery),
+                default
+            );
 
-           var countQuery = $"SELECT COUNT(*) {baseQuery}";
+            var countQuery = $"SELECT COUNT(*) {baseQuery}";
 
-           var totalCountResult = await _repo.GetFromSqlAsync<int>(
-               connectionString,
-               FormattableStringFactory.Create(countQuery),
-               default
-           );
+            var totalCountResult = await _repo.GetFromSqlAsync<int>(
+                connectionString,
+                FormattableStringFactory.Create(countQuery),
+                default
+            );
 
-           var totalCount = totalCountResult.FirstOrDefault();
+            var totalCount = totalCountResult.FirstOrDefault();
 
-           return new OracleTablesAndViewsResult
-           {
-               Results = results,
-               TotalCount = totalCount
-           };
-       }
+            return new OracleTablesAndViewsResult
+            {
+                Results = results,
+                TotalCount = totalCount
+            };
+        }
 
-       public async Task<IEnumerable<OracleColumn>> GetTableOrViewColumnsAsync(string connectionString, string schema, string objectName)
-       {
-           return await _repo.GetFromSqlAsync<OracleColumn>(
-               connectionString,
-               $@"SELECT col.COLUMN_NAME,
+        public async Task<IEnumerable<OracleColumn>> GetTableOrViewColumnsAsync(string connectionString, string schema, string objectName)
+        {
+            return await _repo.GetFromSqlAsync<OracleColumn>(
+                connectionString,
+                $@"SELECT col.COLUMN_NAME,
                          col.DATA_TYPE,
                          col.DATA_LENGTH,
                          col.DATA_PRECISION,
@@ -333,72 +333,72 @@ AND (
                         AND col.COLUMN_NAME = com.COLUMN_NAME
                   WHERE col.OWNER = {schema} AND col.TABLE_NAME = {objectName}
                   ORDER BY col.COLUMN_ID",
-               default);
-       }
+                default);
+        }
 
-       public async Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className)
-       {
-           var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
-           var sb = new System.Text.StringBuilder();
+        public async Task<string> GenerateEfCoreMappingClassAsync(string connectionString, string schema, string objectName, string className)
+        {
+            var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
+            var sb = new System.Text.StringBuilder();
 
-           foreach (var column in columns)
-           {
-               sb.AppendLine(GenerateProperty(column));
-               sb.AppendLine();
-           }
+            foreach (var column in columns)
+            {
+                sb.AppendLine(GenerateProperty(column));
+                sb.AppendLine();
+            }
 
-           return sb.ToString();
-       }
+            return sb.ToString();
+        }
 
-       public async Task<string> GenerateCSharpClassAsync(string connectionString, string schema, string objectName, string className)
-       {
-           var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
-           var sb = new System.Text.StringBuilder();
+        public async Task<string> GenerateCSharpClassAsync(string connectionString, string schema, string objectName, string className)
+        {
+            var columns = await GetTableOrViewColumnsAsync(connectionString, schema, objectName);
+            var sb = new System.Text.StringBuilder();
 
-           var actualClassName = string.IsNullOrEmpty(className) ? objectName.ToPascalCase() : className;
+            var actualClassName = string.IsNullOrEmpty(className) ? objectName.ToPascalCase() : className;
 
-           sb.AppendLine($"public class {actualClassName}");
-           sb.AppendLine("{");
+            sb.AppendLine($"public class {actualClassName}");
+            sb.AppendLine("{");
 
-           foreach (var column in columns)
-           {
-               var cSharpType = GetCSharpType(column.DataType, column.ColumnName);
-               var propertyName = column.ColumnName.ToPascalCase();
-               var nullableIndicator = column.Nullable == "Y" && IsNullableType(cSharpType) ? "?" : "";
-               sb.AppendLine($"    public {cSharpType}{nullableIndicator} {propertyName} {{ get; set; }}");
-           }
+            foreach (var column in columns)
+            {
+                var cSharpType = GetCSharpType(column.DataType, column.ColumnName);
+                var propertyName = column.ColumnName.ToPascalCase();
+                var nullableIndicator = column.Nullable == "Y" && IsNullableType(cSharpType) ? "?" : "";
+                sb.AppendLine($"    public {cSharpType}{nullableIndicator} {propertyName} {{ get; set; }}");
+            }
 
-           sb.AppendLine("}");
+            sb.AppendLine("}");
 
-           return sb.ToString();
-       }
+            return sb.ToString();
+        }
 
-       private bool IsNullableType(string cSharpType)
-       {
-           return cSharpType switch
-           {
-               "string" => true,
-               "byte[]" => true,
-               _ => false
-           };
-       }
+        private bool IsNullableType(string cSharpType)
+        {
+            return cSharpType switch
+            {
+                "string" => true,
+                "byte[]" => true,
+                _ => false
+            };
+        }
 
-       private string GenerateProperty(OracleColumn column)
-       {
-           var propertyName = column.ColumnName.ToPascalCase();
-           var columnType = GetFullColumnType(column);
+        private string GenerateProperty(OracleColumn column)
+        {
+            var propertyName = column.ColumnName.ToPascalCase();
+            var columnType = GetFullColumnType(column);
 
-           var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
-                            + $"\t\t\t\t.HasColumnName(\"{column.ColumnName}\")\n"
-                            + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
+            var propertyChain = $"\t\t\tbuilder.Property(x => x.{propertyName})\n"
+                             + $"\t\t\t\t.HasColumnName(\"{column.ColumnName}\")\n"
+                             + $"\t\t\t\t.HasColumnType(\"{columnType}\")";
 
-           if (column.Nullable == "N")
-           {
-               propertyChain += "\n\t\t\t\t.IsRequired()";
-           }
+            if (column.Nullable == "N")
+            {
+                propertyChain += "\n\t\t\t\t.IsRequired()";
+            }
 
-           return propertyChain + ";";
-       }
+            return propertyChain + ";";
+        }
 
 
 
@@ -426,47 +426,47 @@ AND (
             }
         }
 
-       private string GetCSharpType(string oracleType, string columnName)
-       {
-           // Rule: "Is*** should be bools"
-           if (columnName.StartsWith("IS", StringComparison.OrdinalIgnoreCase))
-           {
-               return "bool";
-           }
+        private string GetCSharpType(string oracleType, string columnName)
+        {
+            // Rule: "Is*** should be bools"
+            if (columnName.StartsWith("IS", StringComparison.OrdinalIgnoreCase))
+            {
+                return "bool";
+            }
 
-           // Rule: "ids should be long"
-           if (columnName.Contains("ID", StringComparison.OrdinalIgnoreCase) && oracleType == "NUMBER")
-           {
-               return "long";
-           }
+            // Rule: "ids should be long"
+            if (columnName.Contains("ID", StringComparison.OrdinalIgnoreCase) && oracleType == "NUMBER")
+            {
+                return "long";
+            }
 
-           if (oracleType.StartsWith("TIMESTAMP")) return "DateTime";
+            if (oracleType.StartsWith("TIMESTAMP")) return "DateTime";
 
-           return oracleType switch
-           {
-               "DATE" => "DateTime",
-               "NUMBER" => "decimal",
-               "FLOAT" => "double",
-               "BINARY_FLOAT" => "float",
-               "BINARY_DOUBLE" => "double",
-               "VARCHAR2" => "string",
-               "NVARCHAR2" => "string",
-               "CHAR" => "string",
-               "NCHAR" => "string",
-               "CLOB" => "string",
-               "NCLOB" => "string",
-               "BLOB" => "byte[]",
-               "RAW" => "byte[]",
-               "LONG RAW" => "byte[]",
-               _ => "string"
-           };
-       }
+            return oracleType switch
+            {
+                "DATE" => "DateTime",
+                "NUMBER" => "decimal",
+                "FLOAT" => "double",
+                "BINARY_FLOAT" => "float",
+                "BINARY_DOUBLE" => "double",
+                "VARCHAR2" => "string",
+                "NVARCHAR2" => "string",
+                "CHAR" => "string",
+                "NCHAR" => "string",
+                "CLOB" => "string",
+                "NCLOB" => "string",
+                "BLOB" => "byte[]",
+                "RAW" => "byte[]",
+                "LONG RAW" => "byte[]",
+                _ => "string"
+            };
+        }
 
-       public async Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql)
-       {
-           try
-           {
-               var block = $@"
+        public async Task<string> AnalyzeQueryPerformanceAsync(string connectionString, string schema, string sql)
+        {
+            try
+            {
+                var block = $@"
                     DECLARE
                     l_cursor SYS_REFCURSOR;
                     BEGIN
@@ -481,71 +481,71 @@ AND (
                     DBMS_SQL.RETURN_RESULT(l_cursor);
                     END;";
 
-               var planLines = await _repo.GetFromSqlAsync<string>(
-                   connectionString,
-                   FormattableStringFactory.Create(block),
-                   default);
+                var planLines = await _repo.GetFromSqlAsync<string>(
+                    connectionString,
+                    FormattableStringFactory.Create(block),
+                    default);
 
-               var planText = string.Join(Environment.NewLine, planLines);
+                var planText = string.Join(Environment.NewLine, planLines);
 
-               return $"Execution Plan:\n{planText}";
-           }
-           catch (Exception ex)
-           {
-               _logger.LogError(ex, "Error analyzing Oracle query performance");
-               return $"Error analyzing query performance: {ex.Message}";
-           }
-       }
+                return $"Execution Plan:\n{planText}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error analyzing Oracle query performance");
+                return $"Error analyzing query performance: {ex.Message}";
+            }
+        }
 
-       public async Task<OracleQueryResult> ExecuteSelectQueryAsync(string connectionString, string sql)
-       {
-           if (string.IsNullOrWhiteSpace(sql) || !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-           {
-               throw new ArgumentException("Only SELECT statements are allowed.");
-           }
+        public async Task<OracleQueryResult> ExecuteSelectQueryAsync(string connectionString, string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql) || !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Only SELECT statements are allowed.");
+            }
 
-           try
-           {
-               var rows = await _repo.GetFromSqlDynamicAsync(
-                   connectionString,
-                   FormattableStringFactory.Create(sql),
-                   default
-               );
+            try
+            {
+                var rows = await _repo.GetFromSqlDynamicAsync(
+                    connectionString,
+                    FormattableStringFactory.Create(sql),
+                    default
+                );
 
-               return new OracleQueryResult
-               {
-                   Rows = rows.ToList(),
-                   TotalCount = rows.Count()
-               };
-           }
-           catch (Exception ex)
-           {
-               _logger.LogError(ex, "Error executing Oracle SELECT query");
-               throw;
-           }
-       }
+                return new OracleQueryResult
+                {
+                    Rows = rows.ToList(),
+                    TotalCount = rows.Count()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing Oracle SELECT query");
+                throw;
+            }
+        }
 
-       public async Task<IEnumerable<string>> GetSchemasAsync(string connectionString)
-       {
-           var query = "SELECT DISTINCT USERNAME FROM ALL_USERS ORDER BY USERNAME";
-           var schemas = await _repo.GetFromSqlAsync<string>(
-               connectionString,
-               FormattableStringFactory.Create(query),
-               default
-           );
-           return schemas;
-       }
+        public async Task<IEnumerable<string>> GetSchemasAsync(string connectionString)
+        {
+            var query = "SELECT DISTINCT USERNAME FROM ALL_USERS ORDER BY USERNAME";
+            var schemas = await _repo.GetFromSqlAsync<string>(
+                connectionString,
+                FormattableStringFactory.Create(query),
+                default
+            );
+            return schemas;
+        }
 
-       public async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(string connectionString, string schema, string objectName, string objectType)
-       {
-           if (string.IsNullOrWhiteSpace(schema))
-               throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
-           if (string.IsNullOrWhiteSpace(objectName))
-               throw new ArgumentException("Object name cannot be null or empty.", nameof(objectName));
-           if (string.IsNullOrWhiteSpace(objectType))
-               throw new ArgumentException("Object type cannot be null or empty.", nameof(objectType));
+        public async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(string connectionString, string schema, string objectName, string objectType)
+        {
+            if (string.IsNullOrWhiteSpace(schema))
+                throw new ArgumentException("Schema cannot be null or empty.", nameof(schema));
+            if (string.IsNullOrWhiteSpace(objectName))
+                throw new ArgumentException("Object name cannot be null or empty.", nameof(objectName));
+            if (string.IsNullOrWhiteSpace(objectType))
+                throw new ArgumentException("Object type cannot be null or empty.", nameof(objectType));
 
-           var query = $@"
+            var query = $@"
                SELECT CONNECT_BY_ROOT d.type as Type, d.name AS Referencee, d.referenced_owner as ReferencedSchema, d.referenced_name as ReferencedName
                FROM all_dependencies d
                WHERE d.owner = '{schema.ToUpperInvariant()}'
@@ -553,11 +553,117 @@ AND (
                START WITH d.name = '{objectName.ToUpperInvariant()}' AND d.type = '{objectType.ToUpperInvariant()}'
                CONNECT BY PRIOR d.referenced_name = d.name AND PRIOR d.referenced_type = d.type";
 
-           return await _repo.GetFromSqlAsync<OracleDependency>(
-               connectionString,
-               FormattableStringFactory.Create(query),
-               default
-           );
-       }
-   }
+            return await _repo.GetFromSqlAsync<OracleDependency>(
+                connectionString,
+                FormattableStringFactory.Create(query),
+                default
+            );
+        }
+
+
+        public async Task<IEnumerable<OracleIndexDefinition>> GetIndexDefinitionsAsync(string connectionString, string schema)
+        {
+            var query = $@"
+                SELECT
+                    i.OWNER,
+                    i.INDEX_NAME,
+                    i.TABLE_NAME,
+                    i.INDEX_TYPE,
+                    i.UNIQUENESS,
+                    LISTAGG(ic.COLUMN_NAME, ', ') WITHIN GROUP (ORDER BY ic.COLUMN_POSITION) AS COLUMNS
+                FROM
+                    ALL_INDEXES i
+                LEFT JOIN
+                    ALL_IND_COLUMNS ic ON i.OWNER = ic.INDEX_OWNER AND i.INDEX_NAME = ic.INDEX_NAME
+                WHERE
+                    i.OWNER like 'TCP%' OR i.OWNER like 'TOS%'
+                GROUP BY
+                    i.OWNER, i.INDEX_NAME, i.TABLE_NAME, i.INDEX_TYPE, i.UNIQUENESS
+                ORDER BY
+                    i.TABLE_NAME, i.INDEX_NAME
+            ";
+
+            return await _repo.GetFromSqlAsync<OracleIndexDefinition>(
+                connectionString,
+                FormattableStringFactory.Create(query),
+                default);
+        }
+
+        public async Task<string> GetIndexCreateScriptAsync(string connectionString, OracleIndexDefinition index)
+        {
+            var query = $@"
+                SELECT DBMS_METADATA.GET_DDL('INDEX', '{index.IndexName.ToUpperInvariant()}', '{index.Owner.ToUpperInvariant()}') AS DDL FROM DUAL
+            ";
+
+            try
+            {
+                var result = await _repo.GetFromSqlDynamicAsync(
+                    connectionString,
+                    FormattableStringFactory.Create(query),
+                    default);
+
+                if (result?.Any() == true && result[0].ContainsKey("DDL"))
+                {
+                    var ddl = result[0]["DDL"]?.ToString();
+                    return ddl ?? string.Empty;
+                }
+
+                return string.Empty;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Error getting CREATE script for index {index}");
+                return string.Empty;
+            }
+        }
+        public async Task<List<OracleIndexDefinition>> GetIndexesUsedInQueryAsync(string connectionString, string schema, string sql)
+        {
+            var statementId = "IDX_ANALYSIS_" + Guid.NewGuid().ToString("N").Substring(0, 10);
+            try
+            {
+                // 1. Run EXPLAIN PLAN
+                var explainSql = $@"EXPLAIN PLAN SET STATEMENT_ID = '{statementId}' FOR {sql}";
+                await _repo.ExecuteAsync(connectionString, FormattableStringFactory.Create(explainSql), default);
+
+                // 2. Query PLAN_TABLE for indexes
+                var queryPlanSql = $@"
+                    SELECT DISTINCT
+                        OBJECT_OWNER as OWNER,
+                        OBJECT_NAME as INDEX_NAME,
+                        OBJECT_TYPE as INDEX_TYPE, -- Reusing IndexType property for Object Type temporarily or just for info
+                        'UNKNOWN' as UNIQUENESS,   -- Not available from plan table directly without join
+                        'UNKNOWN' as TABLE_NAME,   -- Not available from plan table directly without join
+                        'UNKNOWN' as COLUMNS       -- Not available from plan table directly
+                    FROM PLAN_TABLE
+                    WHERE STATEMENT_ID = '{statementId}'
+                    AND OBJECT_TYPE LIKE '%INDEX%'
+                    AND OBJECT_NAME IS NOT NULL";
+
+                var indexes = await _repo.GetFromSqlAsync<OracleIndexDefinition>(
+                    connectionString,
+                    FormattableStringFactory.Create(queryPlanSql),
+                    default);
+
+                return indexes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error analyzing query indexes");
+                throw;
+            }
+            finally
+            {
+                // 3. Clean up PLAN_TABLE
+                try
+                {
+                    var cleanupSql = $"DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = '{statementId}'";
+                    await _repo.ExecuteAsync(connectionString, FormattableStringFactory.Create(cleanupSql), default);
+                }
+                catch (Exception cleanupEx)
+                {
+                    _logger.LogError(cleanupEx, "Error cleaning up PLAN_TABLE");
+                }
+            }
+        }
+    }
 }
