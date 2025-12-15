@@ -15,6 +15,7 @@ using Microsoft.TeamFoundation.SourceControl.WebApi;
 using Microsoft.VisualStudio.Services.WebApi;
 using SmartComponents.LocalEmbeddings;
 using System.Linq.Expressions;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -33,7 +34,7 @@ namespace Common.Services
         private readonly List<string> _repoRegexFilters;
         private readonly string _organizationUrl;
         private readonly IConfigurationService _configService;
-        private readonly LocalEmbedder _embedder;
+        private readonly LocalEmbedder? _embedder;
 
         public string GetLocalCloneFolder() => _localCloneFolder;
 
@@ -44,7 +45,7 @@ namespace Common.Services
             IBuildHttpClient buildClient,
             IProjectHttpClient projectClient,
             IGitHttpClient gitClient,
-            LocalEmbedder embeder)
+            LocalEmbedder? embeder)
         {
             var config = configService.GetConfig();
 
@@ -163,32 +164,64 @@ namespace Common.Services
 
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                var filtroEmbedding = _embedder.Embed(filter);
-                var results = await GenerateEmbeddingsForReposAsync(repos);
+                if (_embedder != null)
+                {
+                    var filtroEmbedding = _embedder.Embed(filter);
+                    var results = await GenerateEmbeddingsForReposAsync(repos);
 
-                var results2 = LocalEmbedder.FindClosest(filtroEmbedding, results, maxResults: 999, minSimilarity: 0.6f);
+                    var results2 = LocalEmbedder.FindClosest(filtroEmbedding, results, maxResults: 999, minSimilarity: 0.6f);
 
-                return results2.ToList();
-            }
-
-            //var results = query.ToList();
-            var ordered = repos.AsQueryable()
+                    return results2.ToList();
+                }
+                else
+                {
+                    // If embedder is null, just return the filtered list without embedding search
+                    return repos.AsQueryable()
+                                 .Where(repo => repo.Path.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                                                repo.Project.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                                                repo.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
                                  .OrderByDescending(GetLatestBuildDetailsExpression())
                                  .ToList();
+                }
+            }
+            else
+            {
+                //var results = query.ToList();
+                var ordered = repos.AsQueryable()
+                                     .OrderByDescending(GetLatestBuildDetailsExpression())
+                                     .ToList();
 
-            return ordered;
+                return ordered;
+            }
         }
 
-        private async Task<IEnumerable<(Repository Item, EmbeddingF32 Embedding)>> GenerateEmbeddingsForReposAsync(params List<Repository> repos)
-        {
-            // Embbed only what doesnt have one yet
+                private async Task<IEnumerable<(Repository Item, EmbeddingF32 Embedding)>> GenerateEmbeddingsForReposAsync(params List<Repository> repos)
 
-            foreach (var repo in repos)
-            {
-                if (repo.Embedding == null)
                 {
-                    repo.Embedding = _embedder.Embed(repo.Path);
-                    // TODO: melhorar eficiencia
+
+                    if (_embedder == null)
+
+                    {
+
+                        return Enumerable.Empty<(Repository Item, EmbeddingF32 Embedding)>();
+
+                    }
+
+        
+
+                    // Embbed only what doesnt have one yet
+
+                    foreach (var repo in repos)
+
+                    {
+
+                        if (repo.Embedding == null)
+
+                        {
+
+                            repo.Embedding = _embedder.Embed(repo.Path);
+
+                            // TODO: melhorar eficiencia
                     await _repositoryDatabase.UpsertAsync(repo);
                 }
             }
@@ -905,9 +938,18 @@ namespace Common.Services
             }, cancellationToken);
 
             // Report 100% completion at the end
-            await reportProgress(100, "Pull complete.");
-
-            return (successfulPulls, failedPulls);
-        }
-    }
-}
+                        await reportProgress(100, "Pull complete.");
+            
+                        return (successfulPulls, failedPulls);
+                    }
+            
+                            public string GenerateSonarCloudUrl(Repository repo)
+                            {
+                                var cleanedProject = Regex.Replace(repo.Project.Replace('.', '-').Replace(' ', '-'), "-+", "-");
+                                var cleanedName = Regex.Replace(repo.Name.Replace('.', '-').Replace(' ', '-'), "-+", "-");
+                                var sonarId = $"{cleanedProject}-{cleanedName}";
+                                var branch = WebUtility.UrlEncode(repo.CurrentBranch);
+                                return $"https://sonarcloud.io/summary/new_code?id={sonarId}&branch={branch}";
+                            }                }
+            }
+            

@@ -33,5 +33,6 @@ namespace Common.Services.Interfaces
         Task<(bool Success, string ErrorMessage)> PullRepositoryAsync(Guid buildInfoId, CancellationToken cancellationToken);
         Task<(int Successful, int Failed)> PullAllRepositoriesAsync(Func<int, string, Task> reportProgress, CancellationToken cancellationToken);
         Task FetchBuildInfoAsync();
+        string GenerateSonarCloudUrl(Repository repo);
     }
 }

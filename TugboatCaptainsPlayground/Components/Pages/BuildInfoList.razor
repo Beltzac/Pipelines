@@ -500,7 +500,7 @@ async Task OpenExternalRunClickAsync(ItemClickEventArgs e)
     async Task OpenSonarClickAsync(ItemClickEventArgs e)
     {
         var repo = e.Data as Repository;
-        var url = $"https://sonarcloud.io/project/branches_list?id={repo.Project.Replace('.', '-')}-{repo.Name.Replace('.', '-')}";
+        var url = BuildInfoService.GenerateSonarCloudUrl(repo);
         OpenFolderUtils.OpenUrl(url);
     }
 
