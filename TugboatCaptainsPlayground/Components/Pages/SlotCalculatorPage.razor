@@ -1,4 +1,4 @@
-@page "/slot-calculator"
+﻿@page "/slot-calculator"
 @using System.Globalization
 @using BlazorDateRangePicker
 @using Common.Models
@@ -15,115 +15,143 @@
 @inject ToastService toastService
 @implements IDisposable
 @inject OracleOpsService OracleOpsService
+
 <StickyFilter>
     <div class="d-flex flex-wrap gap-3">
+        <!-- Seção de Filtros e Parâmetros de Entrada -->
         <div class="col-md-4">
-            <label class="form-label">Period</label>
+            <label class="form-label">Período</label>
             <DateRangePicker
                 TimePicker="true" TimePicker24Hour="true"
-                TimePickerSeconds="true" AutoApply="true" DateFormat="@($"MM/dd/yyyy HH:mm:ss")"
+                TimePickerSeconds="true" AutoApply="true" DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
                 StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
                 class="form-control" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">Oracle Environment:</label>
+            <label class="form-label">Ambiente Oracle:</label>
             <EnvironmentSelector
                 Environments="oracleEnvironments"
                 @bind-SelectedEnvironmentName="StateService.SelectedOracleEnvironment" />
         </div>
+        
+        <!-- Parâmetros do Algoritmo com Dicas (Hints) para Gestão -->
         <div class="col-md-2">
-            <label class="form-label">Initial Yard TEU</label>
+            <label class="form-label" title="Quantidade de TEUs presentes no pátio no início da simulação.">
+                Estoque Inicial (TEU) <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
+            </label>
             <input type="number" class="form-control" @bind="StateService.InitialYardTeu" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">Avg TEU per Truck</label>
+            <label class="form-label" title="Estimativa de quantos TEUs cada caminhão movimenta em média (fator de conversão Truck -> TEU).">
+                Média TEU/Caminhão <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
+            </label>
             <input type="number" class="form-control" @bind="StateService.AvgTeuPerTruck" step="0.1" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">Reserve Rho</label>
-            <input type="number" class="form-control" @bind="StateService.ReserveRho" step="0.01" min="0" max="0.99" />
+            <label class="form-label" title="Fator de Reserva: Porcentagem da capacidade operacional (Gate/Equipamentos) que deve ser mantida livre para imprevistos.">
+                Fator Reserva (%) <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
+            </label>
+            <div class="input-group">
+                <input type="number" class="form-control" @bind="ReservePercent" step="1" min="0" max="100" />
+                <span class="input-group-text">%</span>
+            </div>
         </div>
         <div class="col-md-2">
-            <label class="form-label">Easing Strength</label>
+            <label class="form-label" title="Controla a suavidade da curva de slots. Valores mais altos evitam mudanças bruscas na abertura de agendamentos.">
+                Suavização <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
+            </label>
             <input type="number" class="form-control" @bind="StateService.EasingStrength" step="0.1" min="0" max="0.99" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">Target Yard TEU</label>
-            <input type="number" class="form-control" @bind="StateService.TargetYardTeu" />
+            <label class="form-label" title="Meta de ocupação ideal como porcentagem da capacidade máxima do pátio.">
+                Meta de Estoque (%) <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
+            </label>
+            <div class="input-group">
+                <input type="number" class="form-control" @bind="TargetPercent" step="1" min="0" max="100" />
+                <span class="input-group-text">%</span>
+            </div>
+            <small class="text-muted">(@StateService.TargetYardTeu.ToString("N0") TEUs)</small>
         </div>
         <div class="col-md-2">
-            <label class="form-label">Max Yard TEU</label>
+            <label class="form-label" title="Capacidade física máxima do pátio.">
+                Capacidade Máx (TEU)
+            </label>
             <input type="number" class="form-control" @bind="StateService.MaxYardTeu" />
         </div>
+
+        <!-- Botões de Ação -->
         <div class="col-md-12 mt-2">
             @if (StateService.IsLoading)
             {
-                <button class="btn btn-secondary" @onclick="CancelCalculation">Cancel</button>
+                <button class="btn btn-secondary" @onclick="CancelCalculation">Cancelar</button>
             }
             else
             {
-                <button class="btn btn-primary" @onclick="CalculateSlots">Calculate</button>
+                <button class="btn btn-primary" @onclick="CalculateSlots">Calcular</button>
             }
 
-
-            <button class="btn btn-secondary" @onclick="ResetAllZoom">Reset Zoom</button>
-
+            <button class="btn btn-secondary" @onclick="ResetAllZoom" title="Restaura o zoom de todos os gráficos para o período total">Resetar Zoom</button>
         </div>
     </div>
 </StickyFilter>
 
-<CustomProgressBar IsLoading="@StateService.IsLoading" Label="Calculating..." />
+<CustomProgressBar IsLoading="@StateService.IsLoading" Label="Calculando..." />
 
+<!-- Card: Taxas Calculadas -->
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Calculated Rates</h5>
+        <h5 class="mb-0">Taxas Operacionais Calculadas</h5>
     </div>
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <h6>Vessel Rates</h6>
-                <p>Load Rate: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
-                <p>Unload Rate: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
+                <h6>Taxas de Navio (Vessel)</h6>
+                <p>Embarque: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
+                <p>Descarga: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
             </div>
             <div class="col-md-6">
-                <h6>Train Rates</h6>
-                <p>Load Rate: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
-                <p>Unload Rate: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
+                <h6>Taxas de Trem (Rail)</h6>
+                <p>Embarque: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
+                <p>Descarga: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Card: Gráfico Principal (Estoque) -->
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Hour Window Analysis</h5>
+        <h5 class="mb-0">Análise de Janela Horária (Projeção de Estoque)</h5>
     </div>
     <div class="card-body">
         <canvas id="slotChart" width="400" height="100" style='width:100%;height:100px'></canvas>
     </div>
 </div>
 
+<!-- Card: Gráfico de Slots -->
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Slots Summary</h5>
+        <h5 class="mb-0">Resumo de Slots Sugeridos</h5>
     </div>
     <div class="card-body">
         <canvas id="slotsSummaryChart" width="400" height="100" style='width:100%;height:100px'></canvas>
     </div>
 </div>
 
+<!-- Card: Gráfico de Capacidade -->
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Capacity Data (Gate Trucks & Yard Moves)</h5>
+        <h5 class="mb-0">Dados de Capacidade (Gate e Movimentações)</h5>
     </div>
     <div class="card-body">
         <canvas id="capacityChart" width="400" height="100" style='width:100%;height:100px'></canvas>
     </div>
 </div>
 
+<!-- Card: Gráfico de Movimentação por Modal -->
 <div class="card mb-3">
     <div class="card-header">
-        <h5 class="mb-0">Inbound / Outbound by Mode</h5>
+        <h5 class="mb-0">Entradas / Saídas por Modal</h5>
     </div>
     <div class="card-body">
         <canvas id="inOutChart" width="400" height="100" style='width:100%;height:100px'></canvas>
@@ -132,6 +160,18 @@
 
 
 @code {
+
+    private double TargetPercent
+    {
+        get => StateService.MaxYardTeu > 0 ? Math.Round((double)StateService.TargetYardTeu / StateService.MaxYardTeu * 100, 1) : 0;
+        set => StateService.TargetYardTeu = (int)(StateService.MaxYardTeu * (value / 100.0));
+    }
+
+    private double ReservePercent
+    {
+        get => Math.Round(StateService.ReserveRho * 100, 1);
+        set => StateService.ReserveRho = value / 100.0;
+    }
 
     private CancellationTokenSource cts;
     private DotNetObjectReference<SlotCalculatorPage>? objRef;
@@ -203,10 +243,14 @@
             StateService.ProgressValue = 0;
             StateService.IsLoading = true;
 
-            // Get current yard TEU to initialize the algorithm
-            StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(StateService.SelectedOracleEnvironment, cts.Token);
+            // FIX: Só busca o estoque atual do banco se o usuário não tiver digitado nada (0)
+            if (StateService.InitialYardTeu == 0)
+            {
+                StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(StateService.SelectedOracleEnvironment, cts.Token);
+            }
 
-            // Fetch actual gate trucks and yard moves data
+            // Busca dados do período selecionado
+            // O Service agora já cuida de buscar histórico (fallback) caso o período seja futuro
             if (StateService.GateTrucks.Count == 0
                 || StateService.CachedStartDate != StateService.StartDate
                 || StateService.CachedEndDate != StateService.EndDate
@@ -226,7 +270,6 @@
 
             var caps = new Dictionary<DateTime, OpsCaps>();
 
-            // Use actual data for caps
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
                 var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : new InOut();
@@ -300,8 +343,8 @@
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error calculating slots: {Message}", ex.Message);
-            toastService.ShowError($"Error calculating slots: {ex.Message}");
+            _logger.LogError(ex, "Erro ao calcular slots: {Message}", ex.Message);
+            toastService.ShowError($"Erro ao calcular slots: {ex.Message}");
         }
         finally
         {
@@ -324,7 +367,7 @@
     {
         if (StateService.ChartData == null || !StateService.ChartData.Any()) return;
 
-        var labels = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp).ToString("yyyy-MM-dd HH:mm")).ToArray();
+        var labels = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
         var dataTotalSlots = StateService.ChartData.Select(d => d.TotalSlots).ToArray();
         var dataSlotsIn = StateService.ChartData.Select(d => d.SlotsIn).ToArray();
         var dataSlotsOut = StateService.ChartData.Select(d => d.SlotsOut).ToArray();
@@ -345,6 +388,7 @@
 
         // Per-class data
         var classDatasets = new List<object>();
+        // Palette mantida para consistência visual
         var palette = new[]
         {
             "rgb(255,99,132)",
@@ -363,6 +407,8 @@
 
 
         // Convert vessels and rails data to JavaScript-compatible format
+        // Formato da chave ajustado para corresponder ao label (dd/MM HH:mm) pode ser necessário dependendo do JS
+        // Mas mantendo yyyy-MM-dd HH:mm para compatibilidade com o objeto Date do JS se for parseado lá
         var vesselsData = new Dictionary<string, string[]>();
         var railsData = new Dictionary<string, string[]>();
 
@@ -388,7 +434,7 @@
         {
             new
             {
-            label = "Target Yard TEU",
+            label = "Meta de Estoque (Target)", // Traduzido
             data = targetYardTeu,
             borderColor = "rgba(0,128,0,0.5)",
             borderDash = new[] {5,5},
@@ -397,7 +443,7 @@
             },
             new
             {
-            label = "Yard TEU Projection (No Trucks)",
+            label = "Projeção Estoque (Sem Gate)", // Traduzido
             data = yardTeuNoGate,
             borderColor = "rgb(128,128,128)",
             tension = 0.4,
@@ -406,7 +452,7 @@
             },
             new
             {
-            label = "Yard TEU Projection (With Trucks)",
+            label = "Projeção Estoque (Com Gate)", // Traduzido
             data = yardTeuProjection,
             borderColor = "rgb(0, 128, 255)",
             tension = 0.4,
@@ -434,7 +480,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Time"
+                            text = "Hora" // Traduzido
                         }
                     }
                 },
@@ -462,7 +508,7 @@
                 {
                     new
                     {
-                        label = "Truck In",
+                        label = "Caminhão (Entrada)", // Traduzido
                         data = truckIn,
                         borderColor = "rgb(0,200,0)",
                         tension = 0.4,
@@ -471,7 +517,7 @@
                     },
                     new
                     {
-                        label = "Truck Out",
+                        label = "Caminhão (Saída)", // Traduzido
                         data = truckOut,
                         borderColor = "rgb(200,0,0)",
                         tension = 0.4,
@@ -480,7 +526,7 @@
                     },
                     new
                     {
-                        label = "Vessel In",
+                        label = "Navio (Entrada)", // Traduzido
                         data = vesselIn,
                         borderColor = "rgb(0,0,200)",
                         tension = 0.4,
@@ -489,7 +535,7 @@
                     },
                     new
                     {
-                        label = "Vessel Out",
+                        label = "Navio (Saída)", // Traduzido
                         data = vesselOut,
                         borderColor = "rgb(200,0,200)",
                         tension = 0.4,
@@ -498,7 +544,7 @@
                     },
                     new
                     {
-                        label = "Rail In",
+                        label = "Trem (Entrada)", // Traduzido
                         data = railIn,
                         borderColor = "rgb(128,128,0)",
                         tension = 0.4,
@@ -507,7 +553,7 @@
                     },
                     new
                     {
-                        label = "Rail Out",
+                        label = "Trem (Saída)", // Traduzido
                         data = railOut,
                         borderColor = "rgb(0,128,128)",
                         tension = 0.4,
@@ -542,7 +588,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Time"
+                            text = "Hora" // Traduzido
                         }
                     }
                 }
@@ -563,7 +609,7 @@
                 {
                     new
                     {
-                        label = "Total Slots",
+                        label = "Total de Slots", // Traduzido
                         data = dataTotalSlots,
                         borderColor = "rgb(75, 192, 192)",
                         tension = 0.4,
@@ -572,7 +618,7 @@
                     },
                     new
                     {
-                        label = "Slots In",
+                        label = "Slots (Entrada)", // Traduzido
                         data = dataSlotsIn,
                         borderColor = "rgb(235, 64, 52)",
                         tension = 0.4,
@@ -581,7 +627,7 @@
                     },
                     new
                     {
-                        label = "Slots Out",
+                        label = "Slots (Saída)", // Traduzido
                         data = dataSlotsOut,
                         borderColor = "rgb(153, 102, 255)",
                         tension = 0.4,
@@ -619,7 +665,7 @@
     {
         if (StateService.CapacityData == null || !StateService.CapacityData.Any()) return;
 
-        var labels = StateService.CapacityData.Select(d => DateTime.Parse(d.Timestamp).ToString("yyyy-MM-dd HH:mm")).ToArray();
+        var labels = StateService.CapacityData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
         var gateTrucksIn = StateService.CapacityData.Select(d => d.GateTrucksIn).ToArray();
         var gateTrucksOut = StateService.CapacityData.Select(d => d.GateTrucksOut).ToArray();
         var yardMoves = StateService.CapacityData.Select(d => d.YardMoves).ToArray();
@@ -634,7 +680,7 @@
                 {
                     new
                     {
-                        label = "Gate Trucks In",
+                        label = "Caminhões Gate (Entrada)", // Traduzido
                         data = gateTrucksIn,
                         borderColor = "rgb(0, 200, 0)",
                         tension = 0.4,
@@ -643,7 +689,7 @@
                     },
                     new
                     {
-                        label = "Gate Trucks Out",
+                        label = "Caminhões Gate (Saída)", // Traduzido
                         data = gateTrucksOut,
                         borderColor = "rgb(200, 0, 0)",
                         tension = 0.4,
@@ -652,7 +698,7 @@
                     },
                     new
                     {
-                        label = "Yard Moves",
+                        label = "Movimentações de Pátio", // Traduzido
                         data = yardMoves,
                         borderColor = "rgb(0, 0, 200)",
                         tension = 0.4,
@@ -672,7 +718,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Count"
+                            text = "Quantidade" // Traduzido
                         }
                     },
                     x = new
@@ -680,7 +726,7 @@
                         title = new
                         {
                             display = true,
-                            text = "Time"
+                            text = "Hora" // Traduzido
                         }
 
 

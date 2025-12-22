@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Common.Models;
-using Common.Repositories.TCP.Interfaces;
+﻿using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 
 namespace Common.Services
@@ -306,10 +302,10 @@ namespace Common.Services
                 )",
                default);
 
-           if (vesselRate != null && vesselRate.Any())
-           {
-               return vesselRate.First();
-           }
+            if (vesselRate != null && vesselRate.Any())
+            {
+                return vesselRate.First();
+            }
 
             return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Vessel" };
         }
@@ -354,10 +350,10 @@ namespace Common.Services
                 )",
                default);
 
-           if (trainRate != null && trainRate.Any())
-           {
-               return trainRate.First();
-           }
+            if (trainRate != null && trainRate.Any())
+            {
+                return trainRate.First();
+            }
 
             return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Train" };
         }
