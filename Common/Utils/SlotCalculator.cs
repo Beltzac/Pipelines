@@ -11,6 +11,7 @@ public record HourWindow(
     int SlotsOut,
     int YardTeuProjection,
     int YardTeuNoGate,
+    int YardTeuRealGate,
     int TruckIn,
     int TruckOut,
     int VesselIn,
@@ -53,6 +54,7 @@ public static class SlotCalculator
         Dictionary<DateTime, VesselPlan> vessels,
         Dictionary<DateTime, RailPlan> rails,
         Dictionary<DateTime, OpsCaps> caps,
+        Dictionary<DateTime, int> actualHistory,
         YardBand band,
         double avgTeuPerTruck,
         double reserveRho,
@@ -66,6 +68,7 @@ public static class SlotCalculator
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
         if (reserveRho < 0 || reserveRho >= 1) throw new ArgumentOutOfRangeException(nameof(reserveRho));
 
+        var now = DateTime.Now;
         var vesselTeus = vessels.ToDictionary(kv => kv.Key, kv => (kv.Value.DischargeTEU, kv.Value.LoadTEU));
         var distributedVessels = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end);
 
@@ -79,61 +82,69 @@ public static class SlotCalculator
         // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
         int currentYardTeus = initialYardTeu;
+        int yardTeuRealGate = initialYardTeu;
 
         // Interpolate missing caps
         var interpolatedCaps = InterpolateCaps(caps, start, end);
 
         for (var t = start; t <= end; t = t.AddHours(1))
         {
+            var isHistory = t < now;
             var cap = interpolatedCaps[t];
 
-            // Gate vs Yard handling bottleneck (convert YardMoves to trucks)
-            int yardTrucks = (int)Math.Floor(cap.YardMovesPerHour / avgTeuPerTruck);
-            int totalGateTrucks = cap.GateTrucksInPerHour + cap.GateTrucksOutPerHour;
-            int rawTruckSlots = Math.Min(totalGateTrucks, yardTrucks);
+            // 1. Determine Gate Capacity/Actuals in TEUs and Trucks
+            // In history, cap holds actual gate moves (already in TEUs). 
+            // In future, it holds planned capacity (in trucks).
+            int gateTeuInCap = isHistory ? cap.GateTrucksInPerHour : (int)(cap.GateTrucksInPerHour * avgTeuPerTruck);
+            int gateTeuOutCap = isHistory ? cap.GateTrucksOutPerHour : (int)(cap.GateTrucksOutPerHour * avgTeuPerTruck);
+            
+            int gateTrucksInCap = isHistory ? (int)(cap.GateTrucksInPerHour / avgTeuPerTruck) : cap.GateTrucksInPerHour;
+            int gateTrucksOutCap = isHistory ? (int)(cap.GateTrucksOutPerHour / avgTeuPerTruck) : cap.GateTrucksOutPerHour;
+
+            // 2. Calculate available truck slots based on bottlenecks
+            // YardMovesPerHour is in moves (approx trucks).
+            int yardTrucksCap = (int)Math.Floor(cap.YardMovesPerHour / avgTeuPerTruck);
+            int totalGateTrucksCap = gateTrucksInCap + gateTrucksOutCap;
+            int rawTruckSlots = Math.Min(totalGateTrucksCap, yardTrucksCap);
             int totalTruckSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawTruckSlots));
             
             var vesselFlow = distributedVessels.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
             var railFlow = distributedRails.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
 
+            // 3. Update Projections with Vessel and Rail flows (always in TEUs)
+            int netVesselRailTeu = vesselFlow.DischargeTEU + railFlow.DischargeTEU - vesselFlow.LoadTEU - railFlow.LoadTEU;
+            currentYardTeus += netVesselRailTeu;
+            yardTeuRealGate += netVesselRailTeu;
 
-            // First apply vessel and rail flows
-            currentYardTeus += vesselFlow.DischargeTEU + railFlow.DischargeTEU;
-            currentYardTeus -= vesselFlow.LoadTEU + railFlow.LoadTEU;
+            // 4. Update Real Gate Projection (Orange) using full capacity/actuals
+            yardTeuRealGate += gateTeuInCap - gateTeuOutCap;
 
-            // Yard steering: desired net TEU to nudge toward target
-            int diffTEU = band.TargetTEU - currentYardTeus; // + wants IN, - wants OUT
+            // 5. Calculate Algorithm Allocation (Blue)
+            int diffTEU = band.TargetTEU - currentYardTeus;
+            double biasFactor = (band.MaxTEU != band.MinTEU) ? (double)diffTEU / (band.MaxTEU - band.MinTEU) : 0.0;
 
-            // biasFactor in range [-1, 1]
-            var biasFactor = 0.0;
-            if (band.MaxTEU != band.MinTEU)
-            {
-                biasFactor = (double)diffTEU / (band.MaxTEU - band.MinTEU);
-            }
-
-            // Distribute slots using easing
             var (allocatedIn, allocatedOut) = ApplyEasing(totalTruckSlots, biasFactor, easingStrength);
 
-            //int wantIn = allocatedIn;
             // Cap allocated slots to individual capacities
-            int wantIn = Math.Min(allocatedIn, cap.GateTrucksInPerHour);
-            int wantOut = Math.Min(allocatedOut, cap.GateTrucksOutPerHour);
+            int wantIn = Math.Max(0, Math.Min(allocatedIn, gateTrucksInCap));
+            int wantOut = Math.Max(0, Math.Min(allocatedOut, gateTrucksOutCap));
 
-            if (wantIn < 0) wantIn = 0;
-            if (wantOut < 0) wantOut = 0;
+            // 6. Update Algorithm Projection (Blue) using allocated slots
+            int allocatedTeuIn = (int)(wantIn * avgTeuPerTruck);
+            int allocatedTeuOut = (int)(wantOut * avgTeuPerTruck);
+            currentYardTeus += allocatedTeuIn - allocatedTeuOut;
 
-            // Update yard occupancy using allocated slots
-            currentYardTeus += (int)(wantIn * avgTeuPerTruck);
-            currentYardTeus -= (int)(wantOut * avgTeuPerTruck);
+            // 7. Record results
             results.Add(new HourWindow(
                 t,
-                totalTruckSlots,
-                wantIn,
-                wantOut,
+                isHistory ? totalGateTrucksCap : totalTruckSlots,
+                isHistory ? gateTrucksInCap : wantIn,
+                isHistory ? gateTrucksOutCap : wantOut,
                 currentYardTeus,
                 O_noGate.TryGetValue(t, out var gate) ? gate : 0,
-                (int)(wantIn * avgTeuPerTruck),
-                (int)(wantOut * avgTeuPerTruck),
+                yardTeuRealGate,
+                isHistory ? gateTeuInCap : allocatedTeuIn,
+                isHistory ? gateTeuOutCap : allocatedTeuOut,
                 vesselFlow.DischargeTEU,
                 vesselFlow.LoadTEU,
                 railFlow.DischargeTEU,

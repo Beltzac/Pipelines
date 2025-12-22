@@ -546,7 +546,7 @@ namespace Common.Services
                 throw new ArgumentException("Object type cannot be null or empty.", nameof(objectType));
 
             var query = $@"
-               SELECT CONNECT_BY_ROOT d.type as Type, d.name AS Referencee, d.referenced_owner as ReferencedSchema, d.referenced_name as ReferencedName
+               SELECT CONNECT_BY_ROOT d.type as TYPE, d.name AS REFERENCEE, d.referenced_owner as REFERENCED_SCHEMA, d.referenced_name as REFERENCED_NAME
                FROM all_dependencies d
                WHERE d.owner = '{schema.ToUpperInvariant()}'
                  AND d.referenced_type in ('TABLE', 'VIEW')

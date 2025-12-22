@@ -1,4 +1,4 @@
-﻿using Common.Repositories.TCP.Interfaces;
+using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 
 namespace Common.Services
@@ -28,6 +28,15 @@ namespace Common.Services
             public int Count { get; set; }
         }
 
+        private class HourlyInOut
+        {
+            public DateTime Hour { get; set; }
+            public int InCount { get; set; }
+            public int OutCount { get; set; }
+            public int OtherIn { get; set; }
+            public int OtherOut { get; set; }
+        }
+
         /// <summary>
         /// Fetch vessel plans with vessel names
         /// </summary>
@@ -42,7 +51,7 @@ namespace Common.Services
             SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
-             FROM V_CNTRS c
+             FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                AND c.CNTR_CATEGORY != 'H'
@@ -55,7 +64,7 @@ namespace Common.Services
             SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
-             FROM V_CNTRS c
+             FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
              WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
                AND c.CNTR_CATEGORY != 'H'
@@ -182,7 +191,7 @@ namespace Common.Services
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
             var teusList = await _repo.GetFromSqlAsync<int>(
                 env.ConnectionString,
-                (FormattableString)$@"SELECT SUM(CASE WHEN SUBSTR(CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as TotalTeus FROM V_CNTRS WHERE CNTR_STATUS = 'YA'",
+                (FormattableString)$@"SELECT SUM(CASE WHEN SUBSTR(CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as TotalTeus FROM TOSBRIDGE.TOS_CNTRS WHERE CNTR_STATUS = 'YA'",
                 default);
             return teusList.FirstOrDefault();
         }
@@ -259,10 +268,16 @@ namespace Common.Services
         /// <summary>
         /// Get vessel loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default)
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
-            var endDate = DateTime.Now;
-            var startDate = endDate.AddYears(-1);
+            var actualStartDate = startDate;
+            var actualEndDate = endDate;
+            if (actualStartDate > DateTime.Now)
+            {
+                actualEndDate = DateTime.Now;
+                actualStartDate = actualEndDate.AddDays(-30);
+            }
+
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var vesselRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
@@ -281,19 +296,19 @@ namespace Common.Services
                                    AND c.CNTR_CATEGORY != 'H'
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
-                              ELSE 0 END) as LoadTeus,
+                              ELSE 0 END) as UnloadTeus,
                           SUM(CASE WHEN c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
                                    AND c.CNTR_CATEGORY != 'H'
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
-                              ELSE 0 END) as UnloadTeus,
+                              ELSE 0 END) as LoadTeus,
                           ( ( vv.VESSEL_VISIT_END_WORK - vv.VESSEL_VISIT_START_WORK ) * 24 ) AS DurationHours
                    FROM TOSBRIDGE.TOS_VESSEL_VISIT vv
-                   LEFT JOIN V_CNTRS c
+                   LEFT JOIN TOSBRIDGE.TOS_CNTRS c
                           ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
                           OR c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
                    WHERE
-                    vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                    vv.VESSEL_VISIT_ETB BETWEEN {actualStartDate} AND {actualEndDate}
                         AND vv.VESSEL_VISIT_END_WORK IS NOT NULL
                         AND vv.VESSEL_VISIT_START_WORK IS NOT NULL
                    GROUP BY vv.VESSEL_VISIT_ID,
@@ -312,10 +327,16 @@ namespace Common.Services
         /// <summary>
         /// Get train loading/unloading rates from the last year
         /// </summary>
-        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default)
+        public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
-            var endDate = DateTime.Now;
-            var startDate = endDate.AddYears(-1);
+            var actualStartDate = startDate;
+            var actualEndDate = endDate;
+            if (actualStartDate > DateTime.Now)
+            {
+                actualEndDate = DateTime.Now;
+                actualStartDate = actualEndDate.AddDays(-30);
+            }
+
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
             var trainRate = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
@@ -333,17 +354,17 @@ namespace Common.Services
                           SUM(CASE WHEN c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
-                              ELSE 0 END) as LoadTeus,
+                               ELSE 0 END) as UnloadTeus,
                           SUM(CASE WHEN c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
                                    THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
                                               THEN 2 ELSE 1 END)
-                              ELSE 0 END) as UnloadTeus,
+                               ELSE 0 END) as LoadTeus,
                           ((tv.TRAIN_VISIT_END_WORK - tv.TRAIN_VISIT_START_WORK) * 24) as DurationHours
                    FROM TOSBRIDGE.TOS_TRAIN_VISIT tv
                    LEFT JOIN TOSBRIDGE.TOS_CNTRS c
                           ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
                           OR c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
-                   WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
+                   WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {actualStartDate} AND {actualEndDate}
                         AND tv.TRAIN_VISIT_END_WORK IS NOT NULL
                         AND tv.TRAIN_VISIT_START_WORK IS NOT NULL
                    GROUP BY tv.TRAIN_VISIT_ID, tv.TRAIN_VISIT_START_WORK, tv.TRAIN_VISIT_END_WORK
@@ -356,6 +377,210 @@ namespace Common.Services
             }
 
             return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Train" };
+        }
+
+        public async Task<int> GetHistoricalYardTeuAsync(DateTime targetDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var currentTeu = await GetCurrentYardTeuAsync(envName, cancellationToken);
+
+            if (targetDate > DateTime.Now) return currentTeu;
+
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+
+            // Calculate moves from targetDate to NOW to reverse-engineer inventory
+            // Historical = Current - (In - Out) = Current - In + Out
+            // In: Moved INTO Yard (To=Y, From!=Y)
+            // Out: Moved OUT OF Yard (From=Y, To!=Y)
+            // Note: We use LoadUnloadRate just as a container for sums
+            var moves = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT 
+                  'Moves' as NAME, 
+                  SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as TOTAL_LOAD_TEUS, 
+                  SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as TOTAL_UNLOAD_TEUS,
+                  0 as TOTAL_DURATION_HOURS, 0 as LOAD_RATE_TEUS_PER_HOUR, 0 as UNLOAD_RATE_TEUS_PER_HOUR
+                FROM TOSBRIDGE.TOS_CNTR_MOV m
+                INNER JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
+                WHERE m.MOV_TIME_PUT >= {targetDate}
+                ",
+                cancellationToken);
+
+            var diff = moves.FirstOrDefault();
+            if (diff != null)
+            {
+                var inSinceThen = diff.TotalLoadTeus;
+                var outSinceThen = diff.TotalUnloadTeus;
+                return currentTeu - inSinceThen + outSinceThen;
+            }
+
+            return currentTeu;
+        }
+
+                        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchActualGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+
+                        {
+
+                            var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
+
+                            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+
+                
+
+                            var data = await _repo.GetFromSqlAsync<HourlyInOut>(
+
+                                env.ConnectionString,
+
+                                (FormattableString)$@"
+
+                                SELECT 
+
+                                    TRUNC(m.MOV_TIME_PUT, 'HH24') as Hour,
+
+                                    SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE = 'T' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as IN_COUNT,
+
+                                    SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE = 'T' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as OUT_COUNT,
+
+                                    COUNT(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE NOT IN ('Y', 'T') THEN 1 END) as OTHER_IN,
+
+                                    COUNT(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE NOT IN ('Y', 'T') THEN 1 END) as OTHER_OUT
+
+                                FROM TOSBRIDGE.TOS_CNTR_MOV m
+                                INNER JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
+
+                                WHERE m.MOV_TIME_PUT BETWEEN {startDate} AND {endDate}
+
+                                  AND ( (m.MOV_FROM_TYPE != 'Y' AND m.MOV_TO_TYPE = 'Y') OR (m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE != 'Y') )
+
+                                GROUP BY TRUNC(m.MOV_TIME_PUT, 'HH24')",
+
+                                cancellationToken);
+
+                
+
+                            foreach (var item in data)
+
+                            {
+
+                                result[item.Hour] = new Common.Services.Interfaces.InOut 
+
+                                { 
+
+                                    In = item.InCount, 
+
+                                    Out = item.OutCount,
+
+                                    OtherIn = item.OtherIn,
+
+                                    OtherOut = item.OtherOut
+
+                                };
+
+                            }
+
+                
+
+                            // Fill missing hours
+
+                            for (var h = startDate; h <= endDate; h = h.AddHours(1))
+
+                            {
+
+                                var k = new DateTime(h.Year, h.Month, h.Day, h.Hour, 0, 0); // Normalize
+
+                                if (!result.ContainsKey(k))
+
+                                    result[k] = new Common.Services.Interfaces.InOut { In = 0, Out = 0, OtherIn = 0, OtherOut = 0 };
+
+                            }
+
+                
+
+                            return result;
+
+                        }
+        public async Task<Dictionary<DateTime, int>> FetchActualYardInventoryHistoryAsync(DateTime startDate, DateTime endDate, int initialInventory, string envName, CancellationToken cancellationToken = default)
+        {
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+            
+            // Calculate Net Change per hour
+            var changes = await _repo.GetFromSqlAsync<HourlyTeu>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT 
+                    TRUNC(m.MOV_TIME_PUT, 'HH24') as Hour,
+                    SUM(
+                    (CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END)
+                    -
+                    (CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END)
+                    ) as Teus,
+                    'Net' as Name
+                FROM TOSBRIDGE.TOS_CNTR_MOV m
+                INNER JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
+                WHERE m.MOV_TIME_PUT BETWEEN {startDate} AND {endDate}
+                  AND ( (m.MOV_FROM_TYPE != 'Y' AND m.MOV_TO_TYPE = 'Y') OR (m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE != 'Y') )
+                GROUP BY TRUNC(m.MOV_TIME_PUT, 'HH24')
+                ",
+                cancellationToken);
+
+            var result = new Dictionary<DateTime, int>();
+            int current = initialInventory;
+            
+            var changeDict = changes.ToDictionary(x => x.Hour, x => x.Teus);
+            
+            for (var t = startDate; t <= endDate; t = t.AddHours(1))
+            {
+                if (t > DateTime.Now) break;
+
+                // Apply changes that happened IN this hour to reflect inventory at end of hour (or start of next?)
+                // Usually Inventory(t) is state at t.
+                // Moves(t) are moves happening between t and t+1.
+                // So Inventory(t+1) = Inventory(t) + Moves(t).
+                
+                // Let's assume result[t] is Inventory AT t.
+                result[t] = current;
+
+                if (changeDict.TryGetValue(t, out int net))
+                {
+                    current += net;
+                }
+            }
+            // Add one more point for the end? Or just cover the range.
+            // If EndDate is inclusive hour, we usually want the state at that hour.
+            
+            return result;
+        }
+
+        private class AvgResult
+        {
+            public double AvgValue { get; set; }
+        }
+
+        public async Task<double> GetAvgTeuPerTruckAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var actualStartDate = startDate;
+            var actualEndDate = endDate;
+            if (actualStartDate > DateTime.Now)
+            {
+                actualEndDate = DateTime.Now;
+                actualStartDate = actualEndDate.AddDays(-30);
+            }
+
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+
+            var result = await _repo.GetFromSqlAsync<AvgResult>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT 
+                    CASE WHEN COUNT(DISTINCT tv.TRUCK_VISIT_ID) > 0 
+                         THEN SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) / COUNT(DISTINCT tv.TRUCK_VISIT_ID)
+                         ELSE 0 END as AvgValue
+                FROM TCPAPI.V_TRUCK_VISIT tv
+                INNER JOIN TOSBRIDGE.TOS_CNTRS c ON c.CNTR_IB_VISIT_ID = tv.TRUCK_VISIT_ID OR c.CNTR_OB_VISIT_ID = tv.TRUCK_VISIT_ID
+                WHERE tv.TRUCK_VISIT_TIME_IN BETWEEN {actualStartDate} AND {actualEndDate}",
+                cancellationToken);
+
+            return result.FirstOrDefault()?.AvgValue ?? 1.5;
         }
     }
 }

@@ -36,12 +36,6 @@
         
         <!-- Parâmetros do Algoritmo com Dicas (Hints) para Gestão -->
         <div class="col-md-2">
-            <label class="form-label" title="Quantidade de TEUs presentes no pátio no início da simulação.">
-                Estoque Inicial (TEU) <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
-            </label>
-            <input type="number" class="form-control" @bind="StateService.InitialYardTeu" />
-        </div>
-        <div class="col-md-2">
             <label class="form-label" title="Estimativa de quantos TEUs cada caminhão movimenta em média (fator de conversão Truck -> TEU).">
                 Média TEU/Caminhão <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
             </label>
@@ -243,11 +237,8 @@
             StateService.ProgressValue = 0;
             StateService.IsLoading = true;
 
-            // FIX: Só busca o estoque atual do banco se o usuário não tiver digitado nada (0)
-            if (StateService.InitialYardTeu == 0)
-            {
-                StateService.InitialYardTeu = await OracleOpsService.GetCurrentYardTeuAsync(StateService.SelectedOracleEnvironment, cts.Token);
-            }
+            // Always calculate historical start
+            var initialInventory = await OracleOpsService.GetHistoricalYardTeuAsync(StateService.StartDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Busca dados do período selecionado
             // O Service agora já cuida de buscar histórico (fallback) caso o período seja futuro
@@ -256,9 +247,26 @@
                 || StateService.CachedEndDate != StateService.EndDate
                 || StateService.CachedEnvironment != StateService.SelectedOracleEnvironment)
             {
-                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                StateService.GateTrucks = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                
+                // Fetch both actual and average gate trucks
+                var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+                
+                // Always fetch actual history
+                StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate, StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
+
+                // Merge: Use actuals if T < Now and they contain data, otherwise averages
+                StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
+                foreach(var kvp in avgGate) {
+                    if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0)) {
+                        StateService.GateTrucks[kvp.Key] = act;
+                    } else {
+                        StateService.GateTrucks[kvp.Key] = kvp.Value;
+                    }
+                }
+                
                 StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
                 StateService.CachedStartDate = StateService.StartDate;
                 StateService.CachedEndDate = StateService.EndDate;
@@ -272,30 +280,36 @@
 
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
-                var gateTruckData = gateTrucks.TryGetValue(t, out var gt) ? gt : new InOut();
-                var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : 0;
+                var gateData = gateTrucks.TryGetValue(t, out var gt) ? gt : null;
+                var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : StateService.YardMovesPerHour;
 
-                // Use separate in and out gate trucks for the hour
-                caps[t] = new OpsCaps(t, gateTruckData.In, gateTruckData.Out, yardMoveCount);
+                // Fallback for future hours if no specific gate plan is provided (assuming gateTrucks dict only has history/avg)
+                int inCap = gateData?.In ?? (StateService.GateTrucksPerHour / 2);
+                int outCap = gateData?.Out ?? (StateService.GateTrucksPerHour / 2);
+
+                caps[t] = new OpsCaps(t, inCap, outCap, yardMoveCount);
             }
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
 
-            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.SelectedOracleEnvironment, cts.Token);
-            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.SelectedOracleEnvironment, cts.Token);
+            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var avgTeuPerTruck = await OracleOpsService.GetAvgTeuPerTruckAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             StateService.VesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
             StateService.VesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
             StateService.TrainLoadRate = trainRates?.LoadRateTeusPerHour ?? 0;
             StateService.TrainUnloadRate = trainRates?.UnloadRateTeusPerHour ?? 0;
+            StateService.AvgTeuPerTruck = avgTeuPerTruck;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
                 StateService.StartDate,
                 StateService.EndDate,
-                StateService.InitialYardTeu,
+                initialInventory,
                 StateService.Vessels,
                 StateService.Rails,
                 caps,
+                StateService.ActualHistory,
                 band,
                 StateService.AvgTeuPerTruck,
                 StateService.ReserveRho,
@@ -317,6 +331,7 @@
                 MaxYardTeu = StateService.MaxYardTeu,
                 YardTeuProjection = hw.YardTeuProjection,
                 YardTeuNoGate = hw.YardTeuNoGate,
+                YardTeuRealGate = hw.YardTeuRealGate,
                 TruckIn = hw.TruckIn,
                 TruckOut = hw.TruckOut,
                 VesselIn = hw.VesselIn,
@@ -367,7 +382,22 @@
     {
         if (StateService.ChartData == null || !StateService.ChartData.Any()) return;
 
+        var now = DateTime.Now;
         var labels = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
+        
+        int nowIndex = -1;
+        double minDiff = double.MaxValue;
+        for (int i = 0; i < StateService.ChartData.Count; i++)
+        {
+            var t = DateTime.Parse(StateService.ChartData[i].Timestamp);
+            var diff = Math.Abs((t - now).TotalMinutes);
+            if (diff < minDiff)
+            {
+                minDiff = diff;
+                nowIndex = i;
+            }
+        }
+
         var dataTotalSlots = StateService.ChartData.Select(d => d.TotalSlots).ToArray();
         var dataSlotsIn = StateService.ChartData.Select(d => d.SlotsIn).ToArray();
         var dataSlotsOut = StateService.ChartData.Select(d => d.SlotsOut).ToArray();
@@ -377,6 +407,10 @@
         var yardTeuProjection = StateService.ChartData.Select(d => d.YardTeuProjection).ToArray();
 
         var yardTeuNoGate = StateService.ChartData.Select(d => d.YardTeuNoGate).ToArray();
+        var yardTeuRealGate = StateService.ChartData.Select(d => {
+            var t = DateTime.Parse(d.Timestamp);
+            return t > now ? (double?)null : d.YardTeuRealGate;
+        }).ToArray();
 
         var truckIn = StateService.ChartData.Select(d => d.TruckIn).ToArray();
         var truckOut = StateService.ChartData.Select(d => d.TruckOut).ToArray();
@@ -385,6 +419,20 @@
 
         var railIn = StateService.ChartData.Select(d => d.RailIn).ToArray();
         var railOut = StateService.ChartData.Select(d => d.RailOut).ToArray();
+        
+        int?[]? actualInventory = null;
+        if (StateService.ActualHistory != null && StateService.ActualHistory.Any())
+        {
+             actualInventory = StateService.ChartData.Select(d => {
+                var t = DateTime.Parse(d.Timestamp);
+                var normalizedT = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
+                if (normalizedT > now) return (int?)null;
+                return StateService.ActualHistory.TryGetValue(normalizedT, out var val) ? (int?)val : null;
+            }).ToArray();
+            
+            // If all values are null, it means we don't have actual data for this window (e.g. all future)
+            if (actualInventory.All(x => x == null)) actualInventory = null;
+        }
 
         // Per-class data
         var classDatasets = new List<object>();
@@ -424,13 +472,7 @@
             railsData[key] = kvp.Value.TrainNames.ToArray();
         }
 
-        var chartData = new
-        {
-            type = "line",
-            data = new
-            {
-                labels = labels,
-                datasets = new object[]
+        var datasets = new List<object>
         {
             new
             {
@@ -452,14 +494,45 @@
             },
             new
             {
-            label = "Projeção Estoque (Com Gate)", // Traduzido
+            label = "Projeção Real (Gate Atual)", // Traduzido
+            data = yardTeuRealGate,
+            borderColor = "rgb(255, 165, 0)", // Orange
+            tension = 0.4,
+            cubicInterpolationMode = "monotone",
+            pointRadius = 0
+            },
+            new
+            {
+            label = "Projeção Estoque (Otima)", // Traduzido
             data = yardTeuProjection,
             borderColor = "rgb(0, 128, 255)",
             tension = 0.4,
             cubicInterpolationMode = "monotone",
             pointRadius = 0
             },
+        };
+        
+        if (actualInventory != null)
+        {
+             datasets.Add(new
+            {
+                label = "Estoque Real (Histórico)", // Traduzido
+                data = actualInventory,
+                borderColor = "rgb(255, 99, 132)",
+                borderDash = new[] {2,2},
+                tension = 0.4,
+                cubicInterpolationMode = "monotone",
+                pointRadius = 0
+            });
         }
+
+        var chartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = datasets
             },
             options = new
             {
@@ -490,6 +563,12 @@
                     {
                         mode = "index",
                         intersect = false
+                    },
+                    verticalLine = new
+                    {
+                        index = nowIndex,
+                        color = "red",
+                        label = "Agora"
                     }
                 }
             },
@@ -498,13 +577,7 @@
         };
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
 
-        var inOutChartData = new
-        {
-            type = "line",
-            data = new
-            {
-                labels = labels,
-                datasets = new object[]
+        var inOutDatasets = new List<object>
                 {
                     new
                     {
@@ -560,7 +633,15 @@
                         cubicInterpolationMode = "monotone",
                         pointRadius = 0
                     }
-                }
+                };
+
+        var inOutChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = inOutDatasets
             },
             options = new
             {
@@ -571,6 +652,12 @@
                     {
                         mode = "index",
                         intersect = false
+                    },
+                    verticalLine = new
+                    {
+                        index = nowIndex,
+                        color = "red",
+                        label = "Agora"
                     }
                 },
                 scales = new
@@ -599,13 +686,7 @@
 
         await JSRuntime.InvokeVoidAsync("renderChart", "inOutChart", inOutChartData);
 
-        var slotsSummaryChartData = new
-        {
-            type = "line",
-            data = new
-            {
-                labels = labels,
-                datasets = new object[]
+        var slotsSummaryDatasets = new List<object>
                 {
                     new
                     {
@@ -634,7 +715,15 @@
                         cubicInterpolationMode = "monotone",
                         pointRadius = 0
                     }
-                }
+                };
+
+        var slotsSummaryChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = slotsSummaryDatasets
             },
             options = new
             {
@@ -646,6 +735,12 @@
                         mode = "index",
                         intersect = false,
                         enabled = true
+                    },
+                    verticalLine = new
+                    {
+                        index = nowIndex,
+                        color = "red",
+                        label = "Agora"
                     }
                 },
                 interaction = new
@@ -665,18 +760,26 @@
     {
         if (StateService.CapacityData == null || !StateService.CapacityData.Any()) return;
 
+        var now = DateTime.Now;
         var labels = StateService.CapacityData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
         var gateTrucksIn = StateService.CapacityData.Select(d => d.GateTrucksIn).ToArray();
         var gateTrucksOut = StateService.CapacityData.Select(d => d.GateTrucksOut).ToArray();
         var yardMoves = StateService.CapacityData.Select(d => d.YardMoves).ToArray();
 
-        var capacityChartData = new
+        int nowIndex = -1;
+        double minDiff = double.MaxValue;
+        for (int i = 0; i < StateService.CapacityData.Count; i++)
         {
-            type = "line",
-            data = new
+            var t = DateTime.Parse(StateService.CapacityData[i].Timestamp);
+            var diff = Math.Abs((t - now).TotalMinutes);
+            if (diff < minDiff)
             {
-                labels = labels,
-                datasets = new object[]
+                minDiff = diff;
+                nowIndex = i;
+            }
+        }
+
+        var capacityDatasets = new List<object>
                 {
                     new
                     {
@@ -705,7 +808,15 @@
                         cubicInterpolationMode = "monotone",
                         pointRadius = 0
                     }
-                }
+                };
+
+        var capacityChartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = capacityDatasets
             },
             options = new
             {
@@ -738,6 +849,12 @@
                     {
                         mode = "index",
                         intersect = false
+                    },
+                    verticalLine = new
+                    {
+                        index = nowIndex,
+                        color = "red",
+                        label = "Agora"
                     }
                 }
             }

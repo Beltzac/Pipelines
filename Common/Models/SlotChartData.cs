@@ -15,6 +15,7 @@ namespace Common.Models
         public int MaxYardTeu { get; set; }
         public int YardTeuProjection { get; set; }
         public int YardTeuNoGate { get; set; }
+        public int YardTeuRealGate { get; set; }
         public int TruckIn { get; set; }
         public int TruckOut { get; set; }
         public int VesselIn { get; set; }

@@ -13,8 +13,12 @@ namespace Common.Services.Interfaces
         Task<int> GetCurrentYardTeuAsync(string envName, CancellationToken cancellationToken = default);
         Task<Dictionary<DateTime, InOut>> FetchGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
         Task<Dictionary<DateTime, int>> FetchYardMovesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
-        Task<LoadUnloadRate> GetVesselLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default);
-        Task<LoadUnloadRate> GetTrainLoadUnloadRatesAsync(string envName, CancellationToken cancellationToken = default);
+        Task<LoadUnloadRate> GetVesselLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
+        Task<LoadUnloadRate> GetTrainLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
+        Task<int> GetHistoricalYardTeuAsync(DateTime targetDate, string envName, CancellationToken cancellationToken = default);
+        Task<Dictionary<DateTime, InOut>> FetchActualGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
+        Task<Dictionary<DateTime, int>> FetchActualYardInventoryHistoryAsync(DateTime startDate, DateTime endDate, int initialInventory, string envName, CancellationToken cancellationToken = default);
+        Task<double> GetAvgTeuPerTruckAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
     }
 
     public class LoadUnloadRate
@@ -31,5 +35,7 @@ namespace Common.Services.Interfaces
     {
         public int In { get; set; }
         public int Out { get; set; }
+        public int OtherIn { get; set; }
+        public int OtherOut { get; set; }
     }
 }

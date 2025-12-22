@@ -6,6 +6,51 @@ window.renderChart = (canvasId, chartData) => {
         window.slotCharts[canvasId].destroy();
     }
 
+    // Add vertical line plugin
+    const verticalLinePlugin = {
+        id: 'verticalLine',
+        afterDraw: (chart) => {
+            const pluginOptions = chart.config.options.plugins.verticalLine;
+            if (pluginOptions && pluginOptions.index !== undefined && pluginOptions.index !== -1) {
+                const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                const index = pluginOptions.index;
+                
+                if (index < 0 || !chart.data.labels || index >= chart.data.labels.length) return;
+
+                // Get X position from the first dataset's meta data
+                const meta = chart.getDatasetMeta(0);
+                if (!meta || !meta.data || !meta.data[index]) return;
+                
+                const xPos = meta.data[index].x;
+                if (isNaN(xPos) || xPos < left || xPos > right) return;
+
+                const color = pluginOptions.color || 'red';
+                const label = pluginOptions.label || '';
+
+                ctx.save();
+                ctx.strokeStyle = color;
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(xPos, top);
+                ctx.lineTo(xPos, bottom);
+                ctx.stroke();
+
+                ctx.fillStyle = color;
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(label, xPos + 5, top + 15);
+                ctx.restore();
+            }
+        }
+    };
+
+    if (!chartData.plugins) chartData.plugins = [];
+    // Check if already added to avoid duplicates
+    if (!chartData.plugins.some(p => p.id === 'verticalLine')) {
+        chartData.plugins.push(verticalLinePlugin);
+    }
+
     // Add tooltip callback if vessels or rails data is provided
     if (chartData.vessels || chartData.rails) {
         if (!chartData.options) chartData.options = {};

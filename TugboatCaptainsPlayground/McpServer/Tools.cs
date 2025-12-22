@@ -189,25 +189,199 @@ namespace TugboatCaptainsPlayground.McpServer
             }).ToList();
         }
 
-       [McpServerTool(ReadOnly = true), Description("Get object dependencies (tables/views) for a given Oracle object.")]
-       public static async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(
-           IOracleSchemaService oracleSchemaService,
-           IConfigurationService configurationService,
-           [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
-           [Description("The schema name where the object is located. Use get_oracle_schemas to get available schemas.")] string schema,
-           [Description("The name of the object (table or view).")] string objectName,
-           [Description("The type of the object (TABLE or VIEW).")] string objectType)
-       {
-           var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-           return await oracleSchemaService.GetOracleDependenciesAsync(
-               oracleEnv.ConnectionString,
-               schema,
-               objectName,
-               objectType
-           );
-       }
-
-       private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
+               [McpServerTool(ReadOnly = true), Description("Get object dependencies (tables/views) for a given Oracle object.")]
+              public static async Task<IEnumerable<OracleDependency>> GetOracleDependenciesAsync(
+                  IOracleSchemaService oracleSchemaService,
+                  IConfigurationService configurationService,
+                  [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
+                  [Description("The schema name where the object is located. Use get_oracle_schemas to get available schemas.")] string schema,
+                  [Description("The name of the object (table or view).")] string objectName,
+                  [Description("The type of the object (TABLE or VIEW).")] string objectType)
+              {
+                  var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                  return await oracleSchemaService.GetOracleDependenciesAsync(
+                      oracleEnv.ConnectionString,
+                      schema,
+                      objectName,
+                      objectType
+                  );
+              }
+       
+               [McpServerTool(ReadOnly = true), Description("Get a list of all configured MongoDB environments.")]
+               public static List<MongoEnvironment> GetMongoEnvironments(IConfigurationService configurationService)
+               {
+                   return configurationService.GetConfig().MongoEnvironments;
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Get messages from a specific MongoDB environment.")]
+               public static async Task<Dictionary<string, MongoMessage>> GetMongoMessagesAsync(
+                   IMongoMessageService mongoMessageService,
+                   IConfigurationService configurationService,
+                   [Description("The name of the MongoDB environment. Use get_mongo_environments to get available environments.")] string environmentName)
+               {
+                   var mongoEnv = configurationService.GetConfig().MongoEnvironments.FirstOrDefault(e => e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
+                   if (mongoEnv == null) throw new ArgumentException($"MongoDB environment '{environmentName}' not found.");
+       
+                   return await mongoMessageService.GetMessagesAsync(mongoEnv.ConnectionString);
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Execute an ESB query to search for execution requests.")]
+               public static async Task<(List<RequisicaoExecucao> Results, int TotalCount)> ExecuteEsbQueryAsync(
+                   IEsbService esbService,
+                   [Description("The ESB environment name.")] string environment,
+                   [Description("Start date for the search.")] DateTimeOffset? startDate = null,
+                   [Description("End date for the search.")] DateTimeOffset? endDate = null,
+                   [Description("Filter by URL.")] string? urlFilter = null,
+                   [Description("Filter by HTTP Method.")] string? httpMethod = null,
+                   [Description("Filter by generic text search.")] string? genericText = null,
+                   [Description("Filter by User ID.")] long? userId = null,
+                   [Description("Filter by Execution ID.")] int? execucaoId = null,
+                   [Description("Page size for pagination.")] int pageSize = 10,
+                   [Description("Page number for pagination.")] int pageNumber = 1,
+                   [Description("Filter by HTTP Status range (e.g., 200-299).")] string? httpStatusRange = null,
+                   [Description("Filter by Response Status.")] string? responseStatus = null,
+                   [Description("Filter by minimum delay in seconds.")] int? minDelaySeconds = null)
+               {
+                   return await esbService.ExecuteQueryAsync(environment, startDate, endDate, urlFilter, httpMethod, genericText, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus, minDelaySeconds);
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Get ESB sequences for a specific request and server.")]
+               public static async Task<string> GetEsbSequencesAsync(
+                   IEsbService esbService,
+                   IConfigurationService configurationService,
+                   [Description("The SOAP request to analyze.")] string soapRequest,
+                   [Description("The ESB server name. Use get_esb_servers to get available servers.")] string serverName)
+               {
+                   var server = configurationService.GetConfig().EsbServers.FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));
+                   if (server == null) throw new ArgumentException($"ESB server '{serverName}' not found.");
+       
+                   return await esbService.GetEsbSequencesAsync(soapRequest, server);
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Get a list of all configured ESB servers.")]
+               public static List<EsbServerConfig> GetEsbServers(IConfigurationService configurationService)
+               {
+                   return configurationService.GetConfig().EsbServers;
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Execute an SGG query to search for LTDB/LTVC records.")]
+               public static async Task<(List<LtdbLtvcRecord> Results, int TotalCount)> ExecuteSggQueryAsync(
+                   ISggService sggService,
+                   [Description("The SGG environment name.")] string environment,
+                   [Description("Start date for the search.")] DateTimeOffset? startDate = null,
+                   [Description("End date for the search.")] DateTimeOffset? endDate = null,
+                   [Description("Filter by generic text search.")] string? genericText = null,
+                   [Description("Filter by Placa.")] string? placa = null,
+                   [Description("Filter by Motorista.")] string? motorista = null,
+                   [Description("Filter by Move Type.")] string? moveType = null,
+                   [Description("Filter by Agendamento ID.")] long? idAgendamento = null,
+                   [Description("Filter by Status.")] string? status = null,
+                   [Description("Filter by minimum delay.")] double? minDelay = null,
+                   [Description("Filter by barcode.")] string? codigoBarras = null,
+                   [Description("Filter by Request ID.")] string? requestId = null,
+                   [Description("Page size for pagination.")] int pageSize = 10,
+                   [Description("Page number for pagination.")] int pageNumber = 1)
+               {
+                   var filter = new SggQueryFilter
+                   {
+                       Environment = environment,
+                       StartDate = startDate,
+                       EndDate = endDate,
+                       GenericText = genericText,
+                       Placa = placa,
+                       Motorista = motorista,
+                       MoveType = moveType,
+                       IdAgendamento = idAgendamento,
+                       Status = status,
+                       MinDelay = minDelay,
+                       CodigoBarras = codigoBarras,
+                       RequestId = requestId,
+                       PageSize = pageSize,
+                       PageNumber = pageNumber
+                   };
+                   return await sggService.ExecuteQueryAsync(filter);
+               }
+       
+               [McpServerTool(ReadOnly = true), Description("Get SGG delay metrics for the given filter.")]
+               public static async Task<List<DelayMetric>> GetSggDelayMetricsAsync(
+                   ISggService sggService,
+                   [Description("The SGG environment name.")] string environment,
+                   [Description("Start date for the search.")] DateTimeOffset? startDate = null,
+                   [Description("End date for the search.")] DateTimeOffset? endDate = null)
+               {
+                   var filter = new SggQueryFilter { Environment = environment, StartDate = startDate, EndDate = endDate };
+                               return await sggService.GetDelayMetricsAsync(filter);
+                           }
+                   
+                           [McpServerTool(ReadOnly = true), Description("Get a list of view definitions for a given Oracle schema.")]
+                           public static async Task<IEnumerable<OracleViewDefinition>> GetOracleViewDefinitionsAsync(
+                               IOracleSchemaService oracleSchemaService,
+                               IConfigurationService configurationService,
+                               [Description("The name of the Oracle environment to connect to.")] string environmentName,
+                               [Description("The schema name where the views are located.")] string schema,
+                               [Description("Optional search term to filter views by name.")] string? search = null,
+                               [Description("Page size for pagination.")] int pageSize = 100,
+                               [Description("Page number for pagination.")] int pageNumber = 1)
+                           {
+                               var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                               return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, search, pageSize, pageNumber);
+                           }
+                   
+                           [McpServerTool(ReadOnly = true), Description("Test the connection to a specific Oracle environment.")]
+                           public static async Task<OracleConnectionTestResult> TestOracleConnectionAsync(
+                               IOracleSchemaService oracleSchemaService,
+                               IConfigurationService configurationService,
+                               [Description("The name of the Oracle environment to test.")] string environmentName)
+                           {
+                               var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                               return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString);
+                           }
+                   
+                           [McpServerTool(ReadOnly = true), Description("Compare view definitions across two Oracle environments.")]
+                           public static async Task<OracleDiffResult> CompareOracleViewDefinitionsAsync(
+                               IOracleSchemaService oracleSchemaService,
+                               IConfigurationService configurationService,
+                               [Description("The name of the source Oracle environment.")] string sourceEnvironmentName,
+                               [Description("The name of the target Oracle environment.")] string targetEnvironmentName,
+                               [Description("The schema name.")] string schema,
+                               [Description("The name of the view to compare.")] string viewName)
+                           {
+                               var sourceEnv = GetOracleEnvironment(configurationService, sourceEnvironmentName);
+                               var targetEnv = GetOracleEnvironment(configurationService, targetEnvironmentName);
+                   
+                               var sourceView = await oracleSchemaService.GetViewDefinitionAsync(sourceEnv.ConnectionString, schema, viewName);
+                               var targetView = await oracleSchemaService.GetViewDefinitionAsync(targetEnv.ConnectionString, schema, viewName);
+                   
+                               return await oracleSchemaService.GetViewDiffAsync(viewName, sourceView.Definition, targetView.Definition);
+                           }
+                   
+                           [McpServerTool(ReadOnly = true), Description("Generate an EF Core mapping class for an Oracle table or view.")]
+                           public static async Task<string> GenerateOracleEfCoreMappingClassAsync(
+                               IOracleSchemaService oracleSchemaService,
+                               IConfigurationService configurationService,
+                               [Description("The name of the Oracle environment.")] string environmentName,
+                               [Description("The schema name.")] string schema,
+                               [Description("The name of the table or view.")] string objectName,
+                               [Description("The desired C# class name.")] string className)
+                           {
+                               var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                               return await oracleSchemaService.GenerateEfCoreMappingClassAsync(oracleEnv.ConnectionString, schema, objectName, className);
+                           }
+                   
+                           [McpServerTool(ReadOnly = true), Description("Generate a C# POCO class for an Oracle table or view.")]
+                           public static async Task<string> GenerateOracleCSharpClassAsync(
+                               IOracleSchemaService oracleSchemaService,
+                               IConfigurationService configurationService,
+                               [Description("The name of the Oracle environment.")] string environmentName,
+                               [Description("The schema name.")] string schema,
+                               [Description("The name of the table or view.")] string objectName,
+                               [Description("The desired C# class name.")] string className)
+                           {
+                               var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                               return await oracleSchemaService.GenerateCSharpClassAsync(oracleEnv.ConnectionString, schema, objectName, className);
+                           }
+                   
+              private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
         {
             if (string.IsNullOrWhiteSpace(environmentName))
                 throw new ArgumentException("Environment name cannot be null or empty.", nameof(environmentName));

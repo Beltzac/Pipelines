@@ -1,6 +1,5 @@
-using Common.Models;
+﻿using Common.Models;
 using Common.Services.Interfaces;
-using static Common.Services.OracleOpsService;
 
 namespace TugboatCaptainsPlayground.Services
 {
@@ -8,7 +7,6 @@ namespace TugboatCaptainsPlayground.Services
     {
         public DateTime StartDate { get; set; } = DateTime.Today.AddDays(-7);
         public DateTime EndDate { get; set; } = DateTime.Today;
-        public int InitialYardTeu { get; set; } = 500;
         public int VesselPlanCount { get; set; } = 1;
         public int RailPlanCount { get; set; } = 1;
         public int OpsCaps { get; set; } = 1;
@@ -40,6 +38,8 @@ namespace TugboatCaptainsPlayground.Services
 
         public Dictionary<DateTime, VesselPlan> Vessels { get; set; } = new();
         public Dictionary<DateTime, RailPlan> Rails { get; set; } = new();
+
+        public Dictionary<DateTime, int> ActualHistory { get; set; } = new();
 
         public double VesselLoadRate { get; set; }
         public double VesselUnloadRate { get; set; }
