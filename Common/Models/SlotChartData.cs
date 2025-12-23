@@ -22,5 +22,12 @@ namespace Common.Models
         public int VesselOut { get; set; }
         public int RailIn { get; set; }
         public int RailOut { get; set; }
+
+        public int SimVesselDiff { get; set; }
+        public int SimRailDiff { get; set; }
+        public int SimTruckDiff { get; set; }
+        public int RealVesselDiff { get; set; }
+        public int RealRailDiff { get; set; }
+        public int RealTruckDiff { get; set; }
     }
 }

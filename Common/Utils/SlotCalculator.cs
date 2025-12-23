@@ -17,7 +17,13 @@ public record HourWindow(
     int VesselIn,
     int VesselOut,
     int RailIn,
-    int RailOut
+    int RailOut,
+    int SimVesselDiff,
+    int SimRailDiff,
+    int SimTruckDiff,
+    int RealVesselDiff,
+    int RealRailDiff,
+    int RealTruckDiff
 );
 
 // Problemas:
@@ -84,6 +90,13 @@ public static class SlotCalculator
         int currentYardTeus = initialYardTeu;
         int yardTeuRealGate = initialYardTeu;
 
+        int simVesselDiff = initialYardTeu;
+        int simRailDiff = initialYardTeu;
+        int simTruckDiff = initialYardTeu;
+        int realVesselDiff = initialYardTeu;
+        int realRailDiff = initialYardTeu;
+        int realTruckDiff = initialYardTeu;
+
         // Interpolate missing caps
         var interpolatedCaps = InterpolateCaps(caps, start, end);
 
@@ -118,6 +131,14 @@ public static class SlotCalculator
             // The "Yellow/Orange" line (yardTeuRealGate) uses these projected plans + real gate data.
             int netVesselRailTeu = vesselFlow.DischargeTEU + railFlow.DischargeTEU - vesselFlow.LoadTEU - railFlow.LoadTEU;
 
+            int netVessel = vesselFlow.DischargeTEU - vesselFlow.LoadTEU;
+            int netRail = railFlow.DischargeTEU - railFlow.LoadTEU;
+
+            simVesselDiff += netVessel;
+            simRailDiff += netRail;
+            realVesselDiff += netVessel;
+            realRailDiff += netRail;
+
             currentYardTeus += netVesselRailTeu;
             yardTeuRealGate += netVesselRailTeu;
 
@@ -125,6 +146,7 @@ public static class SlotCalculator
             // In history, gateTeuInCap/OutCap are actuals. In future, they are planned capacity.
             // This line shows the "Real" impact of the gate on the planned vessel/rail schedule.
             yardTeuRealGate += gateTeuInCap - gateTeuOutCap;
+            realTruckDiff += gateTeuInCap - gateTeuOutCap;
 
             // 5. Calculate Algorithm Allocation (Blue)
             int diffTEU = band.TargetTEU - currentYardTeus;
@@ -140,6 +162,7 @@ public static class SlotCalculator
             int allocatedTeuIn = (int)(wantIn * avgTeuPerTruck);
             int allocatedTeuOut = (int)(wantOut * avgTeuPerTruck);
             currentYardTeus += allocatedTeuIn - allocatedTeuOut;
+            simTruckDiff += allocatedTeuIn - allocatedTeuOut;
 
             // 7. Record results
             results.Add(new HourWindow(
@@ -155,7 +178,13 @@ public static class SlotCalculator
                 vesselFlow.DischargeTEU,
                 vesselFlow.LoadTEU,
                 railFlow.DischargeTEU,
-                railFlow.LoadTEU
+                railFlow.LoadTEU,
+                simVesselDiff,
+                simRailDiff,
+                simTruckDiff,
+                realVesselDiff,
+                realRailDiff,
+                realTruckDiff
             ));
         }
 

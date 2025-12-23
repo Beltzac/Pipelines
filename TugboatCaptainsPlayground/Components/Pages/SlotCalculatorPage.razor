@@ -340,7 +340,13 @@
                 VesselIn = hw.VesselIn,
                 VesselOut = hw.VesselOut,
                 RailIn = hw.RailIn,
-                RailOut = hw.RailOut
+                RailOut = hw.RailOut,
+                SimVesselDiff = hw.SimVesselDiff,
+                SimRailDiff = hw.SimRailDiff,
+                SimTruckDiff = hw.SimTruckDiff,
+                RealVesselDiff = hw.RealVesselDiff,
+                RealRailDiff = hw.RealRailDiff,
+                RealTruckDiff = hw.RealTruckDiff
             }).ToList();
 
             // Store capacity data for charting
@@ -422,6 +428,13 @@
 
         var railIn = StateService.ChartData.Select(d => d.RailIn).ToArray();
         var railOut = StateService.ChartData.Select(d => d.RailOut).ToArray();
+
+        var simVesselDiff = StateService.ChartData.Select(d => d.SimVesselDiff).ToArray();
+        var simRailDiff = StateService.ChartData.Select(d => d.SimRailDiff).ToArray();
+        var simTruckDiff = StateService.ChartData.Select(d => d.SimTruckDiff).ToArray();
+        var realVesselDiff = StateService.ChartData.Select(d => d.RealVesselDiff).ToArray();
+        var realRailDiff = StateService.ChartData.Select(d => d.RealRailDiff).ToArray();
+        var realTruckDiff = StateService.ChartData.Select(d => d.RealTruckDiff).ToArray();
 
         var workLines = new List<object>();
         var chartTimestamps = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp)).ToList();
@@ -550,6 +563,63 @@
             tension = 0.4,
             cubicInterpolationMode = "monotone",
             pointRadius = 0
+            },
+            new
+            {
+                label = "Simulação (Apenas Navio)",
+                data = simVesselDiff,
+                borderColor = "rgb(0, 0, 255)",
+                borderDash = new[] { 5, 5 },
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
+            },
+            new
+            {
+                label = "Simulação (Apenas Trem)",
+                data = simRailDiff,
+                borderColor = "rgb(0, 128, 0)",
+                borderDash = new[] { 5, 5 },
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
+            },
+            new
+            {
+                label = "Simulação (Apenas Gate)",
+                data = simTruckDiff,
+                borderColor = "rgb(255, 165, 0)",
+                borderDash = new[] { 5, 5 },
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
+            },
+            new
+            {
+                label = "Real (Apenas Navio)",
+                data = realVesselDiff,
+                borderColor = "rgb(0, 0, 139)",
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
+            },
+            new
+            {
+                label = "Real (Apenas Trem)",
+                data = realRailDiff,
+                borderColor = "rgb(0, 100, 0)",
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
+            },
+            new
+            {
+                label = "Real (Apenas Gate)",
+                data = realTruckDiff,
+                borderColor = "rgb(255, 140, 0)",
+                tension = 0.4,
+                pointRadius = 0,
+                hidden = true
             },
         };
         
