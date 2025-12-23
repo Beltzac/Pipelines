@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-
-namespace Common.Models
+﻿namespace Common.Models
 {
     public class SlotChartData
     {
@@ -13,9 +10,8 @@ namespace Common.Models
         public int MinYardTeu { get; set; }
         public int TargetYardTeu { get; set; }
         public int MaxYardTeu { get; set; }
-        public int YardTeuProjection { get; set; }
-        public int YardTeuNoGate { get; set; }
-        public int YardTeuRealGate { get; set; }
+        public int YardTeuSimulated { get; set; }
+        public int YardTeuReal { get; set; }
         public int TruckIn { get; set; }
         public int TruckOut { get; set; }
         public int VesselIn { get; set; }

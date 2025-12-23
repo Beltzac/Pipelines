@@ -21,19 +21,17 @@
         <!-- Seção de Filtros e Parâmetros de Entrada -->
         <div class="col-md-4">
             <label class="form-label">Período</label>
-            <DateRangePicker
-                TimePicker="true" TimePicker24Hour="true"
-                TimePickerSeconds="true" AutoApply="true" DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
-                StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
-                class="form-control" />
+            <DateRangePicker TimePicker="true" TimePicker24Hour="true"
+                             TimePickerSeconds="true" AutoApply="true" DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
+                             StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
+                             class="form-control" />
         </div>
         <div class="col-md-3">
             <label class="form-label">Ambiente Oracle:</label>
-            <EnvironmentSelector
-                Environments="oracleEnvironments"
-                @bind-SelectedEnvironmentName="StateService.SelectedOracleEnvironment" />
+            <EnvironmentSelector Environments="oracleEnvironments"
+                                 @bind-SelectedEnvironmentName="StateService.SelectedOracleEnvironment" />
         </div>
-        
+
         <!-- Parâmetros do Algoritmo com Dicas (Hints) para Gestão -->
         <div class="col-md-2">
             <label class="form-label" title="Estimativa de quantos TEUs cada caminhão movimenta em média (fator de conversão Truck -> TEU).">
@@ -244,27 +242,31 @@
             // Removido cache para garantir dados sempre frescos
             StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            
+
             StateService.VesselSchedules = await OracleOpsService.FetchVesselSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             StateService.RailSchedules = await OracleOpsService.FetchRailSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Fetch both actual and average gate trucks
             var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            
+
             // Always fetch actual history
             StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate, StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Merge: Use actuals if T < Now and they contain data, otherwise averages
             StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
-            foreach(var kvp in avgGate) {
-                if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0)) {
+            foreach (var kvp in avgGate)
+            {
+                if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0))
+                {
                     StateService.GateTrucks[kvp.Key] = act;
-                } else {
+                }
+                else
+                {
                     StateService.GateTrucks[kvp.Key] = kvp.Value;
                 }
             }
-            
+
             StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             StateService.CachedStartDate = StateService.StartDate;
             StateService.CachedEndDate = StateService.EndDate;
@@ -312,7 +314,7 @@
                 StateService.Vessels,
                 StateService.Rails,
                 caps,
-                StateService.ActualHistory,
+                actualGate,
                 band,
                 StateService.AvgTeuPerTruck,
                 StateService.ReserveRho,
@@ -326,27 +328,32 @@
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData
             {
                 Timestamp = hw.T.ToString("o"),
-                TotalSlots = hw.TotalSlots,
-                SlotsIn = hw.SlotsIn,
-                SlotsOut = hw.SlotsOut,
+
+
+                TotalSlots = hw.Simulated.TeuTruckIn + hw.Simulated.TeuTruckOut,
+                SlotsIn = hw.Simulated.TeuTruckIn,
+                SlotsOut = hw.Simulated.TeuTruckOut,
+
                 MinYardTeu = StateService.MinYardTeu,
                 TargetYardTeu = StateService.TargetYardTeu,
                 MaxYardTeu = StateService.MaxYardTeu,
-                YardTeuProjection = hw.YardTeuProjection,
-                YardTeuNoGate = hw.YardTeuNoGate,
-                YardTeuRealGate = hw.YardTeuRealGate,
-                TruckIn = hw.TruckIn,
-                TruckOut = hw.TruckOut,
-                VesselIn = hw.VesselIn,
-                VesselOut = hw.VesselOut,
-                RailIn = hw.RailIn,
-                RailOut = hw.RailOut,
-                SimVesselDiff = hw.SimVesselDiff,
-                SimRailDiff = hw.SimRailDiff,
-                SimTruckDiff = hw.SimTruckDiff,
-                RealVesselDiff = hw.RealVesselDiff,
-                RealRailDiff = hw.RealRailDiff,
-                RealTruckDiff = hw.RealTruckDiff
+
+                YardTeuSimulated = hw.Simulated.TotalTeu,
+                YardTeuReal = hw.Real.TotalTeu,
+
+                TruckIn = hw.Real.TeuTruckIn,
+                TruckOut = hw.Real.TeuTruckOut,
+                VesselIn = hw.Real.TeuVesselIn,
+                VesselOut = hw.Real.TeuVesselOut,
+                RailIn = hw.Real.TeuRailIn,
+                RailOut = hw.Real.TeuRailOut,
+
+                SimVesselDiff = hw.Simulated.TotalTeuOnlyVessel,
+                SimRailDiff = hw.Simulated.TotalTeuOnlyRail,
+                SimTruckDiff = hw.Simulated.TotalTeuOnlyTruck,
+                RealVesselDiff = hw.Real.TotalTeuOnlyVessel,
+                RealRailDiff = hw.Real.TotalTeuOnlyRail,
+                RealTruckDiff = hw.Real.TotalTeuOnlyTruck
             }).ToList();
 
             // Store capacity data for charting
@@ -393,8 +400,8 @@
 
         var now = DateTime.Now;
         var labels = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
-        
-        int nowIndex = -1;
+
+        int? nowIndex = null;
         double minDiff = double.MaxValue;
         for (int i = 0; i < StateService.ChartData.Count; i++)
         {
@@ -410,22 +417,18 @@
         var dataTotalSlots = StateService.ChartData.Select(d => d.TotalSlots).ToArray();
         var dataSlotsIn = StateService.ChartData.Select(d => d.SlotsIn).ToArray();
         var dataSlotsOut = StateService.ChartData.Select(d => d.SlotsOut).ToArray();
+
         var minYardTeu = StateService.ChartData.Select(d => d.MinYardTeu).ToArray();
         var targetYardTeu = StateService.ChartData.Select(d => d.TargetYardTeu).ToArray();
         var maxYardTeu = StateService.ChartData.Select(d => d.MaxYardTeu).ToArray();
-        var yardTeuProjection = StateService.ChartData.Select(d => d.YardTeuProjection).ToArray();
 
-        var yardTeuNoGate = StateService.ChartData.Select(d => d.YardTeuNoGate).ToArray();
-        var yardTeuRealGate = StateService.ChartData.Select(d => {
-            var t = DateTime.Parse(d.Timestamp);
-            return t > now ? (double?)null : d.YardTeuRealGate;
-        }).ToArray();
+        var yardTeuSimulated = StateService.ChartData.Select(d => d.YardTeuSimulated).ToArray();
+        var yardTeuReal = StateService.ChartData.Select(d =>d.YardTeuReal).ToArray();
 
         var truckIn = StateService.ChartData.Select(d => d.TruckIn).ToArray();
         var truckOut = StateService.ChartData.Select(d => d.TruckOut).ToArray();
         var vesselIn = StateService.ChartData.Select(d => d.VesselIn).ToArray();
         var vesselOut = StateService.ChartData.Select(d => d.VesselOut).ToArray();
-
         var railIn = StateService.ChartData.Select(d => d.RailIn).ToArray();
         var railOut = StateService.ChartData.Select(d => d.RailOut).ToArray();
 
@@ -438,55 +441,6 @@
 
         var workLines = new List<object>();
         var chartTimestamps = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp)).ToList();
-
-        // foreach (var v in StateService.VesselSchedules)
-        // {
-        //     int startIdx = v.StartWork.HasValue ? FindClosestIndex(chartTimestamps, v.StartWork.Value) : -1;
-        //     int endIdx = v.EndWork.HasValue ? FindClosestIndex(chartTimestamps, v.EndWork.Value) : -1;
-
-        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "blue", label = $"Start: {v.VesselName}", dash = new[] { 2, 2 } });
-        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkblue", label = $"End: {v.VesselName}", dash = new[] { 2, 2 } });
-        // }
-
-        // foreach (var r in StateService.RailSchedules)
-        // {
-        //     int startIdx = r.StartWork.HasValue ? FindClosestIndex(chartTimestamps, r.StartWork.Value) : -1;
-        //     int endIdx = r.EndWork.HasValue ? FindClosestIndex(chartTimestamps, r.EndWork.Value) : -1;
-
-        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "green", label = $"Start: {r.TrainName}", dash = new[] { 2, 2 } });
-        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkgreen", label = $"End: {r.TrainName}", dash = new[] { 2, 2 } });
-        // }
-        // foreach (var v in StateService.VesselSchedules)
-        // {
-        //     int startIdx = v.StartWork.HasValue ? FindClosestIndex(chartTimestamps, v.StartWork.Value) : -1;
-        //     int endIdx = v.EndWork.HasValue ? FindClosestIndex(chartTimestamps, v.EndWork.Value) : -1;
-
-        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "blue", label = $"Start: {v.VesselName}", dash = new[] { 2, 2 } });
-        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkblue", label = $"End: {v.VesselName}", dash = new[] { 2, 2 } });
-        // }
-
-        // foreach (var r in StateService.RailSchedules)
-        // {
-        //     int startIdx = r.StartWork.HasValue ? FindClosestIndex(chartTimestamps, r.StartWork.Value) : -1;
-        //     int endIdx = r.EndWork.HasValue ? FindClosestIndex(chartTimestamps, r.EndWork.Value) : -1;
-
-        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "green", label = $"Start: {r.TrainName}", dash = new[] { 2, 2 } });
-        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkgreen", label = $"End: {r.TrainName}", dash = new[] { 2, 2 } });
-        // }
-
-        int?[]? actualInventory = null;
-        if (StateService.ActualHistory != null && StateService.ActualHistory.Any())
-        {
-             actualInventory = StateService.ChartData.Select(d => {
-                var t = DateTime.Parse(d.Timestamp);
-                var normalizedT = new DateTime(t.Year, t.Month, t.Day, t.Hour, 0, 0);
-                if (normalizedT > now) return (int?)null;
-                return StateService.ActualHistory.TryGetValue(normalizedT, out var val) ? (int?)val : null;
-            }).ToArray();
-            
-            // If all values are null, it means we don't have actual data for this window (e.g. all future)
-            if (actualInventory.All(x => x == null)) actualInventory = null;
-        }
 
         // Per-class data
         var classDatasets = new List<object>();
@@ -530,39 +484,30 @@
         {
             new
             {
-            label = "Meta de Estoque (Target)", // Traduzido
-            data = targetYardTeu,
-            borderColor = "rgba(0,128,0,0.5)",
-            borderDash = new[] {5,5},
-            pointRadius = 0,
-            fill = false
+                label = "Meta de Estoque (Target)", // Traduzido
+                data = targetYardTeu,
+                borderColor = "rgba(0,128,0,0.5)",
+                borderDash = new[] {5,5},
+                pointRadius = 0,
+                fill = false
             },
             new
             {
-            label = "Projeção Estoque (Sem Gate)", // Traduzido
-            data = yardTeuNoGate,
-            borderColor = "rgb(128,128,128)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
+                label = "Projeção Estoque Real", // Traduzido
+                data = yardTeuReal,
+                borderColor = "rgb(255, 165, 0)", // Orange
+                tension = 0.4,
+                cubicInterpolationMode = "monotone",
+                pointRadius = 0
             },
             new
             {
-            label = "Projeção Real (Gate Atual)", // Traduzido
-            data = yardTeuRealGate,
-            borderColor = "rgb(255, 165, 0)", // Orange
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
-            },
-            new
-            {
-            label = "Projeção Estoque (Ótima)", // Traduzido
-            data = yardTeuProjection,
-            borderColor = "rgb(0, 128, 255)",
-            tension = 0.4,
-            cubicInterpolationMode = "monotone",
-            pointRadius = 0
+                label = "Projeção Estoque Simulada", // Traduzido
+                data = yardTeuSimulated,
+                borderColor = "rgb(0, 128, 255)",
+                tension = 0.4,
+                cubicInterpolationMode = "monotone",
+                pointRadius = 0
             },
             new
             {
@@ -622,20 +567,6 @@
                 hidden = true
             },
         };
-        
-        if (actualInventory != null)
-        {
-             datasets.Add(new
-            {
-                label = "Estoque Real (Histórico)", // Traduzido
-                data = actualInventory,
-                borderColor = "rgb(255, 99, 132)",
-                borderDash = new[] {2,2},
-                tension = 0.4,
-                cubicInterpolationMode = "monotone",
-                pointRadius = 0
-            });
-        }
 
         var chartData = new
         {
@@ -978,10 +909,10 @@
     private int FindClosestIndex(List<DateTime> timestamps, DateTime target)
     {
         if (timestamps == null || !timestamps.Any()) return -1;
-        
+
         int closestIndex = -1;
         double minDiff = double.MaxValue;
-        
+
         for (int i = 0; i < timestamps.Count; i++)
         {
             var diff = Math.Abs((timestamps[i] - target).TotalMinutes);
@@ -991,7 +922,7 @@
                 closestIndex = i;
             }
         }
-        
+
         // Only return if it's reasonably close (e.g. within 30 mins of the hour slot)
         return minDiff <= 30 ? closestIndex : -1;
     }

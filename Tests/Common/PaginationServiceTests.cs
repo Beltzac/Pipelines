@@ -24,6 +24,62 @@ namespace Tests.Common
         }
 
         [Test]
+        public void ComputeHourWindows_UsesActualFlowsForRealData()
+        {
+            // Arrange
+            var start = new DateTime(2025, 1, 1, 10, 0, 0);
+            var end = new DateTime(2025, 1, 1, 12, 0, 0);
+            int initialYardTeu = 1000;
+            var vessels = new Dictionary<DateTime, VesselPlan>();
+            var rails = new Dictionary<DateTime, RailPlan>();
+            var caps = new Dictionary<DateTime, OpsCaps>
+            {
+                [start] = new OpsCaps(start, 10, 10, 100),
+                [start.AddHours(1)] = new OpsCaps(start.AddHours(1), 10, 10, 100),
+                [end] = new OpsCaps(end, 10, 10, 100)
+            };
+            var actualFlows = new Dictionary<DateTime, InOut>
+            {
+                [start] = new InOut { In = 50, Out = 20, VesselIn = 100, VesselOut = 50, RailIn = 30, RailOut = 10 },
+                [start.AddHours(1)] = new InOut { In = 40, Out = 30, VesselIn = 0, VesselOut = 0, RailIn = 0, RailOut = 0 }
+            };
+            var band = new YardBand(500, 1000, 1500);
+            double avgTeuPerTruck = 1.5;
+
+            // Act
+            var results = SlotCalculator.ComputeHourWindows(
+                start, end, initialYardTeu, vessels, rails, caps, actualFlows,
+                band, avgTeuPerTruck, 0.1, 0.5, 100, 100, 50, 50).ToList();
+
+            // Assert
+            results.Should().HaveCount(3);
+
+            // Hour 1 (start)
+            var h1 = results[0];
+            h1.T.Should().Be(start);
+            // realTeu for h1 should be initialYardTeu + h1 flows
+            // h1 flows: In=50, Out=20, VesselIn=100, VesselOut=50, RailIn=30, RailOut=10. Net = 50-20+100-50+30-10 = 100.
+            // So 1000 + 100 = 1100.
+            h1.Real.TotalTeu.Should().Be(1100);
+            h1.Real.TeuTruckIn.Should().Be(50);
+            h1.Real.TeuTruckOut.Should().Be(20);
+            h1.Real.TeuVesselIn.Should().Be(100);
+            h1.Real.TeuVesselOut.Should().Be(50);
+            h1.Real.TeuRailIn.Should().Be(30);
+            h1.Real.TeuRailOut.Should().Be(10);
+
+            // Hour 2 (start + 1h)
+            var h2 = results[1];
+            h2.T.Should().Be(start.AddHours(1));
+            // realTeu for h2 should be h1.Real.TotalTeu + h2 flows
+            // h2 flows: In=40, Out=30, others=0. Net = +10.
+            // So 1100 + 10 = 1110.
+            h2.Real.TotalTeu.Should().Be(1110);
+            h2.Real.TeuTruckIn.Should().Be(40);
+            h2.Real.TeuTruckOut.Should().Be(30);
+        }
+
+        [Test]
         public async Task InitializeAsync_LoadsSourceAndTargetValues()
         {
             // Arrange

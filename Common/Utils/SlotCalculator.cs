@@ -1,29 +1,33 @@
+﻿using Common.Services.Interfaces;
+
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU, List<string> VesselNames);
 public record RailPlan(DateTime T, int InTEU, int OutTEU, List<string> TrainNames);
 public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour, int VesselIn = 0, int VesselOut = 0, int RailIn = 0, int RailOut = 0, int OtherIn = 0, int OtherOut = 0);
 public record YardBand(int MinTEU, int TargetTEU, int MaxTEU);
 
 public record DistributeLoadUnload(DateTime T, int DischargeTEU, int LoadTEU);
+
 public record HourWindow(
     DateTime T,
-    int TotalSlots,
-    int SlotsIn,
-    int SlotsOut,
-    int YardTeuProjection,
-    int YardTeuNoGate,
-    int YardTeuRealGate,
-    int TruckIn,
-    int TruckOut,
-    int VesselIn,
-    int VesselOut,
-    int RailIn,
-    int RailOut,
-    int SimVesselDiff,
-    int SimRailDiff,
-    int SimTruckDiff,
-    int RealVesselDiff,
-    int RealRailDiff,
-    int RealTruckDiff
+    HourWindowData Real,
+    HourWindowData Simulated
+);
+
+public record HourWindowData(
+    int TotalTeu,
+
+    int TotalTeuOnlyVessel,
+    int TotalTeuOnlyRail,
+    int TotalTeuOnlyTruck,
+
+    int TeuTruckIn,
+    int TeuTruckOut,
+
+    int TeuVesselIn,
+    int TeuVesselOut,
+
+    int TeuRailIn,
+    int TeuRailOut
 );
 
 // Problemas:
@@ -60,7 +64,7 @@ public static class SlotCalculator
         Dictionary<DateTime, VesselPlan> vessels,
         Dictionary<DateTime, RailPlan> rails,
         Dictionary<DateTime, OpsCaps> caps,
-        Dictionary<DateTime, int> actualHistory,
+        Dictionary<DateTime, InOut> actualFlows,
         YardBand band,
         double avgTeuPerTruck,
         double reserveRho,
@@ -76,115 +80,105 @@ public static class SlotCalculator
 
         var now = DateTime.Now;
         var vesselTeus = vessels.ToDictionary(kv => kv.Key, kv => (kv.Value.DischargeTEU, kv.Value.LoadTEU));
-        var distributedVessels = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end);
+        var distributedVesselsSim = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end);
 
         var railTeus = rails.ToDictionary(kv => kv.Key, kv => (kv.Value.InTEU, kv.Value.OutTEU));
-        var distributedRails = DistributeTeusOverTime(railTeus, railLoadRate, railUnloadRate, start, end);
-
-
-        // Forecast yard occupancy *without trucks*
-        var O_noGate = ForecastYardNoGate(start, end, initialYardTeu, distributedVessels, distributedRails);
+        var distributedRailsSim = DistributeTeusOverTime(railTeus, railLoadRate, railUnloadRate, start, end);
 
         // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
-        int currentYardTeus = initialYardTeu;
-        int yardTeuRealGate = initialYardTeu;
 
-        int simVesselDiff = initialYardTeu;
-        int simRailDiff = initialYardTeu;
-        int simTruckDiff = initialYardTeu;
-        int realVesselDiff = initialYardTeu;
-        int realRailDiff = initialYardTeu;
-        int realTruckDiff = initialYardTeu;
+        int realTeu = initialYardTeu;
+        int simTeu = initialYardTeu;
+
+        int simTeuVesselDiff = initialYardTeu;
+        int simTeuRailDiff = initialYardTeu;
+        int simTeuTruckDiff = initialYardTeu;
+        int realTeuVesselDiff = initialYardTeu;
+        int realTeuRailDiff = initialYardTeu;
+        int realTeuTruckDiff = initialYardTeu;
 
         // Interpolate missing caps
+        // CAPS ARE THE MAXIMUN, NOT THE REAL DATA
         var interpolatedCaps = InterpolateCaps(caps, start, end);
 
         for (var t = start; t <= end; t = t.AddHours(1))
         {
-            var isHistory = t < now;
             var cap = interpolatedCaps[t];
 
-            // 1. Determine Gate Capacity/Actuals in TEUs and Trucks
-            // In history, cap holds actual gate moves (already in TEUs). 
-            // In future, it holds planned capacity (in trucks).
-            int gateTeuInCap = isHistory ? cap.GateTrucksInPerHour : (int)(cap.GateTrucksInPerHour * avgTeuPerTruck);
-            int gateTeuOutCap = isHistory ? cap.GateTrucksOutPerHour : (int)(cap.GateTrucksOutPerHour * avgTeuPerTruck);
-            
-            int gateTrucksInCap = isHistory ? (int)(cap.GateTrucksInPerHour / avgTeuPerTruck) : cap.GateTrucksInPerHour;
-            int gateTrucksOutCap = isHistory ? (int)(cap.GateTrucksOutPerHour / avgTeuPerTruck) : cap.GateTrucksOutPerHour;
+            int gateTeuInCap = (int)Math.Round(cap.GateTrucksInPerHour * avgTeuPerTruck);
+            int gateTeuOutCap = (int)Math.Round(cap.GateTrucksOutPerHour * avgTeuPerTruck);
 
-            // 2. Calculate available truck slots based on bottlenecks
-            // YardMovesPerHour is in moves (approx trucks).
-            int yardTrucksCap = (int)Math.Floor(cap.YardMovesPerHour / avgTeuPerTruck);
-            int totalGateTrucksCap = gateTrucksInCap + gateTrucksOutCap;
-            int rawTruckSlots = Math.Min(totalGateTrucksCap, yardTrucksCap);
-            int totalTruckSlots = Math.Max(0, (int)Math.Floor((1.0 - reserveRho) * rawTruckSlots));
-            
-            var vesselFlow = distributedVessels.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
-            var railFlow = distributedRails.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
+            var vesselFlowSim = distributedVesselsSim.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
+            var railFlowSim = distributedRailsSim.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
 
-            // 3. Update Projections with Vessel and Rail flows (always in TEUs)
-            // We use the distributed (projected) plans for both historical and future periods.
-            // This allows comparing how the planned vessel/rail schedule + real gate data 
-            // performs against the actual historical inventory.
-            // The "Yellow/Orange" line (yardTeuRealGate) uses these projected plans + real gate data.
-            int netVesselRailTeu = vesselFlow.DischargeTEU + railFlow.DischargeTEU - vesselFlow.LoadTEU - railFlow.LoadTEU;
+            simTeu += vesselFlowSim.DischargeTEU + railFlowSim.DischargeTEU - vesselFlowSim.LoadTEU - railFlowSim.LoadTEU;
 
-            int netVessel = vesselFlow.DischargeTEU - vesselFlow.LoadTEU;
-            int netRail = railFlow.DischargeTEU - railFlow.LoadTEU;
-
-            simVesselDiff += netVessel;
-            simRailDiff += netRail;
-            realVesselDiff += netVessel;
-            realRailDiff += netRail;
-
-            currentYardTeus += netVesselRailTeu;
-            yardTeuRealGate += netVesselRailTeu;
-
-            // 4. Update Real Gate Projection (Orange/Yellow) using full capacity/actuals
-            // In history, gateTeuInCap/OutCap are actuals. In future, they are planned capacity.
-            // This line shows the "Real" impact of the gate on the planned vessel/rail schedule.
-            yardTeuRealGate += gateTeuInCap - gateTeuOutCap;
-            realTruckDiff += gateTeuInCap - gateTeuOutCap;
-
-            // 5. Calculate Algorithm Allocation (Blue)
-            int diffTEU = band.TargetTEU - currentYardTeus;
+            int diffTEU = band.TargetTEU - simTeu;
             double biasFactor = (band.MaxTEU != band.MinTEU) ? (double)diffTEU / (band.MaxTEU - band.MinTEU) : 0.0;
 
-            var (allocatedIn, allocatedOut) = ApplyEasing(totalTruckSlots, biasFactor, easingStrength);
+            var (allocatedTeuIn, allocatedTeuOut) = ApplyEasing(gateTeuInCap + gateTeuOutCap, biasFactor, easingStrength);
 
-            // Cap allocated slots to individual capacities
-            int wantIn = Math.Max(0, Math.Min(allocatedIn, gateTrucksInCap));
-            int wantOut = Math.Max(0, Math.Min(allocatedOut, gateTrucksOutCap));
+            simTeu += allocatedTeuIn - allocatedTeuOut;
 
-            // 6. Update Algorithm Projection (Blue) using allocated slots
-            int allocatedTeuIn = (int)(wantIn * avgTeuPerTruck);
-            int allocatedTeuOut = (int)(wantOut * avgTeuPerTruck);
-            currentYardTeus += allocatedTeuIn - allocatedTeuOut;
-            simTruckDiff += allocatedTeuIn - allocatedTeuOut;
+            simTeuTruckDiff += allocatedTeuIn - allocatedTeuOut;
+            simTeuVesselDiff += vesselFlowSim.DischargeTEU - vesselFlowSim.LoadTEU;
+            simTeuRailDiff += railFlowSim.DischargeTEU - railFlowSim.LoadTEU;
+
+            // Real data processing
+            var flow = actualFlows.TryGetValue(t, out var f) ? f : new InOut();
+            
+            // Actual flows are already in TEUs from OracleOpsService.FetchActualGateTrucksAsync
+            int realTeuTruckIn = flow.In;
+            int realTeuTruckOut = flow.Out;
+            int realTeuVesselIn = flow.VesselIn;
+            int realTeuVesselOut = flow.VesselOut;
+            int realTeuRailIn = flow.RailIn;
+            int realTeuRailOut = flow.RailOut;
+
+            realTeuTruckDiff += realTeuTruckIn - realTeuTruckOut;
+            realTeuVesselDiff += realTeuVesselIn - realTeuVesselOut;
+            realTeuRailDiff += realTeuRailIn - realTeuRailOut;
+
+            // Calculate realTeu based on flows
+            realTeu += (realTeuTruckIn - realTeuTruckOut) + 
+                       (realTeuVesselIn - realTeuVesselOut) + 
+                       (realTeuRailIn - realTeuRailOut) +
+                       (flow.OtherIn - flow.OtherOut);
+
+            var real = new HourWindowData
+            (
+                realTeu,
+                realTeuVesselDiff,
+                realTeuRailDiff,
+                realTeuTruckDiff,
+                realTeuTruckIn,
+                realTeuTruckOut,
+                realTeuVesselIn,
+                realTeuVesselOut,
+                realTeuRailIn,
+                realTeuRailOut
+            );
+
+            var simulation = new HourWindowData
+            (
+                simTeu,
+                simTeuVesselDiff,
+                simTeuRailDiff,
+                simTeuTruckDiff,
+                allocatedTeuIn,
+                allocatedTeuOut,
+                vesselFlowSim.DischargeTEU,
+                vesselFlowSim.LoadTEU,
+                railFlowSim.DischargeTEU,
+                railFlowSim.LoadTEU
+            );
 
             // 7. Record results
             results.Add(new HourWindow(
                 t,
-                isHistory ? totalGateTrucksCap : totalTruckSlots,
-                isHistory ? gateTrucksInCap : wantIn,
-                isHistory ? gateTrucksOutCap : wantOut,
-                currentYardTeus,
-                O_noGate.TryGetValue(t, out var gate) ? gate : 0,
-                yardTeuRealGate,
-                isHistory ? gateTeuInCap : allocatedTeuIn,
-                isHistory ? gateTeuOutCap : allocatedTeuOut,
-                vesselFlow.DischargeTEU,
-                vesselFlow.LoadTEU,
-                railFlow.DischargeTEU,
-                railFlow.LoadTEU,
-                simVesselDiff,
-                simRailDiff,
-                simTruckDiff,
-                realVesselDiff,
-                realRailDiff,
-                realTruckDiff
+                real,
+                simulation
             ));
         }
 
@@ -194,7 +188,7 @@ public static class SlotCalculator
     private static Dictionary<DateTime, OpsCaps> InterpolateCaps(Dictionary<DateTime, OpsCaps> originalCaps, DateTime start, DateTime end)
     {
         var interpolatedCaps = new Dictionary<DateTime, OpsCaps>();
-        
+
         // Copy existing caps
         foreach (var kvp in originalCaps)
         {
@@ -209,7 +203,7 @@ public static class SlotCalculator
                 // Find previous and next available caps
                 OpsCaps? previousCap = null;
                 OpsCaps? nextCap = null;
-                
+
                 // Search backwards
                 var prevTime = t.AddHours(-1);
                 while (prevTime >= start && previousCap == null)
@@ -283,25 +277,6 @@ public static class SlotCalculator
         return (int)Math.Round(a + (b - a) * factor);
     }
 
-    /// <summary>
-    /// Forecasts yard occupancy without considering gate operations.
-    /// </summary>
-    private static Dictionary<DateTime, int> ForecastYardNoGate(
-    DateTime start, DateTime end, int O0,
-    IReadOnlyDictionary<DateTime, DistributeLoadUnload> vessels,
-    IReadOnlyDictionary<DateTime, DistributeLoadUnload> rails)
-    {
-        var res = new Dictionary<DateTime, int>();
-        int cur = O0;
-        for (var t = start; t <= end; t = t.AddHours(1))
-        {
-            var v = vessels.TryGetValue(t, out var vp) ? vp : new DistributeLoadUnload(t, 0, 0);
-            var r = rails.TryGetValue(t, out var rp) ? rp : new DistributeLoadUnload(t, 0, 0);
-            cur = cur + v.DischargeTEU + r.DischargeTEU - v.LoadTEU - r.LoadTEU;
-            res[t] = cur;
-        }
-        return res;
-    }
 
     /// <summary>
     /// Applies an easing function to distribute remaining slots based on a bias factor.
@@ -327,7 +302,7 @@ public static class SlotCalculator
         //double shareInLinear = t;
 
         // Cosine easing share: smooth nonlinear curve
-        double shareInEased = PowerRatio(t, (1-easingStrength) * 10);
+        double shareInEased = PowerRatio(t, (1 - easingStrength) * 10);
 
         // Blend linear and eased shares
         double shareIn = shareInEased;
@@ -396,12 +371,12 @@ public static class SlotCalculator
     )
     {
         var distributed = new Dictionary<DateTime, DistributeLoadUnload>();
-    
+
         foreach (var entry in hourlyInputs)
         {
             var time = entry.Key;
             var (inTeus, outTeus) = entry.Value;
-    
+
             // Distribute incoming TEUs
             int remainingIn = inTeus;
             int hourOffsetIn = 0;
@@ -409,7 +384,7 @@ public static class SlotCalculator
             {
                 var currentHour = time.AddHours(hourOffsetIn);
                 if (currentHour > end) break;
-    
+
                 int teusThisHour = (int)Math.Min(remainingIn, unloadRate);
                 if (!distributed.ContainsKey(currentHour))
                 {
@@ -419,7 +394,7 @@ public static class SlotCalculator
                 remainingIn -= teusThisHour;
                 hourOffsetIn++;
             }
-    
+
             // Distribute outgoing TEUs
             int remainingOut = outTeus;
             int hourOffsetOut = 0;
@@ -427,7 +402,7 @@ public static class SlotCalculator
             {
                 var currentHour = time.AddHours(hourOffsetOut);
                 if (currentHour > end) break;
-    
+
                 int teusThisHour = (int)Math.Min(remainingOut, loadRate);
                 if (!distributed.ContainsKey(currentHour))
                 {
@@ -438,7 +413,7 @@ public static class SlotCalculator
                 hourOffsetOut++;
             }
         }
-    
+
         return distributed;
     }
 
