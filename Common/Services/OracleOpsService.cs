@@ -53,27 +53,27 @@ namespace Common.Services
             var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+            SELECT TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
              FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-             WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
                AND c.CNTR_CATEGORY != 'H'
-             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+             GROUP BY TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24')",
                 cancellationToken);
 
             var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
+            SELECT TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
              FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-             WHERE vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
                AND c.CNTR_CATEGORY != 'H'
-             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
+             GROUP BY TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24')",
                 cancellationToken);
 
             var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();
@@ -568,6 +568,56 @@ namespace Common.Services
                 cancellationToken);
 
             return result.FirstOrDefault()?.AvgValue ?? 2.5;
+        }
+
+        public async Task<double> GetAvgVesselLagHoursAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var actualStartDate = startDate;
+            var actualEndDate = endDate;
+            if (actualStartDate > DateTime.Now)
+            {
+                actualEndDate = DateTime.Now;
+                actualStartDate = actualEndDate.AddDays(-30);
+            }
+
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+
+            var result = await _repo.GetFromSqlAsync<AvgResult>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT AVG((VESSEL_VISIT_START_WORK - VESSEL_VISIT_ETB) * 24) as AvgValue
+                FROM TOSBRIDGE.TOS_VESSEL_VISIT
+                WHERE VESSEL_VISIT_ETB BETWEEN {actualStartDate} AND {actualEndDate}
+                  AND VESSEL_VISIT_START_WORK IS NOT NULL
+                  AND VESSEL_VISIT_START_WORK > VESSEL_VISIT_ETB",
+                cancellationToken);
+
+            return result.FirstOrDefault()?.AvgValue ?? 2.0;
+        }
+
+        public async Task<double> GetAvgRailLagHoursAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var actualStartDate = startDate;
+            var actualEndDate = endDate;
+            if (actualStartDate > DateTime.Now)
+            {
+                actualEndDate = DateTime.Now;
+                actualStartDate = actualEndDate.AddDays(-30);
+            }
+
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+
+            var result = await _repo.GetFromSqlAsync<AvgResult>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT AVG((TRAIN_VISIT_START_WORK - TRAIN_VISIT_ARRIVE) * 24) as AvgValue
+                FROM TOSBRIDGE.TOS_TRAIN_VISIT
+                WHERE TRAIN_VISIT_ARRIVE BETWEEN {actualStartDate} AND {actualEndDate}
+                  AND TRAIN_VISIT_START_WORK IS NOT NULL
+                  AND TRAIN_VISIT_START_WORK > TRAIN_VISIT_ARRIVE",
+                cancellationToken);
+
+            return result.FirstOrDefault()?.AvgValue ?? 1.0;
         }
 
         public async Task<List<VesselSchedule>> FetchVesselSchedulesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)

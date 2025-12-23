@@ -100,11 +100,13 @@
                 <h6>Taxas de Navio (Vessel)</h6>
                 <p>Embarque: @StateService.VesselLoadRate.ToString("F2") TEU/h</p>
                 <p>Descarga: @StateService.VesselUnloadRate.ToString("F2") TEU/h</p>
+                <p>Lag Médio: @StateService.VesselLagHours.ToString("F1") h</p>
             </div>
             <div class="col-md-6">
                 <h6>Taxas de Trem (Rail)</h6>
                 <p>Embarque: @StateService.TrainLoadRate.ToString("F2") TEU/h</p>
                 <p>Descarga: @StateService.TrainUnloadRate.ToString("F2") TEU/h</p>
+                <p>Lag Médio: @StateService.RailLagHours.ToString("F1") h</p>
             </div>
         </div>
     </div>
@@ -300,12 +302,16 @@
             var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             var avgTeuPerTruck = await OracleOpsService.GetAvgTeuPerTruckAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var avgVesselLag = await OracleOpsService.GetAvgVesselLagHoursAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var avgRailLag = await OracleOpsService.GetAvgRailLagHoursAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             StateService.VesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
             StateService.VesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
             StateService.TrainLoadRate = trainRates?.LoadRateTeusPerHour ?? 0;
             StateService.TrainUnloadRate = trainRates?.UnloadRateTeusPerHour ?? 0;
             StateService.AvgTeuPerTruck = avgTeuPerTruck;
+            StateService.VesselLagHours = avgVesselLag;
+            StateService.RailLagHours = avgRailLag;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
                 StateService.StartDate,
@@ -322,7 +328,9 @@
                 StateService.VesselLoadRate,
                 StateService.VesselUnloadRate,
                 StateService.TrainLoadRate,
-                StateService.TrainUnloadRate
+                StateService.TrainUnloadRate,
+                StateService.VesselLagHours,
+                StateService.RailLagHours
             ).ToList();
 
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData

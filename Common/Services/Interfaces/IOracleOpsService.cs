@@ -19,6 +19,8 @@ namespace Common.Services.Interfaces
         Task<Dictionary<DateTime, InOut>> FetchActualGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
         Task<Dictionary<DateTime, int>> FetchActualYardInventoryHistoryAsync(DateTime startDate, DateTime endDate, int initialInventory, string envName, CancellationToken cancellationToken = default);
         Task<double> GetAvgTeuPerTruckAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
+        Task<double> GetAvgVesselLagHoursAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
+        Task<double> GetAvgRailLagHoursAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
         Task<List<VesselSchedule>> FetchVesselSchedulesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
         Task<List<RailSchedule>> FetchRailSchedulesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default);
     }

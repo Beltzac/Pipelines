@@ -72,7 +72,9 @@ public static class SlotCalculator
         double vesselLoadRate,
         double vesselUnloadRate,
         double railLoadRate,
-        double railUnloadRate
+        double railUnloadRate,
+        double vesselLagHours = 0,
+        double railLagHours = 0
     )
     {
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
@@ -80,10 +82,10 @@ public static class SlotCalculator
 
         var now = DateTime.Now;
         var vesselTeus = vessels.ToDictionary(kv => kv.Key, kv => (kv.Value.DischargeTEU, kv.Value.LoadTEU));
-        var distributedVesselsSim = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end);
+        var distributedVesselsSim = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end, vesselLagHours);
 
         var railTeus = rails.ToDictionary(kv => kv.Key, kv => (kv.Value.InTEU, kv.Value.OutTEU));
-        var distributedRailsSim = DistributeTeusOverTime(railTeus, railLoadRate, railUnloadRate, start, end);
+        var distributedRailsSim = DistributeTeusOverTime(railTeus, railLoadRate, railUnloadRate, start, end, railLagHours);
 
         // Track yard state dynamically responding to in/out slots
         var results = new List<HourWindow>();
@@ -109,6 +111,28 @@ public static class SlotCalculator
             int gateTeuInCap = (int)Math.Round(cap.GateTrucksInPerHour * avgTeuPerTruck);
             int gateTeuOutCap = (int)Math.Round(cap.GateTrucksOutPerHour * avgTeuPerTruck);
 
+            // Real data processing
+            var flow = actualFlows.TryGetValue(t, out var f) ? f : new InOut();
+
+            // Actual flows are already in TEUs from OracleOpsService.FetchActualGateTrucksAsync
+            int realTeuTruckIn = flow.In;
+            int realTeuTruckOut = flow.Out;
+            int realTeuVesselIn = flow.VesselIn;
+            int realTeuVesselOut = flow.VesselOut;
+            int realTeuRailIn = flow.RailIn;
+            int realTeuRailOut = flow.RailOut;
+
+            realTeuTruckDiff += realTeuTruckIn - realTeuTruckOut;
+            realTeuVesselDiff += realTeuVesselIn - realTeuVesselOut;
+            realTeuRailDiff += realTeuRailIn - realTeuRailOut;
+
+            // Calculate realTeu based on flows
+            realTeu += (realTeuTruckIn - realTeuTruckOut) +
+                       (realTeuVesselIn - realTeuVesselOut) +
+                       (realTeuRailIn - realTeuRailOut) +
+                       (flow.OtherIn - flow.OtherOut);
+
+            // Simulation data processing
             var vesselFlowSim = distributedVesselsSim.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
             var railFlowSim = distributedRailsSim.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
 
@@ -124,27 +148,6 @@ public static class SlotCalculator
             simTeuTruckDiff += allocatedTeuIn - allocatedTeuOut;
             simTeuVesselDiff += vesselFlowSim.DischargeTEU - vesselFlowSim.LoadTEU;
             simTeuRailDiff += railFlowSim.DischargeTEU - railFlowSim.LoadTEU;
-
-            // Real data processing
-            var flow = actualFlows.TryGetValue(t, out var f) ? f : new InOut();
-            
-            // Actual flows are already in TEUs from OracleOpsService.FetchActualGateTrucksAsync
-            int realTeuTruckIn = flow.In;
-            int realTeuTruckOut = flow.Out;
-            int realTeuVesselIn = flow.VesselIn;
-            int realTeuVesselOut = flow.VesselOut;
-            int realTeuRailIn = flow.RailIn;
-            int realTeuRailOut = flow.RailOut;
-
-            realTeuTruckDiff += realTeuTruckIn - realTeuTruckOut;
-            realTeuVesselDiff += realTeuVesselIn - realTeuVesselOut;
-            realTeuRailDiff += realTeuRailIn - realTeuRailOut;
-
-            // Calculate realTeu based on flows
-            realTeu += (realTeuTruckIn - realTeuTruckOut) + 
-                       (realTeuVesselIn - realTeuVesselOut) + 
-                       (realTeuRailIn - realTeuRailOut) +
-                       (flow.OtherIn - flow.OtherOut);
 
             var real = new HourWindowData
             (
@@ -367,50 +370,67 @@ public static class SlotCalculator
         double loadRate, // teus per hour
         double unloadRate, // teus per hour
         DateTime start,
-        DateTime end
+        DateTime end,
+        double lagHours = 0
     )
     {
         var distributed = new Dictionary<DateTime, DistributeLoadUnload>();
+        int roundedLag = 0;// (int)Math.Round(lagHours);
 
         foreach (var entry in hourlyInputs)
         {
-            var time = entry.Key;
+            var time = entry.Key.AddHours(roundedLag);
             var (inTeus, outTeus) = entry.Value;
 
-            // Distribute incoming TEUs
+            // Distribute incoming TEUs (Discharge)
             int remainingIn = inTeus;
             int hourOffsetIn = 0;
             while (remainingIn > 0)
             {
                 var currentHour = time.AddHours(hourOffsetIn);
-                if (currentHour > end) break;
 
                 int teusThisHour = (int)Math.Min(remainingIn, unloadRate);
-                if (!distributed.ContainsKey(currentHour))
+
+                if (currentHour >= start && currentHour <= end)
                 {
-                    distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                    if (!distributed.ContainsKey(currentHour))
+                    {
+                        distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                    }
+                    distributed[currentHour] = distributed[currentHour] with { DischargeTEU = distributed[currentHour].DischargeTEU + teusThisHour };
                 }
-                distributed[currentHour] = distributed[currentHour] with { DischargeTEU = distributed[currentHour].DischargeTEU + teusThisHour };
+
                 remainingIn -= teusThisHour;
                 hourOffsetIn++;
+
+                if (currentHour > end && remainingIn > 0) break;
             }
 
-            // Distribute outgoing TEUs
+            // Distribute outgoing TEUs (Load) - Sequential: Starts after Discharge
             int remainingOut = outTeus;
-            int hourOffsetOut = 0;
+            int hourOffsetOut = hourOffsetIn;
+
+            if (inTeus == 0) hourOffsetOut = 0;
+
             while (remainingOut > 0)
             {
                 var currentHour = time.AddHours(hourOffsetOut);
-                if (currentHour > end) break;
 
                 int teusThisHour = (int)Math.Min(remainingOut, loadRate);
-                if (!distributed.ContainsKey(currentHour))
+
+                if (currentHour >= start && currentHour <= end)
                 {
-                    distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                    if (!distributed.ContainsKey(currentHour))
+                    {
+                        distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
+                    }
+                    distributed[currentHour] = distributed[currentHour] with { LoadTEU = distributed[currentHour].LoadTEU + teusThisHour };
                 }
-                distributed[currentHour] = distributed[currentHour] with { LoadTEU = distributed[currentHour].LoadTEU + teusThisHour };
+
                 remainingOut -= teusThisHour;
                 hourOffsetOut++;
+
+                if (currentHour > end && remainingOut > 0) break;
             }
         }
 

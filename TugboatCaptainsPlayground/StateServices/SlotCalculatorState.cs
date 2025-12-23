@@ -48,6 +48,8 @@ namespace TugboatCaptainsPlayground.Services
         public double VesselUnloadRate { get; set; }
         public double TrainLoadRate { get; set; }
         public double TrainUnloadRate { get; set; }
+        public double VesselLagHours { get; set; }
+        public double RailLagHours { get; set; }
         public string SelectedOracleEnvironment { get; set; }
     }
 }
