@@ -374,67 +374,92 @@ public static class SlotCalculator
         double lagHours = 0
     )
     {
-        var distributed = new Dictionary<DateTime, DistributeLoadUnload>();
-        int roundedLag = 0;// (int)Math.Round(lagHours);
+        // Use double for accumulation to avoid rounding errors during distribution
+        var tempDistributed = new Dictionary<DateTime, (double Discharge, double Load)>();
 
         foreach (var entry in hourlyInputs)
         {
-            var time = entry.Key.AddHours(roundedLag);
+            // Precise start time with lag
+            // We removed the 30 minutes centering as it was pushing the peaks forward
+            var arrivalTime = entry.Key.AddHours(lagHours);
             var (inTeus, outTeus) = entry.Value;
 
-            // Distribute incoming TEUs (Discharge)
-            int remainingIn = inTeus;
-            int hourOffsetIn = 0;
-            while (remainingIn > 0)
+            // 1. Discharge
+            if (inTeus > 0 && unloadRate > 0)
             {
-                var currentHour = time.AddHours(hourOffsetIn);
+                double durationHours = inTeus / unloadRate;
+                DateTime dischargeEnd = arrivalTime.AddHours(durationHours);
 
-                int teusThisHour = (int)Math.Min(remainingIn, unloadRate);
-
-                if (currentHour >= start && currentHour <= end)
-                {
-                    if (!distributed.ContainsKey(currentHour))
-                    {
-                        distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
-                    }
-                    distributed[currentHour] = distributed[currentHour] with { DischargeTEU = distributed[currentHour].DischargeTEU + teusThisHour };
-                }
-
-                remainingIn -= teusThisHour;
-                hourOffsetIn++;
-
-                if (currentHour > end && remainingIn > 0) break;
+                DistributeRange(tempDistributed, arrivalTime, dischargeEnd, unloadRate, true, start, end);
             }
 
-            // Distribute outgoing TEUs (Load) - Sequential: Starts after Discharge
-            int remainingOut = outTeus;
-            int hourOffsetOut = hourOffsetIn;
-
-            if (inTeus == 0) hourOffsetOut = 0;
-
-            while (remainingOut > 0)
+            // 2. Load
+            if (outTeus > 0 && loadRate > 0)
             {
-                var currentHour = time.AddHours(hourOffsetOut);
+                double durationHours = outTeus / loadRate;
+                DateTime loadEnd = arrivalTime.AddHours(durationHours);
 
-                int teusThisHour = (int)Math.Min(remainingOut, loadRate);
-
-                if (currentHour >= start && currentHour <= end)
-                {
-                    if (!distributed.ContainsKey(currentHour))
-                    {
-                        distributed[currentHour] = new DistributeLoadUnload(currentHour, 0, 0);
-                    }
-                    distributed[currentHour] = distributed[currentHour] with { LoadTEU = distributed[currentHour].LoadTEU + teusThisHour };
-                }
-
-                remainingOut -= teusThisHour;
-                hourOffsetOut++;
-
-                if (currentHour > end && remainingOut > 0) break;
+                DistributeRange(tempDistributed, arrivalTime, loadEnd, loadRate, false, start, end);
             }
         }
 
+        // Convert to final result
+        var distributed = new Dictionary<DateTime, DistributeLoadUnload>();
+        foreach (var kvp in tempDistributed)
+        {
+            // We only care about buckets within the requested range
+            if (kvp.Key >= start && kvp.Key <= end)
+            {
+                distributed[kvp.Key] = new DistributeLoadUnload(
+                    kvp.Key,
+                    (int)Math.Round(kvp.Value.Discharge),
+                    (int)Math.Round(kvp.Value.Load)
+                );
+            }
+        }
         return distributed;
+    }
+
+    private static void DistributeRange(
+        Dictionary<DateTime, (double Discharge, double Load)> bucketDict,
+        DateTime startTime,
+        DateTime endTime,
+        double ratePerHour,
+        bool isDischarge,
+        DateTime horizonStart,
+        DateTime horizonEnd)
+    {
+        var current = startTime;
+
+        while (current < endTime)
+        {
+            // Bucket key is the start of the hour
+            var bucketKey = new DateTime(current.Year, current.Month, current.Day, current.Hour, 0, 0);
+            var nextHour = bucketKey.AddHours(1);
+
+            // The segment ends at the earlier of: end of operation OR end of current hour
+            var segmentEnd = (endTime < nextHour) ? endTime : nextHour;
+
+            // Only accumulate if within horizon
+            if (bucketKey >= horizonStart && bucketKey <= horizonEnd)
+            {
+                double duration = (segmentEnd - current).TotalHours;
+                double amount = duration * ratePerHour;
+
+                if (!bucketDict.ContainsKey(bucketKey))
+                {
+                    bucketDict[bucketKey] = (0, 0);
+                }
+
+                var (d, l) = bucketDict[bucketKey];
+                if (isDischarge)
+                    bucketDict[bucketKey] = (d + amount, l);
+                else
+                    bucketDict[bucketKey] = (d, l + amount);
+            }
+
+            current = segmentEnd;
+        }
     }
 
 }
