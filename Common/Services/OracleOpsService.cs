@@ -53,27 +53,27 @@ namespace Common.Services
             var ins = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-            SELECT TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24') as Hour,
+            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
              FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
+             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_ETD BETWEEN {startDate} AND {endDate})
                AND c.CNTR_CATEGORY != 'H'
-             GROUP BY TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24')",
+             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 cancellationToken);
 
             var outs = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-            SELECT TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24') as Hour,
+            SELECT TRUNC(vv.VESSEL_VISIT_ETB,'HH24') as Hour,
                    SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) as Teus,
                    MAX(vv.VESSEL_NAME) as Name
              FROM TOSBRIDGE.TOS_CNTRS c
              INNER JOIN TOSBRIDGE.TOS_VESSEL_VISIT vv ON c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
+             WHERE (vv.VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate} OR vv.VESSEL_VISIT_ETD BETWEEN {startDate} AND {endDate})
                AND c.CNTR_CATEGORY != 'H'
-             GROUP BY TRUNC(NVL(vv.VESSEL_VISIT_START_WORK, vv.VESSEL_VISIT_ETB),'HH24')",
+             GROUP BY TRUNC(vv.VESSEL_VISIT_ETB,'HH24')",
                 cancellationToken);
 
             var temp = new Dictionary<DateTime, (int InTeus, int OutTeus, List<string> InNames, List<string> OutNames)>();

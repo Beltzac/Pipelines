@@ -1,4 +1,5 @@
 ﻿using Common.Services.Interfaces;
+using System.Diagnostics;
 
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU, List<string> VesselNames);
 public record RailPlan(DateTime T, int InTEU, int OutTEU, List<string> TrainNames);
@@ -80,6 +81,11 @@ public static class SlotCalculator
         if (avgTeuPerTruck <= 0) throw new ArgumentOutOfRangeException(nameof(avgTeuPerTruck));
         if (reserveRho < 0 || reserveRho >= 1) throw new ArgumentOutOfRangeException(nameof(reserveRho));
 
+        // Assert: Simulation plan (vessels/rails) should be based on estimated values (ETB/ETA)
+        // Assert: Real data (actualFlows) should be based on actual values (MOV_TIME_PUT)
+        Debug.Assert(vessels != null, "Vessel plan (Estimated) must be provided");
+        Debug.Assert(actualFlows != null, "Actual flows (Real) must be provided");
+
         var now = DateTime.Now;
         var vesselTeus = vessels.ToDictionary(kv => kv.Key, kv => (kv.Value.DischargeTEU, kv.Value.LoadTEU));
         var distributedVesselsSim = DistributeTeusOverTime(vesselTeus, vesselLoadRate, vesselUnloadRate, start, end, vesselLagHours);
@@ -111,8 +117,15 @@ public static class SlotCalculator
             int gateTeuInCap = (int)Math.Round(cap.GateTrucksInPerHour * avgTeuPerTruck);
             int gateTeuOutCap = (int)Math.Round(cap.GateTrucksOutPerHour * avgTeuPerTruck);
 
-            // Real data processing
+            // Real data processing (Actual values from TOS_CNTR_MOV)
             var flow = actualFlows.TryGetValue(t, out var f) ? f : new InOut();
+            
+            // Assert: Real data should not exist for future dates in simulation
+            if (t > now.AddHours(1))
+            {
+                Debug.Assert(flow.In == 0 && flow.Out == 0 && flow.VesselIn == 0 && flow.VesselOut == 0, 
+                    $"Real data found for future date {t}. Real data must only contain actual values.");
+            }
 
             // Actual flows are already in TEUs from OracleOpsService.FetchActualGateTrucksAsync
             int realTeuTruckIn = flow.In;
@@ -132,7 +145,7 @@ public static class SlotCalculator
                        (realTeuRailIn - realTeuRailOut) +
                        (flow.OtherIn - flow.OtherOut);
 
-            // Simulation data processing
+            // Simulation data processing (Estimated values from TOS_VESSEL_VISIT ETB)
             var vesselFlowSim = distributedVesselsSim.TryGetValue(t, out var v) ? v : new DistributeLoadUnload(t, 0, 0);
             var railFlowSim = distributedRailsSim.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
 
