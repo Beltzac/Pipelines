@@ -1,6 +1,6 @@
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU, List<string> VesselNames);
 public record RailPlan(DateTime T, int InTEU, int OutTEU, List<string> TrainNames);
-public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour);
+public record OpsCaps(DateTime T, int GateTrucksInPerHour, int GateTrucksOutPerHour, int YardMovesPerHour, int VesselIn = 0, int VesselOut = 0, int RailIn = 0, int RailOut = 0, int OtherIn = 0, int OtherOut = 0);
 public record YardBand(int MinTEU, int TargetTEU, int MaxTEU);
 
 public record DistributeLoadUnload(DateTime T, int DischargeTEU, int LoadTEU);
@@ -112,11 +112,18 @@ public static class SlotCalculator
             var railFlow = distributedRails.TryGetValue(t, out var r) ? r : new DistributeLoadUnload(t, 0, 0);
 
             // 3. Update Projections with Vessel and Rail flows (always in TEUs)
+            // We use the distributed (projected) plans for both historical and future periods.
+            // This allows comparing how the planned vessel/rail schedule + real gate data 
+            // performs against the actual historical inventory.
+            // The "Yellow/Orange" line (yardTeuRealGate) uses these projected plans + real gate data.
             int netVesselRailTeu = vesselFlow.DischargeTEU + railFlow.DischargeTEU - vesselFlow.LoadTEU - railFlow.LoadTEU;
+
             currentYardTeus += netVesselRailTeu;
             yardTeuRealGate += netVesselRailTeu;
 
-            // 4. Update Real Gate Projection (Orange) using full capacity/actuals
+            // 4. Update Real Gate Projection (Orange/Yellow) using full capacity/actuals
+            // In history, gateTeuInCap/OutCap are actuals. In future, they are planned capacity.
+            // This line shows the "Real" impact of the gate on the planned vessel/rail schedule.
             yardTeuRealGate += gateTeuInCap - gateTeuOutCap;
 
             // 5. Calculate Algorithm Allocation (Blue)
@@ -212,23 +219,29 @@ public static class SlotCalculator
                     int gateIn = InterpolateValue(previousCap.GateTrucksInPerHour, nextCap.GateTrucksInPerHour, factor);
                     int gateOut = InterpolateValue(previousCap.GateTrucksOutPerHour, nextCap.GateTrucksOutPerHour, factor);
                     int yardMoves = InterpolateValue(previousCap.YardMovesPerHour, nextCap.YardMovesPerHour, factor);
+                    int vesselIn = InterpolateValue(previousCap.VesselIn, nextCap.VesselIn, factor);
+                    int vesselOut = InterpolateValue(previousCap.VesselOut, nextCap.VesselOut, factor);
+                    int railIn = InterpolateValue(previousCap.RailIn, nextCap.RailIn, factor);
+                    int railOut = InterpolateValue(previousCap.RailOut, nextCap.RailOut, factor);
+                    int otherIn = InterpolateValue(previousCap.OtherIn, nextCap.OtherIn, factor);
+                    int otherOut = InterpolateValue(previousCap.OtherOut, nextCap.OtherOut, factor);
 
-                    interpolatedCaps[t] = new OpsCaps(t, gateIn, gateOut, yardMoves);
+                    interpolatedCaps[t] = new OpsCaps(t, gateIn, gateOut, yardMoves, vesselIn, vesselOut, railIn, railOut, otherIn, otherOut);
                 }
                 else if (previousCap != null)
                 {
                     // Use previous cap values
-                    interpolatedCaps[t] = new OpsCaps(t, previousCap.GateTrucksInPerHour, previousCap.GateTrucksOutPerHour, previousCap.YardMovesPerHour);
+                    interpolatedCaps[t] = new OpsCaps(t, previousCap.GateTrucksInPerHour, previousCap.GateTrucksOutPerHour, previousCap.YardMovesPerHour, previousCap.VesselIn, previousCap.VesselOut, previousCap.RailIn, previousCap.RailOut, previousCap.OtherIn, previousCap.OtherOut);
                 }
                 else if (nextCap != null)
                 {
                     // Use next cap values
-                    interpolatedCaps[t] = new OpsCaps(t, nextCap.GateTrucksInPerHour, nextCap.GateTrucksOutPerHour, nextCap.YardMovesPerHour);
+                    interpolatedCaps[t] = new OpsCaps(t, nextCap.GateTrucksInPerHour, nextCap.GateTrucksOutPerHour, nextCap.YardMovesPerHour, nextCap.VesselIn, nextCap.VesselOut, nextCap.RailIn, nextCap.RailOut, nextCap.OtherIn, nextCap.OtherOut);
                 }
                 else
                 {
                     // No caps available, use defaults
-                    interpolatedCaps[t] = new OpsCaps(t, 0, 0, 0);
+                    interpolatedCaps[t] = new OpsCaps(t, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                 }
             }
         }

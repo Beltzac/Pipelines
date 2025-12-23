@@ -241,37 +241,31 @@
             var initialInventory = await OracleOpsService.GetHistoricalYardTeuAsync(StateService.StartDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Busca dados do período selecionado
-            // O Service agora já cuida de buscar histórico (fallback) caso o período seja futuro
-            if (StateService.GateTrucks.Count == 0
-                || StateService.CachedStartDate != StateService.StartDate
-                || StateService.CachedEndDate != StateService.EndDate
-                || StateService.CachedEnvironment != StateService.SelectedOracleEnvironment)
-            {
-                StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                
-                // Fetch both actual and average gate trucks
-                var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                
-                // Always fetch actual history
-                StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate, StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
+            // Removido cache para garantir dados sempre frescos
+            StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            
+            // Fetch both actual and average gate trucks
+            var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            
+            // Always fetch actual history
+            StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate, StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
 
-                // Merge: Use actuals if T < Now and they contain data, otherwise averages
-                StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
-                foreach(var kvp in avgGate) {
-                    if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0)) {
-                        StateService.GateTrucks[kvp.Key] = act;
-                    } else {
-                        StateService.GateTrucks[kvp.Key] = kvp.Value;
-                    }
+            // Merge: Use actuals if T < Now and they contain data, otherwise averages
+            StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
+            foreach(var kvp in avgGate) {
+                if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0)) {
+                    StateService.GateTrucks[kvp.Key] = act;
+                } else {
+                    StateService.GateTrucks[kvp.Key] = kvp.Value;
                 }
-                
-                StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-                StateService.CachedStartDate = StateService.StartDate;
-                StateService.CachedEndDate = StateService.EndDate;
-                StateService.CachedEnvironment = StateService.SelectedOracleEnvironment;
             }
+            
+            StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.CachedStartDate = StateService.StartDate;
+            StateService.CachedEndDate = StateService.EndDate;
+            StateService.CachedEnvironment = StateService.SelectedOracleEnvironment;
 
             var gateTrucks = StateService.GateTrucks;
             var yardMoves = StateService.YardMoves;
@@ -286,8 +280,14 @@
                 // Fallback for future hours if no specific gate plan is provided (assuming gateTrucks dict only has history/avg)
                 int inCap = gateData?.In ?? (StateService.GateTrucksPerHour / 2);
                 int outCap = gateData?.Out ?? (StateService.GateTrucksPerHour / 2);
+                int vesselIn = gateData?.VesselIn ?? 0;
+                int vesselOut = gateData?.VesselOut ?? 0;
+                int railIn = gateData?.RailIn ?? 0;
+                int railOut = gateData?.RailOut ?? 0;
+                int otherIn = gateData?.OtherIn ?? 0;
+                int otherOut = gateData?.OtherOut ?? 0;
 
-                caps[t] = new OpsCaps(t, inCap, outCap, yardMoveCount);
+                caps[t] = new OpsCaps(t, inCap, outCap, yardMoveCount, vesselIn, vesselOut, railIn, railOut, otherIn, otherOut);
             }
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
@@ -503,7 +503,7 @@
             },
             new
             {
-            label = "Projeção Estoque (Otima)", // Traduzido
+            label = "Projeção Estoque (Ótima)", // Traduzido
             data = yardTeuProjection,
             borderColor = "rgb(0, 128, 255)",
             tension = 0.4,

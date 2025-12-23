@@ -1,5 +1,6 @@
 using Common.Models;
 using Common.Services.Interfaces;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 
@@ -384,13 +385,13 @@ namespace TugboatCaptainsPlayground.McpServer
               private static OracleEnvironment GetOracleEnvironment(IConfigurationService configurationService, string environmentName)
         {
             if (string.IsNullOrWhiteSpace(environmentName))
-                throw new ArgumentException("Environment name cannot be null or empty.", nameof(environmentName));
+                throw new McpProtocolException("Environment name cannot be null or empty.", McpErrorCode.InvalidParams);
 
             var config = configurationService.GetConfig();
             var oracleEnv = config.OracleEnvironments.FirstOrDefault(e => e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
 
             if (oracleEnv == null)
-                throw new ArgumentException($"Oracle environment '{environmentName}' not found.");
+                throw new McpProtocolException($"Oracle environment '{environmentName}' not found.", McpErrorCode.InvalidParams);
 
             return oracleEnv;
         }

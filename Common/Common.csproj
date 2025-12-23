@@ -17,9 +17,9 @@
     <PackageReference Include="Blazor.Bootstrap" Version="3.3.1" />
     <PackageReference Include="Blazor.ContextMenu" Version="2.1.0" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
-    <PackageReference Include="CompareNETObjects" Version="4.83.0" />
+    <PackageReference Include="CompareNETObjects" Version="4.84.0" />
     <PackageReference Include="CSharpDiff" Version="0.0.7" />
-    <PackageReference Include="DiffPlex" Version="1.8.0" />
+    <PackageReference Include="DiffPlex" Version="1.9.0" />
     <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
     <PackageReference Include="eladaus.urldetector" Version="1.5.5" />
     <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="9.0.0" />
@@ -50,8 +50,8 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="19.246.0-preview" />
     <PackageReference Include="Microsoft.VisualStudio.Services.Client" Version="19.246.0-preview" />
-    <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
-    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.3.0-preview.3" />
+    <PackageReference Include="ModelContextProtocol" Version="0.5.0-preview.1" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.5.0-preview.1" />
     <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
     <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.80" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.8.0" />

@@ -35,6 +35,10 @@ namespace Common.Services.Interfaces
     {
         public int In { get; set; }
         public int Out { get; set; }
+        public int VesselIn { get; set; }
+        public int VesselOut { get; set; }
+        public int RailIn { get; set; }
+        public int RailOut { get; set; }
         public int OtherIn { get; set; }
         public int OtherOut { get; set; }
     }

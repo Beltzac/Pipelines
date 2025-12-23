@@ -33,6 +33,10 @@ namespace Common.Services
             public DateTime Hour { get; set; }
             public int InCount { get; set; }
             public int OutCount { get; set; }
+            public int VesselIn { get; set; }
+            public int VesselOut { get; set; }
+            public int RailIn { get; set; }
+            public int RailOut { get; set; }
             public int OtherIn { get; set; }
             public int OtherOut { get; set; }
         }
@@ -265,9 +269,6 @@ namespace Common.Services
         }
 
 
-        /// <summary>
-        /// Get vessel loading/unloading rates from the last year
-        /// </summary>
         public async Task<Common.Services.Interfaces.LoadUnloadRate> GetVesselLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var actualStartDate = startDate;
@@ -285,35 +286,22 @@ namespace Common.Services
                 (FormattableString)$@"
                 SELECT
                    'Average Vessel' as NAME,
-                   CAST(AVG(LoadTeus) AS NUMBER) as TOTAL_LOAD_TEUS,
-                   CAST(AVG(UnloadTeus) AS NUMBER) as TOTAL_UNLOAD_TEUS,
-                   CAST(AVG(DurationHours) AS NUMBER) as TOTAL_DURATION_HOURS,
-                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(LoadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
-                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(UnloadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
+                   NVL(AVG(LoadTeus), 0) as TOTAL_LOAD_TEUS,
+                   NVL(AVG(UnloadTeus), 0) as TOTAL_UNLOAD_TEUS,
+                   NVL(AVG(LoadDurationHours + UnloadDurationHours), 0) as TOTAL_DURATION_HOURS,
+                   CASE WHEN AVG(LoadDurationHours) > 0 THEN AVG(LoadTeus) / AVG(LoadDurationHours) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
+                   CASE WHEN AVG(UnloadDurationHours) > 0 THEN AVG(UnloadTeus) / AVG(UnloadDurationHours) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
                 FROM (
                    SELECT vv.VESSEL_VISIT_ID,
-                          SUM(CASE WHEN c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-                                   AND c.CNTR_CATEGORY != 'H'
-                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
-                                              THEN 2 ELSE 1 END)
-                              ELSE 0 END) as UnloadTeus,
-                          SUM(CASE WHEN c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-                                   AND c.CNTR_CATEGORY != 'H'
-                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
-                                              THEN 2 ELSE 1 END)
-                              ELSE 0 END) as LoadTeus,
-                          ( ( vv.VESSEL_VISIT_END_WORK - vv.VESSEL_VISIT_START_WORK ) * 24 ) AS DurationHours
+                          SUM(CASE WHEN m.MOV_FROM_TYPE = 'V' AND c.CNTR_CATEGORY != 'H' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as UnloadTeus,
+                          SUM(CASE WHEN m.MOV_TO_TYPE = 'V' AND c.CNTR_CATEGORY != 'H' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as LoadTeus,
+                          NVL((MAX(CASE WHEN m.MOV_TO_TYPE = 'V' THEN m.MOV_TIME_PUT END) - MIN(CASE WHEN m.MOV_TO_TYPE = 'V' THEN m.MOV_TIME_PUT END)) * 24, 0) as LoadDurationHours,
+                          NVL((MAX(CASE WHEN m.MOV_FROM_TYPE = 'V' THEN m.MOV_TIME_PUT END) - MIN(CASE WHEN m.MOV_FROM_TYPE = 'V' THEN m.MOV_TIME_PUT END)) * 24, 0) as UnloadDurationHours
                    FROM TOSBRIDGE.TOS_VESSEL_VISIT vv
-                   LEFT JOIN TOSBRIDGE.TOS_CNTRS c
-                          ON c.CNTR_IB_VISIT_ID = vv.VESSEL_VISIT_ID
-                          OR c.CNTR_OB_VISIT_ID = vv.VESSEL_VISIT_ID
-                   WHERE
-                    vv.VESSEL_VISIT_ETB BETWEEN {actualStartDate} AND {actualEndDate}
-                        AND vv.VESSEL_VISIT_END_WORK IS NOT NULL
-                        AND vv.VESSEL_VISIT_START_WORK IS NOT NULL
-                   GROUP BY vv.VESSEL_VISIT_ID,
-                        vv.VESSEL_VISIT_END_WORK,
-                        vv.VESSEL_VISIT_START_WORK
+                   JOIN TOSBRIDGE.TOS_CNTR_MOV m ON m.VISIT_ID = vv.VESSEL_VISIT_ID
+                   JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
+                   WHERE vv.VESSEL_VISIT_ETB BETWEEN {actualStartDate} AND {actualEndDate}
+                   GROUP BY vv.VESSEL_VISIT_ID
                 )",
                default);
 
@@ -324,9 +312,6 @@ namespace Common.Services
 
             return new Common.Services.Interfaces.LoadUnloadRate { Name = "Average Vessel" };
         }
-        /// <summary>
-        /// Get train loading/unloading rates from the last year
-        /// </summary>
         public async Task<Common.Services.Interfaces.LoadUnloadRate> GetTrainLoadUnloadRatesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
         {
             var actualStartDate = startDate;
@@ -344,30 +329,22 @@ namespace Common.Services
                 (FormattableString)$@"
                 SELECT
                    'Average Train' as NAME,
-                   CAST(AVG(LoadTeus) AS NUMBER) as TOTAL_LOAD_TEUS,
-                   CAST(AVG(UnloadTeus) AS NUMBER) as TOTAL_UNLOAD_TEUS,
-                   CAST(AVG(DurationHours) AS NUMBER) as TOTAL_DURATION_HOURS,
-                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(LoadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
-                   CASE WHEN CAST(AVG(DurationHours) AS NUMBER) > 0 THEN CAST(AVG(UnloadTeus) AS NUMBER) / CAST(AVG(DurationHours) AS NUMBER) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
+                   NVL(AVG(LoadTeus), 0) as TOTAL_LOAD_TEUS,
+                   NVL(AVG(UnloadTeus), 0) as TOTAL_UNLOAD_TEUS,
+                   NVL(AVG(LoadDurationHours + UnloadDurationHours), 0) as TOTAL_DURATION_HOURS,
+                   CASE WHEN AVG(LoadDurationHours) > 0 THEN AVG(LoadTeus) / AVG(LoadDurationHours) ELSE 0 END as LOAD_RATE_TEUS_PER_HOUR,
+                   CASE WHEN AVG(UnloadDurationHours) > 0 THEN AVG(UnloadTeus) / AVG(UnloadDurationHours) ELSE 0 END as UNLOAD_RATE_TEUS_PER_HOUR
                 FROM (
                    SELECT tv.TRAIN_VISIT_ID,
-                          SUM(CASE WHEN c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
-                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
-                                              THEN 2 ELSE 1 END)
-                               ELSE 0 END) as UnloadTeus,
-                          SUM(CASE WHEN c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
-                                   THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4'
-                                              THEN 2 ELSE 1 END)
-                               ELSE 0 END) as LoadTeus,
-                          ((tv.TRAIN_VISIT_END_WORK - tv.TRAIN_VISIT_START_WORK) * 24) as DurationHours
+                          SUM(CASE WHEN m.MOV_FROM_TYPE = 'R' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as UnloadTeus,
+                          SUM(CASE WHEN m.MOV_TO_TYPE = 'R' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as LoadTeus,
+                          NVL((MAX(CASE WHEN m.MOV_TO_TYPE = 'R' THEN m.MOV_TIME_PUT END) - MIN(CASE WHEN m.MOV_TO_TYPE = 'R' THEN m.MOV_TIME_PUT END)) * 24, 0) as LoadDurationHours,
+                          NVL((MAX(CASE WHEN m.MOV_FROM_TYPE = 'R' THEN m.MOV_TIME_PUT END) - MIN(CASE WHEN m.MOV_FROM_TYPE = 'R' THEN m.MOV_TIME_PUT END)) * 24, 0) as UnloadDurationHours
                    FROM TOSBRIDGE.TOS_TRAIN_VISIT tv
-                   LEFT JOIN TOSBRIDGE.TOS_CNTRS c
-                          ON c.CNTR_IB_VISIT_ID = tv.TRAIN_VISIT_ID
-                          OR c.CNTR_OB_VISIT_ID = tv.TRAIN_VISIT_ID
+                   JOIN TOSBRIDGE.TOS_CNTR_MOV m ON m.VISIT_ID = tv.TRAIN_VISIT_ID
+                   JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
                    WHERE tv.TRAIN_VISIT_ARRIVE BETWEEN {actualStartDate} AND {actualEndDate}
-                        AND tv.TRAIN_VISIT_END_WORK IS NOT NULL
-                        AND tv.TRAIN_VISIT_START_WORK IS NOT NULL
-                   GROUP BY tv.TRAIN_VISIT_ID, tv.TRAIN_VISIT_START_WORK, tv.TRAIN_VISIT_END_WORK
+                   GROUP BY tv.TRAIN_VISIT_ID
                 )",
                default);
 
@@ -438,12 +415,13 @@ namespace Common.Services
                                     TRUNC(m.MOV_TIME_PUT, 'HH24') as Hour,
 
                                     SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE = 'T' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as IN_COUNT,
-
                                     SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE = 'T' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as OUT_COUNT,
-
-                                    COUNT(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE NOT IN ('Y', 'T') THEN 1 END) as OTHER_IN,
-
-                                    COUNT(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE NOT IN ('Y', 'T') THEN 1 END) as OTHER_OUT
+                                    SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE = 'V' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as VESSEL_IN,
+                                    SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE = 'V' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as VESSEL_OUT,
+                                    SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE = 'R' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as RAIL_IN,
+                                    SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE = 'R' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as RAIL_OUT,
+                                    SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE NOT IN ('Y', 'T', 'V', 'R') THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as OTHER_IN,
+                                    SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE NOT IN ('Y', 'T', 'V', 'R') THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as OTHER_OUT
 
                                 FROM TOSBRIDGE.TOS_CNTR_MOV m
                                 INNER JOIN TOSBRIDGE.TOS_CNTRS c ON m.CNTR_ID = c.CNTR_ID
@@ -469,6 +447,14 @@ namespace Common.Services
                                     In = item.InCount, 
 
                                     Out = item.OutCount,
+
+                                    VesselIn = item.VesselIn,
+
+                                    VesselOut = item.VesselOut,
+
+                                    RailIn = item.RailIn,
+
+                                    RailOut = item.RailOut,
 
                                     OtherIn = item.OtherIn,
 
