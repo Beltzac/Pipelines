@@ -41,6 +41,9 @@ namespace TugboatCaptainsPlayground.Services
 
         public Dictionary<DateTime, int> ActualHistory { get; set; } = new();
 
+        public List<VesselSchedule> VesselSchedules { get; set; } = new();
+        public List<RailSchedule> RailSchedules { get; set; } = new();
+
         public double VesselLoadRate { get; set; }
         public double VesselUnloadRate { get; set; }
         public double TrainLoadRate { get; set; }

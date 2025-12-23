@@ -11,36 +11,40 @@ window.renderChart = (canvasId, chartData) => {
         id: 'verticalLine',
         afterDraw: (chart) => {
             const pluginOptions = chart.config.options.plugins.verticalLine;
-            if (pluginOptions && pluginOptions.index !== undefined && pluginOptions.index !== -1) {
-                const { ctx, chartArea: { top, bottom, left, right } } = chart;
-                const index = pluginOptions.index;
-                
-                if (index < 0 || !chart.data.labels || index >= chart.data.labels.length) return;
+            const workLines = chart.config.options.plugins.workLines;
+            const { ctx, chartArea: { top, bottom, left, right } } = chart;
 
-                // Get X position from the first dataset's meta data
+            const drawLine = (index, color, label, dash = [5, 5]) => {
+                if (index === undefined || index === -1 || index < 0 || !chart.data.labels || index >= chart.data.labels.length) return;
                 const meta = chart.getDatasetMeta(0);
                 if (!meta || !meta.data || !meta.data[index]) return;
-                
                 const xPos = meta.data[index].x;
                 if (isNaN(xPos) || xPos < left || xPos > right) return;
 
-                const color = pluginOptions.color || 'red';
-                const label = pluginOptions.label || '';
-
                 ctx.save();
                 ctx.strokeStyle = color;
-                ctx.setLineDash([5, 5]);
+                ctx.setLineDash(dash);
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.moveTo(xPos, top);
                 ctx.lineTo(xPos, bottom);
                 ctx.stroke();
 
-                ctx.fillStyle = color;
-                ctx.font = 'bold 12px sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText(label, xPos + 5, top + 15);
+                if (label) {
+                    ctx.fillStyle = color;
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, xPos + 5, top + 15);
+                }
                 ctx.restore();
+            };
+
+            if (pluginOptions && pluginOptions.index !== undefined) {
+                drawLine(pluginOptions.index, pluginOptions.color || 'red', pluginOptions.label || '');
+            }
+
+            if (workLines && Array.isArray(workLines)) {
+                workLines.forEach(line => drawLine(line.index, line.color, line.label, line.dash));
             }
         }
     };

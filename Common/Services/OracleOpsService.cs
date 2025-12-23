@@ -1,3 +1,4 @@
+﻿using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 
@@ -372,9 +373,9 @@ namespace Common.Services
             var moves = await _repo.GetFromSqlAsync<Common.Services.Interfaces.LoadUnloadRate>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                SELECT 
-                  'Moves' as NAME, 
-                  SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as TOTAL_LOAD_TEUS, 
+                SELECT
+                  'Moves' as NAME,
+                  SUM(CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as TOTAL_LOAD_TEUS,
                   SUM(CASE WHEN m.MOV_FROM_TYPE = 'Y' AND m.MOV_TO_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END) as TOTAL_UNLOAD_TEUS,
                   0 as TOTAL_DURATION_HOURS, 0 as LOAD_RATE_TEUS_PER_HOUR, 0 as UNLOAD_RATE_TEUS_PER_HOUR
                 FROM TOSBRIDGE.TOS_CNTR_MOV m
@@ -394,23 +395,23 @@ namespace Common.Services
             return currentTeu;
         }
 
-                        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchActualGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<DateTime, Common.Services.Interfaces.InOut>> FetchActualGateTrucksAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
 
-                        {
+        {
 
-                            var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
+            var result = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
 
-                            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
 
-                
 
-                            var data = await _repo.GetFromSqlAsync<HourlyInOut>(
 
-                                env.ConnectionString,
+            var data = await _repo.GetFromSqlAsync<HourlyInOut>(
 
-                                (FormattableString)$@"
+                env.ConnectionString,
 
-                                SELECT 
+                (FormattableString)$@"
+
+                                SELECT
 
                                     TRUNC(m.MOV_TIME_PUT, 'HH24') as Hour,
 
@@ -432,68 +433,68 @@ namespace Common.Services
 
                                 GROUP BY TRUNC(m.MOV_TIME_PUT, 'HH24')",
 
-                                cancellationToken);
+                cancellationToken);
 
-                
 
-                            foreach (var item in data)
 
-                            {
+            foreach (var item in data)
 
-                                result[item.Hour] = new Common.Services.Interfaces.InOut 
+            {
 
-                                { 
+                result[item.Hour] = new Common.Services.Interfaces.InOut
 
-                                    In = item.InCount, 
+                {
 
-                                    Out = item.OutCount,
+                    In = item.InCount,
 
-                                    VesselIn = item.VesselIn,
+                    Out = item.OutCount,
 
-                                    VesselOut = item.VesselOut,
+                    VesselIn = item.VesselIn,
 
-                                    RailIn = item.RailIn,
+                    VesselOut = item.VesselOut,
 
-                                    RailOut = item.RailOut,
+                    RailIn = item.RailIn,
 
-                                    OtherIn = item.OtherIn,
+                    RailOut = item.RailOut,
 
-                                    OtherOut = item.OtherOut
+                    OtherIn = item.OtherIn,
 
-                                };
+                    OtherOut = item.OtherOut
 
-                            }
+                };
 
-                
+            }
 
-                            // Fill missing hours
 
-                            for (var h = startDate; h <= endDate; h = h.AddHours(1))
 
-                            {
+            // Fill missing hours
 
-                                var k = new DateTime(h.Year, h.Month, h.Day, h.Hour, 0, 0); // Normalize
+            for (var h = startDate; h <= endDate; h = h.AddHours(1))
 
-                                if (!result.ContainsKey(k))
+            {
 
-                                    result[k] = new Common.Services.Interfaces.InOut { In = 0, Out = 0, OtherIn = 0, OtherOut = 0 };
+                var k = new DateTime(h.Year, h.Month, h.Day, h.Hour, 0, 0); // Normalize
 
-                            }
+                if (!result.ContainsKey(k))
 
-                
+                    result[k] = new Common.Services.Interfaces.InOut { In = 0, Out = 0, OtherIn = 0, OtherOut = 0 };
 
-                            return result;
+            }
 
-                        }
+
+
+            return result;
+
+        }
         public async Task<Dictionary<DateTime, int>> FetchActualYardInventoryHistoryAsync(DateTime startDate, DateTime endDate, int initialInventory, string envName, CancellationToken cancellationToken = default)
         {
             var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
-            
+
             // Calculate Net Change per hour
             var changes = await _repo.GetFromSqlAsync<HourlyTeu>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                SELECT 
+                SELECT
                     TRUNC(m.MOV_TIME_PUT, 'HH24') as Hour,
                     SUM(
                     (CASE WHEN m.MOV_TO_TYPE = 'Y' AND m.MOV_FROM_TYPE != 'Y' THEN (CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) ELSE 0 END)
@@ -511,9 +512,9 @@ namespace Common.Services
 
             var result = new Dictionary<DateTime, int>();
             int current = initialInventory;
-            
+
             var changeDict = changes.ToDictionary(x => x.Hour, x => x.Teus);
-            
+
             for (var t = startDate; t <= endDate; t = t.AddHours(1))
             {
                 if (t > DateTime.Now) break;
@@ -522,7 +523,7 @@ namespace Common.Services
                 // Usually Inventory(t) is state at t.
                 // Moves(t) are moves happening between t and t+1.
                 // So Inventory(t+1) = Inventory(t) + Moves(t).
-                
+
                 // Let's assume result[t] is Inventory AT t.
                 result[t] = current;
 
@@ -533,7 +534,7 @@ namespace Common.Services
             }
             // Add one more point for the end? Or just cover the range.
             // If EndDate is inclusive hour, we usually want the state at that hour.
-            
+
             return result;
         }
 
@@ -557,8 +558,8 @@ namespace Common.Services
             var result = await _repo.GetFromSqlAsync<AvgResult>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                SELECT 
-                    CASE WHEN COUNT(DISTINCT tv.TRUCK_VISIT_ID) > 0 
+                SELECT
+                    CASE WHEN COUNT(DISTINCT tv.TRUCK_VISIT_ID) > 0
                          THEN SUM(CASE WHEN SUBSTR(c.CNTR_ISO,1,1)='4' THEN 2 ELSE 1 END) / COUNT(DISTINCT tv.TRUCK_VISIT_ID)
                          ELSE 0 END as AvgValue
                 FROM TCPAPI.V_TRUCK_VISIT tv
@@ -566,7 +567,43 @@ namespace Common.Services
                 WHERE tv.TRUCK_VISIT_TIME_IN BETWEEN {actualStartDate} AND {actualEndDate}",
                 cancellationToken);
 
-            return result.FirstOrDefault()?.AvgValue ?? 1.5;
+            return result.FirstOrDefault()?.AvgValue ?? 2.5;
+        }
+
+        public async Task<List<VesselSchedule>> FetchVesselSchedulesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+            return await _repo.GetFromSqlAsync<VesselSchedule>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT VESSEL_NAME as VESSEL_NAME,
+                       NVL(VESSEL_VISIT_START_WORK, VESSEL_VISIT_ETB) as START_WORK,
+                       NVL(VESSEL_VISIT_END_WORK, VESSEL_VISIT_ETD) as END_WORK
+                FROM TOSBRIDGE.TOS_VESSEL_VISIT
+                WHERE (VESSEL_VISIT_ETB BETWEEN {startDate} AND {endDate}
+                   OR VESSEL_VISIT_ETD BETWEEN {startDate} AND {endDate}
+                   OR VESSEL_VISIT_START_WORK BETWEEN {startDate} AND {endDate}
+                   OR VESSEL_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
+                  AND VESSEL_NAME IS NOT NULL",
+                cancellationToken);
+        }
+
+        public async Task<List<RailSchedule>> FetchRailSchedulesAsync(DateTime startDate, DateTime endDate, string envName, CancellationToken cancellationToken = default)
+        {
+            var env = _config.GetConfig().OracleEnvironments.First(e => e.Name == envName);
+            return await _repo.GetFromSqlAsync<RailSchedule>(
+                env.ConnectionString,
+                (FormattableString)$@"
+                SELECT TRAIN_VISIT_NAME as TRAIN_NAME,
+                       NVL(TRAIN_VISIT_START_WORK, TRAIN_VISIT_ARRIVE) as START_WORK,
+                       NVL(TRAIN_VISIT_END_WORK, TRAIN_VISIT_DEPART) as END_WORK
+                FROM TOSBRIDGE.TOS_TRAIN_VISIT
+                WHERE (TRAIN_VISIT_ARRIVE BETWEEN {startDate} AND {endDate}
+                   OR TRAIN_VISIT_DEPART BETWEEN {startDate} AND {endDate}
+                   OR TRAIN_VISIT_START_WORK BETWEEN {startDate} AND {endDate}
+                   OR TRAIN_VISIT_END_WORK BETWEEN {startDate} AND {endDate})
+                  AND TRAIN_VISIT_NAME IS NOT NULL",
+                cancellationToken);
         }
     }
 }

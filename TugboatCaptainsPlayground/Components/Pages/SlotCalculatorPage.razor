@@ -245,6 +245,9 @@
             StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             
+            StateService.VesselSchedules = await OracleOpsService.FetchVesselSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.RailSchedules = await OracleOpsService.FetchRailSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+
             // Fetch both actual and average gate trucks
             var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
             var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
@@ -419,7 +422,45 @@
 
         var railIn = StateService.ChartData.Select(d => d.RailIn).ToArray();
         var railOut = StateService.ChartData.Select(d => d.RailOut).ToArray();
-        
+
+        var workLines = new List<object>();
+        var chartTimestamps = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp)).ToList();
+
+        // foreach (var v in StateService.VesselSchedules)
+        // {
+        //     int startIdx = v.StartWork.HasValue ? FindClosestIndex(chartTimestamps, v.StartWork.Value) : -1;
+        //     int endIdx = v.EndWork.HasValue ? FindClosestIndex(chartTimestamps, v.EndWork.Value) : -1;
+
+        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "blue", label = $"Start: {v.VesselName}", dash = new[] { 2, 2 } });
+        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkblue", label = $"End: {v.VesselName}", dash = new[] { 2, 2 } });
+        // }
+
+        // foreach (var r in StateService.RailSchedules)
+        // {
+        //     int startIdx = r.StartWork.HasValue ? FindClosestIndex(chartTimestamps, r.StartWork.Value) : -1;
+        //     int endIdx = r.EndWork.HasValue ? FindClosestIndex(chartTimestamps, r.EndWork.Value) : -1;
+
+        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "green", label = $"Start: {r.TrainName}", dash = new[] { 2, 2 } });
+        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkgreen", label = $"End: {r.TrainName}", dash = new[] { 2, 2 } });
+        // }
+        // foreach (var v in StateService.VesselSchedules)
+        // {
+        //     int startIdx = v.StartWork.HasValue ? FindClosestIndex(chartTimestamps, v.StartWork.Value) : -1;
+        //     int endIdx = v.EndWork.HasValue ? FindClosestIndex(chartTimestamps, v.EndWork.Value) : -1;
+
+        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "blue", label = $"Start: {v.VesselName}", dash = new[] { 2, 2 } });
+        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkblue", label = $"End: {v.VesselName}", dash = new[] { 2, 2 } });
+        // }
+
+        // foreach (var r in StateService.RailSchedules)
+        // {
+        //     int startIdx = r.StartWork.HasValue ? FindClosestIndex(chartTimestamps, r.StartWork.Value) : -1;
+        //     int endIdx = r.EndWork.HasValue ? FindClosestIndex(chartTimestamps, r.EndWork.Value) : -1;
+
+        //     if (startIdx != -1) workLines.Add(new { index = startIdx, color = "green", label = $"Start: {r.TrainName}", dash = new[] { 2, 2 } });
+        //     if (endIdx != -1) workLines.Add(new { index = endIdx, color = "darkgreen", label = $"End: {r.TrainName}", dash = new[] { 2, 2 } });
+        // }
+
         int?[]? actualInventory = null;
         if (StateService.ActualHistory != null && StateService.ActualHistory.Any())
         {
@@ -569,7 +610,8 @@
                         index = nowIndex,
                         color = "red",
                         label = "Agora"
-                    }
+                    },
+                    workLines = workLines
                 }
             },
             vessels = vesselsData,
@@ -861,5 +903,26 @@
         };
 
         await JSRuntime.InvokeVoidAsync("renderChart", "capacityChart", capacityChartData);
+    }
+
+    private int FindClosestIndex(List<DateTime> timestamps, DateTime target)
+    {
+        if (timestamps == null || !timestamps.Any()) return -1;
+        
+        int closestIndex = -1;
+        double minDiff = double.MaxValue;
+        
+        for (int i = 0; i < timestamps.Count; i++)
+        {
+            var diff = Math.Abs((timestamps[i] - target).TotalMinutes);
+            if (diff < minDiff)
+            {
+                minDiff = diff;
+                closestIndex = i;
+            }
+        }
+        
+        // Only return if it's reasonably close (e.g. within 30 mins of the hour slot)
+        return minDiff <= 30 ? closestIndex : -1;
     }
 }
