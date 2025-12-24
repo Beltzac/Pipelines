@@ -21,10 +21,9 @@
         <!-- Seção de Filtros e Parâmetros de Entrada -->
         <div class="col-md-4">
             <label class="form-label">Período</label>
-            <DateRangePicker TimePicker="true" TimePicker24Hour="true"
-                             TimePickerSeconds="true" AutoApply="true" DateFormat="@($"dd/MM/yyyy HH:mm:ss")"
-                             StartDate="StateService.StartDate" EndDate="StateService.EndDate" OnRangeSelect="OnRangeSelect"
-                             class="form-control" />
+            <DateRangePicker TimePicker="true" TimePicker24Hour="true" TimePickerSeconds="true" AutoApply="true"
+                             DateFormat="@($"dd/MM/yyyy HH:mm:ss")" StartDate="StateService.StartDate" EndDate="StateService.EndDate"
+                             OnRangeSelect="OnRangeSelect" class="form-control" />
         </div>
         <div class="col-md-3">
             <label class="form-label">Ambiente Oracle:</label>
@@ -34,13 +33,15 @@
 
         <!-- Parâmetros do Algoritmo com Dicas (Hints) para Gestão -->
         <div class="col-md-2">
-            <label class="form-label" title="Estimativa de quantos TEUs cada caminhão movimenta em média (fator de conversão Truck -> TEU).">
+            <label class="form-label"
+                   title="Estimativa de quantos TEUs cada caminhão movimenta em média (fator de conversão Truck -> TEU).">
                 Média TEU/Caminhão <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
             </label>
             <input type="number" class="form-control" @bind="StateService.AvgTeuPerTruck" step="0.1" />
         </div>
         <div class="col-md-2">
-            <label class="form-label" title="Fator de Reserva: Porcentagem da capacidade operacional (Gate/Equipamentos) que deve ser mantida livre para imprevistos.">
+            <label class="form-label"
+                   title="Fator de Reserva: Porcentagem da capacidade operacional (Gate/Equipamentos) que deve ser mantida livre para imprevistos.">
                 Fator Reserva (%) <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
             </label>
             <div class="input-group">
@@ -49,10 +50,12 @@
             </div>
         </div>
         <div class="col-md-2">
-            <label class="form-label" title="Controla a suavidade da curva de slots. Valores mais altos evitam mudanças bruscas na abertura de agendamentos.">
+            <label class="form-label"
+                   title="Controla a suavidade da curva de slots. Valores mais altos evitam mudanças bruscas na abertura de agendamentos.">
                 Suavização <i class="bi bi-info-circle-fill text-muted" style="font-size: 0.8em;"></i>
             </label>
-            <input type="number" class="form-control" @bind="StateService.EasingStrength" step="0.1" min="0" max="0.99" />
+            <input type="number" class="form-control" @bind="StateService.EasingStrength" step="0.1" min="0"
+                   max="0.99" />
         </div>
         <div class="col-md-2">
             <label class="form-label" title="Meta de ocupação ideal como porcentagem da capacidade máxima do pátio.">
@@ -70,6 +73,35 @@
             </label>
             <input type="number" class="form-control" @bind="StateService.MaxYardTeu" />
         </div>
+        <div class="col-md-2">
+            <label class="form-label" title="Mostra linhas de início/fim de navios e trens no gráfico.">
+                Mostrar Linhas de Trabalho
+            </label>
+            <div class="mt-2">
+                <input type="text" class="form-control mb-2" placeholder="Filtrar por nome..." @bind="WorkLineFilter"
+                       @bind:after="UpdateChart" />
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" @bind="ShowVesselStartLines"
+                           @bind:after="UpdateChart" id="showVesselStartLinesToggle" />
+                    <label class="form-check-label" for="showVesselStartLinesToggle">Navio Início</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" @bind="ShowVesselEndLines" @bind:after="UpdateChart"
+                           id="showVesselEndLinesToggle" />
+                    <label class="form-check-label" for="showVesselEndLinesToggle">Navio Fim</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" @bind="ShowRailStartLines" @bind:after="UpdateChart"
+                           id="showRailStartLinesToggle" />
+                    <label class="form-check-label" for="showRailStartLinesToggle">Trem Início</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" @bind="ShowRailEndLines" @bind:after="UpdateChart"
+                           id="showRailEndLinesToggle" />
+                    <label class="form-check-label" for="showRailEndLinesToggle">Trem Fim</label>
+                </div>
+            </div>
+        </div>
 
         <!-- Botões de Ação -->
         <div class="col-md-12 mt-2">
@@ -82,7 +114,10 @@
                 <button class="btn btn-primary" @onclick="CalculateSlots">Calcular</button>
             }
 
-            <button class="btn btn-secondary" @onclick="ResetAllZoom" title="Restaura o zoom de todos os gráficos para o período total">Resetar Zoom</button>
+            <button class="btn btn-secondary" @onclick="ResetAllZoom"
+                    title="Restaura o zoom de todos os gráficos para o período total">
+                Resetar Zoom
+            </button>
         </div>
     </div>
 </StickyFilter>
@@ -154,10 +189,16 @@
 
 
 @code {
+    private string WorkLineFilter { get; set; } = string.Empty;
+    private bool ShowVesselStartLines { get; set; } = true;
+    private bool ShowVesselEndLines { get; set; } = true;
+    private bool ShowRailStartLines { get; set; } = true;
+    private bool ShowRailEndLines { get; set; } = true;
 
     private double TargetPercent
     {
-        get => StateService.MaxYardTeu > 0 ? Math.Round((double)StateService.TargetYardTeu / StateService.MaxYardTeu * 100, 1) : 0;
+        get => StateService.MaxYardTeu > 0 ? Math.Round((double)StateService.TargetYardTeu / StateService.MaxYardTeu * 100, 1) :
+        0;
         set => StateService.TargetYardTeu = (int)(StateService.MaxYardTeu * (value / 100.0));
     }
 
@@ -238,38 +279,47 @@
             StateService.IsLoading = true;
 
             // Always calculate historical start
-            var initialInventory = await OracleOpsService.GetHistoricalYardTeuAsync(StateService.StartDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var initialInventory = await OracleOpsService.GetHistoricalYardTeuAsync(StateService.StartDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
 
             // Busca dados do período selecionado
             // Removido cache para garantir dados sempre frescos
-            StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7), StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.Vessels = await OracleOpsService.FetchVesselPlansWithNamesAsync(StateService.StartDate.AddDays(-7),
+            StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.Rails = await OracleOpsService.FetchRailPlansWithNamesAsync(StateService.StartDate.AddDays(-7),
+            StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
-            StateService.VesselSchedules = await OracleOpsService.FetchVesselSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            StateService.RailSchedules = await OracleOpsService.FetchRailSchedulesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.VesselSchedules = await OracleOpsService.FetchVesselSchedulesAsync(StateService.StartDate,
+            StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.RailSchedules = await OracleOpsService.FetchRailSchedulesAsync(StateService.StartDate,
+            StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Fetch both actual and average gate trucks
-            var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var actualGate = await OracleOpsService.FetchActualGateTrucksAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
+
+            //var avgGate = await OracleOpsService.FetchGateTrucksAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Always fetch actual history
-            StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate, StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.ActualHistory = await OracleOpsService.FetchActualYardInventoryHistoryAsync(StateService.StartDate,
+            StateService.EndDate, initialInventory, StateService.SelectedOracleEnvironment, cts.Token);
 
             // Merge: Use actuals if T < Now and they contain data, otherwise averages
-            StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
-            foreach (var kvp in avgGate)
-            {
-                if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0))
-                {
-                    StateService.GateTrucks[kvp.Key] = act;
-                }
-                else
-                {
-                    StateService.GateTrucks[kvp.Key] = kvp.Value;
-                }
-            }
+            // StateService.GateTrucks = new Dictionary<DateTime, Common.Services.Interfaces.InOut>();
+            // foreach (var kvp in avgGate)
+            // {
+            // if (kvp.Key < DateTime.Now && actualGate.TryGetValue(kvp.Key, out var act) && (act.In > 0 || act.Out > 0))
+            // {
+            // StateService.GateTrucks[kvp.Key] = act;
+            // }
+            // else
+            // {
+            // StateService.GateTrucks[kvp.Key] = kvp.Value;
+            // }
+            // }
 
-            StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
             StateService.CachedStartDate = StateService.StartDate;
             StateService.CachedEndDate = StateService.EndDate;
             StateService.CachedEnvironment = StateService.SelectedOracleEnvironment;
@@ -283,10 +333,8 @@
             {
                 var gateData = gateTrucks.TryGetValue(t, out var gt) ? gt : null;
                 var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : StateService.YardMovesPerHour;
-
-                // Fallback for future hours if no specific gate plan is provided (assuming gateTrucks dict only has history/avg)
-                int inCap = gateData?.In ?? (StateService.GateTrucksPerHour / 2);
-                int outCap = gateData?.Out ?? (StateService.GateTrucksPerHour / 2);
+                int inCap = gateData?.In ?? 0;
+                int outCap = gateData?.Out ?? 0;
                 int vesselIn = gateData?.VesselIn ?? 0;
                 int vesselOut = gateData?.VesselOut ?? 0;
                 int railIn = gateData?.RailIn ?? 0;
@@ -299,11 +347,16 @@
 
             var band = new YardBand(StateService.MinYardTeu, StateService.TargetYardTeu, StateService.MaxYardTeu);
 
-            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            var avgTeuPerTruck = await OracleOpsService.GetAvgTeuPerTruckAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            var avgVesselLag = await OracleOpsService.GetAvgVesselLagHoursAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
-            var avgRailLag = await OracleOpsService.GetAvgRailLagHoursAsync(StateService.StartDate, StateService.EndDate, StateService.SelectedOracleEnvironment, cts.Token);
+            var vesselRates = await OracleOpsService.GetVesselLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
+            var trainRates = await OracleOpsService.GetTrainLoadUnloadRatesAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
+            var avgTeuPerTruck = await OracleOpsService.GetAvgTeuPerTruckAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
+            var avgVesselLag = await OracleOpsService.GetAvgVesselLagHoursAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
+            var avgRailLag = await OracleOpsService.GetAvgRailLagHoursAsync(StateService.StartDate, StateService.EndDate,
+            StateService.SelectedOracleEnvironment, cts.Token);
 
             StateService.VesselLoadRate = vesselRates?.LoadRateTeusPerHour ?? 0;
             StateService.VesselUnloadRate = vesselRates?.UnloadRateTeusPerHour ?? 0;
@@ -314,23 +367,23 @@
             StateService.RailLagHours = avgRailLag;
 
             StateService.HourWindows = SlotCalculator.ComputeHourWindows(
-                StateService.StartDate,
-                StateService.EndDate,
-                initialInventory,
-                StateService.Vessels,
-                StateService.Rails,
-                caps,
-                actualGate,
-                band,
-                StateService.AvgTeuPerTruck,
-                StateService.ReserveRho,
-                StateService.EasingStrength,
-                StateService.VesselLoadRate,
-                StateService.VesselUnloadRate,
-                StateService.TrainLoadRate,
-                StateService.TrainUnloadRate,
-                StateService.VesselLagHours,
-                StateService.RailLagHours
+            StateService.StartDate,
+            StateService.EndDate,
+            initialInventory,
+            StateService.Vessels,
+            StateService.Rails,
+            caps,
+            actualGate,
+            band,
+            StateService.AvgTeuPerTruck,
+            StateService.ReserveRho,
+            StateService.EasingStrength,
+            StateService.VesselLoadRate,
+            StateService.VesselUnloadRate,
+            StateService.TrainLoadRate,
+            StateService.TrainUnloadRate,
+            StateService.VesselLagHours,
+            StateService.RailLagHours
             ).ToList();
 
             StateService.ChartData = StateService.HourWindows.Select(hw => new SlotChartData
@@ -431,7 +484,7 @@
         var maxYardTeu = StateService.ChartData.Select(d => d.MaxYardTeu).ToArray();
 
         var yardTeuSimulated = StateService.ChartData.Select(d => d.YardTeuSimulated).ToArray();
-        var yardTeuReal = StateService.ChartData.Select(d =>d.YardTeuReal).ToArray();
+        var yardTeuReal = StateService.ChartData.Select(d => d.YardTeuReal).ToArray();
 
         var truckIn = StateService.ChartData.Select(d => d.TruckIn).ToArray();
         var truckOut = StateService.ChartData.Select(d => d.TruckOut).ToArray();
@@ -450,21 +503,115 @@
         var workLines = new List<object>();
         var chartTimestamps = StateService.ChartData.Select(d => DateTime.Parse(d.Timestamp)).ToList();
 
+        // Add vessel work start lines if enabled
+        if (ShowVesselStartLines)
+        {
+            foreach (var schedule in StateService.VesselSchedules)
+            {
+                if (schedule.StartWork.HasValue && (string.IsNullOrEmpty(WorkLineFilter) || schedule.VesselName.Contains(WorkLineFilter,
+                StringComparison.OrdinalIgnoreCase)))
+                {
+                    var vesselStartIndex = FindClosestIndex(chartTimestamps, schedule.StartWork.Value);
+                    if (vesselStartIndex >= 0)
+                    {
+                        workLines.Add(new
+                        {
+                            index = vesselStartIndex,
+                            color = "rgba(0, 0, 255, 0.3)",
+                            label = $"{schedule.VesselName} (Início)",
+                            type = "vessel"
+                        });
+                    }
+                }
+            }
+        }
+
+        // Add vessel work end lines if enabled
+        if (ShowVesselEndLines)
+        {
+            foreach (var schedule in StateService.VesselSchedules)
+            {
+                if (schedule.EndWork.HasValue && (string.IsNullOrEmpty(WorkLineFilter) || schedule.VesselName.Contains(WorkLineFilter,
+                StringComparison.OrdinalIgnoreCase)))
+                {
+                    var vesselEndIndex = FindClosestIndex(chartTimestamps, schedule.EndWork.Value);
+                    if (vesselEndIndex >= 0)
+                    {
+                        workLines.Add(new
+                        {
+                            index = vesselEndIndex,
+                            color = "rgba(0, 0, 255, 0.3)",
+                            label = $"{schedule.VesselName} (Fim)",
+                            type = "vessel"
+                        });
+                    }
+                }
+
+            }
+        }
+
+        // Add rail work start lines if enabled
+        if (ShowRailStartLines)
+        {
+            foreach (var schedule in StateService.RailSchedules)
+            {
+                if (schedule.StartWork.HasValue && (string.IsNullOrEmpty(WorkLineFilter) || schedule.TrainName.Contains(WorkLineFilter,
+                StringComparison.OrdinalIgnoreCase)))
+                {
+                    var railStartIndex = FindClosestIndex(chartTimestamps, schedule.StartWork.Value);
+                    if (railStartIndex >= 0)
+                    {
+                        workLines.Add(new
+                        {
+                            index = railStartIndex,
+                            color = "rgba(0, 128, 0, 0.3)",
+                            label = $"{schedule.TrainName} (Início)",
+                            type = "rail"
+                        });
+
+                    }
+                }
+            }
+        }
+
+        // Add rail work end lines if enabled
+        if (ShowRailEndLines)
+        {
+            foreach (var schedule in StateService.RailSchedules)
+            {
+                if (schedule.EndWork.HasValue && (string.IsNullOrEmpty(WorkLineFilter) || schedule.TrainName.Contains(WorkLineFilter,
+                StringComparison.OrdinalIgnoreCase)))
+                {
+                    var railEndIndex = FindClosestIndex(chartTimestamps, schedule.EndWork.Value);
+                    if (railEndIndex >= 0)
+                    {
+                        workLines.Add(new
+                        {
+                            index = railEndIndex,
+                            color = "rgba(0, 128, 0, 0.3)",
+                            label = $"{schedule.TrainName} (Fim)",
+                            type = "rail"
+                        });
+                    }
+                }
+            }
+        }
+
         // Per-class data
         var classDatasets = new List<object>();
         // Palette mantida para consistência visual
         var palette = new[]
         {
-            "rgb(255,99,132)",
-            "rgb(54,162,235)",
-            "rgb(255,206,86)",
-            "rgb(75,192,192)",
-            "rgb(153,102,255)",
-            "rgb(255,159,64)",
-            "rgb(199,199,199)",
-            "rgb(0,128,0)",
-            "rgb(128,0,128)",
-            "rgb(0,0,0)"
+"rgb(255,99,132)",
+"rgb(54,162,235)",
+"rgb(255,206,86)",
+"rgb(75,192,192)",
+"rgb(153,102,255)",
+"rgb(255,159,64)",
+"rgb(199,199,199)",
+"rgb(0,128,0)",
+"rgb(128,0,128)",
+"rgb(0,0,0)"
         };
         int colorIndex = 0;
 
@@ -489,92 +636,92 @@
         }
 
         var datasets = new List<object>
-        {
-            new
-            {
-                label = "Meta de Estoque (Target)", // Traduzido
-                data = targetYardTeu,
-                borderColor = "rgba(0,128,0,0.5)",
-                borderDash = new[] {5,5},
-                pointRadius = 0,
-                fill = false
-            },
-            new
-            {
-                label = "Projeção Estoque Real", // Traduzido
-                data = yardTeuReal,
-                borderColor = "rgb(255, 165, 0)", // Orange
-                tension = 0.4,
-                cubicInterpolationMode = "monotone",
-                pointRadius = 0
-            },
-            new
-            {
-                label = "Projeção Estoque Simulada", // Traduzido
-                data = yardTeuSimulated,
-                borderColor = "rgb(0, 128, 255)",
-                tension = 0.4,
-                cubicInterpolationMode = "monotone",
-                pointRadius = 0
-            },
-            new
-            {
-                label = "Simulação (Apenas Navio)",
-                data = simVesselDiff,
-                borderColor = "rgb(0, 0, 255)",
-                borderDash = new[] { 5, 5 },
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-            new
-            {
-                label = "Simulação (Apenas Trem)",
-                data = simRailDiff,
-                borderColor = "rgb(0, 128, 0)",
-                borderDash = new[] { 5, 5 },
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-            new
-            {
-                label = "Simulação (Apenas Gate)",
-                data = simTruckDiff,
-                borderColor = "rgb(255, 165, 0)",
-                borderDash = new[] { 5, 5 },
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-            new
-            {
-                label = "Real (Apenas Navio)",
-                data = realVesselDiff,
-                borderColor = "rgb(0, 0, 139)",
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-            new
-            {
-                label = "Real (Apenas Trem)",
-                data = realRailDiff,
-                borderColor = "rgb(0, 100, 0)",
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-            new
-            {
-                label = "Real (Apenas Gate)",
-                data = realTruckDiff,
-                borderColor = "rgb(255, 140, 0)",
-                tension = 0.4,
-                pointRadius = 0,
-                hidden = true
-            },
-        };
+{
+new
+{
+label = "Meta de Estoque (Target)", // Traduzido
+data = targetYardTeu,
+borderColor = "rgba(0,128,0,0.5)",
+borderDash = new[] {5,5},
+pointRadius = 0,
+fill = false
+},
+new
+{
+label = "Projeção Estoque Real", // Traduzido
+data = yardTeuReal,
+borderColor = "rgb(255, 165, 0)", // Orange
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Projeção Estoque Simulada", // Traduzido
+data = yardTeuSimulated,
+borderColor = "rgb(0, 128, 255)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Simulação (Apenas Navio)",
+data = simVesselDiff,
+borderColor = "rgb(0, 0, 255)",
+borderDash = new[] { 5, 5 },
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+new
+{
+label = "Simulação (Apenas Trem)",
+data = simRailDiff,
+borderColor = "rgb(0, 128, 0)",
+borderDash = new[] { 5, 5 },
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+new
+{
+label = "Simulação (Apenas Gate)",
+data = simTruckDiff,
+borderColor = "rgb(255, 165, 0)",
+borderDash = new[] { 5, 5 },
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+new
+{
+label = "Real (Apenas Navio)",
+data = realVesselDiff,
+borderColor = "rgb(0, 0, 139)",
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+new
+{
+label = "Real (Apenas Trem)",
+data = realRailDiff,
+borderColor = "rgb(0, 100, 0)",
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+new
+{
+label = "Real (Apenas Gate)",
+data = realTruckDiff,
+borderColor = "rgb(255, 140, 0)",
+tension = 0.4,
+pointRadius = 0,
+hidden = true
+},
+};
 
         var chartData = new
         {
@@ -629,62 +776,62 @@
         await JSRuntime.InvokeVoidAsync("renderChart", "slotChart", chartData);
 
         var inOutDatasets = new List<object>
-                {
-                    new
-                    {
-                        label = "Caminhão (Entrada)", // Traduzido
-                        data = truckIn,
-                        borderColor = "rgb(0,200,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Caminhão (Saída)", // Traduzido
-                        data = truckOut,
-                        borderColor = "rgb(200,0,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Navio (Entrada)", // Traduzido
-                        data = vesselIn,
-                        borderColor = "rgb(0,0,200)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Navio (Saída)", // Traduzido
-                        data = vesselOut,
-                        borderColor = "rgb(200,0,200)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Trem (Entrada)", // Traduzido
-                        data = railIn,
-                        borderColor = "rgb(128,128,0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Trem (Saída)", // Traduzido
-                        data = railOut,
-                        borderColor = "rgb(0,128,128)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    }
-                };
+{
+new
+{
+label = "Caminhão (Entrada)", // Traduzido
+data = truckIn,
+borderColor = "rgb(0,200,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Caminhão (Saída)", // Traduzido
+data = truckOut,
+borderColor = "rgb(200,0,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Navio (Entrada)", // Traduzido
+data = vesselIn,
+borderColor = "rgb(0,0,200)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Navio (Saída)", // Traduzido
+data = vesselOut,
+borderColor = "rgb(200,0,200)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Trem (Entrada)", // Traduzido
+data = railIn,
+borderColor = "rgb(128,128,0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Trem (Saída)", // Traduzido
+data = railOut,
+borderColor = "rgb(0,128,128)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+}
+};
 
         var inOutChartData = new
         {
@@ -738,35 +885,35 @@
         await JSRuntime.InvokeVoidAsync("renderChart", "inOutChart", inOutChartData);
 
         var slotsSummaryDatasets = new List<object>
-                {
-                    new
-                    {
-                        label = "Total de Slots", // Traduzido
-                        data = dataTotalSlots,
-                        borderColor = "rgb(75, 192, 192)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Slots (Entrada)", // Traduzido
-                        data = dataSlotsIn,
-                        borderColor = "rgb(235, 64, 52)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Slots (Saída)", // Traduzido
-                        data = dataSlotsOut,
-                        borderColor = "rgb(153, 102, 255)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    }
-                };
+{
+new
+{
+label = "Total de Slots", // Traduzido
+data = dataTotalSlots,
+borderColor = "rgb(75, 192, 192)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Slots (Entrada)", // Traduzido
+data = dataSlotsIn,
+borderColor = "rgb(235, 64, 52)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Slots (Saída)", // Traduzido
+data = dataSlotsOut,
+borderColor = "rgb(153, 102, 255)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+}
+};
 
         var slotsSummaryChartData = new
         {
@@ -831,35 +978,35 @@
         }
 
         var capacityDatasets = new List<object>
-                {
-                    new
-                    {
-                        label = "Caminhões Gate (Entrada)", // Traduzido
-                        data = gateTrucksIn,
-                        borderColor = "rgb(0, 200, 0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Caminhões Gate (Saída)", // Traduzido
-                        data = gateTrucksOut,
-                        borderColor = "rgb(200, 0, 0)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    },
-                    new
-                    {
-                        label = "Movimentações de Pátio", // Traduzido
-                        data = yardMoves,
-                        borderColor = "rgb(0, 0, 200)",
-                        tension = 0.4,
-                        cubicInterpolationMode = "monotone",
-                        pointRadius = 0
-                    }
-                };
+{
+new
+{
+label = "Caminhões Gate (Entrada)", // Traduzido
+data = gateTrucksIn,
+borderColor = "rgb(0, 200, 0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Caminhões Gate (Saída)", // Traduzido
+data = gateTrucksOut,
+borderColor = "rgb(200, 0, 0)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+},
+new
+{
+label = "Movimentações de Pátio", // Traduzido
+data = yardMoves,
+borderColor = "rgb(0, 0, 200)",
+tension = 0.4,
+cubicInterpolationMode = "monotone",
+pointRadius = 0
+}
+};
 
         var capacityChartData = new
         {

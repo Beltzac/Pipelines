@@ -585,7 +585,7 @@ namespace Common.Services
             var result = await _repo.GetFromSqlAsync<AvgResult>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                SELECT AVG((VESSEL_VISIT_START_WORK - VESSEL_VISIT_ETB) * 24) as AvgValue
+                SELECT NVL(AVG((VESSEL_VISIT_START_WORK - VESSEL_VISIT_ETB) * 24), 0) as AvgValue
                 FROM TOSBRIDGE.TOS_VESSEL_VISIT
                 WHERE VESSEL_VISIT_ETB BETWEEN {actualStartDate} AND {actualEndDate}
                   AND VESSEL_VISIT_START_WORK IS NOT NULL
@@ -610,7 +610,7 @@ namespace Common.Services
             var result = await _repo.GetFromSqlAsync<AvgResult>(
                 env.ConnectionString,
                 (FormattableString)$@"
-                SELECT AVG((TRAIN_VISIT_START_WORK - TRAIN_VISIT_ARRIVE) * 24) as AvgValue
+                SELECT NVL(AVG((TRAIN_VISIT_START_WORK - TRAIN_VISIT_ARRIVE) * 24), 0) as AvgValue
                 FROM TOSBRIDGE.TOS_TRAIN_VISIT
                 WHERE TRAIN_VISIT_ARRIVE BETWEEN {actualStartDate} AND {actualEndDate}
                   AND TRAIN_VISIT_START_WORK IS NOT NULL
