@@ -1,4 +1,4 @@
-using Common.Models;
+﻿using Common.Models;
 using Common.Services.Interfaces;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -34,15 +34,51 @@ namespace Common.Services
                     Texto = doc.TryGetValue("Texto", out var texto) ? texto.AsString : null,
                     Tags = doc.TryGetValue("Tags", out var tags) ? tags.AsBsonArray.Select(x => x.AsString).ToList() : new List<string>(),
                     RevisaoPendente = doc.TryGetValue("RevisaoPendente", out var revisaoPendente) && !revisaoPendente.IsBsonNull ? revisaoPendente.AsBoolean : false,
-                    Inclusao = doc.TryGetValue("Inclusao", out var inclusao) ? ConvertMetadata(inclusao.AsBsonDocument) : new Metadata(),
-                    Alteracao = doc.TryGetValue("Alteracao", out var alteracao) ? ConvertMetadata(alteracao.AsBsonDocument) : new Metadata(),
-                    UltimaInteracao = doc.TryGetValue("UltimaInteracao", out var ultimaInteracao) ? ConvertMetadata(ultimaInteracao.AsBsonDocument) : new Metadata()
                 };
-
-                messages[message.Id] = message;
+                messages[message.Id ?? Guid.NewGuid().ToString()] = message;
             });
 
             return messages;
+        }
+
+        public async Task<PaginatedResult<MongoMessage>> GetMessagesPaginatedAsync(string connectionString, int pageNumber, int pageSize)
+        {
+            var client = new MongoClient(connectionString);
+            var database = client.GetDatabase("Core_Mensagens");
+            var collection = database.GetCollection<BsonDocument>("Mensagem");
+
+            var filter = new BsonDocument();
+            var totalCount = (int)await collection.CountDocumentsAsync(filter);
+            var skip = (pageNumber - 1) * pageSize;
+            var docs = await collection.Find(filter)
+                .Skip(skip)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            var items = docs.Select(doc => new MongoMessage
+            {
+                Id = doc.TryGetValue("_id", out var id) ? id.AsString : null,
+                Path = doc.TryGetValue("Path", out var path) ? path.AsString : null,
+                Key = doc.TryGetValue("Key", out var key) ? key.AsString : null,
+                Idioma = doc.TryGetValue("Idioma", out var idioma) ? idioma.AsString : null,
+                Nivel = doc.TryGetValue("Nivel", out var nivel) ?
+                    nivel.BsonType == BsonType.Int32 ? nivel.AsInt32 :
+                    nivel.BsonType == BsonType.Double ? (int)nivel.AsDouble :
+                    throw new InvalidOperationException("Nivel must be a number") :
+                    null,
+                Titulo = doc.TryGetValue("Titulo", out var titulo) ? titulo.AsString : null,
+                Texto = doc.TryGetValue("Texto", out var texto) ? texto.AsString : null,
+                Tags = doc.TryGetValue("Tags", out var tags) ? tags.AsBsonArray.Select(x => x.AsString).ToList() : new List<string>(),
+                RevisaoPendente = doc.TryGetValue("RevisaoPendente", out var revisaoPendente) && !revisaoPendente.IsBsonNull ? revisaoPendente.AsBoolean : false,
+            }).ToList();
+
+            return new PaginatedResult<MongoMessage>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<string> GenerateInsertStatementAsync(MongoMessage message)

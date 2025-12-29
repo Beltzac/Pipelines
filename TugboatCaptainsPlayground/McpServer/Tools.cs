@@ -1,4 +1,4 @@
-using Common.Models;
+﻿using Common.Models;
 using Common.Services.Interfaces;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
@@ -214,16 +214,18 @@ namespace TugboatCaptainsPlayground.McpServer
                    return configurationService.GetConfig().MongoEnvironments;
                }
        
-               [McpServerTool(ReadOnly = true), Description("Get messages from a specific MongoDB environment.")]
-               public static async Task<Dictionary<string, MongoMessage>> GetMongoMessagesAsync(
+               [McpServerTool(ReadOnly = true), Description("Get messages from a specific MongoDB environment (paginated).")]
+               public static async Task<PaginatedResult<MongoMessage>> GetMongoMessagesAsync(
                    IMongoMessageService mongoMessageService,
                    IConfigurationService configurationService,
-                   [Description("The name of the MongoDB environment. Use get_mongo_environments to get available environments.")] string environmentName)
+                   [Description("The name of the MongoDB environment. Use get_mongo_environments to get available environments.")] string environmentName,
+                   [Description("Page number (1-based)")] int pageNumber = 1,
+                   [Description("Page size")] int pageSize = 50)
                {
                    var mongoEnv = configurationService.GetConfig().MongoEnvironments.FirstOrDefault(e => e.Name.Equals(environmentName, StringComparison.OrdinalIgnoreCase));
                    if (mongoEnv == null) throw new ArgumentException($"MongoDB environment '{environmentName}' not found.");
-       
-                   return await mongoMessageService.GetMessagesAsync(mongoEnv.ConnectionString);
+
+                   return await mongoMessageService.GetMessagesPaginatedAsync(mongoEnv.ConnectionString, pageNumber, pageSize);
                }
        
                [McpServerTool(ReadOnly = true), Description("Execute an ESB query to search for execution requests.")]

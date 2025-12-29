@@ -187,9 +187,72 @@
     </div>
 </div>
 
+<!-- Card: Vessel Comparison Chart -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Comparação Navio Real vs Simulado</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Selecionar Navio:</label>
+                <select class="form-select" @bind="StateService.SelectedVessel" @bind:after="OnVesselSelected">
+                    <option value="">-- Selecione um Navio --</option>
+                    @foreach (var vessel in AvailableVessels)
+                    {
+                        <option value="@vessel">@vessel</option>
+                    }
+                </select>
+            </div>
+        </div>
+        @if (StateService.VesselComparisonData.Any())
+        {
+            <div class="row">
+                <div class="col-md-8">
+                    <canvas id="vesselComparisonChart" width="400" height="100" style='width:100%;height:100px'></canvas>
+                </div>
+                <div class="col-md-4">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Hora</th>
+                                    <th>Real (TEU)</th>
+                                    <th>Simulado (TEU)</th>
+                                    <th>Diferença</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var data in StateService.VesselComparisonData)
+                                {
+                                    <tr>
+                                        <td>@DateTime.Parse(data.Timestamp).ToString("dd/MM HH:mm")</td>
+                                        <td>@data.CumulativeRealTeu</td>
+                                        <td>@data.CumulativeSimulatedTeu</td>
+                                        <td class="@(data.Difference >= 0 ? "text-success" : "text-danger")">
+                                            @(data.Difference >= 0 ? "+" : "")@data.Difference
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(StateService.SelectedVessel))
+        {
+            <div class="alert alert-info">
+                Nenhum dado disponível para o navio selecionado. Verifique se há dados reais e simulados para o período.
+            </div>
+        }
+    </div>
+</div>
+
 
 @code {
     private string WorkLineFilter { get; set; } = string.Empty;
+    private List<string> AvailableVessels { get; set; } = new();
     private bool ShowVesselStartLines { get; set; } = true;
     private bool ShowVesselEndLines { get; set; } = true;
     private bool ShowRailStartLines { get; set; } = true;
@@ -320,27 +383,28 @@
 
             StateService.YardMoves = await OracleOpsService.FetchYardMovesAsync(StateService.StartDate, StateService.EndDate,
             StateService.SelectedOracleEnvironment, cts.Token);
+            StateService.ActualFlows = actualGate;
             StateService.CachedStartDate = StateService.StartDate;
             StateService.CachedEndDate = StateService.EndDate;
             StateService.CachedEnvironment = StateService.SelectedOracleEnvironment;
 
-            var gateTrucks = StateService.GateTrucks;
+            var actualFlows = StateService.ActualFlows;
             var yardMoves = StateService.YardMoves;
 
             var caps = new Dictionary<DateTime, OpsCaps>();
 
             for (var t = StateService.StartDate; t <= StateService.EndDate; t = t.AddHours(1))
             {
-                var gateData = gateTrucks.TryGetValue(t, out var gt) ? gt : null;
+                var flowData = actualFlows.TryGetValue(t, out var af) ? af : null;
                 var yardMoveCount = yardMoves.TryGetValue(t, out var ym) ? ym : StateService.YardMovesPerHour;
-                int inCap = gateData?.In ?? 0;
-                int outCap = gateData?.Out ?? 0;
-                int vesselIn = gateData?.VesselIn ?? 0;
-                int vesselOut = gateData?.VesselOut ?? 0;
-                int railIn = gateData?.RailIn ?? 0;
-                int railOut = gateData?.RailOut ?? 0;
-                int otherIn = gateData?.OtherIn ?? 0;
-                int otherOut = gateData?.OtherOut ?? 0;
+                int inCap = flowData?.In ?? 0;
+                int outCap = flowData?.Out ?? 0;
+                int vesselIn = flowData?.VesselIn ?? 0;
+                int vesselOut = flowData?.VesselOut ?? 0;
+                int railIn = flowData?.RailIn ?? 0;
+                int railOut = flowData?.RailOut ?? 0;
+                int otherIn = flowData?.OtherIn ?? 0;
+                int otherOut = flowData?.OtherOut ?? 0;
 
                 caps[t] = new OpsCaps(t, inCap, outCap, yardMoveCount, vesselIn, vesselOut, railIn, railOut, otherIn, otherOut);
             }
@@ -425,6 +489,14 @@
                 GateTrucksOut = kvp.Value.GateTrucksOutPerHour,
                 YardMoves = kvp.Value.YardMovesPerHour
             }).ToList();
+
+            // Populate AvailableVessels from VesselSchedules
+            AvailableVessels = StateService.VesselSchedules
+                .Where(vs => !string.IsNullOrEmpty(vs.VesselName))
+                .Select(vs => vs.VesselName)
+                .Distinct()
+                .OrderBy(v => v)
+                .ToList();
 
             await UpdateChart();
             await UpdateCapacityChart();
@@ -1080,5 +1152,117 @@ pointRadius = 0
 
         // Only return if it's reasonably close (e.g. within 30 mins of the hour slot)
         return minDiff <= 30 ? closestIndex : -1;
+    }
+
+    private async Task OnVesselSelected()
+    {
+        if (string.IsNullOrEmpty(StateService.SelectedVessel))
+        {
+            StateService.VesselComparisonData = new List<VesselComparisonChartData>();
+            return;
+        }
+
+        // Find the vessel schedule for the selected vessel
+        var vesselSchedule = StateService.VesselSchedules.FirstOrDefault(v => v.VesselName == StateService.SelectedVessel);
+        if (vesselSchedule == null || vesselSchedule.StartWork == null || vesselSchedule.EndWork == null)
+        {
+            StateService.VesselComparisonData = new List<VesselComparisonChartData>();
+            return;
+        }
+
+        // Compute vessel comparison data
+        var comparisonData = SlotCalculator.ComputeVesselComparison(
+            StateService.SelectedVessel,
+            vesselSchedule,
+            StateService.Vessels,
+            StateService.ActualFlows,
+            StateService.VesselLoadRate,
+            StateService.VesselUnloadRate
+        );
+
+        StateService.VesselComparisonData = comparisonData;
+        await UpdateVesselComparisonChart();
+    }
+
+    private async Task UpdateVesselComparisonChart()
+    {
+        if (StateService.VesselComparisonData == null || !StateService.VesselComparisonData.Any()) return;
+
+        var labels = StateService.VesselComparisonData.Select(d => DateTime.Parse(d.Timestamp).ToString("dd/MM HH:mm")).ToArray();
+        var cumulativeRealTeu = StateService.VesselComparisonData.Select(d => d.CumulativeRealTeu).ToArray();
+        var cumulativeSimulatedTeu = StateService.VesselComparisonData.Select(d => d.CumulativeSimulatedTeu).ToArray();
+        var difference = StateService.VesselComparisonData.Select(d => d.Difference).ToArray();
+
+        var datasets = new List<object>
+        {
+            new
+            {
+                label = "TEU Real (Acumulado)",
+                data = cumulativeRealTeu,
+                borderColor = "rgb(255, 99, 132)",
+                tension = 0.4,
+                pointRadius = 2
+            },
+            new
+            {
+                label = "TEU Simulado (Acumulado)",
+                data = cumulativeSimulatedTeu,
+                borderColor = "rgb(54, 162, 235)",
+                tension = 0.4,
+                pointRadius = 2
+            },
+            new
+            {
+                label = "Diferença",
+                data = difference,
+                borderColor = "rgb(75, 192, 192)",
+                tension = 0.4,
+                pointRadius = 0,
+                fill = false
+            }
+        };
+
+        var chartData = new
+        {
+            type = "line",
+            data = new
+            {
+                labels = labels,
+                datasets = datasets
+            },
+            options = new
+            {
+                responsive = true,
+                plugins = new
+                {
+                    tooltip = new
+                    {
+                        mode = "index",
+                        intersect = false
+                    }
+                },
+                scales = new
+                {
+                    y = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "TEUs"
+                        }
+                    },
+                    x = new
+                    {
+                        title = new
+                        {
+                            display = true,
+                            text = "Hora"
+                        }
+                    }
+                }
+            }
+        };
+
+        await JSRuntime.InvokeVoidAsync("renderChart", "vesselComparisonChart", chartData);
     }
 }

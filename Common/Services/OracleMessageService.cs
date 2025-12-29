@@ -1,4 +1,4 @@
-using Common.Models;
+﻿using Common.Models;
 using Common.Repositories.TCP.Interfaces;
 using Common.Services.Interfaces;
 using SQL.Formatter;
@@ -73,6 +73,68 @@ namespace Common.Services
             }
 
             return messages;
+        }
+
+        public async Task<PaginatedResult<MessageDefinition>> GetMessagesPaginatedAsync(string connectionString, int pageNumber, int pageSize)
+        {
+            var messages = new Dictionary<string, MessageDefinition>();
+
+            // Fetch base message data
+            var messageQuery = @"
+                SELECT m.ID_MENSAGEM, m.ID_SISTEMA_MENSAGEM, m.ID_DESTINO_MENSAGEM, m.ID_GRUPO_MENSAGEM,
+                        m.VERIFICADO, m.MODULO, m.CODIGO, m.PREFIXO, m.ELEMENTO, m.OBSERVACAO
+                FROM TCPCONF.MENSAGEM m
+                WHERE m.EXCLUIDO = 0";
+
+            var messageResults = await _repo.GetFromSqlAsync<MessageDefinition>(
+                connectionString,
+                FormattableStringFactory.Create(messageQuery),
+                default);
+
+            foreach (var message in messageResults)
+            {
+                message.Key = $"{message.Prefixo}-{message.Codigo}";
+                messages[message.Key] = message;
+            }
+
+            // Fetch language-specific data
+            var languageQuery = @"
+                SELECT mi.ID_MENSAGEM, mi.IDIOMA, mi.TITULO, mi.DESCRICAO, mi.AJUDA
+                FROM TCPCONF.MENSAGEM_IDIOMA mi
+                WHERE mi.EXCLUIDO = 0";
+
+            var languageResults = await _repo.GetFromSqlAsync<MessageLanguageDefinition>(
+                connectionString,
+                FormattableStringFactory.Create(languageQuery),
+                default);
+
+            foreach (var lang in languageResults)
+            {
+                var message = messages.Values.FirstOrDefault(x => x.IdMensagem == lang.IdMensagem);
+                if (message != null)
+                {
+                    message.Languages[lang.Idioma] = new MessageLanguageDefinition
+                    {
+                        IdMensagem = lang.IdMensagem,
+                        Idioma = lang.Idioma,
+                        Titulo = lang.Titulo,
+                        Descricao = lang.Descricao,
+                        Ajuda = lang.Ajuda
+                    };
+                }
+            }
+
+            var allMessages = messages.Values.ToList();
+            var totalCount = allMessages.Count;
+            var pagedItems = allMessages.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+
+            return new PaginatedResult<MessageDefinition>
+            {
+                Items = pagedItems,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<MessageDiffResult> GetMessageDiffAsync(string key, MessageDefinition source, MessageDefinition target)

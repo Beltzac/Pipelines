@@ -29,7 +29,7 @@ namespace TugboatCaptainsPlayground.Services
         public double EasingStrength { get; set; } = 0.1;
 
         // Cached data
-        public Dictionary<DateTime, InOut> GateTrucks { get; set; } = new();
+        public Dictionary<DateTime, InOut> ActualFlows { get; set; } = new();
         public Dictionary<DateTime, int> YardMoves { get; set; } = new();
 
         public DateTime? CachedStartDate { get; set; }
@@ -51,5 +51,9 @@ namespace TugboatCaptainsPlayground.Services
         public double VesselLagHours { get; set; }
         public double RailLagHours { get; set; }
         public string SelectedOracleEnvironment { get; set; }
+
+        // Vessel comparison data
+        public string SelectedVessel { get; set; } = string.Empty;
+        public List<VesselComparisonChartData> VesselComparisonData { get; set; } = new();
     }
 }

@@ -1,4 +1,5 @@
-﻿using Common.Services.Interfaces;
+﻿using Common.Models;
+using Common.Services.Interfaces;
 using System.Diagnostics;
 
 public record VesselPlan(DateTime T, int DischargeTEU, int LoadTEU, List<string> VesselNames);
@@ -119,11 +120,11 @@ public static class SlotCalculator
 
             // Real data processing (Actual values from TOS_CNTR_MOV)
             var flow = actualFlows.TryGetValue(t, out var f) ? f : new InOut();
-            
+
             // Assert: Real data should not exist for future dates in simulation
             if (t > now.AddHours(1))
             {
-                Debug.Assert(flow.In == 0 && flow.Out == 0 && flow.VesselIn == 0 && flow.VesselOut == 0, 
+                Debug.Assert(flow.In == 0 && flow.Out == 0 && flow.VesselIn == 0 && flow.VesselOut == 0,
                     $"Real data found for future date {t}. Real data must only contain actual values.");
             }
 
@@ -475,4 +476,112 @@ public static class SlotCalculator
         }
     }
 
+    /// <summary>
+    /// Computes vessel comparison data for real vs simulated data.
+    /// Simulates from 1 day before work start to 1 day after work end.
+    /// Uses ComputeHourWindows internally for consistency.
+    /// </summary>
+    /// <param name="vesselName">The vessel name to compare</param>
+    /// <param name="vesselSchedule">The vessel schedule with work start/end times</param>
+    /// <param name="vessels">All vessel plans (estimated values)</param>
+    /// <param name="actualFlows">Actual flows (real data from TOS_CNTR_MOV)</param>
+    /// <param name="vesselLoadRate">Vessel load rate in TEU/h</param>
+    /// <param name="vesselUnloadRate">Vessel unload rate in TEU/h</param>
+    /// <returns>List of VesselComparisonChartData for the comparison period</returns>
+    public static List<VesselComparisonChartData> ComputeVesselComparison(
+        string vesselName,
+        VesselSchedule vesselSchedule,
+        Dictionary<DateTime, VesselPlan> vessels,
+        Dictionary<DateTime, InOut> actualFlows,
+        double vesselLoadRate,
+        double vesselUnloadRate)
+    {
+        var result = new List<VesselComparisonChartData>();
+
+        if (string.IsNullOrEmpty(vesselName) || vesselSchedule.StartWork == null || vesselSchedule.EndWork == null)
+        {
+            return result;
+        }
+
+        // Calculate the simulation period: 1 day before work start to 1 day after work end
+        var workStart = vesselSchedule.StartWork.Value;
+        var workEnd = vesselSchedule.EndWork.Value;
+        var simulationStart = workStart.AddDays(-1);
+        var simulationEnd = workEnd.AddDays(1);
+
+        // Find the vessel's planned TEU by searching for the vessel name in all plans
+        var vesselPlans = vessels.Values.Where(p => p.VesselNames.Any(vn => string.Equals(vn, vesselName, StringComparison.OrdinalIgnoreCase))).ToList();
+        var dischargeTEU = vesselPlans.Sum(p => p.DischargeTEU);
+        var loadTEU = vesselPlans.Sum(p => p.LoadTEU);
+
+        // Create a filtered vessels dictionary with only the target vessel
+        var filteredVessels = new Dictionary<DateTime, VesselPlan>
+        {
+            [workStart] = new VesselPlan(workStart, dischargeTEU, loadTEU, new List<string> { vesselName })
+        };
+
+        // Set default values for parameters not needed for vessel comparison
+        var rails = new Dictionary<DateTime, RailPlan>();
+        // Provide caps with high gate truck values so they don't constrain vessel comparison
+        var caps = new Dictionary<DateTime, OpsCaps>
+        {
+            [simulationStart] = new OpsCaps(simulationStart, int.MaxValue, int.MaxValue, int.MaxValue)
+        };
+        var band = new YardBand(0, 0, int.MaxValue);
+        var avgTeuPerTruck = 1.0;
+        var reserveRho = 0.1;
+        var easingStrength = 0.5;
+        var railLoadRate = 100.0;
+        var railUnloadRate = 100.0;
+
+        // Use ComputeHourWindows internally for consistency
+        var hourWindows = ComputeHourWindows(
+            simulationStart,
+            simulationEnd,
+            0, // initialYardTeu - not relevant for vessel comparison
+            filteredVessels,
+            rails,
+            caps,
+            actualFlows,
+            band,
+            avgTeuPerTruck,
+            reserveRho,
+            easingStrength,
+            vesselLoadRate,
+            vesselUnloadRate,
+            railLoadRate,
+            railUnloadRate
+        );
+
+        // Transform HourWindow results into VesselComparisonChartData
+        int cumulativeRealDischarge = 0;
+        int cumulativeRealLoad = 0;
+        int cumulativeSimulatedDischarge = 0;
+        int cumulativeSimulatedLoad = 0;
+
+        foreach (var window in hourWindows)
+        {
+            cumulativeSimulatedDischarge += window.Simulated.TeuVesselIn;
+            cumulativeSimulatedLoad += window.Simulated.TeuVesselOut;
+
+            cumulativeRealDischarge += window.Real.TeuVesselIn;
+            cumulativeRealLoad += window.Real.TeuVesselOut;
+
+            var dataPoint = new VesselComparisonChartData
+            {
+                Timestamp = window.T.ToString("o"),
+                CumulativeRealTeu = cumulativeRealDischarge + cumulativeRealLoad,
+                CumulativeSimulatedTeu = cumulativeSimulatedDischarge + cumulativeSimulatedLoad,
+                Difference = (cumulativeRealDischarge + cumulativeRealLoad) - (cumulativeSimulatedDischarge + cumulativeSimulatedLoad),
+                RealDischargeRate = window.Real.TeuVesselIn,
+                RealLoadRate = window.Real.TeuVesselOut,
+                SimulatedDischargeRate = window.Simulated.TeuVesselIn,
+                SimulatedLoadRate = window.Simulated.TeuVesselOut
+            };
+
+            result.Add(dataPoint);
+        }
+
+        return result;
+    }
 }
