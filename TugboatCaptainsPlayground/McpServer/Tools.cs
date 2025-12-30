@@ -19,19 +19,30 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The number of items to return per page. Default is 20.")] int pageSize = 20,
             [Description("The page number to retrieve. Default is 1.")] int pageNumber = 1)
         {
-            if (pageNumber < 1)
-                throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
-            if (pageSize < 1 || pageSize > 1000)
-                throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (pageNumber < 1)
+                    throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
+                if (pageSize < 1 || pageSize > 1000)
+                    throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
-            return await oracleSchemaService.GetTablesAndViewsAsync(
-                oracleEnv.ConnectionString,
-                schema,
-                search,
-                pageSize,
-                pageNumber);
+                return await oracleSchemaService.GetTablesAndViewsAsync(
+                    oracleEnv.ConnectionString,
+                    schema,
+                    search,
+                    pageSize,
+                    pageNumber);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle tables and views: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get column details (including description/comment) for a specific table or view.")]
@@ -42,14 +53,25 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name where the table or view is located. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The name of the table or view to get column details for. Use get_oracle_tables_and_views to get available tables and views.")] string objectName)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(objectName))
-                throw new McpProtocolException("Object name cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(objectName))
+                    throw new McpProtocolException("Object name cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
-            return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, schema, objectName);
+                return await oracleSchemaService.GetTableOrViewColumnsAsync(oracleEnv.ConnectionString, schema, objectName);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle table or view columns: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
 
@@ -61,13 +83,24 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name where the view is located. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The name of the view to get the definition for. Use get_oracle_tables_and_views to get available views.")] string viewName)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(viewName))
-                throw new McpProtocolException("View name cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(viewName))
+                    throw new McpProtocolException("View name cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, schema, viewName);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.GetViewDefinitionAsync(oracleEnv.ConnectionString, schema, viewName);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle view definition: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         // Environment listing methods
@@ -76,53 +109,60 @@ namespace TugboatCaptainsPlayground.McpServer
             IOracleSchemaService oracleSchemaService,
             IConfigurationService configurationService)
         {
-            var config = configurationService.GetConfig();
-            var environments = config.OracleEnvironments
-                                   .Where(e => !string.IsNullOrWhiteSpace(e.Name))
-                                   .ToList();
-
-            var result = new List<OracleEnvironmentInfo>();
-
-            // Process environments in parallel with timeout
-            var tasks = environments.Select(async env =>
+            try
             {
-                try
-                {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); // 10 second timeout per connection
-                    var connectionTest = await oracleSchemaService.TestConnectionAsync(env.ConnectionString);
+                var config = configurationService.GetConfig();
+                var environments = config.OracleEnvironments
+                                       .Where(e => !string.IsNullOrWhiteSpace(e.Name))
+                                       .ToList();
 
-                    return new OracleEnvironmentInfo
-                    {
-                        Name = env.Name,
-                        IsConnected = connectionTest.IsConnected,
-                        IsProduction = env.IsProduction,
-                        ConnectionError = connectionTest.ErrorMessage
-                    };
-                }
-                catch (OperationCanceledException)
-                {
-                    return new OracleEnvironmentInfo
-                    {
-                        Name = env.Name,
-                        IsConnected = false,
-                        IsProduction = env.IsProduction,
-                        ConnectionError = "Connection test timed out after 10 seconds"
-                    };
-                }
-                catch (Exception ex)
-                {
-                    return new OracleEnvironmentInfo
-                    {
-                        Name = env.Name,
-                        IsConnected = false,
-                        IsProduction = env.IsProduction,
-                        ConnectionError = $"Connection test failed: {ex.Message}"
-                    };
-                }
-            });
+                var result = new List<OracleEnvironmentInfo>();
 
-            var results = await Task.WhenAll(tasks);
-            return results.ToList();
+                // Process environments in parallel with timeout
+                var tasks = environments.Select(async env =>
+                {
+                    try
+                    {
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); // 10 second timeout per connection
+                        var connectionTest = await oracleSchemaService.TestConnectionAsync(env.ConnectionString);
+
+                        return new OracleEnvironmentInfo
+                        {
+                            Name = env.Name,
+                            IsConnected = connectionTest.IsConnected,
+                            IsProduction = env.IsProduction,
+                            ConnectionError = connectionTest.ErrorMessage
+                        };
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return new OracleEnvironmentInfo
+                        {
+                            Name = env.Name,
+                            IsConnected = false,
+                            IsProduction = env.IsProduction,
+                            ConnectionError = "Connection test timed out after 10 seconds"
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        return new OracleEnvironmentInfo
+                        {
+                            Name = env.Name,
+                            IsConnected = false,
+                            IsProduction = env.IsProduction,
+                            ConnectionError = $"Connection test failed: {ex.Message}"
+                        };
+                    }
+                });
+
+                var results = await Task.WhenAll(tasks);
+                return results.ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle environments: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Analyze performance of a given Oracle SQL query, returning execution plan and elapsed time.")]
@@ -133,16 +173,27 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name to execute the query in. Use get_oracle_schemas to get available schemas.")] string schema,
             [Description("The SQL query to analyze for performance.")] string sql)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(sql))
-                throw new McpProtocolException("SQL query cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(sql))
+                    throw new McpProtocolException("SQL query cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.AnalyzeQueryPerformanceAsync(
-                oracleEnv.ConnectionString,
-                schema,
-                sql);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.AnalyzeQueryPerformanceAsync(
+                    oracleEnv.ConnectionString,
+                    schema,
+                    sql);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to analyze Oracle query performance: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Execute a custom SELECT query against Oracle returning dynamic rows.")]
@@ -152,47 +203,58 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The name of the Oracle environment to connect to. Use get_oracle_environments to get available environments.")] string environmentName,
             [Description("The SELECT SQL query to execute.")] string sql)
         {
-            if (string.IsNullOrWhiteSpace(sql))
-                throw new McpProtocolException("SQL query cannot be null or empty.", McpErrorCode.InvalidParams);
-
-            // Limit SQL query length to prevent potential DoS
-            if (sql.Length > 50000)
-                throw new McpProtocolException("SQL query is too long. Maximum length is 50,000 characters.", McpErrorCode.InvalidParams);
-
-            // Remove comments and normalize whitespace for validation
-            var normalizedSql = System.Text.RegularExpressions.Regex.Replace(sql, @"/\*.*?\*/", "", System.Text.RegularExpressions.RegexOptions.Singleline);
-            normalizedSql = System.Text.RegularExpressions.Regex.Replace(normalizedSql, @"--.*?(\r?\n|$)", "", System.Text.RegularExpressions.RegexOptions.Multiline);
-            normalizedSql = normalizedSql.Trim();
-
-            // Basic validation to ensure it's a SELECT query
-            if (!normalizedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase) &&
-                !normalizedSql.StartsWith("WITH", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                throw new McpProtocolException("Only SELECT and WITH queries are allowed.", McpErrorCode.InvalidParams);
-            }
+                if (string.IsNullOrWhiteSpace(sql))
+                    throw new McpProtocolException("SQL query cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            // Additional security check - prevent certain dangerous keywords (but not in string literals)
-            var dangerousKeywords = new[] { "DELETE", "UPDATE", "INSERT", "DROP", "CREATE", "ALTER", "TRUNCATE", "EXEC", "EXECUTE" };
-            var upperSql = normalizedSql.ToUpperInvariant();
+                // Limit SQL query length to prevent potential DoS
+                if (sql.Length > 50000)
+                    throw new McpProtocolException("SQL query is too long. Maximum length is 50,000 characters.", McpErrorCode.InvalidParams);
 
-            // Simple check to avoid false positives with string literals
-            var sqlWithoutStrings = System.Text.RegularExpressions.Regex.Replace(upperSql, @"'[^']*'", "''");
+                // Remove comments and normalize whitespace for validation
+                var normalizedSql = System.Text.RegularExpressions.Regex.Replace(sql, @"/\*.*?\*/", "", System.Text.RegularExpressions.RegexOptions.Singleline);
+                normalizedSql = System.Text.RegularExpressions.Regex.Replace(normalizedSql, @"--.*?(\r?\n|$)", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+                normalizedSql = normalizedSql.Trim();
 
-            foreach (var keyword in dangerousKeywords)
-            {
-                // Check for keyword as whole word (not part of another word)
-                if (System.Text.RegularExpressions.Regex.IsMatch(sqlWithoutStrings, @"\b" + keyword + @"\b"))
+                // Basic validation to ensure it's a SELECT query
+                if (!normalizedSql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase) &&
+                    !normalizedSql.StartsWith("WITH", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new McpProtocolException($"Query contains prohibited keyword: {keyword}", McpErrorCode.InvalidParams);
+                    throw new McpProtocolException("Only SELECT and WITH queries are allowed.", McpErrorCode.InvalidParams);
                 }
+
+                // Additional security check - prevent certain dangerous keywords (but not in string literals)
+                var dangerousKeywords = new[] { "DELETE", "UPDATE", "INSERT", "DROP", "CREATE", "ALTER", "TRUNCATE", "EXEC", "EXECUTE" };
+                var upperSql = normalizedSql.ToUpperInvariant();
+
+                // Simple check to avoid false positives with string literals
+                var sqlWithoutStrings = System.Text.RegularExpressions.Regex.Replace(upperSql, @"'[^']*'", "''");
+
+                foreach (var keyword in dangerousKeywords)
+                {
+                    // Check for keyword as whole word (not part of another word)
+                    if (System.Text.RegularExpressions.Regex.IsMatch(sqlWithoutStrings, @"\b" + keyword + @"\b"))
+                    {
+                        throw new McpProtocolException($"Query contains prohibited keyword: {keyword}", McpErrorCode.InvalidParams);
+                    }
+                }
+
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+
+                return await oracleSchemaService.ExecuteSelectQueryAsync(
+                    oracleEnv.ConnectionString,
+                    sql
+                );
             }
-
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-
-            return await oracleSchemaService.ExecuteSelectQueryAsync(
-                oracleEnv.ConnectionString,
-                sql
-            );
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to execute Oracle SELECT query: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get a list of all schemas in a given Oracle environment.")]
@@ -201,11 +263,22 @@ namespace TugboatCaptainsPlayground.McpServer
             IConfigurationService configurationService,
             [Description("The name of the Oracle environment to get schemas from. Use get_oracle_environments to get available environments.")] string environmentName)
         {
-            if (string.IsNullOrWhiteSpace(environmentName))
-                throw new McpProtocolException("Environment name cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(environmentName))
+                    throw new McpProtocolException("Environment name cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.GetSchemasAsync(oracleEnv.ConnectionString);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.GetSchemasAsync(oracleEnv.ConnectionString);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle schemas: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Search for text inside view definitions")]
@@ -218,79 +291,90 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The search query to find matching text in view definitions.")] string searchQuery,
             [Description("The maximum number of results to return. Default is 20.")] int maxResults = 20)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(searchQuery))
-                throw new McpProtocolException("Search query cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (searchQuery.Length > 1000)
-                throw new McpProtocolException("Search query is too long. Maximum length is 1,000 characters.", McpErrorCode.InvalidParams);
-            if (maxResults < 1 || maxResults > 100)
-                throw new McpProtocolException("Max results must be between 1 and 100.", McpErrorCode.InvalidParams);
-
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-
-            // Fetch views without search filter - we'll do semantic search on the results
-            var viewDefinitions = await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, null, maxResults * 10, 1);
-
-            if (!viewDefinitions.Any())
-            {
-                return new List<OracleViewSearchResult>();
-            }
-
-            var allCandidates = new List<(string ViewName, string Line, int LineNumber)>();
-            const int maxLinesPerView = 1000; // Limit lines per view for performance
-
-            foreach (var def in viewDefinitions)
-            {
-                if (string.IsNullOrWhiteSpace(def.Definition))
-                    continue;
-
-                var lines = def.Definition.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                var linesToProcess = Math.Min(lines.Length, maxLinesPerView);
-
-                for (int i = 0; i < linesToProcess; i++)
-                {
-                    if (!string.IsNullOrWhiteSpace(lines[i]))
-                    {
-                        var trimmedLine = lines[i].Trim();
-                        // Skip very short lines (likely not meaningful for search)
-                        if (trimmedLine.Length > 3)
-                        {
-                            allCandidates.Add((def.Name, trimmedLine, i + 1));
-                        }
-                    }
-                }
-
-                // Limit total candidates for performance
-                if (allCandidates.Count > maxResults * 50)
-                    break;
-            }
-
-            if (!allCandidates.Any())
-            {
-                return new List<OracleViewSearchResult>();
-            }
-
             try
             {
-                var queryVec = embedder.Embed(searchQuery);
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(searchQuery))
+                    throw new McpProtocolException("Search query cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (searchQuery.Length > 1000)
+                    throw new McpProtocolException("Search query is too long. Maximum length is 1,000 characters.", McpErrorCode.InvalidParams);
+                if (maxResults < 1 || maxResults > 100)
+                    throw new McpProtocolException("Max results must be between 1 and 100.", McpErrorCode.InvalidParams);
 
-                var embeddingPairs = allCandidates
-                    .Select(c => (Item: c, Embedding: embedder.Embed(c.Line)))
-                    .ToList();
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
 
-                var results = SmartComponents.LocalEmbeddings.LocalEmbedder.FindClosestWithScore(queryVec, embeddingPairs, maxResults, 0.6f);
+                // Fetch views without search filter - we'll do semantic search on the results
+                var viewDefinitions = await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, null, maxResults * 10, 1);
 
-                return results.Select(r => new OracleViewSearchResult
+                if (!viewDefinitions.Any())
                 {
-                    ViewName = r.Item.ViewName,
-                    MatchingLines = new List<string> { $"Line {r.Item.LineNumber}: {r.Item.Line}" },
-                    Similarity = r.Similarity
-                }).ToList();
+                    return new List<OracleViewSearchResult>();
+                }
+
+                var allCandidates = new List<(string ViewName, string Line, int LineNumber)>();
+                const int maxLinesPerView = 1000; // Limit lines per view for performance
+
+                foreach (var def in viewDefinitions)
+                {
+                    if (string.IsNullOrWhiteSpace(def.Definition))
+                        continue;
+
+                    var lines = def.Definition.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var linesToProcess = Math.Min(lines.Length, maxLinesPerView);
+
+                    for (int i = 0; i < linesToProcess; i++)
+                    {
+                        if (!string.IsNullOrWhiteSpace(lines[i]))
+                        {
+                            var trimmedLine = lines[i].Trim();
+                            // Skip very short lines (likely not meaningful for search)
+                            if (trimmedLine.Length > 3)
+                            {
+                                allCandidates.Add((def.Name, trimmedLine, i + 1));
+                            }
+                        }
+                    }
+
+                    // Limit total candidates for performance
+                    if (allCandidates.Count > maxResults * 50)
+                        break;
+                }
+
+                if (!allCandidates.Any())
+                {
+                    return new List<OracleViewSearchResult>();
+                }
+
+                try
+                {
+                    var queryVec = embedder.Embed(searchQuery);
+
+                    var embeddingPairs = allCandidates
+                        .Select(c => (Item: c, Embedding: embedder.Embed(c.Line)))
+                        .ToList();
+
+                    var results = SmartComponents.LocalEmbeddings.LocalEmbedder.FindClosestWithScore(queryVec, embeddingPairs, maxResults, 0.6f);
+
+                    return results.Select(r => new OracleViewSearchResult
+                    {
+                        ViewName = r.Item.ViewName,
+                        MatchingLines = new List<string> { $"Line {r.Item.LineNumber}: {r.Item.Line}" },
+                        Similarity = r.Similarity
+                    }).ToList();
+                }
+                catch (Exception ex)
+                {
+                    throw new McpProtocolException($"Error performing embedding search: {ex.Message}", McpErrorCode.InternalError);
+                }
+            }
+            catch (McpProtocolException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                throw new McpProtocolException($"Error performing embedding search: {ex.Message}", McpErrorCode.InternalError);
+                throw new McpProtocolException($"Failed to search in Oracle view definitions: {ex.Message}", McpErrorCode.InternalError);
             }
         }
 
@@ -303,33 +387,51 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The name of the object (table or view).")] string objectName,
             [Description("The type of the object (TABLE or VIEW).")] string objectType)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(objectName))
-                throw new McpProtocolException("Object name cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(objectType))
-                throw new McpProtocolException("Object type cannot be null or empty.", McpErrorCode.InvalidParams);
-
-            // Validate object type
-            var validTypes = new[] { "TABLE", "VIEW" };
-            if (!validTypes.Contains(objectType.ToUpperInvariant()))
+            try
             {
-                throw new McpProtocolException($"Object type must be one of: {string.Join(", ", validTypes)}", McpErrorCode.InvalidParams);
-            }
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(objectName))
+                    throw new McpProtocolException("Object name cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(objectType))
+                    throw new McpProtocolException("Object type cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.GetOracleDependenciesAsync(
-                oracleEnv.ConnectionString,
-                schema,
-                objectName,
-                objectType.ToUpperInvariant()
-            );
+                // Validate object type
+                var validTypes = new[] { "TABLE", "VIEW" };
+                if (!validTypes.Contains(objectType.ToUpperInvariant()))
+                {
+                    throw new McpProtocolException($"Object type must be one of: {string.Join(", ", validTypes)}", McpErrorCode.InvalidParams);
+                }
+
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.GetOracleDependenciesAsync(
+                    oracleEnv.ConnectionString,
+                    schema,
+                    objectName,
+                    objectType.ToUpperInvariant()
+                );
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle dependencies: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get a list of all configured MongoDB environments.")]
         public static List<MongoEnvironment> GetMongoEnvironments(IConfigurationService configurationService)
         {
-            return configurationService.GetConfig().MongoEnvironments;
+            try
+            {
+                return configurationService.GetConfig().MongoEnvironments;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get MongoDB environments: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get messages from a specific MongoDB environment (paginated).")]
@@ -340,13 +442,24 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("Page number (1-based)")] int pageNumber = 1,
             [Description("Page size")] int pageSize = 50)
         {
-            if (pageNumber < 1)
-                throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
-            if (pageSize < 1 || pageSize > 1000)
-                throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (pageNumber < 1)
+                    throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
+                if (pageSize < 1 || pageSize > 1000)
+                    throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
 
-            var mongoEnv = GetMongoEnvironment(configurationService, environmentName);
-            return await mongoMessageService.GetMessagesPaginatedAsync(mongoEnv.ConnectionString, pageNumber, pageSize);
+                var mongoEnv = GetMongoEnvironment(configurationService, environmentName);
+                return await mongoMessageService.GetMessagesPaginatedAsync(mongoEnv.ConnectionString, pageNumber, pageSize);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get MongoDB messages: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Execute an ESB query to search for execution requests.")]
@@ -366,16 +479,27 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("Filter by Response Status.")] string? responseStatus = null,
             [Description("Filter by minimum delay in seconds.")] int? minDelaySeconds = null)
         {
-            if (string.IsNullOrWhiteSpace(environment))
-                throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (pageNumber < 1)
-                throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
-            if (pageSize < 1 || pageSize > 1000)
-                throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
-            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
-                throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(environment))
+                    throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (pageNumber < 1)
+                    throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
+                if (pageSize < 1 || pageSize > 1000)
+                    throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
+                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                    throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
 
-            return await esbService.ExecuteQueryAsync(environment, startDate, endDate, urlFilter, httpMethod, genericText, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus, minDelaySeconds);
+                return await esbService.ExecuteQueryAsync(environment, startDate, endDate, urlFilter, httpMethod, genericText, userId, execucaoId, pageSize, pageNumber, httpStatusRange, responseStatus, minDelaySeconds);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to execute ESB query: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get ESB sequences for a specific request and server.")]
@@ -385,17 +509,35 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The SOAP request to analyze.")] string soapRequest,
             [Description("The ESB server name. Use get_esb_servers to get available servers.")] string serverName)
         {
-            if (string.IsNullOrWhiteSpace(soapRequest))
-                throw new McpProtocolException("SOAP request cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(soapRequest))
+                    throw new McpProtocolException("SOAP request cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var server = GetEsbServer(configurationService, serverName);
-            return await esbService.GetEsbSequencesAsync(soapRequest, server);
+                var server = GetEsbServer(configurationService, serverName);
+                return await esbService.GetEsbSequencesAsync(soapRequest, server);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get ESB sequences: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get a list of all configured ESB servers.")]
         public static List<EsbServerConfig> GetEsbServers(IConfigurationService configurationService)
         {
-            return configurationService.GetConfig().EsbServers;
+            try
+            {
+                return configurationService.GetConfig().EsbServers;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get ESB servers: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Execute an SGG query to search for LTDB/LTVC records.")]
@@ -416,33 +558,44 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("Page size for pagination.")] int pageSize = 10,
             [Description("Page number for pagination.")] int pageNumber = 1)
         {
-            if (string.IsNullOrWhiteSpace(environment))
-                throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (pageNumber < 1)
-                throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
-            if (pageSize < 1 || pageSize > 1000)
-                throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
-            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
-                throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
-
-            var filter = new SggQueryFilter
+            try
             {
-                Environment = environment,
-                StartDate = startDate,
-                EndDate = endDate,
-                GenericText = genericText,
-                Placa = placa,
-                Motorista = motorista,
-                MoveType = moveType,
-                IdAgendamento = idAgendamento,
-                Status = status,
-                MinDelay = minDelay,
-                CodigoBarras = codigoBarras,
-                RequestId = requestId,
-                PageSize = pageSize,
-                PageNumber = pageNumber
-            };
-            return await sggService.ExecuteQueryAsync(filter);
+                if (string.IsNullOrWhiteSpace(environment))
+                    throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (pageNumber < 1)
+                    throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
+                if (pageSize < 1 || pageSize > 1000)
+                    throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
+                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                    throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
+
+                var filter = new SggQueryFilter
+                {
+                    Environment = environment,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    GenericText = genericText,
+                    Placa = placa,
+                    Motorista = motorista,
+                    MoveType = moveType,
+                    IdAgendamento = idAgendamento,
+                    Status = status,
+                    MinDelay = minDelay,
+                    CodigoBarras = codigoBarras,
+                    RequestId = requestId,
+                    PageSize = pageSize,
+                    PageNumber = pageNumber
+                };
+                return await sggService.ExecuteQueryAsync(filter);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to execute SGG query: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get SGG delay metrics for the given filter.")]
@@ -452,13 +605,24 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("Start date for the search.")] DateTimeOffset? startDate = null,
             [Description("End date for the search.")] DateTimeOffset? endDate = null)
         {
-            if (string.IsNullOrWhiteSpace(environment))
-                throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
-                throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(environment))
+                    throw new McpProtocolException("Environment cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                    throw new McpProtocolException("Start date cannot be after end date.", McpErrorCode.InvalidParams);
 
-            var filter = new SggQueryFilter { Environment = environment, StartDate = startDate, EndDate = endDate };
-            return await sggService.GetDelayMetricsAsync(filter);
+                var filter = new SggQueryFilter { Environment = environment, StartDate = startDate, EndDate = endDate };
+                return await sggService.GetDelayMetricsAsync(filter);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get SGG delay metrics: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Get a list of view definitions for a given Oracle schema.")]
@@ -471,15 +635,26 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("Page size for pagination.")] int pageSize = 100,
             [Description("Page number for pagination.")] int pageNumber = 1)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (pageNumber < 1)
-                throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
-            if (pageSize < 1 || pageSize > 1000)
-                throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (pageNumber < 1)
+                    throw new McpProtocolException("Page number must be greater than 0.", McpErrorCode.InvalidParams);
+                if (pageSize < 1 || pageSize > 1000)
+                    throw new McpProtocolException("Page size must be between 1 and 1000.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, search, pageSize, pageNumber);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.GetViewDefinitionsAsync(oracleEnv.ConnectionString, schema, search, pageSize, pageNumber);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to get Oracle view definitions: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Test the connection to a specific Oracle environment.")]
@@ -488,11 +663,22 @@ namespace TugboatCaptainsPlayground.McpServer
             IConfigurationService configurationService,
             [Description("The name of the Oracle environment to test.")] string environmentName)
         {
-            if (string.IsNullOrWhiteSpace(environmentName))
-                throw new McpProtocolException("Environment name cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(environmentName))
+                    throw new McpProtocolException("Environment name cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
-            return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString);
+                var oracleEnv = GetOracleEnvironment(configurationService, environmentName);
+                return await oracleSchemaService.TestConnectionAsync(oracleEnv.ConnectionString);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to test Oracle connection: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Compare view definitions across two Oracle environments.")]
@@ -504,18 +690,29 @@ namespace TugboatCaptainsPlayground.McpServer
             [Description("The schema name.")] string schema,
             [Description("The name of the view to compare.")] string viewName)
         {
-            if (string.IsNullOrWhiteSpace(schema))
-                throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
-            if (string.IsNullOrWhiteSpace(viewName))
-                throw new McpProtocolException("View name cannot be null or empty.", McpErrorCode.InvalidParams);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(schema))
+                    throw new McpProtocolException("Schema cannot be null or empty.", McpErrorCode.InvalidParams);
+                if (string.IsNullOrWhiteSpace(viewName))
+                    throw new McpProtocolException("View name cannot be null or empty.", McpErrorCode.InvalidParams);
 
-            var sourceEnv = GetOracleEnvironment(configurationService, sourceEnvironmentName);
-            var targetEnv = GetOracleEnvironment(configurationService, targetEnvironmentName);
+                var sourceEnv = GetOracleEnvironment(configurationService, sourceEnvironmentName);
+                var targetEnv = GetOracleEnvironment(configurationService, targetEnvironmentName);
 
-            var sourceView = await oracleSchemaService.GetViewDefinitionAsync(sourceEnv.ConnectionString, schema, viewName);
-            var targetView = await oracleSchemaService.GetViewDefinitionAsync(targetEnv.ConnectionString, schema, viewName);
+                var sourceView = await oracleSchemaService.GetViewDefinitionAsync(sourceEnv.ConnectionString, schema, viewName);
+                var targetView = await oracleSchemaService.GetViewDefinitionAsync(targetEnv.ConnectionString, schema, viewName);
 
-            return await oracleSchemaService.GetViewDiffAsync(viewName, sourceView.Definition, targetView.Definition);
+                return await oracleSchemaService.GetViewDiffAsync(viewName, sourceView.Definition, targetView.Definition);
+            }
+            catch (McpProtocolException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new McpProtocolException($"Failed to compare Oracle view definitions: {ex.Message}", McpErrorCode.InternalError);
+            }
         }
 
         [McpServerTool(ReadOnly = true), Description("Generate an EF Core mapping class for an Oracle table or view.")]
